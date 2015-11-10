@@ -38,8 +38,28 @@
 #define MODE_OF_DIRECTORY_CREATION 0750
 #endif
 
+static int is_valid_filename(const char *filename)
+{
+	int lastsp = 0;
+	int index = 0;
+	unsigned char c;
 
-int create_directory(char *file, int mode)
+	c = (unsigned char)filename[index];
+	while (c) {
+		if ((c < 0x1f)
+		 || ((lastsp = (c == 0x20)) && index == 0)
+		 || c == 0x7f || c == 0x3c || c == 0x3e
+		 || c == 0x3a || c == 0x22 || c == 0x2f
+		 || c == 0x5c || c == 0x7c || c == 0x3f
+		 || c == 0x2a || c == 0x5e || c == 0x60
+		 || c == 0x7b || c == 0x7d || c == 0x21)
+			return 0;
+		c = (unsigned char)filename[++index];
+	}
+	return !lastsp;
+}
+
+static int create_directory(char *file, int mode)
 {
 	int rc;
 	char *last = strrchr(file, '/');
@@ -62,7 +82,7 @@ int create_directory(char *file, int mode)
 	return rc;
 }
 
-int create_file(char *file, int fmode, int dmode)
+static int create_file(char *file, int fmode, int dmode)
 {
 	int fd = creat(file, fmode);
 	if (fd < 0 && errno == ENOENT) {
@@ -108,6 +128,10 @@ int zread(const char *zipfile, unsigned long long maxsize)
 	for (index = 0 ; index < count ; index++) {
 		err = zip_stat_index(zip, index, ZIP_FL_ENC_GUESS, &zstat);
 		/* check the file name */
+		if (!is_valid_filename(zstat.name)) {
+			syslog(LOG_ERR, "invalid entry %s found in %s", zstat.name, zipfile);
+			goto error;
+		}
 		if (zstat.name[0] == '/') {
 			syslog(LOG_ERR, "absolute entry %s found in %s", zstat.name, zipfile);
 			goto error;
@@ -233,39 +257,37 @@ static int zwr(struct zws *zws, int offset)
 			(ent->d_name[1] == '.' && len == 2)))
 			;
 		else if (offset + len >= sizeof(zws->name)) {
-			closedir(dir);
 			syslog(LOG_ERR, "name too long in zwr");
 			errno = ENAMETOOLONG;
-			return -1;
+			goto error;
 		} else {
 			memcpy(zws->name + offset, ent->d_name, 1+len);
+			if (!is_valid_filename(ent->d_name)) {
+				syslog(LOG_ERR, "invalid name %s", zws->name);
+				goto error;
+			}
 			switch (ent->d_type) {
 			case DT_DIR:
 				z64 = zip_dir_add(zws->zip, zws->name, ZIP_FL_ENC_UTF_8);
 				if (z64 < 0) {
 					syslog(LOG_ERR, "zip_dir_add of %s failed", zws->name);
-					closedir(dir);
-					return -1;
+					goto error;
 				}
 				err = zwr(zws, offset + len);
-				if (err) {
-					closedir(dir);
-					return -1;
-				}
+				if (err)
+					goto error;
 				break;
 			case DT_REG:
 				zsrc = zip_source_file(zws->zip, zws->name, 0, 0);
 				if (zsrc == NULL) {
 					syslog(LOG_ERR, "zip_source_file of %s failed", zws->name);
-					closedir(dir);
-					return -1;
+					goto error;
 				}
 				z64 = zip_file_add(zws->zip, zws->name, zsrc, ZIP_FL_ENC_UTF_8);
 				if (z64 < 0) {
 					syslog(LOG_ERR, "zip_file_add of %s failed", zws->name);
 					zip_source_free(zsrc);
-					closedir(dir);
-					return -1;
+					goto error;
 				}
 				break;
 			default:
@@ -277,6 +299,9 @@ static int zwr(struct zws *zws, int offset)
 
 	closedir(dir);
 	return 0;
+error:
+	closedir(dir);
+	return -1;
 }
 
 /* write (pack) content of the current directory in 'zipfile' */
