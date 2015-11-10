@@ -132,6 +132,13 @@ int xmlsec_init()
 		goto end;
 	}
 
+#ifdef XMLSEC_CRYPTO_DYNAMIC_LOADING
+	if(xmlSecCryptoDLLoadLibrary(XMLSEC_CRYPTO) < 0) {
+		syslog(LOG_ERR, "xmlSecCryptoDLLoadLibrary %s failed.", XMLSEC_CRYPTO);
+		goto end;
+	}
+#endif
+
 	if(xmlSecCryptoAppInit(NULL) < 0) {
 		syslog(LOG_ERR, "xmlSecCryptoAppInit failed.");
 		goto end;
