@@ -16,6 +16,7 @@
 
 
 #include <libxml/tree.h>
+#include "config.h"
 
 struct filedesc;
 

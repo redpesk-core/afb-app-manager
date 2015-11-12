@@ -1,0 +1,10 @@
+Installation Instructions
+*************************
+
+In a shell, type the following commands:
+
+autoreconf -if
+./configure
+make
+sudo make install
+
