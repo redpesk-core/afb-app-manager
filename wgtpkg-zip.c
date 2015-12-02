@@ -49,7 +49,7 @@ static int is_valid_filename(const char *filename)
 		if ((c < 0x1f)
 		 || ((lastsp = (c == 0x20)) && index == 0)
 		 || c == 0x7f || c == 0x3c || c == 0x3e
-		 || c == 0x3a || c == 0x22 || c == 0x2f
+		 || c == 0x3a || c == 0x22 
 		 || c == 0x5c || c == 0x7c || c == 0x3f
 		 || c == 0x2a || c == 0x5e || c == 0x60
 		 || c == 0x7b || c == 0x7d || c == 0x21)
