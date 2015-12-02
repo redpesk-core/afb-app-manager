@@ -25,7 +25,7 @@
 #include "wgtpkg.h"
 
 #ifndef PREDIR
-#define PREDIR  "/tmp/"
+#define PREDIR  "./"
 #endif
 
 static int mode = 0700;
