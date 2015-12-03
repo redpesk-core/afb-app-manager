@@ -89,6 +89,15 @@ extern int file_set_prop(struct filedesc *file, const char *name, const char *va
 extern const char *file_get_prop(struct filedesc *file, const char *name);
 
 /**************************************************************/
+/* from wgtpkg-verbose */
+extern int verbosity;
+#define warning(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
+#define notice(...)  do{if(verbosity)syslog(LOG_NOTICE,__VA_ARGS__);}while(0)
+#define info(...)    do{if(verbosity)syslog(LOG_INFO,__VA_ARGS__);}while(0)
+#define debug(...)   do{if(verbosity>1)syslog(LOG_DEBUG,__VA_ARGS__);}while(0)
+extern int verbose_scan_args(int argc, char **argv);
+
+/**************************************************************/
 /* from wgtpkg-workdir */
 
 extern int enter_workdir(int clean);

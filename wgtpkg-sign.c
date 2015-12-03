@@ -63,6 +63,8 @@ static void usage()
 		"   -d number        the number of the distributor signature (zero for automatic)\n"
 		"   -a               the author signature\n"
 		"   -f               force overwriting\n"
+		"   -q               quiet\n"
+		"   -v               verbose\n"
 		"\n",
 		appname
 	);
@@ -75,6 +77,8 @@ static struct option options[] = {
 	{ "author",      no_argument,       NULL, 'a' },
 	{ "force",       no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
+	{ "quiet",       no_argument,       NULL, 'q' },
+	{ "verbose",     no_argument,       NULL, 'v' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -187,7 +191,7 @@ int main(int ac, char **av)
 		return 1;
 	}
 
-printf("\n\nSIGNING content of directory %s for number %u\n", directory, number);
+	notice("-- SIGNING content of directory %s for number %u", directory, number);
 
 	certfiles[ncert] = NULL;
 	return !!create_digsig(number, keyfile, (const char**)certfiles);

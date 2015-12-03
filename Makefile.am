@@ -1,6 +1,14 @@
 bin_PROGRAMS = wgtpkg-install wgtpkg-pack wgtpkg-sign
 
-COMMONSRCS = wgtpkg-base64.c wgtpkg-certs.c wgtpkg-digsig.c wgtpkg-files.c wgtpkg-workdir.c wgtpkg-xmlsec.c wgtpkg-zip.c
+COMMONSRCS = \
+	wgtpkg-base64.c \
+	wgtpkg-certs.c \
+	wgtpkg-digsig.c \
+	wgtpkg-files.c \
+	wgtpkg-verbose.c \
+	wgtpkg-workdir.c \
+	wgtpkg-xmlsec.c \
+	wgtpkg-zip.c
 
 AM_CFLAGS  = -Wall -Wno-pointer-sign
 AM_CFLAGS += -ffunction-sections -fdata-sections

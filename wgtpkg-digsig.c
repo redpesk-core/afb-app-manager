@@ -271,7 +271,7 @@ int verify_digsig(struct filedesc *fdesc)
 	int res;
 
 	assert ((fdesc->flags & flag_signature) != 0);
-printf("\n\nchecking file %s\n\n",fdesc->name);
+	notice("-- checking file %s",fdesc->name);
 
 	/* reset the flags */
 	file_clear_flags();

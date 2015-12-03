@@ -47,6 +47,8 @@ static void usage()
 		"\n"
 		"   -o wgtfile       the output widget file\n"
 		"   -f               force overwriting\n"
+		"   -q               quiet\n"
+		"   -v               verbose\n"
 		"\n",
 		appname
 	);
@@ -56,6 +58,8 @@ static struct option options[] = {
 	{ "output",      required_argument, NULL, 'o' },
 	{ "force",       no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
+	{ "quiet",       no_argument,       NULL, 'q' },
+	{ "verbose",     no_argument,       NULL, 'v' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -71,12 +75,19 @@ int main(int ac, char **av)
 	force = 0;
 	wgtfile = directory = NULL;
 	for (;;) {
-		i = getopt_long(ac, av, "hfo:", options, NULL);
+		i = getopt_long(ac, av, "qvhfo:", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
 		case 'o':
 			wgtfile = optarg;
+			break;
+		case 'q':
+			if (verbosity)
+				verbosity--;
+			break;
+		case 'v':
+			verbosity++;
 			break;
 		case 'f':
 			force = 1;
@@ -124,7 +135,7 @@ int main(int ac, char **av)
 		return 1;
 	}
 
-printf("\n\nPACKING widget %s from directory %s\n", wgtfile, directory);
+	notice("-- PACKING widget %s from directory %s", wgtfile, directory);
 
 	/* creates an existing widget (for realpath it must exist) */
 	i = open(wgtfile, O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0666);

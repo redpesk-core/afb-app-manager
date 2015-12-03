@@ -29,7 +29,7 @@
 /* install the widget of the file */
 static void install(const char *wgtfile)
 {
-printf("\n\nINSTALLING widget %s\n", wgtfile);
+	notice("-- INSTALLING widget %s", wgtfile);
 
 	if (enter_workdir(1))
 		goto error;
@@ -56,6 +56,8 @@ int main(int ac, char **av)
 
 	xmlsec_init();
 
+	ac = verbose_scan_args(ac, av);
+	
 	/* canonic names for files */
 	for (i = 1 ; av[i] != NULL ; i++)
 		if ((av[i] = realpath(av[i], NULL)) == NULL) {
