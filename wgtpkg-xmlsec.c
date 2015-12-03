@@ -42,12 +42,14 @@ static xmlSecKeysMngrPtr keymgr;
 #define CA_ROOT_DIRECTORY "./ca-certificates"
 #endif
 
+/* checks if a file match  uri (should not be a distributor signature) */
 static int file_match_cb(const char *uri)
 {
 	struct filedesc *fdesc = file_of_name(uri);
 	return fdesc != NULL && fdesc->type == type_file && (fdesc->flags & flag_distributor_signature) == 0;
 }
 
+/* open the file of uri */
 static void *file_open_cb(const char *file)
 {
 	struct filedesc *fdesc;
@@ -68,22 +70,26 @@ static void *file_open_cb(const char *file)
 	return f;
 }
 
+/* read the opened file */
 static int file_read_cb(void *context, char *buffer, int len)
 {
 	size_t r = fread(buffer, 1, len, (FILE*)context);
 	return r ? (int)r : feof((FILE*)context) ? 0 : - 1;
 }
 
+/* close the opened file */
 static int file_close_cb(void *context)
 {
 	return (int)fclose((FILE*)context);
 }
 
+/* echo an error message */
 static void errors_cb(const char *file, int line, const char *func, const char *errorObject, const char *errorSubject, int reason, const char *msg)
 {
 	syslog(LOG_ERR, "xmlSec error %3d: %s (subject=\"%s\", object=\"%s\")", reason, msg, errorSubject ? errorSubject : "?", errorObject ? errorObject : "?");
 }
 
+/* fills database with trusted keys */
 static int fill_trusted_keys()
 {
 	int err;
@@ -118,6 +124,7 @@ static int fill_trusted_keys()
 	
 }
 
+/* initialisation of access to xmlsec */
 int xmlsec_init()
 {
 
@@ -175,7 +182,7 @@ end:
 	return initstatus;
 }
 
-
+/* shuting down accesses to xmlsec */
 void xmlsec_shutdown()
 {
 	xmlSecKeysMngrDestroy(keymgr);
@@ -187,6 +194,7 @@ void xmlsec_shutdown()
 	xmlSecShutdown();
 }
 
+/* verify a signature */
 int xmlsec_verify(xmlNodePtr node)
 {
 	int rc;
@@ -212,9 +220,10 @@ int xmlsec_verify(xmlNodePtr node)
 	return rc;
 }
 
+/* templates for properties of signature files */
 static const struct { const char *id; const char *xml; } properties[2] = {
 	{
-		.id = "AuthorSignature",
+		.id = "AuthorSignature", /* template of properties for author signature */
 		.xml =
 			"<SignatureProperties xmlns:dsp=\"http://www.w3.org/2009/xmldsig-properties\">"
 			 "<SignatureProperty Id=\"profile\" Target=\"#AuthorSignature\">"
@@ -229,7 +238,7 @@ static const struct { const char *id; const char *xml; } properties[2] = {
 			"</SignatureProperties>"
 	},
 	{
-		.id = "DistributorSignature",
+		.id = "DistributorSignature", /* template of properties for distributor signature */
 		.xml = 
 			"<SignatureProperties xmlns:dsp=\"http://www.w3.org/2009/xmldsig-properties\">"
 			 "<SignatureProperty Id=\"profile\" Target=\"#DistributorSignature\">"
@@ -245,6 +254,9 @@ static const struct { const char *id; const char *xml; } properties[2] = {
 	}
 };
 
+/* create a signature of 'index' (0 for author, other values for distributors)
+using the private 'key' (filename) and the certificates 'certs' (filenames)
+as trusted chain */
 xmlDocPtr xmlsec_create(int index, const char *key, const char **certs)
 {
 	unsigned int i, fc, mask;

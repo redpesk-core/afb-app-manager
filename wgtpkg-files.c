@@ -238,6 +238,7 @@ struct filedesc *create_signature(unsigned int number)
 	return result;
 }
 
+/* remove flags that are not related to being signature */
 void file_clear_flags()
 {
 	unsigned int i;

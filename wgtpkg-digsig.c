@@ -132,22 +132,29 @@ static int check_one_reference(xmlNodePtr ref)
 
 	/* parse the uri */
 	u = xmlParseURI(uri);
-	if (u == NULL) {
+	if (!u) {
 		syslog(LOG_ERR, "error while parsing URI %s", uri);
 		goto error2;
 	}
 
+	/* check that unexpected parts are not there */
 	if (u->scheme || u->opaque || u->authority || u->server || u->user || u->query) {
 		syslog(LOG_ERR, "unexpected uri component in %s", uri);
 		goto error3;
 	}
 
+	/* check path and fragment */
+	if (!u->path && !u->fragment) {
+		syslog(LOG_ERR, "invalid uri %s", uri);
+		goto error3;
+	}
 	if (u->path && u->fragment) {
 		syslog(LOG_ERR, "not allowed to sign foreign fragment in %s", uri);
 		goto error3;
 	}
 
 	if (u->path) {
+		/* check that the path is valid */
 		fdesc = file_of_name(u->path);
 		if (fdesc == NULL) {
 			syslog(LOG_ERR, "reference to unknown file %s", u->path);
@@ -219,6 +226,7 @@ static int get_certificates(xmlNodePtr kinfo)
 	return 0;
 }
 
+/* checks the current document */
 static int checkdocument()
 {
 	int rc;
@@ -266,6 +274,7 @@ error:
 	return rc;
 }
 
+/* verify the digital signature of the file described by 'fdesc' */
 int verify_digsig(struct filedesc *fdesc)
 {
 	int res;
@@ -292,6 +301,7 @@ int verify_digsig(struct filedesc *fdesc)
 	return res;
 }
 
+/* check all the signature files */
 int check_all_signatures()
 {
 	int rc, irc;
@@ -302,7 +312,6 @@ int check_all_signatures()
 	rc = 0;
 	for (i = n ; i-- > 0 ; ) {
 		fdesc = signature_of_index(i);
-		assert ((fdesc->flags & flag_signature) != 0);
 		irc = verify_digsig(fdesc);
 		if (!irc)
 			rc = irc;
@@ -311,6 +320,9 @@ int check_all_signatures()
 	return rc;
 }
 
+/* create a signature of 'index' (0 for author, other values for distributors)
+using the private 'key' (filename) and the certificates 'certs' (filenames)
+as trusted chain */
 int create_digsig(int index, const char *key, const char **certs)
 {
 	struct filedesc *fdesc;
@@ -318,14 +330,18 @@ int create_digsig(int index, const char *key, const char **certs)
 	int rc, len;
 
 	rc = -1;
+
+	/* create the doc */
 	doc = xmlsec_create(index, key, certs);
 	if (doc == NULL)
 		goto error;
 
+	/* instanciate the filename */
 	fdesc = create_signature(index);
 	if (fdesc == NULL)
 		goto error2;
 
+	/* save the doc as file */
 	len = xmlSaveFormatFileEnc(fdesc->name, doc, NULL, 0);
 	if (len < 0) {
 		syslog(LOG_ERR, "xmlSaveFormatFileEnc to %s failed", fdesc->name);
