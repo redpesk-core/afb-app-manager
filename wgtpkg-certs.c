@@ -42,16 +42,22 @@ static int add_certificate_x509(X509 *x)
 static int add_certificate_bin(const char *bin, int len)
 {
 	int rc;
-	const unsigned char *b = (const unsigned char *)bin;
-	X509 *x =  d2i_X509(NULL, &b, len);
-	if (x == NULL) {
-		syslog(LOG_ERR, "d2i_X509 failed");
-		return -1;
+	const char *b, *e;
+	b = bin;
+	e = bin + len;
+	while (len) {
+		X509 *x =  d2i_X509(NULL, (const unsigned char **)&b, e-b);
+		if (x == NULL) {
+			syslog(LOG_ERR, "d2i_X509 failed");
+			return -1;
+		}
+		rc = add_certificate_x509(x);
+		if (rc) {
+			X509_free(x);
+			return rc;
+		}
 	}
-	rc = add_certificate_x509(x);
-	if (rc)
-		X509_free(x);
-	return rc;
+	return 0;
 }
 
 int add_certificate_b64(const char *b64)
