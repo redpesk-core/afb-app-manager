@@ -20,7 +20,7 @@ AC_PROG_CC
 # FIXME: Replace `main' with a function in `-lzip':
 #AC_CHECK_LIB([zip], [zip_open])
 
-PKG_CHECK_MODULES([ZIP], [libzip >= 1.0])
+PKG_CHECK_MODULES([ZIP], [libzip >= 0.11])
 PKG_CHECK_MODULES([XML2], [libxml-2.0])
 PKG_CHECK_MODULES([OPENSSL], [openssl])
 PKG_CHECK_MODULES([XMLSEC], [xmlsec1 xmlsec1-openssl])
