@@ -67,7 +67,7 @@ static xmlNodePtr next_element_type(xmlNodePtr node, const char *name)
 }
 
 /* search the element node of id. NOTE : not optimized at all */
-static xmlNodePtr search_id(const char *id)
+static xmlNodePtr search_for(const char *attrname, const char *value)
 {
 	char *val;
 	xmlNodePtr iter, next;
@@ -76,10 +76,10 @@ static xmlNodePtr search_id(const char *id)
 	result = NULL;
 	iter = xmlDocGetRootElement(document);
 	while (iter != NULL) {
-		val = xmlGetProp(iter, "Id");
-		if (val != NULL && !strcmp(val, id)) {
+		val = xmlGetProp(iter, attrname);
+		if (val != NULL && !strcmp(val, value)) {
 			if (result != NULL) {
-				syslog(LOG_ERR, "duplicated Id %s", id);
+				syslog(LOG_ERR, "duplicated %s %s", attrname, value);
 				free(val);
 				return NULL;
 			}
@@ -101,8 +101,14 @@ static xmlNodePtr search_id(const char *id)
 		iter = next;
 	}
 	if (result == NULL)
-		syslog(LOG_ERR, "node of Id '%s' not found", id);
+		syslog(LOG_ERR, "node of %s '%s' not found", attrname, value);
 	return result;
+}
+
+/* search the element node of id. NOTE : not optimized at all */
+static xmlNodePtr search_id(const char *id)
+{
+	return search_for("Id", id);
 }
 #endif
 
