@@ -46,6 +46,13 @@ extern int locales_score(const char *lang);
 extern char *locales_locate_file(const char *filename);
 
 /**************************************************************/
+/* from wgt-rootdir */
+
+extern int widget_set_rootdir(const char *pathname);
+extern int widget_has(const char *filename);
+extern int widget_open_read(const char *filename);
+
+/**************************************************************/
 /* from wgt-strings */
 
 extern const char _config_xml_[];

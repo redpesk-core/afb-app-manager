@@ -14,6 +14,7 @@
  limitations under the License.
 */
 
+#include <unistd.h>
 #include <string.h>
 #include <syslog.h>
 #include <assert.h>
@@ -46,18 +47,31 @@ static xmlNodePtr first(const char *type)
 	return NULL;
 }
 
+static int scorelang(xmlNodePtr node)
+{
+	char *lang = xmlNodeGetLang(node);
+	int score = locales_score(lang);
+	xmlFree(lang);
+	return score;
+}
+
 static xmlNodePtr element_based_localisation(const char *type)
 {
-	xmlNodePtr resu;
-	char *lang;
+	xmlNodePtr resu, elem;
+	int sr, s;
 
 	resu = first(type);
-	while (resu) {
-		lang = xmlNodeGetLang(resu);
-		if (lang) {
-			xmlFree(lang);
+	if (resu) {
+		sr = scorelang(resu);
+		elem = next(resu->next, type);
+		while (resu) {
+			s = scorelang(elem);
+			if (s < sr) {
+				resu = elem;
+				sr = s;
+			}
+			elem = next(elem->next, type);
 		}
-		resu = next(resu->next, type);
 	}
 	return resu;
 }
@@ -72,8 +86,15 @@ void confixml_close()
 
 int confixml_open()
 {
+	int fd;
 	assert(!configxml);
-	configxml = xmlReadFile(_config_xml_, NULL, 0);
+	fd = widget_open_read(_config_xml_);
+	if (fd < 0) {
+		syslog(LOG_ERR, "can't open config file %s", _config_xml_);
+		return fd;
+	}
+	configxml = xmlReadFd(fd, "_config_xml_", NULL, 0);
+	close(fd);
 	if (configxml == NULL) {
 		syslog(LOG_ERR, "xml parse of config file %s failed", _config_xml_);
 		return -1;

@@ -13,6 +13,7 @@ COMMONSRCS = \
 WGTSRCS = \
 	wgt-config-xml.c \
 	wgt-locales.c \
+	wgt-rootdir.c \
 	wgt-strings.c
 
 AM_CFLAGS  = -Wall -Wno-pointer-sign

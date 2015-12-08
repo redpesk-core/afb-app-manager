@@ -14,18 +14,42 @@
  limitations under the License.
 */
 
+#define _GNU_SOURCE
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "wgt.h"
 
-const char _config_xml_[] = "config.xml";
-const char _name_[] = "name";
-const char _description_[] = "description";
-const char _author_[] = "author";
-const char _license_[] = "license";
-const char _icon_[] = "icon";
-const char _content_[] = "content";
-const char _feature_[] = "feature";
-const char _preference_[] = "preference";
-const char _width_[] = "width";
-const char _height_[] = "height";
 
+static int rootfd = AT_FDCWD;
+
+int widget_set_rootdir(const char *pathname)
+{
+	int rfd;
+
+	if (!pathname)
+		rfd = AT_FDCWD;
+	else {
+		rfd = openat(AT_FDCWD, pathname, O_PATH|O_DIRECTORY);
+		if (rfd < 0)
+			return rfd;
+	}
+	if (rootfd >= 0)
+		close(rootfd);
+	rootfd = AT_FDCWD;
+	return 0;
+}
+
+int widget_has(const char *filename)
+{
+	return 0 == faccessat(rootfd, filename, F_OK, 0);
+}
+
+int widget_open_read(const char *filename)
+{
+	return openat(rootfd, filename, O_RDONLY);
+}
 
