@@ -1,8 +1,12 @@
 
+#include <string.h>
 #include <errno.h>
+
 #if 0
 #include <security-manager.h>
 #else
+#include <stdio.h>
+#include <stdint.h>
 enum lib_retcode {
 	SECURITY_MANAGER_SUCCESS,
 	SECURITY_MANAGER_ERROR_INPUT_PARAM,
@@ -22,7 +26,7 @@ static int diese = 0;
  (printf("security_manager_app_inst_req_free(%p)\n",r),(void)0)
 
 #define  security_manager_app_inst_req_new(pr) \
- (*(pr)=(void*)(++diese), printf("security_manager_app_inst_req_new(%p)\n",*pr), SECURITY_MANAGER_SUCCESS)
+ (*(pr)=(void*)(intptr_t)(++diese), printf("security_manager_app_inst_req_new(%p)\n",*pr), SECURITY_MANAGER_SUCCESS)
 
 #define security_manager_app_inst_req_set_pkg_id(r,i) \
  (printf("security_manager_app_inst_req_set_pkg_id(%p,\"%s\")\n",r,i), SECURITY_MANAGER_SUCCESS)

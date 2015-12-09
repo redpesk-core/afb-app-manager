@@ -11,10 +11,11 @@ COMMONSRCS = \
 	wgtpkg-zip.c
 
 WGTSRCS = \
-	wgt-config-xml.c \
-	wgt-locales.c \
-	wgt-rootdir.c \
-	wgt-strings.c
+	wgt-config.c \
+	wgt.c
+
+SECWRP = \
+	secmgr-wrap.c
 
 AM_CFLAGS  = -Wall -Wno-pointer-sign
 AM_CFLAGS += -ffunction-sections -fdata-sections
@@ -24,7 +25,7 @@ AM_LDFLAGS = -Wl,--gc-sections
 
 LDADD = ${ZIP_LIBS} ${XML2_LIBS} ${OPENSSL_LIBS} ${XMLSEC_LIBS}
 
-wgtpkg_install_SOURCES = wgtpkg-install.c ${WGTSRCS} ${COMMONSRCS}
+wgtpkg_install_SOURCES = wgtpkg-install.c ${COMMONSRCS} ${WGTSRCS} ${SECWRP}
 
 wgtpkg_sign_SOURCES = wgtpkg-sign.c ${COMMONSRCS}
 

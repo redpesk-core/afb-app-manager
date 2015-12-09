@@ -14,56 +14,22 @@
  limitations under the License.
 */
 
+struct wgt;
 
-#include <libxml/tree.h>
-#include "config.h"
+extern struct wgt *wgt_create();
+extern void wgt_destroy(struct wgt *wgt);
 
+extern int wgt_connect(struct wgt *wgt, const char *pathname);
+extern void wgt_disconnect(struct wgt *wgt);
+extern int wgt_is_connected(struct wgt *wgt);
 
-/**************************************************************/
-/* from wgt-config-xml */
+extern int wgt_has(struct wgt *wgt, const char *filename);
+extern int wgt_open_read(struct wgt *wgt, const char *filename);
 
-extern int confixml_open();
-extern void confixml_close();
-extern xmlNodePtr confixml_name();
-extern xmlNodePtr confixml_description();
-extern xmlNodePtr confixml_license();
-extern xmlNodePtr confixml_author();
-extern xmlNodePtr confixml_content();
-extern xmlNodePtr confixml_icon(int width, int height);
-extern xmlNodePtr confixml_first_feature();
-extern xmlNodePtr confixml_next_feature(xmlNodePtr node);
-extern xmlNodePtr confixml_first_preference();
-extern xmlNodePtr confixml_next_preference(xmlNodePtr node);
-extern xmlNodePtr confixml_first_icon();
-extern xmlNodePtr confixml_next_icon(xmlNodePtr node);
+extern void wgt_locales_reset(struct wgt *wgt);
+extern int wgt_locales_add(struct wgt *wgt, const char *locstr);
+extern int wgt_locales_score(struct wgt *wgt, const char *lang);
 
-/**************************************************************/
-/* from wgt-locales */
-
-extern void locales_reset();
-extern int locales_add(const char *locstr);
-extern int locales_score(const char *lang);
-extern char *locales_locate_file(const char *filename);
-
-/**************************************************************/
-/* from wgt-rootdir */
-
-extern int widget_set_rootdir(const char *pathname);
-extern int widget_has(const char *filename);
-extern int widget_open_read(const char *filename);
-
-/**************************************************************/
-/* from wgt-strings */
-
-extern const char _config_xml_[];
-extern const char _name_[];
-extern const char _description_[];
-extern const char _author_[];
-extern const char _license_[];
-extern const char _icon_[];
-extern const char _content_[];
-extern const char _feature_[];
-extern const char _preference_[];
-extern const char _width_[];
-extern const char _height_[];
+extern char *wgt_locales_locate(struct wgt *wgt, const char *filename);
+extern int wgt_locales_open_read(struct wgt *wgt, const char *filename);
 

@@ -24,9 +24,23 @@
 #include <libxml/tree.h>
 #include <libxml/uri.h>
 
-
 #include "wgt.h"
+#include "wgt-config.h"
 
+const char wgt_config_string_xml_file[] = "config.xml";
+const char wgt_config_string_name[] = "name";
+const char wgt_config_string_description[] = "description";
+const char wgt_config_string_author[] = "author";
+const char wgt_config_string_license[] = "license";
+const char wgt_config_string_icon[] = "icon";
+const char wgt_config_string_content[] = "content";
+const char wgt_config_string_feature[] = "feature";
+const char wgt_config_string_preference[] = "preference";
+const char wgt_config_string_width[] = "width";
+const char wgt_config_string_height[] = "height";
+
+
+static struct wgt *configwgt = NULL;
 static xmlDocPtr configxml = NULL;
 
 static xmlNodePtr next(xmlNodePtr node, const char *type)
@@ -50,7 +64,7 @@ static xmlNodePtr first(const char *type)
 static int scorelang(xmlNodePtr node)
 {
 	char *lang = xmlNodeGetLang(node);
-	int score = locales_score(lang);
+	int score = wgt_locales_score(configwgt, lang);
 	xmlFree(lang);
 	return score;
 }
@@ -76,89 +90,91 @@ static xmlNodePtr element_based_localisation(const char *type)
 	return resu;
 }
 
-void confixml_close()
+void wgt_config_close()
 {
 	if (configxml) {
 		xmlFreeDoc(configxml);
 		configxml = NULL;
+		configwgt = NULL;
 	}
 }
 
-int confixml_open()
+int wgt_config_open(struct wgt *wgt)
 {
 	int fd;
 	assert(!configxml);
-	fd = widget_open_read(_config_xml_);
+	fd = wgt_open_read(wgt, wgt_config_string_xml_file);
 	if (fd < 0) {
-		syslog(LOG_ERR, "can't open config file %s", _config_xml_);
+		syslog(LOG_ERR, "can't open config file %s", wgt_config_string_xml_file);
 		return fd;
 	}
-	configxml = xmlReadFd(fd, "_config_xml_", NULL, 0);
+	configxml = xmlReadFd(fd, wgt_config_string_xml_file, NULL, 0);
 	close(fd);
 	if (configxml == NULL) {
-		syslog(LOG_ERR, "xml parse of config file %s failed", _config_xml_);
+		syslog(LOG_ERR, "xml parse of config file %s failed", wgt_config_string_xml_file);
 		return -1;
 	}
+	configwgt = wgt;
 	return 0;
 }
 
 /* elements based on localisation */
-xmlNodePtr confixml_name()
+xmlNodePtr wgt_config_name()
 {
-	return element_based_localisation(_name_);
+	return element_based_localisation(wgt_config_string_name);
 }
 
-xmlNodePtr confixml_description()
+xmlNodePtr wgt_config_description()
 {
-	return element_based_localisation(_description_);
+	return element_based_localisation(wgt_config_string_description);
 }
 
-xmlNodePtr confixml_license()
+xmlNodePtr wgt_config_license()
 {
-	return element_based_localisation(_license_);
+	return element_based_localisation(wgt_config_string_license);
 }
 
 /* elements based on path localisation */
-xmlNodePtr confixml_author()
+xmlNodePtr wgt_config_author()
 {
-	return first(_author_);
+	return first(wgt_config_string_author);
 }
 
-xmlNodePtr confixml_content()
+xmlNodePtr wgt_config_content()
 {
-	return first(_content_);
+	return first(wgt_config_string_content);
 }
 
 /* element multiple */
 
-xmlNodePtr confixml_first_feature()
+xmlNodePtr wgt_config_first_feature()
 {
-	return first(_feature_);
+	return first(wgt_config_string_feature);
 }
 
-xmlNodePtr confixml_next_feature(xmlNodePtr node)
+xmlNodePtr wgt_config_next_feature(xmlNodePtr node)
 {
-	return next(node->next, _feature_);
+	return next(node->next, wgt_config_string_feature);
 }
 
-xmlNodePtr confixml_first_preference()
+xmlNodePtr wgt_config_first_preference()
 {
-	return first(_preference_);
+	return first(wgt_config_string_preference);
 }
 
-xmlNodePtr confixml_next_preference(xmlNodePtr node)
+xmlNodePtr wgt_config_next_preference(xmlNodePtr node)
 {
-	return next(node->next, _preference_);
+	return next(node->next, wgt_config_string_preference);
 }
 
-xmlNodePtr confixml_first_icon()
+xmlNodePtr wgt_config_first_icon()
 {
-	return first(_icon_);
+	return first(wgt_config_string_icon);
 }
 
-xmlNodePtr confixml_next_icon(xmlNodePtr node)
+xmlNodePtr wgt_config_next_icon(xmlNodePtr node)
 {
-	return next(node->next, _icon_);
+	return next(node->next, wgt_config_string_icon);
 }
 
 /* best sized icon */
@@ -215,21 +231,21 @@ static int score_dim(xmlNodePtr ref, xmlNodePtr x, const char *dim, int request)
 
 static int better_icon(xmlNodePtr ref, xmlNodePtr x, int width, int height)
 {
-	int sw = score_dim(ref, x, _width_, width);
-	int sh = score_dim(ref, x, _height_, height);
+	int sw = score_dim(ref, x, wgt_config_string_width, width);
+	int sh = score_dim(ref, x, wgt_config_string_height, height);
 	return sw+sh < 0;
 }
 
-xmlNodePtr confixml_icon(int width, int height)
+xmlNodePtr wgt_config_icon(int width, int height)
 {
 	xmlNodePtr resu, icon;
 
-	resu = confixml_first_icon();
-	icon = confixml_next_icon(resu);
+	resu = wgt_config_first_icon();
+	icon = wgt_config_next_icon(resu);
 	while (icon) {
 		if (better_icon(resu, icon, width, height))
 			resu = icon;
-		icon = confixml_next_icon(icon);
+		icon = wgt_config_next_icon(icon);
 	}
 	return resu;
 }
