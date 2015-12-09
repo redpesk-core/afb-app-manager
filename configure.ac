@@ -5,8 +5,8 @@ AC_PREREQ([2.69])
 AC_INIT([wgtpkg], [1.0], [wgtpkg@iot.bzh])
 AM_INIT_AUTOMAKE
 #AM_INIT_AUTOMAKE([-Wall -Wno-pointer-sign])
-AC_CONFIG_SRCDIR([wgtpkg-files.c])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_SRCDIR([src/wgtpkg-files.c])
+AC_CONFIG_HEADERS([src/config.h])
 
 # Checks for programs.
 #AC_PROG_CXX
@@ -37,6 +37,8 @@ AC_TYPE_SSIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([atexit memmove mkdir realpath rmdir stpcpy strrchr strtoul])
+AC_CHECK_FUNCS([strcasecmp strdup strndup])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+                 src/Makefile])
 AC_OUTPUT
