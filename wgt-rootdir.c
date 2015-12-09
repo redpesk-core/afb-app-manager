@@ -18,8 +18,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <errno.h>
 
 #include "wgt.h"
 
@@ -43,13 +42,56 @@ int widget_set_rootdir(const char *pathname)
 	return 0;
 }
 
+static int validsubpath(const char *subpath)
+{
+	int l = 0, i = 0;
+	if (subpath[i] == '/')
+		return 0;
+	while(subpath[i]) {
+		switch(subpath[i++]) {
+		case '.':
+			if (!subpath[i])
+				break;
+			if (subpath[i] == '/') {
+				i++;
+				break;
+			}
+			if (subpath[i++] == '.') {
+				if (!subpath[i]) {
+					l--;
+					break;
+				}
+				if (subpath[i++] == '/') {
+					l--;
+					break;
+				}
+			}
+		default:
+			while(subpath[i] && subpath[i] != '/')
+				i++;
+			l++;
+		case '/':
+			break;
+		}
+	}
+	return l >= 0;
+}
+
 int widget_has(const char *filename)
 {
+	if (!validsubpath(filename)) {
+		errno = EINVAL;
+		return -1;
+	}
 	return 0 == faccessat(rootfd, filename, F_OK, 0);
 }
 
 int widget_open_read(const char *filename)
 {
+	if (!validsubpath(filename)) {
+		errno = EINVAL;
+		return -1;
+	}
 	return openat(rootfd, filename, O_RDONLY);
 }
 
