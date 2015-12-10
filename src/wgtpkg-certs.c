@@ -45,7 +45,7 @@ static int add_certificate_bin(const char *bin, int len)
 	const char *b, *e;
 	b = bin;
 	e = bin + len;
-	while (len) {
+	while (b < e) {
 		X509 *x =  d2i_X509(NULL, (const unsigned char **)&b, e-b);
 		if (x == NULL) {
 			syslog(LOG_ERR, "d2i_X509 failed");
