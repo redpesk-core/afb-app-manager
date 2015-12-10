@@ -71,6 +71,13 @@ static int validsubpath(const char *subpath)
 	return l >= 0;
 }
 
+static const char *normalsubpath(const char *subpath)
+{
+	while(*subpath == '/')
+		subpath++;
+	return validsubpath(subpath) ? subpath : NULL;
+}
+
 struct wgt *wgt_create()
 {
 	struct wgt *wgt = malloc(sizeof * wgt);
@@ -150,7 +157,9 @@ int wgt_has(struct wgt *wgt, const char *filename)
 {
 	assert(wgt);
 	assert(wgt_is_connected(wgt));
-	if (!validsubpath(filename)) {
+
+	filename = normalsubpath(filename);
+	if (!filename) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -161,7 +170,8 @@ int wgt_open_read(struct wgt *wgt, const char *filename)
 {
 	assert(wgt);
 	assert(wgt_is_connected(wgt));
-	if (!validsubpath(filename)) {
+	filename = normalsubpath(filename);
+	if (!filename) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -229,7 +239,8 @@ static const char *localize(struct wgt *wgt, const char *filename, char path[PAT
 {
 	int i;
 
-	if (!validsubpath(filename)) {
+	filename = normalsubpath(filename);
+	if (!filename) {
 		errno = EINVAL;
 		return NULL;
 	}
