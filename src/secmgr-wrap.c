@@ -1,6 +1,22 @@
+/*
+ Copyright 2015 IoT.bzh
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
 
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #if 0
 #include <security-manager.h>
@@ -39,7 +55,13 @@ static int diese = 0;
 
 #define security_manager_app_inst_req_add_path(r,p,t) \
  (printf("security_manager_app_inst_req_add_path(%p,\"%s\",%d)\n",r,p,t), SECURITY_MANAGER_SUCCESS)
+
+#define security_manager_app_install(r) \
+ (printf("security_manager_app_install(%p)\n",r), SECURITY_MANAGER_SUCCESS)
+
 #endif
+
+#include "secmgr-wrap.h"
 
 static app_inst_req *request = NULL;
 
@@ -57,15 +79,11 @@ static int retcode(enum lib_retcode rc)
 	return -1;
 }
 
-void secmgr_cancel()
-{
-	security_manager_app_inst_req_free(request);
-	request = NULL;
-}
-
 int secmgr_init(const char *pkgid, const char *appid)
 {
-	int rc = security_manager_app_inst_req_new(&request);
+	int rc;
+	assert(request == NULL);
+	rc = security_manager_app_inst_req_new(&request);
 	if (rc == SECURITY_MANAGER_SUCCESS) {
 		rc = security_manager_app_inst_req_set_pkg_id(request, pkgid);
 		if (rc == SECURITY_MANAGER_SUCCESS)
@@ -76,15 +94,33 @@ int secmgr_init(const char *pkgid, const char *appid)
 	return retcode(rc);
 }
 
+void secmgr_cancel()
+{
+	security_manager_app_inst_req_free(request);
+	request = NULL;
+}
+
+int secmgr_install()
+{
+	int rc;
+	assert(request != NULL);
+	rc = security_manager_app_install(request);
+	return retcode(rc);
+}
+
 int secmgr_permit(const char *permission)
 {
-	int rc = security_manager_app_inst_req_add_privilege(request, permission);
+	int rc;
+	assert(request != NULL);
+	rc = security_manager_app_inst_req_add_privilege(request, permission);
 	return retcode(rc);
 }
 
 static int addpath(const char *pathname, enum app_install_path_type type)
 {
-	int rc = security_manager_app_inst_req_add_path(request, pathname, type);
+	int rc;
+	assert(request != NULL);
+	rc = security_manager_app_inst_req_add_path(request, pathname, type);
 	return retcode(rc);
 }
 
