@@ -23,9 +23,14 @@ SECWRP = \
 APPFWK = \
 	appfwk.c
 
+
+#pkgsysconfdir = $(sysconfdir)
+pkgsysconfdir = .
+
 AM_CFLAGS  = -Wall -Wno-pointer-sign
 AM_CFLAGS += -ffunction-sections -fdata-sections
 AM_CFLAGS += ${ZIP_CFLAGS} ${XML2_CFLAGS} ${OPENSSL_CFLAGS} ${XMLSEC_CFLAGS}
+AM_CFLAGS += -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" 
 
 AM_LDFLAGS = -Wl,--gc-sections
 
