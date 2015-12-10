@@ -27,38 +27,48 @@
 #include "wgt.h"
 #include "wgt-config.h"
 
-const char wgt_config_string_xml_file[] = "config.xml";
-const char wgt_config_string_name[] = "name";
-const char wgt_config_string_description[] = "description";
 const char wgt_config_string_author[] = "author";
-const char wgt_config_string_license[] = "license";
-const char wgt_config_string_icon[] = "icon";
 const char wgt_config_string_content[] = "content";
+const char wgt_config_string_defaultlocale[] = "defaultlocale";
+const char wgt_config_string_description[] = "description";
+const char wgt_config_string_email[] = "email";
+const char wgt_config_string_encoding[] = "encoding";
 const char wgt_config_string_feature[] = "feature";
-const char wgt_config_string_preference[] = "preference";
-const char wgt_config_string_width[] = "width";
 const char wgt_config_string_height[] = "height";
-
+const char wgt_config_string_href[] = "href";
+const char wgt_config_string_icon[] = "icon";
+const char wgt_config_string_id[] = "id";
+const char wgt_config_string_license[] = "license";
+const char wgt_config_string_name[] = "name";
+const char wgt_config_string_param[] = "param";
+const char wgt_config_string_preference[] = "preference";
+const char wgt_config_string_readonly[] = "readonly";
+const char wgt_config_string_required[] = "required";
+const char wgt_config_string_short[] = "short";
+const char wgt_config_string_src[] = "src";
+const char wgt_config_string_type[] = "type";
+const char wgt_config_string_value[] = "value";
+const char wgt_config_string_version[] = "version";
+const char wgt_config_string_viewmodes[] = "viewmodes";
+const char wgt_config_string_widget[] = "widget";
+const char wgt_config_string_width[] = "width";
+const char wgt_config_string_xml_file[] = "config.xml";
 
 static struct wgt *configwgt = NULL;
 static xmlDocPtr configxml = NULL;
 
 static xmlNodePtr next(xmlNodePtr node, const char *type)
 {
-	while (node && node->type != XML_ELEMENT_NODE && strcmp(type, node->name))
+	while (node && (node->type != XML_ELEMENT_NODE || strcmp(type, node->name)))
 		node = node->next;
 	return node;
 }
 
 static xmlNodePtr first(const char *type)
 {
-	xmlNodePtr root;
-	if (configxml) {
-		root = xmlDocGetRootElement(configxml);
-		if (root)
-			return next(root->children, type);
-	}
-	return NULL;
+	assert(configxml);
+	assert(xmlDocGetRootElement(configxml));
+	return next(xmlDocGetRootElement(configxml)->children, type);
 }
 
 static int scorelang(xmlNodePtr node)
@@ -78,7 +88,7 @@ static xmlNodePtr element_based_localisation(const char *type)
 	if (resu) {
 		sr = scorelang(resu);
 		elem = next(resu->next, type);
-		while (resu) {
+		while (elem) {
 			s = scorelang(elem);
 			if (s < sr) {
 				resu = elem;
@@ -114,34 +124,48 @@ int wgt_config_open(struct wgt *wgt)
 		syslog(LOG_ERR, "xml parse of config file %s failed", wgt_config_string_xml_file);
 		return -1;
 	}
+	assert(xmlDocGetRootElement(configxml));
 	configwgt = wgt;
 	return 0;
+}
+
+xmlNodePtr wgt_config_widget()
+{
+	xmlNodePtr root;
+	assert(configxml);
+	root = xmlDocGetRootElement(configxml);
+	return strcmp(wgt_config_string_widget, root->name) ? NULL : root;
 }
 
 /* elements based on localisation */
 xmlNodePtr wgt_config_name()
 {
+	assert(configxml);
 	return element_based_localisation(wgt_config_string_name);
 }
 
 xmlNodePtr wgt_config_description()
 {
+	assert(configxml);
 	return element_based_localisation(wgt_config_string_description);
 }
 
 xmlNodePtr wgt_config_license()
 {
+	assert(configxml);
 	return element_based_localisation(wgt_config_string_license);
 }
 
 /* elements based on path localisation */
 xmlNodePtr wgt_config_author()
 {
+	assert(configxml);
 	return first(wgt_config_string_author);
 }
 
 xmlNodePtr wgt_config_content()
 {
+	assert(configxml);
 	return first(wgt_config_string_content);
 }
 
@@ -149,32 +173,55 @@ xmlNodePtr wgt_config_content()
 
 xmlNodePtr wgt_config_first_feature()
 {
+	assert(configxml);
 	return first(wgt_config_string_feature);
 }
 
 xmlNodePtr wgt_config_next_feature(xmlNodePtr node)
 {
+	assert(configxml);
+	assert(node);
 	return next(node->next, wgt_config_string_feature);
 }
 
 xmlNodePtr wgt_config_first_preference()
 {
+	assert(configxml);
 	return first(wgt_config_string_preference);
 }
 
 xmlNodePtr wgt_config_next_preference(xmlNodePtr node)
 {
+	assert(configxml);
+	assert(node);
 	return next(node->next, wgt_config_string_preference);
 }
 
 xmlNodePtr wgt_config_first_icon()
 {
+	assert(configxml);
 	return first(wgt_config_string_icon);
 }
 
 xmlNodePtr wgt_config_next_icon(xmlNodePtr node)
 {
+	assert(configxml);
+	assert(node);
 	return next(node->next, wgt_config_string_icon);
+}
+
+xmlNodePtr wgt_config_first_param(xmlNodePtr node)
+{
+	assert(configxml);
+	assert(node);
+	return next(node->children, wgt_config_string_param);
+}
+
+xmlNodePtr wgt_config_next_param(xmlNodePtr node)
+{
+	assert(configxml);
+	assert(node);
+	return next(node->next, wgt_config_string_param);
 }
 
 /* best sized icon */
@@ -229,7 +276,7 @@ static int score_dim(xmlNodePtr ref, xmlNodePtr x, const char *dim, int request)
 	return r;
 }
 
-static int better_icon(xmlNodePtr ref, xmlNodePtr x, int width, int height)
+static int is_better_icon(xmlNodePtr ref, xmlNodePtr x, int width, int height)
 {
 	int sw = score_dim(ref, x, wgt_config_string_width, width);
 	int sh = score_dim(ref, x, wgt_config_string_height, height);
@@ -238,12 +285,13 @@ static int better_icon(xmlNodePtr ref, xmlNodePtr x, int width, int height)
 
 xmlNodePtr wgt_config_icon(int width, int height)
 {
+	assert(configxml);
 	xmlNodePtr resu, icon;
 
 	resu = wgt_config_first_icon();
 	icon = wgt_config_next_icon(resu);
 	while (icon) {
-		if (better_icon(resu, icon, width, height))
+		if (is_better_icon(resu, icon, width, height))
 			resu = icon;
 		icon = wgt_config_next_icon(icon);
 	}

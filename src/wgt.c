@@ -30,6 +30,7 @@
 #include "wgt.h"
 
 struct wgt {
+	int refcount;
 	int rootfd;
 	int nrlocales;
 	char **locales;
@@ -73,7 +74,10 @@ static int validsubpath(const char *subpath)
 struct wgt *wgt_create()
 {
 	struct wgt *wgt = malloc(sizeof * wgt);
-	if (wgt) {
+	if (!wgt)
+		errno = ENOMEM;
+	else {
+		wgt->refcount = 1;
 		wgt->rootfd = -1;
 		wgt->nrlocales = 0;
 		wgt->locales = NULL;
@@ -96,9 +100,16 @@ void wgt_locales_reset(struct wgt *wgt)
 		free(wgt->locales[--wgt->nrlocales]);
 }
 
-void wgt_destroy(struct wgt *wgt)
+void wgt_addref(struct wgt *wgt)
 {
-	if (wgt) {
+	assert(wgt);
+	wgt->refcount++;
+}
+
+void wgt_unref(struct wgt *wgt)
+{
+	assert(wgt);
+	if (!--wgt->refcount) {
 		wgt_disconnect(wgt);
 		wgt_locales_reset(wgt);
 		free(wgt->locales);
@@ -106,13 +117,13 @@ void wgt_destroy(struct wgt *wgt)
 	}
 }
 
-int wgt_connect(struct wgt *wgt, const char *pathname)
+int wgt_connectat(struct wgt *wgt, int dirfd, const char *pathname)
 {
 	int rfd;
 
 	assert(wgt);
 
-	rfd = AT_FDCWD;
+	rfd = dirfd;
 	if (pathname) {
 		rfd = openat(rfd, pathname, O_PATH|O_DIRECTORY);
 		if (rfd < 0)
@@ -122,6 +133,11 @@ int wgt_connect(struct wgt *wgt, const char *pathname)
 		close(wgt->rootfd);
 	wgt->rootfd = rfd;
 	return 0;
+}
+
+int wgt_connect(struct wgt *wgt, const char *pathname)
+{
+	return wgt_connectat(wgt, AT_FDCWD, pathname);
 }
 
 int wgt_is_connected(struct wgt *wgt)

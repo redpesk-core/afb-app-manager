@@ -1,6 +1,7 @@
 wgtpkg-install
 wgtpkg-pack
 wgtpkg-sign
+wgtpkg-info
 *.o
 
 .deps/
@@ -15,7 +16,8 @@ depcomp
 install-sh
 missing
 
-PACK0/
+UNPACK*/
+PACK*/
 TODO
 a.pem
 b.pem
@@ -28,3 +30,5 @@ tests/
 tizen-certificates/
 truc
 *.wgt
+wrt-widgets
+

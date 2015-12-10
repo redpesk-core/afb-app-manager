@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 #if !defined(MAXCERT)
@@ -96,7 +97,7 @@ int main(int ac, char **av)
 	number = UINT_MAX;
 	keyfile = directory = NULL;
 	for (;;) {
-		i = getopt_long(ac, av, "hfak:c:d:", options, NULL);
+		i = getopt_long(ac, av, "hfqvak:c:d:", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
@@ -112,6 +113,13 @@ int main(int ac, char **av)
 		case 'f': force = 1; continue;
 		case 'a': author = 1; continue;
 		case 'h': usage(); return 0;
+		case 'q':
+			if (verbosity)
+				verbosity--;
+			break;
+		case 'v':
+			verbosity++;
+			break;
 		case ':':
 			syslog(LOG_ERR, "missing argument");
 			return 1;

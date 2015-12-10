@@ -14,27 +14,26 @@
  limitations under the License.
 */
 
+#define _GNU_SOURCE
 
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
 #include <syslog.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 
 #include "wgtpkg.h"
-
-#ifndef PREDIR
-#define PREDIR  "./"
-#endif
 
 static int mode = 0700;
 static char workdir[PATH_MAX];
 
 /* removes recursively the content of a directory */
-static int clean_dir()
+static int clean_dirfd(int dirfd)
 {
-	int cr;
+	int cr, fd;
 	DIR *dir;
 	struct dirent *ent;
 	struct {
@@ -42,16 +41,16 @@ static int clean_dir()
 		char spare[PATH_MAX];
 	} entry;
 
-	dir = opendir(".");
+	dir = fdopendir(dirfd);
 	if (dir == NULL) {
-		syslog(LOG_ERR, "opendir failed in clean_dir");
+		syslog(LOG_ERR, "opendir failed in clean_dirfd");
 		return -1;
 	}
 
 	cr = -1;
 	for (;;) {
 		if (readdir_r(dir, &entry.entry, &ent) != 0) {
-			syslog(LOG_ERR, "readdir_r failed in clean_dir");
+			syslog(LOG_ERR, "readdir_r failed in clean_dirfd");
 			goto error;
 		}
 		if (ent == NULL)
@@ -59,25 +58,25 @@ static int clean_dir()
 		if (ent->d_name[0] == '.' && (ent->d_name[1] == 0
 				|| (ent->d_name[1] == '.' && ent->d_name[2] == 0)))
 			continue;
-		cr = unlink(ent->d_name);
+		cr = unlinkat(dirfd, ent->d_name, 0);
 		if (!cr)
 			continue;
 		if (errno != EISDIR) {
-			syslog(LOG_ERR, "unlink of %s failed in clean_dir", ent->d_name);
+			syslog(LOG_ERR, "unlink of %s failed in clean_dirfd", ent->d_name);
 			goto error;
 		}
-		if (chdir(ent->d_name)) {
-			syslog(LOG_ERR, "enter directory %s failed in clean_dir", ent->d_name);
+		fd = openat(dirfd, ent->d_name, O_DIRECTORY|O_RDONLY);
+		if (fd < 0) {
+			syslog(LOG_ERR, "opening directory %s failed in clean_dirfd", ent->d_name);
 			goto error;
 		}
-		cr = clean_dir();
+		cr = clean_dirfd(fd);
+		close(fd);
 		if (cr)
 			goto error;
-		if (chdir(".."))
-			goto error;
-		cr = rmdir(ent->d_name);
+		cr = unlinkat(dirfd, ent->d_name, AT_REMOVEDIR);
 		if (cr) {
-			syslog(LOG_ERR, "rmdir of %s failed in clean_dir", ent->d_name);
+			syslog(LOG_ERR, "rmdir of %s failed in clean_dirfd", ent->d_name);
 			goto error;
 		}
 	}
@@ -87,6 +86,21 @@ error:
 	return cr;
 }
 
+/* removes recursively the content of a directory */
+static int clean_dir(const char *directory)
+{
+	int fd, rc;
+
+	fd = openat(AT_FDCWD, directory, O_DIRECTORY|O_RDONLY);
+	if (fd < 0) {
+		syslog(LOG_ERR, "opening directory %s failed in clean_dir", directory);
+		return fd;
+	}
+	rc = clean_dirfd(fd);
+	close(fd);
+	return rc;
+}
+
 /* removes the content of the working directory */
 int enter_workdir(int clean)
 {
@@ -94,7 +108,7 @@ int enter_workdir(int clean)
 	if (rc)
 		syslog(LOG_ERR, "entring workdir %s failed", workdir);
 	else if (clean)
-		rc = clean_dir();
+		rc = clean_dir(workdir);
 	return rc;
 }
 
@@ -103,7 +117,7 @@ void remove_workdir()
 {
 	enter_workdir(1);
 	chdir("..");
-	unlink(workdir);
+	rmdir(workdir);
 }
 
 int set_workdir(const char *name, int create)
@@ -116,6 +130,7 @@ int set_workdir(const char *name, int create)
 	length = strlen(name);
 	if (length >= sizeof workdir) {
 		syslog(LOG_ERR, "workdir name too long");
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -133,16 +148,24 @@ int set_workdir(const char *name, int create)
 
 	} else if (!S_ISDIR(s.st_mode)) {
 		syslog(LOG_ERR, "%s isn't a directory", name);
+		errno = ENOTDIR;
 		return -1;
 	}
 	memcpy(workdir, name, 1+length);
 	return 0;
 }
 
-/* install the widgets of the list */
-int make_workdir(int reuse)
+int make_workdir_base(const char *root, const char *prefix, int reuse)
 {
-	int i;
+	int i, n, r, l;
+
+	n = snprintf(workdir, sizeof workdir, "%s/%s", root, prefix);
+	if (n >= sizeof workdir) {
+		syslog(LOG_ERR, "workdir prefix too long");
+		errno = EINVAL;
+		return -1;
+	}
+	r = (int)(sizeof workdir) - n;
 
 	/* create a temporary directory */
 	for (i = 0 ; ; i++) {
@@ -150,7 +173,12 @@ int make_workdir(int reuse)
 			syslog(LOG_ERR, "exhaustion of workdirs");
 			return -1;
 		}
-		sprintf(workdir, PREDIR "PACK%d", i);
+		l = snprintf(workdir + n, r, "%d", i);
+		if (l >= r) {
+			syslog(LOG_ERR, "computed workdir too long");
+			errno = EINVAL;
+			return -1;
+		}
 		if (!mkdir(workdir, mode))
 			break;
 		if (errno != EEXIST) {
@@ -162,5 +190,23 @@ int make_workdir(int reuse)
 	}
 
 	return 0;
+}
+
+int make_workdir(int reuse)
+{
+	return make_workdir_base(".", "PACK", reuse);
+}
+
+int workdirfd()
+{
+	int result = open(workdir, O_PATH|O_DIRECTORY);
+	if (result < 0)
+		syslog(LOG_ERR, "can't get fd for workdir %.*s: %m", PATH_MAX, workdir);
+	return result;
+}
+
+int move_workdir(const char *dest, int parents, int force)
+{
+	
 }
 

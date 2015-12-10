@@ -24,6 +24,7 @@
 #include <libxml/uri.h>
 
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 

@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <limits.h>
@@ -31,22 +30,15 @@
 #include "wgt.h"
 #include "wgt-info.h"
 
-static const char appname[] = "wgtpkg-install";
-static const char *root;
-static char **permissions = NULL;
-static int force;
+static const char appname[] = "wgtpkg-info";
 
-static void install(const char *wgtfile);
-static void add_permissions(const char *list);
+static void show(const char *wgtfile);
 
 static void usage()
 {
 	printf(
-		"usage: %s [-f] [-q] [-v] [-p list] rootdir wgtfile...\n"
+		"usage: %s [-f] [-q] [-v] wgtfile...\n"
 		"\n"
-		"   rootdir       the root directory for installing\n"
-		"   -p list       a list of comma separated permissions to allow\n"
-		"   -f            force overwriting\n"
 		"   -q            quiet\n"
 		"   -v            verbose\n"
 		"\n",
@@ -55,33 +47,27 @@ static void usage()
 }
 
 static struct option options[] = {
-	{ "permissions", required_argument, NULL, 'p' },
-	{ "force",       no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ NULL, 0, NULL, 0 }
 };
 
-/* install the widgets of the list */
+/* info the widgets of the list */
 int main(int ac, char **av)
 {
 	int i;
 	char *wpath;
 
-	openlog(appname, LOG_PERROR, LOG_AUTH);
+	openlog(appname, LOG_PERROR, LOG_USER);
 
 	xmlsec_init();
 
-	force = 0;
 	for (;;) {
-		i = getopt_long(ac, av, "hfqvp:", options, NULL);
+		i = getopt_long(ac, av, "hqv", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
-		case 'f':
-			force = 1;
-			break;
 		case 'h':
 			usage();
 			return 0;
@@ -92,9 +78,6 @@ int main(int ac, char **av)
 		case 'v':
 			verbosity++;
 			break;
-		case 'p':
-			add_permissions(optarg);
-			break;
 		case ':':
 			syslog(LOG_ERR, "missing argument value");
 			return 1;
@@ -102,12 +85,6 @@ int main(int ac, char **av)
 			syslog(LOG_ERR, "unrecognized option");
 			return 1;
 		}
-	}
-
-	ac -= optind;
-	if (ac < 2) {
-		syslog(LOG_ERR, "arguments are missing");
-		return 1;
 	}
 
 	/* canonic names for files */
@@ -120,77 +97,12 @@ int main(int ac, char **av)
 		}
 		av[i] = wpath;
 	}
-	root = *av++;
 
-	/* install widgets */
+	/* info widgets */
 	for ( ; *av ; av++)
-		install(*av);
+		show(*av);
 
 	return 0;
-}
-
-static int has_permission(const char *name)
-{
-	char **p = permissions;
-	if (p) {
-		while(*p) {
-			if (0 == strcmp(*p, name))
-				return 1;
-			p++;
-		}
-	}
-	return 0;
-}
-
-static void add_permissions(const char *list)
-{
-	char **ps, *p;
-	const char *iter;
-	int n, on;
-	static const char separators[] = " \t\n\r,";
-
-	n = 0;
-	iter = list + strspn(list, separators);
-	while(*iter) {
-		n++;
-		iter += strcspn(iter, separators);
-		iter += strspn(iter, separators);
-	}
-	if (n == 0)
-		return;
-
-	on = 0;
-	ps = permissions;
-	if (ps)
-		while(*ps++)
-			on++;
-
-	ps = realloc(permissions, (1 + on + n) * sizeof * ps);
-	if (!ps) {
-		syslog(LOG_ERR, "Can't allocate memory for permissions");
-		exit(1);
-	}
-
-	permissions = ps;
-	ps[on] = NULL;
-
-	iter = list + strspn(list, separators);
-	while(*iter) {
-		n = strcspn(iter, separators);
-		p = strndup(iter, n);
-		if (!p) {
-			syslog(LOG_ERR, "Can't allocate permission");
-			exit(1);
-		}
-		if (has_permission(p))
-			free(p);
-		else {
-			ps[on] = p;
-			ps[++on] = NULL;
-		}
-		iter += n;
-		iter += strspn(iter, separators);
-	}
 }
 
 static struct wgt *wgt_at_workdir()
@@ -221,7 +133,7 @@ static struct wgt *wgt_at_workdir()
 }
 
 
-static int check_and_place()
+static int check_and_show()
 {
 	struct wgt *wgt;
 	struct wgt_info *ifo;
@@ -242,14 +154,14 @@ static int check_and_place()
 }
 
 /* install the widget of the file */
-static void install(const char *wgtfile)
+static void show(const char *wgtfile)
 {
-	notice("-- INSTALLING widget %s --", wgtfile);
+	notice("-- INFO for widget %s --", wgtfile);
 
 	/* workdir */
-	if (make_workdir_base(root, "UNPACK", 0)) {
+	if (make_workdir_base("/tmp", "UNPACK", 0)) {
 		syslog(LOG_ERR, "failed to create a working directory");
-		goto error1;
+		return;
 	}
 
 	if (enter_workdir(0))
@@ -261,16 +173,10 @@ static void install(const char *wgtfile)
 	if (check_all_signatures())
 		goto error2;
 
-	if (check_and_place())
-		goto error2;
+	check_and_show();
 	
-	return;
-
 error2:
 	remove_workdir();
-
-error1:
 	return;
 }
-
 

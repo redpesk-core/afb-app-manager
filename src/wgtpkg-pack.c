@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 #if !defined(MAXCERT)

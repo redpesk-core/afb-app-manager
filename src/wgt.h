@@ -17,9 +17,11 @@
 struct wgt;
 
 extern struct wgt *wgt_create();
-extern void wgt_destroy(struct wgt *wgt);
+extern void wgt_addref(struct wgt *wgt);
+extern void wgt_unref(struct wgt *wgt);
 
 extern int wgt_connect(struct wgt *wgt, const char *pathname);
+extern int wgt_connectat(struct wgt *wgt, int fd, const char *pathname);
 extern void wgt_disconnect(struct wgt *wgt);
 extern int wgt_is_connected(struct wgt *wgt);
 
