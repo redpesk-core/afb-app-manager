@@ -15,34 +15,34 @@
 */
 
 
-struct wgt_info_icon {
-	struct wgt_info_icon *next;
+struct wgt_desc_icon {
+	struct wgt_desc_icon *next;
 	char *src;
 	int width;
 	int height;
 };
 
-struct wgt_info_param {
-	struct wgt_info_param *next;
+struct wgt_desc_param {
+	struct wgt_desc_param *next;
 	char *name;
 	char *value;	
 };
 
-struct wgt_info_feature {
-	struct wgt_info_feature *next;
+struct wgt_desc_feature {
+	struct wgt_desc_feature *next;
 	char *name;
 	int required;
-	struct wgt_info_param *params;
+	struct wgt_desc_param *params;
 };
 
-struct wgt_info_preference {
-	struct wgt_info_preference *next;
+struct wgt_desc_preference {
+	struct wgt_desc_preference *next;
 	char *name;
 	char *value;
 	int readonly;
 };
 
-struct wgt_info {
+struct wgt_desc {
 	int refcount;
 	char *id;
 	char *version;
@@ -61,14 +61,16 @@ struct wgt_info {
 	char *content_src;
 	char *content_type;
 	char *content_encoding;
-	struct wgt_info_icon *icons;
-	struct wgt_info_feature *features;
-	struct wgt_info_preference *preferences;
+	struct wgt_desc_icon *icons;
+	struct wgt_desc_feature *features;
+	struct wgt_desc_preference *preferences;
 };
 
 struct wgt;
+struct wgt_info;
 extern struct wgt_info *wgt_info_get(struct wgt *wgt, int icons, int features, int preferences);
-extern void wgt_info_addref(struct wgt_info *info);
-extern void wgt_info_unref(struct wgt_info *info);
-extern void wgt_info_dump(struct wgt_info *info, int fd, const char *prefix);
+extern const struct wgt_desc *wgt_info_desc(struct wgt_info *ifo);
+extern void wgt_info_addref(struct wgt_info *ifo);
+extern void wgt_info_unref(struct wgt_info *ifo);
+extern void wgt_info_dump(struct wgt_info *ifo, int fd, const char *prefix);
 

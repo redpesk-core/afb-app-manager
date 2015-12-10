@@ -26,6 +26,12 @@
 #include "wgt-config.h"
 #include "wgt-info.h"
 
+struct wgt_info {
+	int refcount;
+	struct wgt *wgt;
+	struct wgt_desc desc;
+};
+
 static int getpropbool(xmlNodePtr node, const char *prop, int def)
 {
 	int result;
@@ -67,13 +73,13 @@ static xmlChar *optcontent(xmlNodePtr node)
 	return node ? xmlNodeGetContent(node) : NULL;
 }
 
-static int fill_info(struct wgt_info *ifo, int want_icons, int want_features, int want_preferences)
+static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, int want_preferences)
 {
 	xmlNodePtr node, pnode;
-	struct wgt_info_icon *icon, **icontail;
-	struct wgt_info_feature *feature, **featuretail;
-	struct wgt_info_preference *preference, **preferencetail;
-	struct wgt_info_param *param, **paramtail;
+	struct wgt_desc_icon *icon, **icontail;
+	struct wgt_desc_feature *feature, **featuretail;
+	struct wgt_desc_preference *preference, **preferencetail;
+	struct wgt_desc_param *param, **paramtail;
 
 	node = wgt_config_widget();
 	if (!node) {
@@ -81,41 +87,41 @@ static int fill_info(struct wgt_info *ifo, int want_icons, int want_features, in
 		errno = EINVAL;
 		return -1;
 	}
-	ifo->id = xmlGetProp(node, wgt_config_string_id);
-	ifo->version = xmlGetProp(node, wgt_config_string_version);
-	ifo->width = getpropnum(node, wgt_config_string_width, 0);
-	ifo->height = getpropnum(node, wgt_config_string_height, 0);
-	ifo->viewmodes = xmlGetProp(node, wgt_config_string_viewmodes);
-	ifo->defaultlocale = xmlGetProp(node, wgt_config_string_defaultlocale);
+	desc->id = xmlGetProp(node, wgt_config_string_id);
+	desc->version = xmlGetProp(node, wgt_config_string_version);
+	desc->width = getpropnum(node, wgt_config_string_width, 0);
+	desc->height = getpropnum(node, wgt_config_string_height, 0);
+	desc->viewmodes = xmlGetProp(node, wgt_config_string_viewmodes);
+	desc->defaultlocale = xmlGetProp(node, wgt_config_string_defaultlocale);
 
 	node = wgt_config_name();
-	ifo->name = optcontent(node);
-	ifo->name_short = optprop(node, wgt_config_string_short);
+	desc->name = optcontent(node);
+	desc->name_short = optprop(node, wgt_config_string_short);
 
 	node = wgt_config_description();
-	ifo->description = optcontent(node);
+	desc->description = optcontent(node);
 
 	node = wgt_config_author();
-	ifo->author = optcontent(node);
-	ifo->author_href = optprop(node, wgt_config_string_href);
-	ifo->author_email = optprop(node, wgt_config_string_email);
+	desc->author = optcontent(node);
+	desc->author_href = optprop(node, wgt_config_string_href);
+	desc->author_email = optprop(node, wgt_config_string_email);
 
 	node = wgt_config_license();
-	ifo->license = optcontent(node);
-	ifo->license_href = optprop(node, wgt_config_string_href);
+	desc->license = optcontent(node);
+	desc->license_href = optprop(node, wgt_config_string_href);
 	
 	node = wgt_config_content();
-	ifo->content_src = optprop(node, wgt_config_string_src);
-	if (node && ifo->content_src == NULL) {
+	desc->content_src = optprop(node, wgt_config_string_src);
+	if (node && desc->content_src == NULL) {
 		warning("content without src");
 		errno = EINVAL;
 		return -1;
 	}
-	ifo->content_type = optprop(node, wgt_config_string_type);
-	ifo->content_encoding = optprop(node, wgt_config_string_encoding);
+	desc->content_type = optprop(node, wgt_config_string_type);
+	desc->content_encoding = optprop(node, wgt_config_string_encoding);
 
 	if (want_icons) {
-		icontail = &ifo->icons;
+		icontail = &desc->icons;
 		node = wgt_config_first_icon();
 		while (node) {
 			icon = malloc(sizeof * icon);
@@ -141,7 +147,7 @@ static int fill_info(struct wgt_info *ifo, int want_icons, int want_features, in
 	}
 
 	if (want_features) {
-		featuretail = &ifo->features;
+		featuretail = &desc->features;
 		node = wgt_config_first_feature();
 		while (node) {
 			feature = malloc(sizeof * feature);
@@ -151,6 +157,7 @@ static int fill_info(struct wgt_info *ifo, int want_icons, int want_features, in
 			}
 			feature->name = xmlGetProp(node, wgt_config_string_name);
 			feature->required = getpropbool(node, wgt_config_string_required, 1);
+			feature->params = NULL;
 
 			feature->next = NULL;
 			*featuretail = feature;
@@ -191,7 +198,7 @@ static int fill_info(struct wgt_info *ifo, int want_icons, int want_features, in
 	}
 
 	if (want_preferences) {
-		preferencetail = &ifo->preferences;
+		preferencetail = &desc->preferences;
 		node = wgt_config_first_preference();
 		while (node) {
 			preference = malloc(sizeof * preference);
@@ -219,6 +226,114 @@ static int fill_info(struct wgt_info *ifo, int want_icons, int want_features, in
 	return 0;
 }
 
+static void free_desc(struct wgt_desc *desc)
+{
+	struct wgt_desc_icon *icon;
+	struct wgt_desc_feature *feature;
+	struct wgt_desc_preference *preference;
+	struct wgt_desc_param *param;
+
+	xmlFree(desc->id);
+	xmlFree(desc->version);
+	xmlFree(desc->viewmodes);
+	xmlFree(desc->defaultlocale);
+	xmlFree(desc->name);
+	xmlFree(desc->name_short);
+	xmlFree(desc->description);
+	xmlFree(desc->author);
+	xmlFree(desc->author_href);
+	xmlFree(desc->author_email);
+	xmlFree(desc->license);
+	xmlFree(desc->license_href);
+	xmlFree(desc->content_src);
+	xmlFree(desc->content_type);
+	xmlFree(desc->content_encoding);
+
+	while(desc->icons) {
+		icon = desc->icons;
+		desc->icons = icon->next;
+		xmlFree(icon->src);
+		free(icon);
+	}
+
+	while(desc->features) {
+		feature = desc->features;
+		desc->features = feature->next;
+		xmlFree(feature->name);
+		while(feature->params) {
+			param = feature->params;
+			feature->params = param->next;
+			xmlFree(param->name);
+			xmlFree(param->value);
+			free(param);
+		}
+		free(feature);
+	}
+
+	while(desc->preferences) {
+		preference = desc->preferences;
+		desc->preferences = preference->next;
+		xmlFree(preference->name);
+		xmlFree(preference->value);
+		free(preference);
+	}
+}
+
+static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
+{
+	struct wgt_desc_icon *icon;
+	struct wgt_desc_feature *feature;
+	struct wgt_desc_preference *preference;
+	struct wgt_desc_param *param;
+
+	if (desc->id) fprintf(f, "%sid: %s\n", prefix, desc->id);
+	if (desc->width) fprintf(f, "%swidth: %d\n", prefix, desc->width);
+	if (desc->height) fprintf(f, "%sheight: %d\n", prefix, desc->height);
+	if (desc->version) fprintf(f, "%sversion: %s\n", prefix, desc->version);
+	if (desc->viewmodes) fprintf(f, "%sviewmodes: %s\n", prefix, desc->viewmodes);
+	if (desc->defaultlocale) fprintf(f, "%sdefaultlocale: %s\n", prefix, desc->defaultlocale);
+	if (desc->name) fprintf(f, "%sname: %s\n", prefix, desc->name);
+	if (desc->name_short) fprintf(f, "%sname_short: %s\n", prefix, desc->name_short);
+	if (desc->description) fprintf(f, "%sdescription: %s\n", prefix, desc->description);
+	if (desc->author) fprintf(f, "%sauthor: %s\n", prefix, desc->author);
+	if (desc->author_href) fprintf(f, "%sauthor_href: %s\n", prefix, desc->author_href);
+	if (desc->author_email) fprintf(f, "%sauthor_email: %s\n", prefix, desc->author_email);
+	if (desc->license) fprintf(f, "%slicense: %s\n", prefix, desc->license);
+	if (desc->license_href) fprintf(f, "%slicense_href: %s\n", prefix, desc->license_href);
+	if (desc->content_src) fprintf(f, "%scontent_src: %s\n", prefix, desc->content_src);
+	if (desc->content_type) fprintf(f, "%scontent_type: %s\n", prefix, desc->content_type);
+	if (desc->content_encoding) fprintf(f, "%scontent_encoding: %s\n", prefix, desc->content_encoding);
+
+	icon = desc->icons;
+	while(icon) {
+		fprintf(f, "%s+ icon src: %s\n", prefix, icon->src);
+		if (icon->width) fprintf(f, "%s       width: %d\n", prefix, icon->width);
+		if (icon->height) fprintf(f, "%s       height: %d\n", prefix, icon->height);
+		icon = icon->next;
+	}
+
+	feature = desc->features;
+	while(feature) {
+		fprintf(f, "%s+ feature name: %s\n", prefix, feature->name);
+		fprintf(f, "%s          required: %s\n", prefix, feature->required ? "true" : "false");
+		param = feature->params;
+		while(param) {
+			fprintf(f, "%s          + param name: %s\n", prefix, param->name);
+			fprintf(f, "%s                  value: %s\n", prefix, param->value);
+			param = param->next;
+		}
+		feature = feature->next;
+	}
+
+	preference = desc->preferences;
+	while(preference) {
+		fprintf(f, "%s+ preference name: %s\n", prefix, preference->name);
+		if (preference->value) fprintf(f, "%s             value: %s\n", prefix, preference->value);
+		fprintf(f, "%s             readonly: %s\n", prefix, preference->readonly ? "true" : "false");
+		preference = preference->next;
+	}
+}
+
 struct wgt_info *wgt_info_get(struct wgt *wgt, int icons, int features, int preferences)
 {
 	int rc;
@@ -239,14 +354,21 @@ struct wgt_info *wgt_info_get(struct wgt *wgt, int icons, int features, int pref
 		return NULL;
 	}
 	result->refcount = 1;
+	result->wgt = wgt;
+	wgt_addref(wgt);
 
-	rc = fill_info(result, icons, features, preferences);
+	rc = fill_desc(&result->desc, icons, features, preferences);
 	wgt_config_close();
 	if (rc) {
 		wgt_info_unref(result);
 		return NULL;
 	}
 	return result;
+}
+
+const struct wgt_desc *wgt_info_desc(struct wgt_info *ifo)
+{
+	return &ifo->desc;
 }
 
 void wgt_info_addref(struct wgt_info *ifo)
@@ -258,125 +380,27 @@ void wgt_info_addref(struct wgt_info *ifo)
 
 void wgt_info_unref(struct wgt_info *ifo)
 {
-	struct wgt_info_icon *icon;
-	struct wgt_info_feature *feature;
-	struct wgt_info_preference *preference;
-	struct wgt_info_param *param;
-
 	assert(ifo);
 	assert(ifo->refcount > 0);
 	if (--ifo->refcount)
 		return;
 
-	xmlFree(ifo->id);
-	xmlFree(ifo->version);
-	xmlFree(ifo->viewmodes);
-	xmlFree(ifo->defaultlocale);
-	xmlFree(ifo->name);
-	xmlFree(ifo->name_short);
-	xmlFree(ifo->description);
-	xmlFree(ifo->author);
-	xmlFree(ifo->author_href);
-	xmlFree(ifo->author_email);
-	xmlFree(ifo->license);
-	xmlFree(ifo->license_href);
-	xmlFree(ifo->content_src);
-	xmlFree(ifo->content_type);
-	xmlFree(ifo->content_encoding);
-
-	while(ifo->icons) {
-		icon = ifo->icons;
-		ifo->icons = icon->next;
-		xmlFree(icon->src);
-		free(icon);
-	}
-
-	while(ifo->features) {
-		feature = ifo->features;
-		ifo->features = feature->next;
-		xmlFree(feature->name);
-		while(feature->params) {
-			param = feature->params;
-			feature->params = param->next;
-			xmlFree(param->name);
-			xmlFree(param->value);
-			free(param);
-		}
-		free(feature);
-	}
-
-	while(ifo->preferences) {
-		preference = ifo->preferences;
-		ifo->preferences = preference->next;
-		xmlFree(preference->name);
-		xmlFree(preference->value);
-		free(preference);
-	}
+	free_desc(&ifo->desc);
+	wgt_unref(ifo->wgt);
 	free(ifo);
 }
 
 void wgt_info_dump(struct wgt_info *ifo, int fd, const char *prefix)
 {
 	FILE *f;
-	struct wgt_info_icon *icon;
-	struct wgt_info_feature *feature;
-	struct wgt_info_preference *preference;
-	struct wgt_info_param *param;
 
 	assert(ifo);
 	f = fdopen(fd, "w");
-	if (f == NULL) {
+	if (f == NULL)
 		warning("can't fdopen in wgt_info_dump");
-		return;
+	else {
+		dump_desc(&ifo->desc, f, prefix);
+		fclose(f);
 	}
-	
-	if (ifo->id) fprintf(f, "%sid: %s\n", prefix, ifo->id);
-	if (ifo->width) fprintf(f, "%swidth: %d\n", prefix, ifo->width);
-	if (ifo->height) fprintf(f, "%sheight: %d\n", prefix, ifo->height);
-	if (ifo->version) fprintf(f, "%sversion: %s\n", prefix, ifo->version);
-	if (ifo->viewmodes) fprintf(f, "%sviewmodes: %s\n", prefix, ifo->viewmodes);
-	if (ifo->defaultlocale) fprintf(f, "%sdefaultlocale: %s\n", prefix, ifo->defaultlocale);
-	if (ifo->name) fprintf(f, "%sname: %s\n", prefix, ifo->name);
-	if (ifo->name_short) fprintf(f, "%sname_short: %s\n", prefix, ifo->name_short);
-	if (ifo->description) fprintf(f, "%sdescription: %s\n", prefix, ifo->description);
-	if (ifo->author) fprintf(f, "%sauthor: %s\n", prefix, ifo->author);
-	if (ifo->author_href) fprintf(f, "%sauthor_href: %s\n", prefix, ifo->author_href);
-	if (ifo->author_email) fprintf(f, "%sauthor_email: %s\n", prefix, ifo->author_email);
-	if (ifo->license) fprintf(f, "%slicense: %s\n", prefix, ifo->license);
-	if (ifo->license_href) fprintf(f, "%slicense_href: %s\n", prefix, ifo->license_href);
-	if (ifo->content_src) fprintf(f, "%scontent_src: %s\n", prefix, ifo->content_src);
-	if (ifo->content_type) fprintf(f, "%scontent_type: %s\n", prefix, ifo->content_type);
-	if (ifo->content_encoding) fprintf(f, "%scontent_encoding: %s\n", prefix, ifo->content_encoding);
-
-	icon = ifo->icons;
-	while(icon) {
-		fprintf(f, "%s+ icon src: %s\n", prefix, icon->src);
-		if (icon->width) fprintf(f, "%s       width: %d\n", prefix, icon->width);
-		if (icon->height) fprintf(f, "%s       height: %d\n", prefix, icon->height);
-		icon = icon->next;
-	}
-
-	feature = ifo->features;
-	while(feature) {
-		fprintf(f, "%s+ feature name: %s\n", prefix, feature->name);
-		fprintf(f, "%s          required: %s\n", prefix, feature->required ? "true" : "false");
-		param = feature->params;
-		while(param) {
-			fprintf(f, "%s          + param name: %s\n", prefix, param->name);
-			fprintf(f, "%s                  value: %s\n", prefix, param->value);
-			param = param->next;
-		}
-		feature = feature->next;
-	}
-
-	preference = ifo->preferences;
-	while(preference) {
-		fprintf(f, "%s+ preference name: %s\n", prefix, preference->name);
-		if (preference->value) fprintf(f, "%s             value: %s\n", prefix, preference->value);
-		fprintf(f, "%s             readonly: %s\n", prefix, preference->readonly ? "true" : "false");
-		preference = preference->next;
-	}
-
-	fclose(f);
 }
 

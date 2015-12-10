@@ -129,6 +129,7 @@ int main(int ac, char **av)
 	return 0;
 }
 
+/* checks if the permission 'name' is granted */
 static int has_permission(const char *name)
 {
 	char **p = permissions;
@@ -142,6 +143,7 @@ static int has_permission(const char *name)
 	return 0;
 }
 
+/* add permissions granted for installation */
 static void add_permissions(const char *list)
 {
 	char **ps, *p;
@@ -192,6 +194,7 @@ static void add_permissions(const char *list)
 		iter += strspn(iter, separators);
 	}
 }
+
 
 static struct wgt *wgt_at_workdir()
 {
