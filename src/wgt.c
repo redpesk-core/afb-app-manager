@@ -36,6 +36,7 @@ struct wgt {
 	char **locales;
 };
 
+/* a valid subpath is a relative path not looking deeper than root using .. */
 static int validsubpath(const char *subpath)
 {
 	int l = 0, i = 0;
@@ -63,7 +64,8 @@ static int validsubpath(const char *subpath)
 		default:
 			while(subpath[i] && subpath[i] != '/')
 				i++;
-			l++;
+			if (l >= 0)
+				l++;
 		case '/':
 			break;
 		}
@@ -292,4 +294,28 @@ int wgt_locales_open_read(struct wgt *wgt, const char *filename)
 	return openat(wgt->rootfd, loc, O_RDONLY);
 }
 
+
+#if defined(TEST_wgt_validsubpath)
+#include <stdio.h>
+void t(const char *subpath, int validity) {
+  printf("%s -> %d = %d, %s\n", subpath, validity, validsubpath(subpath), validsubpath(subpath)==validity ? "ok" : "NOT OK");
+}
+int main() {
+  t("/",0);
+  t("..",0);
+  t(".",1);
+  t("../a",0);
+  t("a/..",1);
+  t("a/../////..",0);
+  t("a/../b/..",1);
+  t("a/b/c/..",1);
+  t("a/b/c/../..",1);
+  t("a/b/c/../../..",1);
+  t("a/b/c/../../../.",1);
+  t("./..a/././..b/..c/./.././.././../.",1);
+  t("./..a/././..b/..c/./.././.././.././..",0);
+  t("./..a//.//./..b/..c/./.././/./././///.././.././a/a/a/a/a",1);
+  return 0;
+}
+#endif
 
