@@ -17,49 +17,9 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <syslog.h>
 
-#if 0
 #include <security-manager.h>
-#else
-#include <stdio.h>
-#include <stdint.h>
-enum lib_retcode {
-	SECURITY_MANAGER_SUCCESS,
-	SECURITY_MANAGER_ERROR_INPUT_PARAM,
-	SECURITY_MANAGER_ERROR_MEMORY,
-	SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE,
-	SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED,
-	SECURITY_MANAGER_ERROR_ACCESS_DENIED
-};
-enum app_install_path_type {
-	SECURITY_MANAGER_PATH_PUBLIC_RO,
-	SECURITY_MANAGER_PATH_RO,
-	SECURITY_MANAGER_PATH_RW
-};
-typedef void app_inst_req;
-static int diese = 0;
-#define  security_manager_app_inst_req_free(r) \
- (printf("security_manager_app_inst_req_free(%p)\n",r),(void)0)
-
-#define  security_manager_app_inst_req_new(pr) \
- (*(pr)=(void*)(intptr_t)(++diese), printf("security_manager_app_inst_req_new(%p)\n",*pr), SECURITY_MANAGER_SUCCESS)
-
-#define security_manager_app_inst_req_set_pkg_id(r,i) \
- (printf("security_manager_app_inst_req_set_pkg_id(%p,\"%s\")\n",r,i), SECURITY_MANAGER_SUCCESS)
- 
-#define security_manager_app_inst_req_set_app_id(r,i) \
- (printf("security_manager_app_inst_req_set_app_id(%p,\"%s\")\n",r,i), SECURITY_MANAGER_SUCCESS)
- 
-#define security_manager_app_inst_req_add_privilege(r,p) \
- (printf("security_manager_app_inst_req_add_privilege(%p,\"%s\")\n",r,p), SECURITY_MANAGER_SUCCESS)
-
-#define security_manager_app_inst_req_add_path(r,p,t) \
- (printf("security_manager_app_inst_req_add_path(%p,\"%s\",%d)\n",r,p,t), SECURITY_MANAGER_SUCCESS)
-
-#define security_manager_app_install(r) \
- (printf("security_manager_app_install(%p)\n",r), SECURITY_MANAGER_SUCCESS)
-
-#endif
 
 #include "secmgr-wrap.h"
 
@@ -79,15 +39,22 @@ static int retcode(enum lib_retcode rc)
 	return -1;
 }
 
-int secmgr_init(const char *pkgid, const char *appid)
+int secmgr_init(const char *id)
 {
 	int rc;
 	assert(request == NULL);
 	rc = security_manager_app_inst_req_new(&request);
-	if (rc == SECURITY_MANAGER_SUCCESS) {
-		rc = security_manager_app_inst_req_set_pkg_id(request, pkgid);
-		if (rc == SECURITY_MANAGER_SUCCESS)
-			rc = security_manager_app_inst_req_set_app_id(request, appid);
+	if (rc != SECURITY_MANAGER_SUCCESS)
+		syslog(LOG_ERR, "security_manager_app_inst_req_new failed");
+	else {
+		rc = security_manager_app_inst_req_set_pkg_id(request, id);
+		if (rc != SECURITY_MANAGER_SUCCESS)
+			syslog(LOG_ERR, "security_manager_app_inst_req_set_pkg_id failed");
+		else {
+			rc = security_manager_app_inst_req_set_app_id(request, id);
+			if (rc != SECURITY_MANAGER_SUCCESS)
+				syslog(LOG_ERR, "security_manager_app_inst_req_set_app_id failed");
+		}
 	}
 	if (rc != SECURITY_MANAGER_SUCCESS)
 		secmgr_cancel();
@@ -105,6 +72,9 @@ int secmgr_install()
 	int rc;
 	assert(request != NULL);
 	rc = security_manager_app_install(request);
+	if (rc != SECURITY_MANAGER_SUCCESS)
+		syslog(LOG_ERR, "security_manager_app_install failed");
+	security_manager_app_inst_req_free(request);
 	return retcode(rc);
 }
 
@@ -113,6 +83,8 @@ int secmgr_permit(const char *permission)
 	int rc;
 	assert(request != NULL);
 	rc = security_manager_app_inst_req_add_privilege(request, permission);
+	if (rc != SECURITY_MANAGER_SUCCESS)
+		syslog(LOG_ERR, "security_manager_app_inst_add_privilege %s failed", permission);
 	return retcode(rc);
 }
 
@@ -121,6 +93,8 @@ static int addpath(const char *pathname, enum app_install_path_type type)
 	int rc;
 	assert(request != NULL);
 	rc = security_manager_app_inst_req_add_path(request, pathname, type);
+	if (rc != SECURITY_MANAGER_SUCCESS)
+		syslog(LOG_ERR, "security_manager_app_inst_add_path %s failed", pathname);
 	return retcode(rc);
 }
 

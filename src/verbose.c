@@ -18,19 +18,3 @@
 
 int verbosity = 1;
 
-int verbose_scan_args(int argc, char **argv)
-{
-	int i, r;
-	for (i=r=0 ; i < argc ; i++) {
-		if (!strcmp(argv[i], "-q"))
-			verbosity = verbosity ? verbosity-1 : 0;
-		else if (!strcmp(argv[i], "-v"))
-			verbosity++;
-		else
-			argv[r++] = argv[i];
-	}
-	argv[r] = NULL;
-	return r;
-}
-
-

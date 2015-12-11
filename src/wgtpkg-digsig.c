@@ -209,7 +209,7 @@ static int check_references(xmlNodePtr sinfo)
 		if (f->type == type_file) {
 			flags = f->flags;
 			if (!(flags & (flag_signature | flag_referenced))) {
-				syslog(LOG_ERR, "file not referenced in signature", f->name);
+				syslog(LOG_ERR, "file not referenced in signature: %s", f->name);
 				result = -1;
 			}
 		}
@@ -385,7 +385,7 @@ int create_digsig(int index, const char *key, const char **certs)
 	len = xmlSaveDoc(ctx, doc);
 	if (len < 0) {
 		syslog(LOG_ERR, "xmlSaveDoc to %s failed", fdesc->name);
-		goto error2;
+		goto error4;
 	}
 
 	rc = 0;

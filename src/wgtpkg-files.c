@@ -22,6 +22,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "wgtpkg.h"
 

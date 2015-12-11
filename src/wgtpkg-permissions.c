@@ -33,6 +33,7 @@ static const char prefix_of_permissions[] = PREFIXPERMISSION;
 
 static int nrpermissions = 0;
 static struct permission *permissions = NULL;
+static int indexiter = 0;
 
 /* check is the name has the correct prefix for permissions */
 int is_standard_permission(const char *name)
@@ -128,5 +129,22 @@ int request_permission(const char *name)
 			return 1;
 	}
 	return 0;
+}
+
+/* iteration over granted and requested permissions */
+const char *first_usable_permission()
+{
+	indexiter = 0;
+	return next_usable_permission();
+}
+
+const char *next_usable_permission()
+{
+	while(indexiter < nrpermissions) {
+		struct permission *p = &permissions[indexiter++];
+		if (p->granted && p->requested)
+			return p->name;
+	}
+	return NULL;
 }
 

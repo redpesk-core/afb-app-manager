@@ -102,6 +102,8 @@ extern void crop_permissions(unsigned level);
 extern void grant_permission_list(const char *list);
 extern int permission_exists(const char *name);
 extern int request_permission(const char *name);
+extern const char *first_usable_permission();
+extern const char *next_usable_permission();
 
 /**************************************************************/
 /* from wgtpkg-workdir */

@@ -14,7 +14,7 @@
  limitations under the License.
 */
 
-int secmgr_init(const char *pkgid, const char *appid);
+int secmgr_init(const char *id);
 void secmgr_cancel();
 int secmgr_install();
 int secmgr_permit(const char *permission);

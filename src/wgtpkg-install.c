@@ -20,6 +20,8 @@
 #include <syslog.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
+#include <unistd.h>
 
 #include "verbose.h"
 #include "wgtpkg.h"
@@ -110,7 +112,7 @@ static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 
 	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->version);
 	if (rc >= sizeof newdir) {
-		syslog(LOG_ERR, "path to long: %s/%s/%s", root, desc->id, desc->version);
+		syslog(LOG_ERR, "path to long in move_widget");
 		errno = EINVAL;
 		return -1;
 	}
@@ -118,11 +120,96 @@ static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 	return move_workdir(newdir, 1, force);
 }
 
-static int install_security(struct wgt_info *ifo)
+static int install_icon(const struct wgt_desc *desc)
 {
+	char link[PATH_MAX];
+	char target[PATH_MAX];
 	int rc;
 
-	rc = secmgr_init(wgt_info_desc(ifo)->
+	rc = snprintf(link, sizeof link, "%s/%s@%s", ICONDESTDIR, desc->id, desc->version);
+	if (rc >= sizeof link) {
+		syslog(LOG_ERR, "link to long in install_icon");
+		errno = EINVAL;
+		return -1;
+	}
+
+	rc = snprintf(target, sizeof target, "%s/%s", workdir, desc->icons->src);
+	if (rc >= sizeof target) {
+		syslog(LOG_ERR, "target to long in install_icon");
+		errno = EINVAL;
+		return -1;
+	}
+
+	unlink(link);
+	rc = symlink(target, link);
+	if (rc)
+		syslog(LOG_ERR, "can't create link %s -> %s", link, target);
+	return rc;
+}
+
+static int install_security(const struct wgt_desc *desc)
+{
+	char path[PATH_MAX], *head;
+	const char *icon, *perm;
+	int rc, len, lic, lf;
+	unsigned int i, n;
+	struct filedesc *f;
+
+	rc = secmgr_init(desc->id);
+	if (rc)
+		goto error;
+
+	rc = secmgr_path_public_read_only(workdir);
+	if (rc)
+		goto error2;
+
+	/* instal the files */
+	head = stpcpy(path, workdir);
+	assert(sizeof path > (head - path));
+	len = (int)(sizeof path - (head - path));
+	if (!len) {
+		syslog(LOG_ERR, "root path too long in install_security");
+		errno = ENAMETOOLONG;
+		goto error2;
+	}
+	len--;
+	*head++ = '/';
+	icon = desc->icons->src;
+	lic = (int)strlen(icon);
+	n = file_count();
+	i = 0;
+	while(i < n) {
+		f = file_of_index(i++);
+		lf = (int)strlen(f->name);
+		if (lf >= len) {
+			syslog(LOG_ERR, "path too long in install_security");
+			errno = ENAMETOOLONG;
+			goto error2;
+		}
+		strcpy(head, f->name);
+		if (lf <= lic && !memcmp(f->name, icon, lf) && (!f->name[lf] || f->name[lf] == '/'))
+			rc = secmgr_path_public_read_only(path);
+		else
+			rc = secmgr_path_read_only(path);
+		if (rc)
+			goto error2;
+	}
+
+	/* install the permissions */
+	perm = first_usable_permission();
+	while(perm) {
+		rc = secmgr_permit(perm);
+		if (rc)
+			goto error2;
+		perm = next_usable_permission();
+	}
+
+	rc = secmgr_install();
+	return rc;
+error2:
+	secmgr_cancel();
+error:
+	return -1;
 }
 
 /* install the widget of the file */
@@ -134,7 +221,7 @@ void install_widget(const char *wgtfile, const char *root, int force)
 	notice("-- INSTALLING widget %s --", wgtfile);
 
 	/* workdir */
-	if (make_workdir_base(root, "UNPACK", 0)) {
+	if (make_workdir_base(root, "TMP", 0)) {
 		syslog(LOG_ERR, "failed to create a working directory");
 		goto error1;
 	}
@@ -156,7 +243,11 @@ void install_widget(const char *wgtfile, const char *root, int force)
 	if (move_widget(root, desc, force))
 		goto error3;
 
-	
+	if (install_icon(desc))
+		goto error3;
+
+	if (install_security(desc))
+		goto error3;
 	
 	return;
 
