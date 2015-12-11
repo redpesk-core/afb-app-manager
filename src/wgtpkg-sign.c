@@ -183,7 +183,7 @@ int main(int ac, char **av)
 #undef rp
 
 	/* set and enter the workdir */
-	if (set_workdir(directory, 0) || enter_workdir(0))
+	if (set_workdir(directory, 0))
 		return 1;
 
 	if (fill_files())

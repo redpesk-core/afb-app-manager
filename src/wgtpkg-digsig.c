@@ -18,10 +18,13 @@
 #include <string.h>
 #include <syslog.h>
 #include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/uri.h>
+#include <libxml/xmlsave.h>
 
 
 #include "verbose.h"
@@ -278,7 +281,7 @@ error:
 /* verify the digital signature of the file described by 'fdesc' */
 int verify_digsig(struct filedesc *fdesc)
 {
-	int res;
+	int res, fd;
 
 	assert ((fdesc->flags & flag_signature) != 0);
 	debug("-- checking file %s",fdesc->name);
@@ -288,7 +291,13 @@ int verify_digsig(struct filedesc *fdesc)
 	clear_certificates();
 
 	/* reads and xml parses the signature file */
-	document = xmlReadFile(fdesc->name, NULL, 0);
+	fd = openat(workdirfd, fdesc->name, O_RDONLY);
+	if (fd < 0) {
+		syslog(LOG_ERR, "cant't open file %s", fdesc->name);
+		return -1;
+	}
+	document = xmlReadFd(fd, fdesc->name, NULL, 0);
+	close(fd);
 	if (document == NULL) {
 		syslog(LOG_ERR, "xml parse of file %s failed", fdesc->name);
 		return -1;
@@ -328,7 +337,8 @@ int create_digsig(int index, const char *key, const char **certs)
 {
 	struct filedesc *fdesc;
 	xmlDocPtr doc;
-	int rc, len;
+	int rc, len, fd;
+	xmlSaveCtxtPtr ctx;
 
 	rc = -1;
 
@@ -343,13 +353,27 @@ int create_digsig(int index, const char *key, const char **certs)
 		goto error2;
 
 	/* save the doc as file */
-	len = xmlSaveFormatFileEnc(fdesc->name, doc, NULL, 0);
+	fd = openat(workdirfd, fdesc->name, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	if (fd < 0) {
+		syslog(LOG_ERR, "cant open %s for write", fdesc->name);
+		goto error2;
+	}
+	ctx = xmlSaveToFd(fd, NULL, XML_SAVE_FORMAT);
+	if (!ctx) {
+		syslog(LOG_ERR, "xmlSaveToFd failed for %s", fdesc->name);
+		goto error3;
+	}
+	len = xmlSaveDoc(ctx, doc);
 	if (len < 0) {
-		syslog(LOG_ERR, "xmlSaveFormatFileEnc to %s failed", fdesc->name);
+		syslog(LOG_ERR, "xmlSaveDoc to %s failed", fdesc->name);
 		goto error2;
 	}
 
 	rc = 0;
+error4:
+	xmlSaveClose(ctx);
+error3:
+	close(fd);
 error2:
 	xmlFreeDoc(doc);
 error:

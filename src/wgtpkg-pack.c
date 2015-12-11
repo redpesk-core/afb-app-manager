@@ -139,7 +139,7 @@ int main(int ac, char **av)
 	notice("-- PACKING widget %s from directory %s", wgtfile, directory);
 
 	/* creates an existing widget (for realpath it must exist) */
-	i = open(wgtfile, O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0666);
+	i = open(wgtfile, O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0644);
 	if (i < 0) {
 		syslog(LOG_ERR, "can't write widget %s", wgtfile);
 		return 1;
@@ -155,7 +155,7 @@ int main(int ac, char **av)
 	wgtfile = x;
 
 	/* set and enter the workdir */
-	if (set_workdir(directory, 0) || enter_workdir(0))
+	if (set_workdir(directory, 0))
 		return 1;
 
 

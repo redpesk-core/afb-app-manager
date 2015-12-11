@@ -14,10 +14,11 @@
  limitations under the License.
 */
 
-#define _BSD_SOURCE /* see readdir */
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <limits.h>
@@ -27,18 +28,19 @@
 
 #include "verbose.h"
 #include "wgtpkg.h"
-#include "wgt.h"
-#include "wgt-info.h"
 
-static const char appname[] = "wgtpkg-info";
-
-static void show(const char *wgtfile);
+static const char appname[] = "wgtpkg-install";
+static const char *root;
+static int force;
 
 static void usage()
 {
 	printf(
-		"usage: %s [-f] [-q] [-v] wgtfile...\n"
+		"usage: %s [-f] [-q] [-v] [-p list] rootdir wgtfile...\n"
 		"\n"
+		"   rootdir       the root directory for installing\n"
+		"   -p list       a list of comma separated permissions to allow\n"
+		"   -f            force overwriting\n"
 		"   -q            quiet\n"
 		"   -v            verbose\n"
 		"\n",
@@ -47,27 +49,33 @@ static void usage()
 }
 
 static struct option options[] = {
+	{ "permissions", required_argument, NULL, 'p' },
+	{ "force",       no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ NULL, 0, NULL, 0 }
 };
 
-/* info the widgets of the list */
+/* install the widgets of the list */
 int main(int ac, char **av)
 {
 	int i;
 	char *wpath;
 
-	openlog(appname, LOG_PERROR, LOG_USER);
+	openlog(appname, LOG_PERROR, LOG_AUTH);
 
 	xmlsec_init();
 
+	force = 0;
 	for (;;) {
-		i = getopt_long(ac, av, "hqv", options, NULL);
+		i = getopt_long(ac, av, "hfqvp:", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
+		case 'f':
+			force = 1;
+			break;
 		case 'h':
 			usage();
 			return 0;
@@ -78,6 +86,9 @@ int main(int ac, char **av)
 		case 'v':
 			verbosity++;
 			break;
+		case 'p':
+			grant_permission_list(optarg);
+			break;
 		case ':':
 			syslog(LOG_ERR, "missing argument value");
 			return 1;
@@ -85,6 +96,12 @@ int main(int ac, char **av)
 			syslog(LOG_ERR, "unrecognized option");
 			return 1;
 		}
+	}
+
+	ac -= optind;
+	if (ac < 2) {
+		syslog(LOG_ERR, "arguments are missing");
+		return 1;
 	}
 
 	/* canonic names for files */
@@ -97,47 +114,12 @@ int main(int ac, char **av)
 		}
 		av[i] = wpath;
 	}
+	root = *av++;
 
-	/* info widgets */
+	/* install widgets */
 	for ( ; *av ; av++)
-		show(*av);
+		install_widget(*av, root, force);
 
 	return 0;
-}
-
-static int check_and_show()
-{
-	struct wgt_info *ifo;
-
-	ifo = wgt_info_createat(workdirfd, NULL, 1, 1, 1);
-	if (!ifo)
-		return -1;
-	wgt_info_dump(ifo, 1, "");
-	wgt_info_unref(ifo);
-	return 0;
-}
-
-/* install the widget of the file */
-static void show(const char *wgtfile)
-{
-	notice("-- INFO for widget %s --", wgtfile);
-
-	/* workdir */
-	if (make_workdir_base("/tmp", "UNPACK", 0)) {
-		syslog(LOG_ERR, "failed to create a working directory");
-		return;
-	}
-
-	if (zread(wgtfile, 0))
-		goto error2;
-
-	if (check_all_signatures())
-		goto error2;
-
-	check_and_show();
-	
-error2:
-	remove_workdir();
-	return;
 }
 

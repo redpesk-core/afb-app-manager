@@ -21,6 +21,7 @@
 #include <syslog.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <fcntl.h>
 
 #include "wgtpkg.h"
 
@@ -248,20 +249,23 @@ void file_clear_flags()
 
 static int fill_files_rec(char name[PATH_MAX], int offset)
 {
-	int len, err;
+	int len, err, fd;
 	DIR *dir;
 	struct dirent *ent;
 
-	if (offset == 0)
-		dir = opendir(".");
-	else {
-		dir = opendir(name);
-		name[offset++] = '/';
-	}
-	if (!dir) {
-		syslog(LOG_ERR, "opendir %.*s failed in zwr", offset, name);
+	fd = openat(workdirfd, offset ? name : ".", O_DIRECTORY|O_RDONLY);
+	if (fd < 0) {
+		syslog(LOG_ERR, "openat %.*s failed in fill_files_rec", offset, name);
 		return -1;
 	}
+	dir = fdopendir(fd);
+	if (!dir) {
+		syslog(LOG_ERR, "opendir %.*s failed in fill_files_rec", offset, name);
+		close(fd);
+		return -1;
+	}
+	if (offset)
+		name[offset++] = '/';
 
 	ent = readdir(dir);
 	while (ent != NULL) {

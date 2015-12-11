@@ -21,6 +21,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <assert.h>
+#include <fcntl.h>
 
 #include <libxml/tree.h>
 #include <xmlsec/xmlsec.h>
@@ -53,6 +54,7 @@ static int file_match_cb(const char *uri)
 static void *file_open_cb(const char *file)
 {
 	struct filedesc *fdesc;
+	int fd;
 	FILE *f;
 
 	fdesc = file_of_name(file);
@@ -61,10 +63,13 @@ static void *file_open_cb(const char *file)
 		return NULL;
 	}
 
-	f = fopen(file, "r");
-	if (f == NULL)
+	fd = openat(workdirfd, file, O_RDONLY);
+	f = fd < 0 ? NULL : fdopen(fd, "r");
+	if (f == NULL) {
 		syslog(LOG_ERR, "can't open file %s for reading", file);
-	else
+		if (fd >= 0)
+			close(fd);
+	} else
 		fdesc->flags |= flag_opened;
 
 	return f;

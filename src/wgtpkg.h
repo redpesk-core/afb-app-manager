@@ -89,14 +89,30 @@ extern int file_set_prop(struct filedesc *file, const char *name, const char *va
 extern const char *file_get_prop(struct filedesc *file, const char *name);
 
 /**************************************************************/
+/* from wgtpkg-install */
+
+extern void install_widget(const char *wgtfile, const char *root, int force);
+
+/**************************************************************/
+/* from wgtpkg-permission */
+
+extern int is_standard_permission(const char *name);
+extern void reset_permissions();
+extern void crop_permissions(unsigned level);
+extern void grant_permission_list(const char *list);
+extern int permission_exists(const char *name);
+extern int request_permission(const char *name);
+
+/**************************************************************/
 /* from wgtpkg-workdir */
 
-extern int enter_workdir(int clean);
+extern char workdir[PATH_MAX];
+extern int workdirfd;
 extern void remove_workdir();
 extern int set_workdir(const char *name, int create);
 extern int make_workdir_base(const char *root, const char *prefix, int reuse);
 extern int make_workdir(int reuse);
-extern int workdirfd();
+extern int move_workdir(const char *dest, int parents, int force);
 
 /**************************************************************/
 /* from wgtpkg-xmlsec */

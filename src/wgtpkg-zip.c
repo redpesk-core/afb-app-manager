@@ -65,14 +65,14 @@ static int create_directory(char *file, int mode)
 	char *last = strrchr(file, '/');
 	if (last != NULL)
 		*last = 0;
-	rc = mkdir(file, mode);
+	rc = mkdirat(workdirfd, file, mode);
 	if (rc) {
 		if (errno == EEXIST)
 			rc = 0;
 		else if (errno == ENOENT) {
 			rc = create_directory(file, mode);
 			if (!rc)
-				rc = mkdir(file, mode);
+				rc = mkdirat(workdirfd, file, mode);
 		}
 	}
 	if (rc)
@@ -84,10 +84,10 @@ static int create_directory(char *file, int mode)
 
 static int create_file(char *file, int fmode, int dmode)
 {
-	int fd = creat(file, fmode);
+	int fd = openat(workdirfd, file, O_CREAT|O_WRONLY|O_TRUNC, fmode);
 	if (fd < 0 && errno == ENOENT) {
 		if (!create_directory(file, dmode))
-			fd = creat(file, fmode);
+			fd = openat(workdirfd, file, O_CREAT|O_WRONLY|O_TRUNC, fmode);
 	}
 	if (fd < 0)
 		syslog(LOG_ERR, "can't create file %s", file);
@@ -233,22 +233,27 @@ struct zws {
 
 static int zwr(struct zws *zws, int offset)
 {
-	int len, err;
+	int len, err, fd;
 	DIR *dir;
 	struct dirent *ent;
 	zip_int64_t z64;
 	struct zip_source *zsrc;
+	FILE *fp;
 
-	if (offset == 0)
-		dir = opendir(".");
-	else {
-		dir = opendir(zws->name);
-		zws->name[offset++] = '/';
-	}
-	if (!dir) {
+	fd = openat(workdirfd, offset ? zws->name : ".", O_DIRECTORY|O_RDONLY);
+	if (fd < 0) {
 		syslog(LOG_ERR, "opendir %.*s failed in zwr", offset, zws->name);
 		return -1;
 	}
+	dir = fdopendir(fd);
+	if (!dir) {
+		close(fd);
+		syslog(LOG_ERR, "opendir %.*s failed in zwr", offset, zws->name);
+		return -1;
+	}
+
+	if (offset != 0)
+		zws->name[offset++] = '/';
 
 	ent = readdir(dir);
 	while (ent != NULL) {
@@ -278,9 +283,21 @@ static int zwr(struct zws *zws, int offset)
 					goto error;
 				break;
 			case DT_REG:
-				zsrc = zip_source_file(zws->zip, zws->name, 0, 0);
+				fd = openat(workdirfd, zws->name, O_RDONLY);
+				if (fd < 0) {
+					syslog(LOG_ERR, "openat of %s failed", zws->name);
+					goto error;
+				}
+				fp = fdopen(fd, "r");
+				if (fp == NULL) {
+					syslog(LOG_ERR, "fdopen of %s failed", zws->name);
+					close(fd);
+					goto error;
+				}
+				zsrc = zip_source_filep(zws->zip, fp, 0, 0);
 				if (zsrc == NULL) {
 					syslog(LOG_ERR, "zip_source_file of %s failed", zws->name);
+					fclose(fp);
 					goto error;
 				}
 				z64 = zip_file_add(zws->zip, zws->name, zsrc, ZIP_FL_ENC_UTF_8);

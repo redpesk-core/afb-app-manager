@@ -1,4 +1,4 @@
-bin_PROGRAMS = wgtpkg-install wgtpkg-pack wgtpkg-sign wgtpkg-info appfwk
+bin_PROGRAMS = wgtpkg-installer wgtpkg-pack wgtpkg-sign wgtpkg-info appfwk
 
 OTHERSRCS = \
 	verbose.c
@@ -8,6 +8,8 @@ WGTPKGSRCS = \
 	wgtpkg-certs.c \
 	wgtpkg-digsig.c \
 	wgtpkg-files.c \
+	wgtpkg-install.c \
+	wgtpkg-permissions.c \
 	wgtpkg-workdir.c \
 	wgtpkg-xmlsec.c \
 	wgtpkg-zip.c
@@ -30,7 +32,11 @@ pkgsysconfdir = .
 AM_CFLAGS  = -Wall -Wno-pointer-sign
 AM_CFLAGS += -ffunction-sections -fdata-sections
 AM_CFLAGS += ${ZIP_CFLAGS} ${XML2_CFLAGS} ${OPENSSL_CFLAGS} ${XMLSEC_CFLAGS}
-AM_CFLAGS += -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" 
+
+
+AM_CFLAGS += -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\"
+AM_CFLAGS += -DPREFIXPERMISSION=\"urn:agl-perm:\"
+AM_CFLAGS += -DAGLWIDGET=\"urn:agl-widget\"
 
 AM_LDFLAGS = -Wl,--gc-sections
 
@@ -40,7 +46,7 @@ wgtpkg_sign_SOURCES = wgtpkg-sign.c ${WGTPKGSRCS} ${OTHERSRCS}
 
 wgtpkg_pack_SOURCES = wgtpkg-pack.c ${WGTPKGSRCS} ${OTHERSRCS}
 
-wgtpkg_install_SOURCES = wgtpkg-install.c ${WGTPKGSRCS} ${WGTSRCS} ${SECWRP} ${OTHERSRCS}
+wgtpkg_installer_SOURCES = wgtpkg-installer.c ${WGTPKGSRCS} ${WGTSRCS} ${SECWRP} ${OTHERSRCS}
 
 wgtpkg_info_SOURCES = wgtpkg-info.c ${WGTPKGSRCS} ${WGTSRCS} ${OTHERSRCS}
 

@@ -132,12 +132,10 @@ int wgt_connectat(struct wgt *wgt, int dirfd, const char *pathname)
 
 	assert(wgt);
 
-	rfd = dirfd;
-	if (pathname) {
-		rfd = openat(rfd, pathname, O_PATH|O_DIRECTORY);
-		if (rfd < 0)
-			return rfd;
-	}
+	rfd = (pathname && *pathname) ? openat(dirfd, pathname, O_PATH|O_DIRECTORY) : dup(dirfd);
+	if (rfd < 0)
+		return rfd;
+
 	if (wgt->rootfd >= 0)
 		close(wgt->rootfd);
 	wgt->rootfd = rfd;
@@ -147,6 +145,18 @@ int wgt_connectat(struct wgt *wgt, int dirfd, const char *pathname)
 int wgt_connect(struct wgt *wgt, const char *pathname)
 {
 	return wgt_connectat(wgt, AT_FDCWD, pathname);
+}
+
+struct wgt *wgt_createat(int dirfd, const char *pathname)
+{
+	struct wgt *wgt = wgt_create();
+	if (wgt) {
+		if (wgt_connectat(wgt, dirfd, pathname)) {
+			wgt_unref(wgt);
+			wgt = NULL;
+		}
+	}
+	return wgt;
 }
 
 int wgt_is_connected(struct wgt *wgt)

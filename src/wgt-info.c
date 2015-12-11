@@ -334,7 +334,7 @@ static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
 	}
 }
 
-struct wgt_info *wgt_info_get(struct wgt *wgt, int icons, int features, int preferences)
+struct wgt_info *wgt_info_create(struct wgt *wgt, int icons, int features, int preferences)
 {
 	int rc;
 	struct wgt_info *result;
@@ -366,9 +366,28 @@ struct wgt_info *wgt_info_get(struct wgt *wgt, int icons, int features, int pref
 	return result;
 }
 
+struct wgt_info *wgt_info_createat(int dirfd, const char *pathname, int icons, int features, int preferences)
+{
+	struct wgt_info *result = NULL;
+	struct wgt *wgt = wgt_createat(dirfd, pathname);
+	if (wgt) {
+		result = wgt_info_create(wgt, icons, features, preferences);
+		wgt_unref(wgt);
+	}
+	return result;
+}
+
 const struct wgt_desc *wgt_info_desc(struct wgt_info *ifo)
 {
+	assert(ifo);
 	return &ifo->desc;
+}
+
+struct wgt *wgt_info_wgt(struct wgt_info *ifo)
+{
+	assert(ifo);
+	assert(ifo->wgt);
+	return ifo->wgt;
 }
 
 void wgt_info_addref(struct wgt_info *ifo)
