@@ -423,3 +423,21 @@ void wgt_info_dump(struct wgt_info *ifo, int fd, const char *prefix)
 	}
 }
 
+const struct wgt_desc_feature *wgt_info_feature(struct wgt_info *ifo, const char *name)
+{
+	const struct wgt_desc_feature *result = ifo->desc.features;
+	while(result && strcmp(result->name, name))
+		result = result->next;
+	return result;
+}
+
+const char *wgt_info_param(const struct wgt_desc_feature *feature, const char *name)
+{
+	const struct wgt_desc_param *param = feature->params;
+	while(param) {
+		if (0 == strcmp(name, param->name))
+			return param->value;
+	}
+	return NULL;
+}
+

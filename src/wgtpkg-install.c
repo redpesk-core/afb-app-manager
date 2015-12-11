@@ -19,33 +19,55 @@
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "verbose.h"
 #include "wgtpkg.h"
 #include "wgt.h"
 #include "wgt-info.h"
+#include "secmgr-wrap.h"
+
+static int check_defined(const void *data, const char *name)
+{
+	if (data)
+		return 0;
+	syslog(LOG_ERR, "widget has no defined '%s' (temporary constraints)", name);
+	errno = EINVAL;
+	return -1;
+}
+
+static int check_valid_string(const char *value, const char *name)
+{
+	int pos;
+	char c;
+
+	if (check_defined(value, name))
+		return -1;
+	pos = 0;
+	c = value[pos];
+	while(c) {
+		if (!isalnum(c) && !strchr(".-_", c)) {
+			syslog(LOG_ERR, "forbidden char %c in '%s' -> '%s' (temporary constraints)", c, name, value);
+			errno = EINVAL;
+			return -1;			
+		}
+		c = value[++pos];
+	}
+	return 0;
+}
 
 static int check_temporary_constraints(const struct wgt_desc *desc)
 {
-	if (!desc->icons) {
-		syslog(LOG_ERR, "widget has not icon defined (temporary constraints)");
-		errno = EINVAL;
-		return -1;
-	}
+	int result = check_valid_string(desc->id, "id");
+	result |= check_valid_string(desc->version, "version");
+	result |= check_defined(desc->icons, "icon");
+	result |= check_defined(desc->content_src, "content");
+	if (result)
+		return result;
 	if (desc->icons->next) {
 		syslog(LOG_ERR, "widget has more than one icon defined (temporary constraints)");
 		errno = EINVAL;
-		return -1;
-	}
-	if (!desc->content_src) {
-		syslog(LOG_ERR, "widget has not content defined (temporary constraints)");
-		errno = EINVAL;
-		return -1;
-	}
-	if (!desc->content_type) {
-		syslog(LOG_ERR, "widget has not type for its content (temporary constraints)");
-		errno = EINVAL;
-		return -1;
+		result = -1;
 	}
 	return 0;
 }
@@ -70,37 +92,37 @@ static int check_widget(const struct wgt_desc *desc)
 {
 	int result;
 	const struct wgt_desc_feature *feature;
-	const char *name;
 
 	result = check_temporary_constraints(desc);
 	feature = desc->features;
 	while(feature) {
-		name = feature->name;
-		if (0 == strcmp(name, AGLWIDGET)) {
-			
-		} else {
-			if (!check_permissions(feature->name, feature->required))
-				result = -1;
-		}
+		if (!check_permissions(feature->name, feature->required))
+			result = -1;
 		feature = feature->next;
 	}
 	return result;
 }
 
-static int place(const char *root, const char *appid, const char *version, int force)
+static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 {
 	char newdir[PATH_MAX];
 	int rc;
 
-	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, appid, version);
+	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->version);
 	if (rc >= sizeof newdir) {
-		syslog(LOG_ERR, "path to long: %s/%s/%s", root, appid, version);
+		syslog(LOG_ERR, "path to long: %s/%s/%s", root, desc->id, desc->version);
 		errno = EINVAL;
 		return -1;
 	}
 
-	rc = move_workdir(newdir, 1, force);
-	return rc;
+	return move_workdir(newdir, 1, force);
+}
+
+static int install_security(struct wgt_info *ifo)
+{
+	int rc;
+
+	rc = secmgr_init(wgt_info_desc(ifo)->
 }
 
 /* install the widget of the file */
@@ -131,10 +153,11 @@ void install_widget(const char *wgtfile, const char *root, int force)
 	if (check_widget(desc))
 		goto error3;
 
-/*
-	if (check_and_place())
-		goto error2;
-*/	
+	if (move_widget(root, desc, force))
+		goto error3;
+
+	
+	
 	return;
 
 error3:

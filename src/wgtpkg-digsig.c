@@ -188,17 +188,36 @@ error:
 
 static int check_references(xmlNodePtr sinfo)
 {
+	unsigned int i, n, flags;
+	struct filedesc *f;
+	int result;
 	xmlNodePtr elem;
 
+	result = 0;
 	elem = sinfo->children;
 	while (elem != NULL) {
 		if (is_element(elem, "Reference"))
 			if (check_one_reference(elem))
-				return -1;
+				result = -1;
 		elem = elem->next;
 	}
-	return 0;
+
+	n = file_count();
+	i = 0;
+	while(i < n) {
+		f = file_of_index(i++);
+		if (f->type == type_file) {
+			flags = f->flags;
+			if (!(flags & (flag_signature | flag_referenced))) {
+				syslog(LOG_ERR, "file not referenced in signature", f->name);
+				result = -1;
+			}
+		}
+	}
+
+	return result;
 }
+
 
 static int get_certificates(xmlNodePtr kinfo)
 {

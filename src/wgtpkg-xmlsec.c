@@ -95,17 +95,28 @@ static void errors_cb(const char *file, int line, const char *func, const char *
 }
 
 /* fills database with trusted keys */
-static int fill_trusted_keys()
+static int fill_trusted_keys_file(const char *file)
+{
+	int err = xmlSecCryptoAppKeysMngrCertLoad(keymgr, file, xmlSecKeyDataFormatPem, xmlSecKeyDataTypeTrusted);
+	if (err < 0) {
+		syslog(LOG_ERR, "xmlSecCryptoAppKeysMngrCertLoadMemory failed for %s", file);
+		return -1;
+	}
+	return 0;
+}
+
+/* fills database with trusted keys */
+static int fill_trusted_keys_dir(const char *directory)
 {
 	int err;
 	DIR *dir;
 	struct dirent *ent;
 	char path[PATH_MAX], *e;
 
-	e = stpcpy(path, CA_ROOT_DIRECTORY);
+	e = stpcpy(path, directory);
 	dir = opendir(path);
 	if (!dir) {
-		syslog(LOG_ERR, "opendir %s failed in fill_trusted_keys", path);
+		syslog(LOG_ERR, "opendir %s failed in fill_trusted_keys_dir", path);
 		return -1;
 	}
 
@@ -114,9 +125,8 @@ static int fill_trusted_keys()
 	while (ent != NULL) {
 		if (ent->d_type == DT_REG) {
 			strcpy(e, ent->d_name);
-			err = xmlSecCryptoAppKeysMngrCertLoad(keymgr, path, xmlSecKeyDataFormatPem, xmlSecKeyDataTypeTrusted);
+			err = fill_trusted_keys_file(path);
 			if (err < 0) {
-				syslog(LOG_ERR, "xmlSecCryptoAppKeysMngrCertLoadMemory failed for %s", path);
 				closedir(dir);
 				return -1;
 			}
@@ -180,7 +190,7 @@ int xmlsec_init()
 		syslog(LOG_ERR, "xmlSecCryptoAppDefaultKeysMngrInit failed.");
 		goto end;
 	}
-	fill_trusted_keys();
+	fill_trusted_keys_dir(CA_ROOT_DIRECTORY);
 
 	initstatus = 0;
 end:
