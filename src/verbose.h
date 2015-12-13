@@ -14,11 +14,20 @@
  limitations under the License.
 */
 
-
+#if !defined(NDEBUG)
+#include <syslog.h>
 extern int verbosity;
-#define warning(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
-#define warning(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
-#define notice(...)  do{if(verbosity)syslog(LOG_NOTICE,__VA_ARGS__);}while(0)
-#define info(...)    do{if(verbosity)syslog(LOG_INFO,__VA_ARGS__);}while(0)
-#define debug(...)   do{if(verbosity>1)syslog(LOG_DEBUG,__VA_ARGS__);}while(0)
-
+#define ERROR(...)   syslog(LOG_ERR,__VA_ARGS__)
+#define WARNING(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
+#define NOTICE(...)  do{if(verbosity)syslog(LOG_NOTICE,__VA_ARGS__);}while(0)
+#define INFO(...)    do{if(verbosity)syslog(LOG_INFO,__VA_ARGS__);}while(0)
+#define DEBUG(...)   do{if(verbosity>1)syslog(LOG_DEBUG,__VA_ARGS__);}while(0)
+#else
+#include <syslog.h>
+extern void verbose_error(const char *file, int line);
+#define ERROR(...)   verbose_error(__FILE__,__LINE__)
+#define WARNING(...) do{/*nothing*/}while(0)
+#define NOTICE(...)  do{/*nothing*/}while(0)
+#define INFO(...)    do{/*nothing*/}while(0)
+#define DEBUG(...)   do{/*nothing*/}while(0)
+#endif

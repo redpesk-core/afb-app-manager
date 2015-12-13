@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 struct fdb {
@@ -95,7 +96,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 	/* allocations */
 	grow = realloc(allfiles.files, (allfiles.count + 1) * sizeof(struct filedesc *));
 	if (grow == NULL) {
-		syslog(LOG_ERR, "realloc failed in get_filedesc");
+		ERROR("realloc failed in get_filedesc");
 		return NULL;
 	}
 	allfiles.files = grow;
@@ -103,7 +104,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 	if (sig) {
 		grow = realloc(allsignatures.files, (allsignatures.count + 1) * sizeof(struct filedesc *));
 		if (grow == NULL) {
-			syslog(LOG_ERR, "second realloc failed in get_filedesc");
+			ERROR("second realloc failed in get_filedesc");
 			return NULL;
 		}
 		allsignatures.files = grow;
@@ -111,7 +112,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 
 	result = malloc(sizeof(struct filedesc) + strlen(name));
 	if (!result) {
-		syslog(LOG_ERR, "calloc failed in get_filedesc");
+		ERROR("calloc failed in get_filedesc");
 		return NULL;
 	}
 
@@ -149,7 +150,7 @@ static struct filedesc *file_add(const char *name, enum entrytype type)
 	else if (desc->type == type_unset)
 		desc->type = type;
 	else {
-		syslog(LOG_ERR, "redeclaration of %s in file_add", name);
+		ERROR("redeclaration of %s in file_add", name);
 		errno = EEXIST;
 		desc = NULL;
 	}
@@ -228,7 +229,7 @@ struct filedesc *create_signature(unsigned int number)
 		len = asprintf(&name, "%s%u%s", distributor_file_prefix, number, distributor_file_suffix);
 
 	if (len < 0)
-		syslog(LOG_ERR, "asprintf failed in create_signature");
+		ERROR("asprintf failed in create_signature");
 	else {
 		assert(len > 0);
 		result = file_of_name(name);
@@ -256,12 +257,12 @@ static int fill_files_rec(char name[PATH_MAX], int offset)
 
 	fd = openat(workdirfd, offset ? name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
-		syslog(LOG_ERR, "openat %.*s failed in fill_files_rec", offset, name);
+		ERROR("openat %.*s failed in fill_files_rec", offset, name);
 		return -1;
 	}
 	dir = fdopendir(fd);
 	if (!dir) {
-		syslog(LOG_ERR, "opendir %.*s failed in fill_files_rec", offset, name);
+		ERROR("opendir %.*s failed in fill_files_rec", offset, name);
 		close(fd);
 		return -1;
 	}
@@ -276,7 +277,7 @@ static int fill_files_rec(char name[PATH_MAX], int offset)
 			;
 		else if (offset + len >= PATH_MAX) {
 			closedir(dir);
-			syslog(LOG_ERR, "name too long in fill_files_rec");
+			ERROR("name too long in fill_files_rec");
 			errno = ENAMETOOLONG;
 			return -1;
 		} else {

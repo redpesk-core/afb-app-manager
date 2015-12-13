@@ -79,10 +79,10 @@ int main(int ac, char **av)
 			verbosity++;
 			break;
 		case ':':
-			syslog(LOG_ERR, "missing argument value");
+			ERROR("missing argument value");
 			return 1;
 		default:
-			syslog(LOG_ERR, "unrecognized option");
+			ERROR("unrecognized option");
 			return 1;
 		}
 	}
@@ -92,7 +92,7 @@ int main(int ac, char **av)
 	for (i = 0 ; av[i] != NULL ; i++) {
 		wpath = realpath(av[i], NULL);
 		if (wpath == NULL) {
-			syslog(LOG_ERR, "error while getting realpath of %dth widget: %s", i+1, av[i]);
+			ERROR("error while getting realpath of %dth widget: %s", i+1, av[i]);
 			return 1;
 		}
 		av[i] = wpath;
@@ -120,11 +120,11 @@ static int check_and_show()
 /* install the widget of the file */
 static void show(const char *wgtfile)
 {
-	notice("-- INFO for widget %s --", wgtfile);
+	NOTICE("-- INFO for widget %s --", wgtfile);
 
 	/* workdir */
 	if (make_workdir_base("/tmp", "UNPACK", 0)) {
-		syslog(LOG_ERR, "failed to create a working directory");
+		ERROR("failed to create a working directory");
 		return;
 	}
 

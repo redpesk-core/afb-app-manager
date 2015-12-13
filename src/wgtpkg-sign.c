@@ -48,7 +48,7 @@ static unsigned int get_number(const char *value)
 
 	val = strtoul(value, &end, 10);
 	if (*end || 0 == val || val >= UINT_MAX || *value == '-') {
-		syslog(LOG_ERR, "bad number value %s", value);
+		ERROR("bad number value %s", value);
 		exit(1);
 	}
 	return (unsigned int)val;
@@ -103,7 +103,7 @@ int main(int ac, char **av)
 		switch (i) {
 		case 'c':
 			if (ncert == MAXCERT) {
-				syslog(LOG_ERR, "maximum count of certificates reached");
+				ERROR("maximum count of certificates reached");
 				return 1;
 			}
 			certfiles[ncert++] = optarg;
@@ -121,14 +121,14 @@ int main(int ac, char **av)
 			verbosity++;
 			break;
 		case ':':
-			syslog(LOG_ERR, "missing argument");
+			ERROR("missing argument");
 			return 1;
 		default:
-			syslog(LOG_ERR, "unrecognized option");
+			ERROR("unrecognized option");
 			return 1;
 		}
 		if (*x != NULL) {
-			syslog(LOG_ERR, "option set twice");
+			ERROR("option set twice");
 			return 1;
 		}
 		*x = optarg;
@@ -136,12 +136,12 @@ int main(int ac, char **av)
 
 	/* remaining arguments and final checks */
 	if (optind >= ac) {
-		syslog(LOG_ERR, "no directory set");
+		ERROR("no directory set");
 		return 1;
 	}
 	directory = av[optind++];
 	if (optind < ac) {
-		syslog(LOG_ERR, "extra parameters found");
+		ERROR("extra parameters found");
 		return 1;
 	}
 
@@ -153,20 +153,20 @@ int main(int ac, char **av)
 
 	/* check values */
 	if (stat(directory, &s)) {
-		syslog(LOG_ERR, "can't find directory %s", directory);
+		ERROR("can't find directory %s", directory);
 		return 1;
 	}
 	if (!S_ISDIR(s.st_mode)) {
-		syslog(LOG_ERR, "%s isn't a directory", directory);
+		ERROR("%s isn't a directory", directory);
 		return 1;
 	}
 	if (access(keyfile, R_OK) != 0) {
-		syslog(LOG_ERR, "can't access private key %s", keyfile);
+		ERROR("can't access private key %s", keyfile);
 		return 1;
 	}
 	for(i = 0 ; i < ncert ; i++) 
 		if (access(certfiles[i], R_OK) != 0) {
-			syslog(LOG_ERR, "can't access certificate %s", certfiles[i]);
+			ERROR("can't access certificate %s", certfiles[i]);
 			return 1;
 		}
 
@@ -176,7 +176,7 @@ int main(int ac, char **av)
 
 
 	/* compute absolutes paths */
-#define rp(x) do { char *p = realpath(x, NULL); if (p != NULL) x = p; else { syslog(LOG_ERR, "realpath failed for %s",x); return 1; } } while(0)
+#define rp(x) do { char *p = realpath(x, NULL); if (p != NULL) x = p; else { ERROR("realpath failed for %s",x); return 1; } } while(0)
 	rp(keyfile);
 	for(i = 0 ; i < ncert ; i++) 
 		rp(certfiles[i]);
@@ -195,11 +195,11 @@ int main(int ac, char **av)
 		for (number = 1; get_signature(number) != NULL ; number++);
 
 	if (!force && get_signature(number) != NULL) {
-		syslog(LOG_ERR, "can't overwrite existing signature %s", get_signature(number)->name);
+		ERROR("can't overwrite existing signature %s", get_signature(number)->name);
 		return 1;
 	}
 
-	notice("-- SIGNING content of directory %s for number %u", directory, number);
+	NOTICE("-- SIGNING content of directory %s for number %u", directory, number);
 
 	certfiles[ncert] = NULL;
 	return !!create_digsig(number, keyfile, (const char**)certfiles);

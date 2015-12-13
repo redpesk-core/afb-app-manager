@@ -90,17 +90,17 @@ int main(int ac, char **av)
 			grant_permission_list(optarg);
 			break;
 		case ':':
-			syslog(LOG_ERR, "missing argument value");
+			ERROR("missing argument value");
 			return 1;
 		default:
-			syslog(LOG_ERR, "unrecognized option");
+			ERROR("unrecognized option");
 			return 1;
 		}
 	}
 
 	ac -= optind;
 	if (ac < 2) {
-		syslog(LOG_ERR, "arguments are missing");
+		ERROR("arguments are missing");
 		return 1;
 	}
 
@@ -109,7 +109,7 @@ int main(int ac, char **av)
 	for (i = 0 ; av[i] != NULL ; i++) {
 		wpath = realpath(av[i], NULL);
 		if (wpath == NULL) {
-			syslog(LOG_ERR, "error while getting realpath of %dth widget: %s", i+1, av[i]);
+			ERROR("error while getting realpath of %dth widget: %s", i+1, av[i]);
 			return 1;
 		}
 		av[i] = wpath;

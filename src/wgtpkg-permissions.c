@@ -20,6 +20,7 @@
 #include <syslog.h>
 #include <string.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 struct permission {
@@ -103,7 +104,7 @@ void grant_permission_list(const char *list)
 		iter[n] = 0;
 		p = add_permission(iter);
 		if (!p) {
-			syslog(LOG_ERR, "Can't allocate permission");
+			ERROR("Can't allocate permission");
 			exit(1);
 		}
 		p->granted = 1;

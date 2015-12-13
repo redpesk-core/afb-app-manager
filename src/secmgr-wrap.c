@@ -21,6 +21,7 @@
 
 #include <security-manager.h>
 
+#include "verbose.h"
 #include "secmgr-wrap.h"
 
 static app_inst_req *request = NULL;
@@ -45,15 +46,15 @@ int secmgr_init(const char *id)
 	assert(request == NULL);
 	rc = security_manager_app_inst_req_new(&request);
 	if (rc != SECURITY_MANAGER_SUCCESS)
-		syslog(LOG_ERR, "security_manager_app_inst_req_new failed");
+		ERROR("security_manager_app_inst_req_new failed");
 	else {
 		rc = security_manager_app_inst_req_set_pkg_id(request, id);
 		if (rc != SECURITY_MANAGER_SUCCESS)
-			syslog(LOG_ERR, "security_manager_app_inst_req_set_pkg_id failed");
+			ERROR("security_manager_app_inst_req_set_pkg_id failed");
 		else {
 			rc = security_manager_app_inst_req_set_app_id(request, id);
 			if (rc != SECURITY_MANAGER_SUCCESS)
-				syslog(LOG_ERR, "security_manager_app_inst_req_set_app_id failed");
+				ERROR("security_manager_app_inst_req_set_app_id failed");
 		}
 	}
 	if (rc != SECURITY_MANAGER_SUCCESS)
@@ -73,8 +74,8 @@ int secmgr_install()
 	assert(request != NULL);
 	rc = security_manager_app_install(request);
 	if (rc != SECURITY_MANAGER_SUCCESS)
-		syslog(LOG_ERR, "security_manager_app_install failed");
-	security_manager_app_inst_req_free(request);
+		ERROR("security_manager_app_install failed");
+	secmgr_cancel();
 	return retcode(rc);
 }
 
@@ -84,7 +85,7 @@ int secmgr_permit(const char *permission)
 	assert(request != NULL);
 	rc = security_manager_app_inst_req_add_privilege(request, permission);
 	if (rc != SECURITY_MANAGER_SUCCESS)
-		syslog(LOG_ERR, "security_manager_app_inst_add_privilege %s failed", permission);
+		ERROR("security_manager_app_inst_add_privilege %s failed", permission);
 	return retcode(rc);
 }
 
@@ -94,7 +95,7 @@ static int addpath(const char *pathname, enum app_install_path_type type)
 	assert(request != NULL);
 	rc = security_manager_app_inst_req_add_path(request, pathname, type);
 	if (rc != SECURITY_MANAGER_SUCCESS)
-		syslog(LOG_ERR, "security_manager_app_inst_add_path %s failed", pathname);
+		ERROR("security_manager_app_inst_add_path %s failed", pathname);
 	return retcode(rc);
 }
 

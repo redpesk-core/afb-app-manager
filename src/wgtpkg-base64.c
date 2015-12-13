@@ -19,6 +19,7 @@
 #include <string.h>
 #include <syslog.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 static char tob64(char x)
@@ -38,12 +39,12 @@ char *base64encw(const char *buffer, int length, int width)
 	char *result;
 
 	if (width == 0 || width % 4) {
-		syslog(LOG_ERR, "bad width in base64enc");
+		ERROR("bad width in base64enc");
 		return NULL;
 	}
 	result = malloc(2 + 4 * ((length + 2) / 3) + (length / width));
 	if (result == NULL) {
-		syslog(LOG_ERR, "malloc failed in base64enc");
+		ERROR("malloc failed in base64enc");
 		return NULL;
 	}
 	in = out = 0;
@@ -108,7 +109,7 @@ int base64dec(const char *buffer, char **output)
 	len = strlen(buffer);
 	result = malloc(3 * ((3 + len) / 4));
 	if (result == NULL) {
-		syslog(LOG_ERR, "malloc failed in base64dec");
+		ERROR("malloc failed in base64dec");
 		return -1;
 	}
 	in = out = 0;
@@ -116,7 +117,7 @@ int base64dec(const char *buffer, char **output)
 		in++;
 	while (buffer[in]) {
 		if (in + 4 > len) {
-			syslog(LOG_ERR, "unexpected input size in base64dec");
+			ERROR("unexpected input size in base64dec");
 			free(result);
 			return -1;
 		}
@@ -126,12 +127,12 @@ int base64dec(const char *buffer, char **output)
 		x3 = (unsigned char)fromb64(buffer[in+3]);
 		in += 4;
 		if (x0 == 'E' || x1 == 'E' || x2 == 'E' || x3 == 'E') {
-			syslog(LOG_ERR, "unexpected input character in base64dec");
+			ERROR("unexpected input character in base64dec");
 			free(result);
 			return -1;
 		}
 		if (x0 == '@' || x1 == '@' || (x2 == '@' && x3 != '@')) {
-			syslog(LOG_ERR, "unexpected termination character in base64dec");
+			ERROR("unexpected termination character in base64dec");
 			free(result);
 			return -1;
 		}
@@ -145,7 +146,7 @@ int base64dec(const char *buffer, char **output)
 		else if (!buffer[in])
 			out += 1 + (x2 != '@');
 		else {
-			syslog(LOG_ERR, "unexpected continuation in base64dec");
+			ERROR("unexpected continuation in base64dec");
 			free(result);
 			return -1;
 		}

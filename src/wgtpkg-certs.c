@@ -18,6 +18,7 @@
 #include <syslog.h>
 #include <openssl/x509.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 struct x509l {
@@ -31,7 +32,7 @@ static int add_certificate_x509(X509 *x)
 {
 	X509 **p = realloc(certificates.certs, (certificates.count + 1) * sizeof(X509*));
 	if (!p) {
-		syslog(LOG_ERR, "reallocation failed for certificate");
+		ERROR("reallocation failed for certificate");
 		return -1;
 	}
 	certificates.certs = p;
@@ -48,7 +49,7 @@ static int add_certificate_bin(const char *bin, int len)
 	while (b < e) {
 		X509 *x =  d2i_X509(NULL, (const unsigned char **)&b, e-b);
 		if (x == NULL) {
-			syslog(LOG_ERR, "d2i_X509 failed");
+			ERROR("d2i_X509 failed");
 			return -1;
 		}
 		rc = add_certificate_x509(x);

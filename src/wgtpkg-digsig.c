@@ -83,7 +83,7 @@ static xmlNodePtr search_for(const char *attrname, const char *value)
 		val = xmlGetProp(iter, attrname);
 		if (val != NULL && !strcmp(val, value)) {
 			if (result != NULL) {
-				syslog(LOG_ERR, "duplicated %s %s", attrname, value);
+				ERROR("duplicated %s %s", attrname, value);
 				free(val);
 				return NULL;
 			}
@@ -105,7 +105,7 @@ static xmlNodePtr search_for(const char *attrname, const char *value)
 		iter = next;
 	}
 	if (result == NULL)
-		syslog(LOG_ERR, "node of %s '%s' not found", attrname, value);
+		ERROR("node of %s '%s' not found", attrname, value);
 	return result;
 }
 
@@ -130,30 +130,30 @@ static int check_one_reference(xmlNodePtr ref)
 	/* get the uri */
 	uri = xmlGetProp(ref, "URI");
 	if (uri == NULL) {
-		syslog(LOG_ERR, "attribute URI of element <Reference> not found");
+		ERROR("attribute URI of element <Reference> not found");
 		goto error;
 	}
 
 	/* parse the uri */
 	u = xmlParseURI(uri);
 	if (!u) {
-		syslog(LOG_ERR, "error while parsing URI %s", uri);
+		ERROR("error while parsing URI %s", uri);
 		goto error2;
 	}
 
 	/* check that unexpected parts are not there */
 	if (u->scheme || u->opaque || u->authority || u->server || u->user || u->query) {
-		syslog(LOG_ERR, "unexpected uri component in %s", uri);
+		ERROR("unexpected uri component in %s", uri);
 		goto error3;
 	}
 
 	/* check path and fragment */
 	if (!u->path && !u->fragment) {
-		syslog(LOG_ERR, "invalid uri %s", uri);
+		ERROR("invalid uri %s", uri);
 		goto error3;
 	}
 	if (u->path && u->fragment) {
-		syslog(LOG_ERR, "not allowed to sign foreign fragment in %s", uri);
+		ERROR("not allowed to sign foreign fragment in %s", uri);
 		goto error3;
 	}
 
@@ -161,15 +161,15 @@ static int check_one_reference(xmlNodePtr ref)
 		/* check that the path is valid */
 		fdesc = file_of_name(u->path);
 		if (fdesc == NULL) {
-			syslog(LOG_ERR, "reference to unknown file %s", u->path);
+			ERROR("reference to unknown file %s", u->path);
 			goto error3;
 		}
 		if (fdesc->type != type_file) {
-			syslog(LOG_ERR, "reference to directory %s", u->path);
+			ERROR("reference to directory %s", u->path);
 			goto error3;
 		}
 		if ((fdesc->flags & flag_distributor_signature) != 0) {
-			syslog(LOG_ERR, "reference to signature %s", u->path);
+			ERROR("reference to signature %s", u->path);
 			goto error3;
 		}
 		fdesc->flags |= flag_referenced;
@@ -209,7 +209,7 @@ static int check_references(xmlNodePtr sinfo)
 		if (f->type == type_file) {
 			flags = f->flags;
 			if (!(flags & (flag_signature | flag_referenced))) {
-				syslog(LOG_ERR, "file not referenced in signature: %s", f->name);
+				ERROR("file not referenced in signature: %s", f->name);
 				result = -1;
 			}
 		}
@@ -233,7 +233,7 @@ static int get_certificates(xmlNodePtr kinfo)
 				if (is_element(n2, "X509Certificate")) {
 					b = xmlNodeGetContent(n2);
 					if (b == NULL) {
-						syslog(LOG_ERR, "xmlNodeGetContent of X509Certificate failed");
+						ERROR("xmlNodeGetContent of X509Certificate failed");
 						return -1;
 					}
 					rc = add_certificate_b64(b);
@@ -259,19 +259,19 @@ static int checkdocument()
 
 	rootsig = xmlDocGetRootElement(document);
 	if (!is_node(rootsig, "Signature")) {
-		syslog(LOG_ERR, "root element <Signature> not found");
+		ERROR("root element <Signature> not found");
 		goto error;
 	}
 
 	sinfo = next_element(rootsig->children);
 	if (!is_node(sinfo, "SignedInfo")) {
-		syslog(LOG_ERR, "element <SignedInfo> not found");
+		ERROR("element <SignedInfo> not found");
 		goto error;
 	}
 
 	svalue = next_element(sinfo->next);
 	if (!is_node(svalue, "SignatureValue")) {
-		syslog(LOG_ERR, "element <SignatureValue> not found");
+		ERROR("element <SignatureValue> not found");
 		goto error;
 	}
 
@@ -303,7 +303,7 @@ int verify_digsig(struct filedesc *fdesc)
 	int res, fd;
 
 	assert ((fdesc->flags & flag_signature) != 0);
-	debug("-- checking file %s",fdesc->name);
+	DEBUG("-- checking file %s",fdesc->name);
 
 	/* reset the flags */
 	file_clear_flags();
@@ -312,19 +312,19 @@ int verify_digsig(struct filedesc *fdesc)
 	/* reads and xml parses the signature file */
 	fd = openat(workdirfd, fdesc->name, O_RDONLY);
 	if (fd < 0) {
-		syslog(LOG_ERR, "cant't open file %s", fdesc->name);
+		ERROR("cant't open file %s", fdesc->name);
 		return -1;
 	}
 	document = xmlReadFd(fd, fdesc->name, NULL, 0);
 	close(fd);
 	if (document == NULL) {
-		syslog(LOG_ERR, "xml parse of file %s failed", fdesc->name);
+		ERROR("xml parse of file %s failed", fdesc->name);
 		return -1;
 	}
 
 	res = checkdocument();
 	if (res)
-		syslog(LOG_ERR, "previous error was during check of file %s", fdesc->name);
+		ERROR("previous error was during check of file %s", fdesc->name);
 
 	xmlFreeDoc(document);
 	return res;
@@ -374,17 +374,17 @@ int create_digsig(int index, const char *key, const char **certs)
 	/* save the doc as file */
 	fd = openat(workdirfd, fdesc->name, O_WRONLY|O_CREAT|O_TRUNC, 0644);
 	if (fd < 0) {
-		syslog(LOG_ERR, "cant open %s for write", fdesc->name);
+		ERROR("cant open %s for write", fdesc->name);
 		goto error2;
 	}
 	ctx = xmlSaveToFd(fd, NULL, XML_SAVE_FORMAT);
 	if (!ctx) {
-		syslog(LOG_ERR, "xmlSaveToFd failed for %s", fdesc->name);
+		ERROR("xmlSaveToFd failed for %s", fdesc->name);
 		goto error3;
 	}
 	len = xmlSaveDoc(ctx, doc);
 	if (len < 0) {
-		syslog(LOG_ERR, "xmlSaveDoc to %s failed", fdesc->name);
+		ERROR("xmlSaveDoc to %s failed", fdesc->name);
 		goto error4;
 	}
 

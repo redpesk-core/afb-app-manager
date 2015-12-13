@@ -24,6 +24,7 @@
 #include <libxml/tree.h>
 #include <libxml/uri.h>
 
+#include "verbose.h"
 #include "wgt.h"
 #include "wgt-config.h"
 
@@ -115,13 +116,13 @@ int wgt_config_open(struct wgt *wgt)
 	assert(!configxml);
 	fd = wgt_open_read(wgt, wgt_config_string_xml_file);
 	if (fd < 0) {
-		syslog(LOG_ERR, "can't open config file %s", wgt_config_string_xml_file);
+		ERROR("can't open config file %s", wgt_config_string_xml_file);
 		return fd;
 	}
 	configxml = xmlReadFd(fd, wgt_config_string_xml_file, NULL, 0);
 	close(fd);
 	if (configxml == NULL) {
-		syslog(LOG_ERR, "xml parse of config file %s failed", wgt_config_string_xml_file);
+		ERROR("xml parse of config file %s failed", wgt_config_string_xml_file);
 		return -1;
 	}
 	assert(xmlDocGetRootElement(configxml));

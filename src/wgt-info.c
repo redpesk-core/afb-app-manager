@@ -83,7 +83,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 
 	node = wgt_config_widget();
 	if (!node) {
-		warning("no widget");
+		WARNING("no widget");
 		errno = EINVAL;
 		return -1;
 	}
@@ -113,7 +113,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	node = wgt_config_content();
 	desc->content_src = optprop(node, wgt_config_string_src);
 	if (node && desc->content_src == NULL) {
-		warning("content without src");
+		WARNING("content without src");
 		errno = EINVAL;
 		return -1;
 	}
@@ -137,7 +137,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 			*icontail = icon;
 
 			if (icon->src == NULL) {
-				warning("icon without src");
+				WARNING("icon without src");
 				errno = EINVAL;
 				return -1;
 			}
@@ -163,7 +163,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 			*featuretail = feature;
 
 			if (feature->name == NULL) {
-				warning("feature without name");
+				WARNING("feature without name");
 				errno = EINVAL;
 				return -1;
 			}
@@ -183,7 +183,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				*paramtail = param;
 
 				if (param->name == NULL || param->value == NULL) {
-					warning("param without name or value");
+					WARNING("param without name or value");
 					errno = EINVAL;
 					return -1;
 				}
@@ -214,7 +214,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 			preference->next = NULL;
 
 			if (preference->name == NULL) {
-				warning("preference without name");
+				WARNING("preference without name");
 				errno = EINVAL;
 				return -1;
 			}
@@ -416,7 +416,7 @@ void wgt_info_dump(struct wgt_info *ifo, int fd, const char *prefix)
 	assert(ifo);
 	f = fdopen(fd, "w");
 	if (f == NULL)
-		warning("can't fdopen in wgt_info_dump");
+		WARNING("can't fdopen in wgt_info_dump");
 	else {
 		dump_desc(&ifo->desc, f, prefix);
 		fclose(f);

@@ -23,17 +23,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <wgt.h>
+#include <json.h>
 
-struct stringset {
-	int count;
-	char **strings;
-};
- 
+#include <wgt-info.h>
 
 struct appfwk {
 	int refcount;
-	struct stringset paths;
+	int nrroots;
+	char **roots;
+	struct json_object *applications;
 };
 
 struct appfwk *appfwk_create()
@@ -43,8 +41,9 @@ struct appfwk *appfwk_create()
 		errno = ENOMEM;
 	else {
 		appfwk->refcount = 1;
-		appfwk->paths.count = 0;
-		appfwk->paths.strings = NULL;
+		appfwk->nrroots = 0;
+		appfwk->roots = NULL;
+		appfwk->applications = NULL;
 	}
 	return appfwk;
 }
@@ -59,8 +58,9 @@ void appfwk_unref(struct appfwk *appfwk)
 {
 	assert(appfwk);
 	if (!--appfwk->refcount) {
-		while (appfwk->paths.count)
-			free(appfwk->paths.strings[--appfwk->paths.count]);
+		while (appfwk->nrroots)
+			free(appfwk->roots[--appfwk->nrroots]);
+		free(appfwk->roots);
 		free(appfwk);
 	}
 }
@@ -69,19 +69,23 @@ int appfwk_add_root(struct appfwk *appfwk, const char *path)
 {
 	int i, n;
 	char *r, **roots;
+
 	assert(appfwk);
+
+	/* don't depend on the cwd and unique name */
 	r = realpath(path, NULL);
 	if (!r)
 		return -1;
 
 	/* avoiding duplications */
-	n = appfwk->paths.count;
-	roots = appfwk->paths.strings;
-	for (i = 0 ; i < n ; i++)
+	n = appfwk->nrroots;
+	roots = appfwk->roots;
+	for (i = 0 ; i < n ; i++) {
 		if (!strcmp(r, roots[i])) {
 			free(r);
 			return 0;
 		}
+	}
 
 	/* add */
 	roots = realloc(roots, (n + 1) * sizeof(roots[0]));
@@ -91,63 +95,119 @@ int appfwk_add_root(struct appfwk *appfwk, const char *path)
 		return -1;
 	}
 	roots[n++] = r;
-	appfwk->paths.strings = roots;
-	appfwk->paths.count = n;
+	appfwk->roots = roots;
+	appfwk->nrroots = n;
 	return 0;
 }
 
-struct aea {
-	char *path;
-	char *appver;
-	char *ver;
-	const char *root;
-	const char *appid;
-	const char *version;
-	int (*callback)(struct wgt *wgt, void *data);
-	void *data;
-};
 
-struct appfwk_enumerate_applications_context {
-	const char *dirpath;
-	const char *appid;
-	const char *version;
-	
-	void *data;
-};
-
-inline int testd(int dirfd, struct dirent *e)
+static int json_add(struct json_object *obj, const char *key, struct json_object *val)
 {
-	return e->d_name[0] != '.' || (e->d_name[1] && (e->d_name[1] != '.' || e->d_name[2]));
-}
-
-#include <stdio.h>
-static int aea3(int dirfd, struct aea *aea)
-{
-	printf("aea3 %s *** %s *** %s\n", aea->path, aea->appver, aea->ver);
+	json_object_object_add(obj, key, val);
 	return 0;
 }
 
-static int aea2(int dirfd, struct aea *aea)
+static int json_add_str(struct json_object *obj, const char *key, const char *val)
+{
+	struct json_object *str = json_object_new_string (val ? val : "");
+	return str ? json_add(obj, key, str) : -1;
+}
+
+static int json_add_int(struct json_object *obj, const char *key, int val)
+{
+	struct json_object *v = json_object_new_int (val);
+	return v ? json_add(obj, key, v) : -1;
+}
+
+static struct json_object *read_app_desc(const char *path)
+{
+	struct wgt_info *info;
+	const struct wgt_desc *desc;
+	struct json_object *result;
+	char *appid, *end;
+
+	result = json_object_new_object();
+	if (!result)
+		goto error;
+
+	info = wgt_info_createat(AT_FDCWD, path, 0, 0, 0);
+	if (info == NULL)
+		goto error2;
+	desc = wgt_info_desc(info);
+
+	appid = alloca(2 + strlen(desc->id) + strlen(desc->version));
+	end = stpcpy(appid, desc->id);
+	*end++ = '@';
+	strcpy(end, desc->version);
+
+	if(json_add_str(result, "appid", appid)
+	|| json_add_str(result, "id", desc->id)
+	|| json_add_str(result, "version", desc->version)
+	|| json_add_str(result, "path", path)
+	|| json_add_int(result, "width", desc->width)
+	|| json_add_int(result, "height", desc->height)
+	|| json_add_str(result, "name", desc->name)
+	|| json_add_str(result, "description", desc->description)
+	|| json_add_str(result, "shortname", desc->name_short)
+	|| json_add_str(result, "author", desc->author))
+		goto error3;
+
+	wgt_info_unref(info);
+	return result;
+
+error3:
+	wgt_info_unref(info);
+error2:
+	json_object_put(result);
+error:
+	return NULL;
+}
+
+static int add_appdesc(struct json_object *appset, struct json_object *app)
+{
+	struct json_object *appid;
+
+	if (!json_object_object_get_ex(app, "appid", &appid)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return json_add(appset, json_object_get_string(appid), app);
+}
+
+struct enumdata {
+	char path[PATH_MAX];
+	int length;
+	struct json_object *apps;
+};
+
+static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
 {
 	DIR *dir;
-	int rc, fd;
+	int rc;
+	char *beg, *end;
 	struct dirent entry, *e;
 
-	dir = fdopendir(dirfd);
+	/* opens the directory */
+	dir = opendir(data->path);
 	if (!dir)
 		return -1;
 
-	aea->version = entry.d_name;
+	/* prepare appending entry names */
+	beg = data->path + data->length;
+	*beg++ = '/';
 
+	/* enumerate entries */
 	rc = readdir_r(dir, &entry, &e);
 	while (!rc && e) {
-		if (testd(dirfd, &entry)) {
-			fd = openat(dirfd, entry.d_name, O_DIRECTORY|O_RDONLY);
-			if (fd >= 0) {
-				strcpy(aea->ver, entry.d_name);
-				rc = aea3(fd, aea);			
-				close(fd);
-			}
+		if (entry.d_name[0] != '.' || (entry.d_name[1] && (entry.d_name[1] != '.' || entry.d_name[2]))) {
+			/* prepare callto */
+			end = stpcpy(beg, entry.d_name);
+			data->length = end - data->path;
+			/* call the function */
+			rc = callto(data);
+			if (rc)
+				break;
 		}	
 		rc = readdir_r(dir, &entry, &e);
 	}
@@ -155,70 +215,64 @@ static int aea2(int dirfd, struct aea *aea)
 	return rc;
 }
 
-static int aea1(int dirfd, struct aea *aea)
+static int recordapp(struct enumdata *data)
 {
-	DIR *dir;
-	int rc, fd;
-	struct dirent entry, *e;
+	struct json_object *app;
 
-	dir = fdopendir(dirfd);
-	if (!dir)
-		return -1;
-
-	aea->appid = entry.d_name;
-
-	rc = readdir_r(dir, &entry, &e);
-	while (!rc && e) {
-		if (testd(dirfd, &entry)) {
-			fd = openat(dirfd, entry.d_name, O_DIRECTORY|O_RDONLY);
-			if (fd >= 0) {
-				aea->ver = stpcpy(aea->appver, entry.d_name);
-				*aea->ver++ = '/';
-				rc = aea2(fd, aea);			
-				close(fd);
-			}
-		}	
-		rc = readdir_r(dir, &entry, &e);
+	app = read_app_desc(data->path);
+	if (app != NULL) {
+		if (!add_appdesc(data->apps, app))
+			return 0;
+		json_object_put(app);
 	}
-	closedir(dir);
-	return rc;
+	return -1;
 }
 
-int appfwk_enumerate_applications(struct appfwk *appfwk, int (*callback)(struct wgt *wgt, void *data), void *data)
+/* enumerate the versions */
+static int enumvers(struct enumdata *data)
 {
-	int rc, iroot, nroots;
-	char **roots;
-	int fd;
-	char buffer[PATH_MAX];
-	struct aea aea;
+	int rc = enumentries(data, recordapp);
+	return !rc || errno != ENOTDIR ? 0 : rc;
+}
 
-	aea.callback = callback;
-	aea.data = data;
-	aea.path = buffer;
+/* regenerate the list of applications */
+int appfwk_update_applications(struct appfwk *af)
+{
+	int rc, iroot;
+	struct enumdata edata;
+	struct json_object *oldapps;
 
-	nroots = appfwk->paths.count;
-	roots = appfwk->paths.strings;
-	for (iroot = 0 ; iroot < nroots ; iroot++) {
-		aea.root = roots[iroot];
-		fd = openat(AT_FDCWD, aea.root, O_DIRECTORY|O_RDONLY);
-		if (fd >= 0) {
-			aea.appver = stpcpy(buffer, aea.root);
-			*aea.appver++ = '/';
-			rc = aea1(fd, &aea);
-			close(fd);
+	/* create the result */
+	edata.apps = json_object_new_object();
+	if (edata.apps == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+	/* for each root */
+	for (iroot = 0 ; iroot < af->nrroots ; iroot++) {
+		edata.length = stpcpy(edata.path, af->roots[iroot]) - edata.path;
+		assert(edata.length < sizeof edata.path);
+		/* enumerate the applications */
+		rc = enumentries(&edata, enumvers);
+		if (rc) {
+			json_object_put(edata.apps);
+			return rc;
 		}
 	}
+	/* commit the result */
+	oldapps = af->applications;
+	af->applications = edata.apps;
+	if (oldapps)
+		json_object_put(oldapps);
 	return 0;
 }
-/*
-	struct wgt *wgt;
-		wgt = wgt_create();
-		if (!wgt)
-			return -1;
-		wgt_unref(wgt);
 
-	rfd = AT_FDCWD;
-	if (pathname) {
-		rfd = openat(rfd, pathname, O_PATH|O_DIRECTORY);
-*/
+int main()
+{
+struct appfwk *af = appfwk_create();
+appfwk_add_root(af,"af/apps/");
+appfwk_update_applications(af);
+json_object_to_file("/dev/stdout", af->applications);
+return 0;
+}
 

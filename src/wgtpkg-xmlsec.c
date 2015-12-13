@@ -33,6 +33,7 @@
 #include <xmlsec/io.h>
 
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 static int initstatus;
@@ -59,14 +60,14 @@ static void *file_open_cb(const char *file)
 
 	fdesc = file_of_name(file);
 	if (fdesc == NULL) {
-		syslog(LOG_ERR, "shouldn't open uri %s", file);
+		ERROR("shouldn't open uri %s", file);
 		return NULL;
 	}
 
 	fd = openat(workdirfd, file, O_RDONLY);
 	f = fd < 0 ? NULL : fdopen(fd, "r");
 	if (f == NULL) {
-		syslog(LOG_ERR, "can't open file %s for reading", file);
+		ERROR("can't open file %s for reading", file);
 		if (fd >= 0)
 			close(fd);
 	} else
@@ -91,7 +92,7 @@ static int file_close_cb(void *context)
 /* echo an error message */
 static void errors_cb(const char *file, int line, const char *func, const char *errorObject, const char *errorSubject, int reason, const char *msg)
 {
-	syslog(LOG_ERR, "xmlSec error %3d: %s (subject=\"%s\", object=\"%s\")", reason, msg, errorSubject ? errorSubject : "?", errorObject ? errorObject : "?");
+	ERROR("xmlSec error %3d: %s (subject=\"%s\", object=\"%s\")", reason, msg, errorSubject ? errorSubject : "?", errorObject ? errorObject : "?");
 }
 
 /* fills database with trusted keys */
@@ -99,7 +100,7 @@ static int fill_trusted_keys_file(const char *file)
 {
 	int err = xmlSecCryptoAppKeysMngrCertLoad(keymgr, file, xmlSecKeyDataFormatPem, xmlSecKeyDataTypeTrusted);
 	if (err < 0) {
-		syslog(LOG_ERR, "xmlSecCryptoAppKeysMngrCertLoadMemory failed for %s", file);
+		ERROR("xmlSecCryptoAppKeysMngrCertLoadMemory failed for %s", file);
 		return -1;
 	}
 	return 0;
@@ -116,7 +117,7 @@ static int fill_trusted_keys_dir(const char *directory)
 	e = stpcpy(path, directory);
 	dir = opendir(path);
 	if (!dir) {
-		syslog(LOG_ERR, "opendir %s failed in fill_trusted_keys_dir", path);
+		ERROR("opendir %s failed in fill_trusted_keys_dir", path);
 		return -1;
 	}
 
@@ -150,24 +151,24 @@ int xmlsec_init()
 	initstatus = -1;
 
 	if(xmlSecInit() < 0) {
-		syslog(LOG_ERR, "xmlSecInit failed.");
+		ERROR("xmlSecInit failed.");
 		goto end;
 	}
 
 #ifdef XMLSEC_CRYPTO_DYNAMIC_LOADING
 	if(xmlSecCryptoDLLoadLibrary(XMLSEC_CRYPTO) < 0) {
-		syslog(LOG_ERR, "xmlSecCryptoDLLoadLibrary %s failed.", XMLSEC_CRYPTO);
+		ERROR("xmlSecCryptoDLLoadLibrary %s failed.", XMLSEC_CRYPTO);
 		goto end;
 	}
 #endif
 
 	if(xmlSecCryptoAppInit(NULL) < 0) {
-		syslog(LOG_ERR, "xmlSecCryptoAppInit failed.");
+		ERROR("xmlSecCryptoAppInit failed.");
 		goto end;
 	}
 
 	if(xmlSecCryptoInit() < 0) {
-		syslog(LOG_ERR, "xmlSecCryptoInit failed.");
+		ERROR("xmlSecCryptoInit failed.");
 		goto end;
 	}
 
@@ -176,18 +177,18 @@ int xmlsec_init()
 	xmlSecIOCleanupCallbacks();
 	if (xmlSecIORegisterCallbacks(file_match_cb,
 					file_open_cb, file_read_cb, file_close_cb)) {
-		syslog(LOG_ERR, "xmlSecIORegisterCallbacks failed.");
+		ERROR("xmlSecIORegisterCallbacks failed.");
 		goto end;
 	}
 
 	keymgr = xmlSecKeysMngrCreate();
 	if (keymgr == NULL) {
-		syslog(LOG_ERR, "xmlSecKeysMngrCreate failed.");
+		ERROR("xmlSecKeysMngrCreate failed.");
 		goto end;
 	}
 
 	if(xmlSecCryptoAppDefaultKeysMngrInit(keymgr) < 0) {
-		syslog(LOG_ERR, "xmlSecCryptoAppDefaultKeysMngrInit failed.");
+		ERROR("xmlSecCryptoAppDefaultKeysMngrInit failed.");
 		goto end;
 	}
 	fill_trusted_keys_dir(CA_ROOT_DIRECTORY);
@@ -219,14 +220,14 @@ int xmlsec_verify(xmlNodePtr node)
 
 	dsigctx = xmlSecDSigCtxCreate(keymgr);
 	if (dsigctx == NULL) {
-		syslog(LOG_ERR, "xmlSecDSigCtxCreate failed.");
+		ERROR("xmlSecDSigCtxCreate failed.");
 		rc = -1;
 	} else {
 		rc = xmlSecDSigCtxVerify(dsigctx, node);
 		if (rc)
-			syslog(LOG_ERR, "xmlSecDSigCtxVerify failed.");
+			ERROR("xmlSecDSigCtxVerify failed.");
 		else if (dsigctx->status != xmlSecDSigStatusSucceeded) {
-			syslog(LOG_ERR, "invalid signature.");
+			ERROR("invalid signature.");
 			rc = -1;
 		}
 		xmlSecDSigCtxDestroy(dsigctx);
@@ -286,14 +287,14 @@ xmlDocPtr xmlsec_create(int index, const char *key, const char **certs)
 	/* create the document */
 	doc = xmlNewDoc("1.0");
 	if (doc == NULL) {
-		syslog(LOG_ERR, "xmlNewDoc failed");
+		ERROR("xmlNewDoc failed");
 		goto error;
 	}
 
 	/* create the root signature node */
 	sign = xmlSecTmplSignatureCreate(doc, xmlSecTransformInclC14N11Id, xmlSecTransformRsaSha256Id, properties[!!index].id);
 	if (sign == NULL) {
-		syslog(LOG_ERR, "xmlSecTmplSignatureCreate failed");
+		ERROR("xmlSecTmplSignatureCreate failed");
 		goto error2;
 	}
 	xmlDocSetRootElement(doc, sign);
@@ -301,16 +302,16 @@ xmlDocPtr xmlsec_create(int index, const char *key, const char **certs)
 	/* create the object and its reference */
 	obj = xmlSecTmplSignatureAddObject(sign, "prop", NULL, NULL);
 	if (obj == NULL) {
-		syslog(LOG_ERR, "xmlSecTmplSignatureAddObject failed");
+		ERROR("xmlSecTmplSignatureAddObject failed");
 		goto error2;
 	}
 	rc = xmlParseBalancedChunkMemory(doc, NULL, NULL, 0, properties[!!index].xml, &props);
 	if (rc) {
-		syslog(LOG_ERR, "xmlParseBalancedChunkMemory failed");
+		ERROR("xmlParseBalancedChunkMemory failed");
 		goto error2;
 	}
 	if (NULL == xmlAddChild(obj, props)) {
-		syslog(LOG_ERR, "filling object node failed");
+		ERROR("filling object node failed");
 		xmlFreeNode(obj);
 		goto error2;
 	}
@@ -323,7 +324,7 @@ xmlDocPtr xmlsec_create(int index, const char *key, const char **certs)
 		if (fdesc->type == type_file && (fdesc->flags & mask) == 0) {
 			ref = xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha256Id, NULL, fdesc->name, NULL);
 			if (ref == NULL) {
-				syslog(LOG_ERR, "creation of reference to %s failed", fdesc->name);
+				ERROR("creation of reference to %s failed", fdesc->name);
 				goto error2;
 			}
 		}
@@ -332,45 +333,45 @@ xmlDocPtr xmlsec_create(int index, const char *key, const char **certs)
 	/* create reference to object having properties */
 	ref =  xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha256Id, NULL, "#prop", NULL);
 	if (ref == NULL) {
-		syslog(LOG_ERR, "creation of reference to #prop failed");
+		ERROR("creation of reference to #prop failed");
 		goto error2;
 	}
 	if (NULL == xmlSecTmplReferenceAddTransform(ref, xmlSecTransformInclC14N11Id)) {
-		syslog(LOG_ERR, "setting transform reference to #prop failed");
+		ERROR("setting transform reference to #prop failed");
 		goto error2;
 	}
 
 	/* adds the X509 data */
 	kinfo = xmlSecTmplSignatureEnsureKeyInfo(sign, NULL);
 	if (kinfo == NULL) {
-		syslog(LOG_ERR, "xmlSecTmplSignatureEnsureKeyInfo failed");
+		ERROR("xmlSecTmplSignatureEnsureKeyInfo failed");
 		goto error2;
 	}
 	if (NULL == xmlSecTmplKeyInfoAddX509Data(kinfo)) {
-		syslog(LOG_ERR, "xmlSecTmplKeyInfoAddX509Data failed");
+		ERROR("xmlSecTmplKeyInfoAddX509Data failed");
 		goto error2;
 	}
 
 	/* sign now */
 	dsigctx = xmlSecDSigCtxCreate(keymgr);
 	if (dsigctx == NULL) {
-		syslog(LOG_ERR, "xmlSecDSigCtxCreate failed.");
+		ERROR("xmlSecDSigCtxCreate failed.");
 		goto error3;
 	}
 	dsigctx->signKey = xmlSecCryptoAppKeyLoad(key, xmlSecKeyDataFormatPem, NULL, NULL, NULL);
 	if (dsigctx->signKey == NULL) {
-		syslog(LOG_ERR, "loading key %s failed.", key);
+		ERROR("loading key %s failed.", key);
 		goto error3;
 	}
 	while (*certs) {
 		if(xmlSecCryptoAppKeyCertLoad(dsigctx->signKey, *certs, xmlSecKeyDataFormatPem) < 0) {
-			syslog(LOG_ERR, "loading certificate %s failed.", *certs);
+			ERROR("loading certificate %s failed.", *certs);
 			goto error3;
 		}
 		certs++;
 	}
 	if(xmlSecDSigCtxSign(dsigctx, sign) < 0) {
-		syslog(LOG_ERR, "signing the document failed.");
+		ERROR("signing the document failed.");
 		goto error3;
 	}
 	xmlSecDSigCtxDestroy(dsigctx);

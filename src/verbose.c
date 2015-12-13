@@ -14,7 +14,14 @@
  limitations under the License.
 */
 
-#include <string.h>
+#include "verbose.h"
 
+#if !defined(NDEBUG)
 int verbosity = 1;
+#else
+void verbose_error(const char *file, int line)
+{
+	ERROR("error file %s line %d", file, line);
+}
+#endif
 

@@ -35,7 +35,7 @@ deficondir = $(deffwdir)/icons
 
 AM_CFLAGS  = -Wall -Wno-pointer-sign
 AM_CFLAGS += -ffunction-sections -fdata-sections
-AM_CFLAGS += ${ZIP_CFLAGS} ${XML2_CFLAGS} ${OPENSSL_CFLAGS} ${XMLSEC_CFLAGS}
+AM_CFLAGS += ${ZIP_CFLAGS} ${XML2_CFLAGS} ${OPENSSL_CFLAGS} ${XMLSEC_CFLAGS} ${JSON_CFLAGS}
 
 AM_CFLAGS += -Isimulation
 
@@ -47,7 +47,7 @@ AM_CFLAGS += -DAPPDEFDIR=\"$(defappdir)\"
 
 AM_LDFLAGS = -Wl,--gc-sections
 
-LDADD = ${ZIP_LIBS} ${XML2_LIBS} ${OPENSSL_LIBS} ${XMLSEC_LIBS}
+LDADD = ${ZIP_LIBS} ${XML2_LIBS} ${OPENSSL_LIBS} ${XMLSEC_LIBS} ${JSON_LIBS}
 
 wgtpkg_sign_SOURCES = wgtpkg-sign.c ${WGTPKGSRCS} ${OTHERSRCS}
 
@@ -57,5 +57,5 @@ wgtpkg_installer_SOURCES = wgtpkg-installer.c ${WGTPKGSRCS} ${WGTSRCS} ${SECWRP}
 
 wgtpkg_info_SOURCES = wgtpkg-info.c ${WGTPKGSRCS} ${WGTSRCS} ${OTHERSRCS}
 
-appfwk_SOURCES = ${APPFWK} ${OTHERSRCS}
+appfwk_SOURCES = ${APPFWK} ${WGTSRCS} ${OTHERSRCS}
 

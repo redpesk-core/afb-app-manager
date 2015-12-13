@@ -33,7 +33,7 @@ static int check_defined(const void *data, const char *name)
 {
 	if (data)
 		return 0;
-	syslog(LOG_ERR, "widget has no defined '%s' (temporary constraints)", name);
+	ERROR("widget has no defined '%s' (temporary constraints)", name);
 	errno = EINVAL;
 	return -1;
 }
@@ -49,7 +49,7 @@ static int check_valid_string(const char *value, const char *name)
 	c = value[pos];
 	while(c) {
 		if (!isalnum(c) && !strchr(".-_", c)) {
-			syslog(LOG_ERR, "forbidden char %c in '%s' -> '%s' (temporary constraints)", c, name, value);
+			ERROR("forbidden char %c in '%s' -> '%s' (temporary constraints)", c, name, value);
 			errno = EINVAL;
 			return -1;			
 		}
@@ -67,7 +67,7 @@ static int check_temporary_constraints(const struct wgt_desc *desc)
 	if (result)
 		return result;
 	if (desc->icons->next) {
-		syslog(LOG_ERR, "widget has more than one icon defined (temporary constraints)");
+		ERROR("widget has more than one icon defined (temporary constraints)");
 		errno = EINVAL;
 		result = -1;
 	}
@@ -78,13 +78,13 @@ static int check_permissions(const char *name, int required)
 {
 	if (permission_exists(name)) {
 		if (request_permission(name)) {
-			debug("granted permission: %s", name);
+			DEBUG("granted permission: %s", name);
 		} else if (required) {
-			syslog(LOG_ERR, "ungranted permission required: %s", name);
+			ERROR("ungranted permission required: %s", name);
 			errno = EPERM;
 			return 0;
 		} else {
-			notice("ungranted permission optional: %s", name);
+			INFO("ungranted permission optional: %s", name);
 		}
 	}
 	return 1;
@@ -112,7 +112,7 @@ static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 
 	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->version);
 	if (rc >= sizeof newdir) {
-		syslog(LOG_ERR, "path to long in move_widget");
+		ERROR("path to long in move_widget");
 		errno = EINVAL;
 		return -1;
 	}
@@ -128,14 +128,14 @@ static int install_icon(const struct wgt_desc *desc)
 
 	rc = snprintf(link, sizeof link, "%s/%s@%s", ICONDESTDIR, desc->id, desc->version);
 	if (rc >= sizeof link) {
-		syslog(LOG_ERR, "link to long in install_icon");
+		ERROR("link to long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
 
 	rc = snprintf(target, sizeof target, "%s/%s", workdir, desc->icons->src);
 	if (rc >= sizeof target) {
-		syslog(LOG_ERR, "target to long in install_icon");
+		ERROR("target to long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
@@ -143,7 +143,7 @@ static int install_icon(const struct wgt_desc *desc)
 	unlink(link);
 	rc = symlink(target, link);
 	if (rc)
-		syslog(LOG_ERR, "can't create link %s -> %s", link, target);
+		ERROR("can't create link %s -> %s", link, target);
 	return rc;
 }
 
@@ -168,7 +168,7 @@ static int install_security(const struct wgt_desc *desc)
 	assert(sizeof path > (head - path));
 	len = (int)(sizeof path - (head - path));
 	if (!len) {
-		syslog(LOG_ERR, "root path too long in install_security");
+		ERROR("root path too long in install_security");
 		errno = ENAMETOOLONG;
 		goto error2;
 	}
@@ -182,7 +182,7 @@ static int install_security(const struct wgt_desc *desc)
 		f = file_of_index(i++);
 		lf = (int)strlen(f->name);
 		if (lf >= len) {
-			syslog(LOG_ERR, "path too long in install_security");
+			ERROR("path too long in install_security");
 			errno = ENAMETOOLONG;
 			goto error2;
 		}
@@ -218,11 +218,11 @@ void install_widget(const char *wgtfile, const char *root, int force)
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 
-	notice("-- INSTALLING widget %s --", wgtfile);
+	NOTICE("-- INSTALLING widget %s --", wgtfile);
 
 	/* workdir */
 	if (make_workdir_base(root, "TMP", 0)) {
-		syslog(LOG_ERR, "failed to create a working directory");
+		ERROR("failed to create a working directory");
 		goto error1;
 	}
 

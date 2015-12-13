@@ -28,6 +28,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include "verbose.h"
 #include "wgtpkg.h"
 
 
@@ -76,7 +77,7 @@ static int create_directory(char *file, int mode)
 		}
 	}
 	if (rc)
-		syslog(LOG_ERR, "can't create directory %s", file);
+		ERROR("can't create directory %s", file);
 	if (last != NULL)
 		*last = '/';
 	return rc;
@@ -90,7 +91,7 @@ static int create_file(char *file, int fmode, int dmode)
 			fd = openat(workdirfd, file, O_CREAT|O_WRONLY|O_TRUNC, fmode);
 	}
 	if (fd < 0)
-		syslog(LOG_ERR, "can't create file %s", file);
+		ERROR("can't create file %s", file);
 	return fd;
 }
 
@@ -111,13 +112,13 @@ int zread(const char *zipfile, unsigned long long maxsize)
 	/* open the zip file */
 	zip = zip_open(zipfile, ZIP_CHECKCONS, &err);
 	if (!zip) {
-		syslog(LOG_ERR, "Can't connect to file %s", zipfile);
+		ERROR("Can't connect to file %s", zipfile);
 		return -1;
 	}
 
 	z64 = zip_get_num_entries(zip, 0);
 	if (z64 < 0 || z64 > UINT_MAX) {
-		syslog(LOG_ERR, "too many entries in %s", zipfile);
+		ERROR("too many entries in %s", zipfile);
 		goto error;
 	}
 	count = (unsigned int)z64;
@@ -129,22 +130,22 @@ int zread(const char *zipfile, unsigned long long maxsize)
 		err = zip_stat_index(zip, index, ZIP_FL_ENC_GUESS, &zstat);
 		/* check the file name */
 		if (!is_valid_filename(zstat.name)) {
-			syslog(LOG_ERR, "invalid entry %s found in %s", zstat.name, zipfile);
+			ERROR("invalid entry %s found in %s", zstat.name, zipfile);
 			goto error;
 		}
 		if (zstat.name[0] == '/') {
-			syslog(LOG_ERR, "absolute entry %s found in %s", zstat.name, zipfile);
+			ERROR("absolute entry %s found in %s", zstat.name, zipfile);
 			goto error;
 		}
 		len = strlen(zstat.name);
 		if (len == 0) {
-			syslog(LOG_ERR, "empty entry found in %s", zipfile);
+			ERROR("empty entry found in %s", zipfile);
 			goto error;
 		}
 		if (zstat.size == 0) {
 			/* directory name */
 			if (zstat.name[len - 1] != '/') {
-				syslog(LOG_ERR, "bad directory name %s in %s", zstat.name, zipfile);
+				ERROR("bad directory name %s in %s", zstat.name, zipfile);
 				goto error;
 			}
 			/* record */
@@ -152,7 +153,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 		} else {
 			/* directory name */
 			if (zstat.name[len - 1] == '/') {
-				syslog(LOG_ERR, "bad file name %s in %s", zstat.name, zipfile);
+				ERROR("bad file name %s in %s", zstat.name, zipfile);
 				goto error;
 			}
 			/* get the size */
@@ -167,7 +168,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 
 	/* check the size */
 	if (maxsize && esize > maxsize) {
-		syslog(LOG_ERR, "extracted size %zu greater than allowed size %llu", esize, maxsize);
+		ERROR("extracted size %zu greater than allowed size %llu", esize, maxsize);
 		goto error;
 	}
 
@@ -187,7 +188,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			/* file name */
 			zfile = zip_fopen_index(zip, fdesc->zindex, 0);
 			if (!zfile) {
-				syslog(LOG_ERR, "Can't open %s in %s", zstat.name, zipfile);
+				ERROR("Can't open %s in %s", zstat.name, zipfile);
 				goto error;
 			}
 			fd = create_file((char*)zstat.name, MODE_OF_FILE_CREATION, MODE_OF_DIRECTORY_CREATION);
@@ -198,12 +199,12 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			while (z64) {
 				sizr = zip_fread(zfile, buffer, sizeof buffer);
 				if (sizr < 0) {
-					syslog(LOG_ERR, "error while reading %s in %s", zstat.name, zipfile);
+					ERROR("error while reading %s in %s", zstat.name, zipfile);
 					goto errorzf;
 				}
 				sizw = write(fd, buffer, sizr);
 				if (sizw < 0) {
-					syslog(LOG_ERR, "error while writing %s", zstat.name);
+					ERROR("error while writing %s", zstat.name);
 					goto errorzf;
 				}
 				z64 -= sizw;
@@ -242,13 +243,13 @@ static int zwr(struct zws *zws, int offset)
 
 	fd = openat(workdirfd, offset ? zws->name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
-		syslog(LOG_ERR, "opendir %.*s failed in zwr", offset, zws->name);
+		ERROR("opendir %.*s failed in zwr", offset, zws->name);
 		return -1;
 	}
 	dir = fdopendir(fd);
 	if (!dir) {
 		close(fd);
-		syslog(LOG_ERR, "opendir %.*s failed in zwr", offset, zws->name);
+		ERROR("opendir %.*s failed in zwr", offset, zws->name);
 		return -1;
 	}
 
@@ -262,20 +263,20 @@ static int zwr(struct zws *zws, int offset)
 			(ent->d_name[1] == '.' && len == 2)))
 			;
 		else if (offset + len >= sizeof(zws->name)) {
-			syslog(LOG_ERR, "name too long in zwr");
+			ERROR("name too long in zwr");
 			errno = ENAMETOOLONG;
 			goto error;
 		} else {
 			memcpy(zws->name + offset, ent->d_name, 1+len);
 			if (!is_valid_filename(ent->d_name)) {
-				syslog(LOG_ERR, "invalid name %s", zws->name);
+				ERROR("invalid name %s", zws->name);
 				goto error;
 			}
 			switch (ent->d_type) {
 			case DT_DIR:
 				z64 = zip_dir_add(zws->zip, zws->name, ZIP_FL_ENC_UTF_8);
 				if (z64 < 0) {
-					syslog(LOG_ERR, "zip_dir_add of %s failed", zws->name);
+					ERROR("zip_dir_add of %s failed", zws->name);
 					goto error;
 				}
 				err = zwr(zws, offset + len);
@@ -285,24 +286,24 @@ static int zwr(struct zws *zws, int offset)
 			case DT_REG:
 				fd = openat(workdirfd, zws->name, O_RDONLY);
 				if (fd < 0) {
-					syslog(LOG_ERR, "openat of %s failed", zws->name);
+					ERROR("openat of %s failed", zws->name);
 					goto error;
 				}
 				fp = fdopen(fd, "r");
 				if (fp == NULL) {
-					syslog(LOG_ERR, "fdopen of %s failed", zws->name);
+					ERROR("fdopen of %s failed", zws->name);
 					close(fd);
 					goto error;
 				}
 				zsrc = zip_source_filep(zws->zip, fp, 0, 0);
 				if (zsrc == NULL) {
-					syslog(LOG_ERR, "zip_source_file of %s failed", zws->name);
+					ERROR("zip_source_file of %s failed", zws->name);
 					fclose(fp);
 					goto error;
 				}
 				z64 = zip_file_add(zws->zip, zws->name, zsrc, ZIP_FL_ENC_UTF_8);
 				if (z64 < 0) {
-					syslog(LOG_ERR, "zip_file_add of %s failed", zws->name);
+					ERROR("zip_file_add of %s failed", zws->name);
 					zip_source_free(zsrc);
 					goto error;
 				}
@@ -329,7 +330,7 @@ int zwrite(const char *zipfile)
 
 	zws.zip = zip_open(zipfile, ZIP_CREATE|ZIP_TRUNCATE, &err);
 	if (!zws.zip) {
-		syslog(LOG_ERR, "Can't open %s for write", zipfile);
+		ERROR("Can't open %s for write", zipfile);
 		return -1;
 	}
 

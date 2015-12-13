@@ -46,19 +46,19 @@ static int clean_dirfd(int dirfd)
 
 	dirfd = dup(dirfd);
 	if (dirfd < 0) {
-		syslog(LOG_ERR, "failed to dup the dirfd");
+		ERROR("failed to dup the dirfd");
 		return -1;
 	}
 	dir = fdopendir(dirfd);
 	if (dir == NULL) {
-		syslog(LOG_ERR, "fdopendir failed in clean_dirfd");
+		ERROR("fdopendir failed in clean_dirfd");
 		return -1;
 	}
 
 	cr = -1;
 	for (;;) {
 		if (readdir_r(dir, &entry.entry, &ent) != 0) {
-			syslog(LOG_ERR, "readdir_r failed in clean_dirfd");
+			ERROR("readdir_r failed in clean_dirfd");
 			goto error;
 		}
 		if (ent == NULL)
@@ -70,12 +70,12 @@ static int clean_dirfd(int dirfd)
 		if (!cr)
 			continue;
 		if (errno != EISDIR) {
-			syslog(LOG_ERR, "unlink of %s failed in clean_dirfd", ent->d_name);
+			ERROR("unlink of %s failed in clean_dirfd", ent->d_name);
 			goto error;
 		}
 		fd = openat(dirfd, ent->d_name, O_DIRECTORY|O_RDONLY);
 		if (fd < 0) {
-			syslog(LOG_ERR, "opening directory %s failed in clean_dirfd", ent->d_name);
+			ERROR("opening directory %s failed in clean_dirfd", ent->d_name);
 			goto error;
 		}
 		cr = clean_dirfd(fd);
@@ -84,7 +84,7 @@ static int clean_dirfd(int dirfd)
 			goto error;
 		cr = unlinkat(dirfd, ent->d_name, AT_REMOVEDIR);
 		if (cr) {
-			syslog(LOG_ERR, "rmdir of %s failed in clean_dirfd", ent->d_name);
+			ERROR("rmdir of %s failed in clean_dirfd", ent->d_name);
 			goto error;
 		}
 	}
@@ -101,7 +101,7 @@ static int clean_dir(const char *directory)
 
 	fd = openat(AT_FDCWD, directory, O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
-		syslog(LOG_ERR, "opening directory %s failed in clean_dir", directory);
+		ERROR("opening directory %s failed in clean_dir", directory);
 		return fd;
 	}
 	rc = clean_dirfd(fd);
@@ -128,7 +128,7 @@ static int set_real_workdir(const char *name, int create)
 	/* check the length */
 	length = strlen(name);
 	if (length >= sizeof workdir) {
-		syslog(LOG_ERR, "workdir name too long");
+		ERROR("workdir name too long");
 		errno = EINVAL;
 		return -1;
 	}
@@ -137,17 +137,17 @@ static int set_real_workdir(const char *name, int create)
 	dirfd = openat(AT_FDCWD, name, O_DIRECTORY|O_RDONLY);
 	if (dirfd < 0) {
 		if (!create || errno != ENOENT) {
-			syslog(LOG_ERR, "no workdir %s", name);
+			ERROR("no workdir %s", name);
 			return -1;
 		}
 		rc = mkdir(name, mode);
 		if (rc) {
-			syslog(LOG_ERR, "can't create workdir %s", name);
+			ERROR("can't create workdir %s", name);
 			return -1;
 		}
 		dirfd = open(name, O_PATH|O_DIRECTORY);
 		if (dirfd < 0) {
-			syslog(LOG_ERR, "can't open workdir %s", name);
+			ERROR("can't open workdir %s", name);
 			return -1;
 		}
 	}
@@ -170,7 +170,7 @@ int set_workdir(const char *name, int create)
 
 	rp = realpath(name, NULL);
 	if (!rp) {
-		syslog(LOG_ERR, "realpath failed for %s", name);
+		ERROR("realpath failed for %s", name);
 		return -1;
 	}
 	rc = set_real_workdir(rp, create);
@@ -184,7 +184,7 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 
 	n = snprintf(workdir, sizeof workdir, "%s/%s", root, prefix);
 	if (n >= sizeof workdir) {
-		syslog(LOG_ERR, "workdir prefix too long");
+		ERROR("workdir prefix too long");
 		errno = EINVAL;
 		return -1;
 	}
@@ -197,19 +197,19 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 	/* create a temporary directory */
 	for (i = 0 ; ; i++) {
 		if (i == INT_MAX) {
-			syslog(LOG_ERR, "exhaustion of workdirs");
+			ERROR("exhaustion of workdirs");
 			return -1;
 		}
 		l = snprintf(workdir + n, r, "%d", i);
 		if (l >= r) {
-			syslog(LOG_ERR, "computed workdir too long");
+			ERROR("computed workdir too long");
 			errno = EINVAL;
 			return -1;
 		}
 		if (!mkdir(workdir, mode))
 			break;
 		if (errno != EEXIST) {
-			syslog(LOG_ERR, "error in creation of workdir %s: %m", workdir);
+			ERROR("error in creation of workdir %s: %m", workdir);
 			return -1;
 		}
 		if (reuse)
@@ -217,7 +217,7 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 	}
 	workdirfd = openat(AT_FDCWD, workdir, O_RDONLY|O_DIRECTORY);
 	if (workdirfd < 0) {
-		syslog(LOG_ERR, "error in onnection to workdir %s: %m", workdir);
+		ERROR("error in onnection to workdir %s: %m", workdir);
 		rmdir(workdir);
 		return -1;
 	}
@@ -235,7 +235,7 @@ int make_workdir_base(const char *root, const char *prefix, int reuse)
 
 	rp = realpath(root, NULL);
 	if (!rp) {
-		syslog(LOG_ERR, "realpath failed for %s", root);
+		ERROR("realpath failed for %s", root);
 		return -1;
 	}
 	rc = make_real_workdir_base(rp, prefix, reuse);
@@ -257,7 +257,7 @@ static int move_real_workdir(const char *dest, int parents, int force)
 
 	/* check length */
 	if (strlen(dest) >= sizeof workdir) {
-		syslog(LOG_ERR, "destination dirname too long");
+		ERROR("destination dirname too long");
 		errno = EINVAL;
 		return -1;
 	}
@@ -266,23 +266,23 @@ static int move_real_workdir(const char *dest, int parents, int force)
 	rc = stat(dest, &s);
 	if (rc == 0) {
 		if (!S_ISDIR(s.st_mode)) {
-			syslog(LOG_ERR, "in move_real_workdir, can't overwrite regular file %s", dest);
+			ERROR("in move_real_workdir, can't overwrite regular file %s", dest);
 			errno = EEXIST;
 			return -1;
 		}
 		if (!force) {
-			syslog(LOG_ERR, "in move_real_workdir, can't overwrite regular file %s", dest);
+			ERROR("in move_real_workdir, can't overwrite regular file %s", dest);
 			errno = EEXIST;
 			return -1;
 		}
 		rc = clean_dir(dest);
 		if (rc) {
-			syslog(LOG_ERR, "in move_real_workdir, can't clean dir %s", dest);
+			ERROR("in move_real_workdir, can't clean dir %s", dest);
 			return rc;
 		}
 		rc = rmdir(dest);
 		if (rc) {
-			syslog(LOG_ERR, "in move_real_workdir, can't remove dir %s", dest);
+			ERROR("in move_real_workdir, can't remove dir %s", dest);
 			return rc;
 		}
 	} else {
@@ -296,13 +296,13 @@ static int move_real_workdir(const char *dest, int parents, int force)
 			if (!rc) {
 				/* found an entry */
 				if (!S_ISDIR(s.st_mode)) {
-					syslog(LOG_ERR, "in move_real_workdir, '%s' isn't a directory", copy);
+					ERROR("in move_real_workdir, '%s' isn't a directory", copy);
 					errno = ENOTDIR;
 					return -1;
 				}
 			} else if (!parents) {
 				/* parent entry not found but not allowed to create it */
-				syslog(LOG_ERR, "in move_real_workdir, parent directory '%s' not found: %m", copy);
+				ERROR("in move_real_workdir, parent directory '%s' not found: %m", copy);
 				return -1;
 			} else {
 				/* parent entries to be created */
@@ -313,13 +313,13 @@ static int move_real_workdir(const char *dest, int parents, int force)
 					if (!rc)
 						break;
 					if (errno != ENOENT) {
-						syslog(LOG_ERR, "in move_real_workdir, mkdir '%s' failed: %m", copy);
+						ERROR("in move_real_workdir, mkdir '%s' failed: %m", copy);
 						return -1;
 					}
 					while (l && copy[l] != '/')
 						l--;
 					if (l == 0) {
-						syslog(LOG_ERR, "in move_real_workdir, internal error");
+						ERROR("in move_real_workdir, internal error");
 						errno = EINVAL;
 						return -1;
 					}
@@ -331,7 +331,7 @@ static int move_real_workdir(const char *dest, int parents, int force)
 					while (copy[++l]);
 					rc = mkdir(copy, mode);
 					if (rc && errno != EEXIST) {
-						syslog(LOG_ERR, "in move_real_workdir, mkdir '%s' failed: %m", copy);
+						ERROR("in move_real_workdir, mkdir '%s' failed: %m", copy);
 						return -1;
 					}
 				}
@@ -344,7 +344,7 @@ static int move_real_workdir(const char *dest, int parents, int force)
 	workdirfd = -1;
 	rc = renameat(AT_FDCWD, workdir, AT_FDCWD, dest);
 	if (rc) {
-		syslog(LOG_ERR, "in move_real_workdir, renameat failed %s -> %s: %m", workdir, dest);
+		ERROR("in move_real_workdir, renameat failed %s -> %s: %m", workdir, dest);
 		return -1;
 	}
 
@@ -361,7 +361,7 @@ int move_workdir(const char *dest, int parents, int force)
 
 	rp = realpath(dest, NULL);
 	if (!rp) {
-		syslog(LOG_ERR, "realpath failed for %s", dest);
+		ERROR("realpath failed for %s", dest);
 		return -1;
 	}
 	rc = move_real_workdir(rp, parents, force);

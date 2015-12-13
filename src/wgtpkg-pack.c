@@ -97,51 +97,51 @@ int main(int ac, char **av)
 			usage();
 			return 0;
 		case ':':
-			syslog(LOG_ERR, "missing argument");
+			ERROR("missing argument");
 			return 1;
 		default:
-			syslog(LOG_ERR, "unrecognized option");
+			ERROR("unrecognized option");
 			return 1;
 		}
 	}
 
 	/* remaining arguments and final checks */
 	if (optind >= ac) {
-		syslog(LOG_ERR, "no directory set");
+		ERROR("no directory set");
 		return 1;
 	}
 	directory = av[optind++];
 	if (optind < ac) {
-		syslog(LOG_ERR, "extra parameters found");
+		ERROR("extra parameters found");
 		return 1;
 	}
 
 	/* set default values */
 	if (wgtfile == NULL && 0 > asprintf(&wgtfile, "%s.wgt", directory)) {
-		syslog(LOG_ERR, "asprintf failed");
+		ERROR("asprintf failed");
 		return 1;
 	}
 
 	/* check values */
 	if (stat(directory, &s)) {
-		syslog(LOG_ERR, "can't find directory %s", directory);
+		ERROR("can't find directory %s", directory);
 		return 1;
 	}
 	if (!S_ISDIR(s.st_mode)) {
-		syslog(LOG_ERR, "%s isn't a directory", directory);
+		ERROR("%s isn't a directory", directory);
 		return 1;
 	}
 	if (access(wgtfile, F_OK) == 0 && force == 0) {
-		syslog(LOG_ERR, "can't overwrite existing %s", wgtfile);
+		ERROR("can't overwrite existing %s", wgtfile);
 		return 1;
 	}
 
-	notice("-- PACKING widget %s from directory %s", wgtfile, directory);
+	NOTICE("-- PACKING widget %s from directory %s", wgtfile, directory);
 
 	/* creates an existing widget (for realpath it must exist) */
 	i = open(wgtfile, O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0644);
 	if (i < 0) {
-		syslog(LOG_ERR, "can't write widget %s", wgtfile);
+		ERROR("can't write widget %s", wgtfile);
 		return 1;
 	}
 	close(i);
@@ -149,7 +149,7 @@ int main(int ac, char **av)
 	/* compute absolutes paths */
 	x = realpath(wgtfile, NULL);
 	if (x == NULL) {
-		syslog(LOG_ERR, "realpath failed for %s",wgtfile);
+		ERROR("realpath failed for %s",wgtfile);
 		return 1;
 	}
 	wgtfile = x;
