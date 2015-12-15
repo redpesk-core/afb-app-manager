@@ -23,8 +23,10 @@ struct jbus *create_jbus(int session, const char *path);
 void jbus_addref(struct jbus *jbus);
 void jbus_unref(struct jbus *jbus);
 
+int jbus_replyj(struct jreq *jreq, const char *reply);
 int jbus_reply(struct jreq *jreq, struct json_object *reply);
 int jbus_add_service(struct jbus *jbus, const char *method, void (*oncall)(struct jreq *, struct json_object *));
+int jbus_start_serving(struct jbus *jbus);
 
 int jbus_callj(struct jbus *jbus, const char *method, const char *query, void (*onresp)(int, struct json_object *, void *), void *data);
 int jbus_call(struct jbus *jbus, const char *method, struct json_object *query, void (*onresp)(int, struct json_object *response, void *), void *data);

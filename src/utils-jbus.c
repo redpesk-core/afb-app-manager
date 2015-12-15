@@ -60,19 +60,6 @@ static const char reply_out_of_memory[] = "{\"status\":\"out of memory\"}";
 static const char reply_invalid[] = "{\"status\":\"invalid request\"}";
 static const char interface_jbus[] = "org.jbus";
 
-static int send_reply(struct jreq *jreq, const char *reply)
-{
-	int rc = -1;
-	if (dbus_message_append_args(jreq->reply, DBUS_TYPE_STRING, &reply, DBUS_TYPE_INVALID)) {
-		if (dbus_connection_send(jreq->connection, jreq->reply, NULL))
-			rc = 0;
-	}
-	dbus_message_unref(jreq->reply);
-	dbus_connection_unref(jreq->connection);
-	free(jreq);
-	return rc;
-}
-
 static DBusHandlerResult incoming_resp(DBusConnection *connection, DBusMessage *message, struct jbus *jbus)
 {
 	int status;
@@ -82,7 +69,7 @@ static DBusHandlerResult incoming_resp(DBusConnection *connection, DBusMessage *
 	dbus_uint32_t serial;
 
 	/* search for the waiter */
-	serial = dbus_message_get_serial(message);
+	serial = dbus_message_get_reply_serial(message);
 	prv = &jbus->waiters;
 	while ((jrw = *prv) != NULL && jrw->serial != serial)
 		prv = &jrw->next;
@@ -144,12 +131,12 @@ static DBusHandlerResult incoming_call(DBusConnection *connection, DBusMessage *
 	
 	/* retrieve the json value */
 	if (!dbus_message_get_args(message, NULL, DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID)) {
-		send_reply(jreq, reply_invalid);
+		jbus_replyj(jreq, reply_invalid);
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
 	query = json_tokener_parse(str);
 	if (query == NULL) {
-		send_reply(jreq, reply_invalid);
+		jbus_replyj(jreq, reply_invalid);
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
 
@@ -245,10 +232,23 @@ void jbus_unref(struct jbus *jbus)
 	}
 }
 
+int jbus_replyj(struct jreq *jreq, const char *reply)
+{
+	int rc = -1;
+	if (dbus_message_append_args(jreq->reply, DBUS_TYPE_STRING, &reply, DBUS_TYPE_INVALID)) {
+		if (dbus_connection_send(jreq->connection, jreq->reply, NULL))
+			rc = 0;
+	}
+	dbus_message_unref(jreq->reply);
+	dbus_connection_unref(jreq->connection);
+	free(jreq);
+	return rc;
+}
+
 int jbus_reply(struct jreq *jreq, struct json_object *reply)
 {
 	const char *str = json_object_to_json_string(reply);
-	return send_reply(jreq, str ? str : reply_out_of_memory);
+	return jbus_replyj(jreq, str ? str : reply_out_of_memory);
 }
 
 int jbus_add_service(struct jbus *jbus, const char *method, void (*oncall)(struct jreq *jreq, struct json_object *request))
