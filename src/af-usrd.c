@@ -19,11 +19,13 @@
 #include "verbose.h"
 #include "utils-jbus.h"
 #include "appfwk.h"
+#include "appfwk-run.h"
 
 static struct jbus *jbus;
 static struct appfwk *appfwk;
 
 const char error_nothing[] = "[]";
+const char error_bad_request[] = "{\"status\":\"error: bad request\"}";
 const char error_not_found[] = "{\"status\":\"error: not found\"}";
 
 static const char *getappid(struct json_object *obj)
@@ -31,14 +33,14 @@ static const char *getappid(struct json_object *obj)
 	return json_object_get_string(obj);
 }
 
-static const char *getrunid(struct json_object *obj)
+static int getrunid(struct json_object *obj)
 {
-	return json_object_get_string(obj);
+	return json_object_get_int(obj);
 }
 
 static void reply(struct jreq *jreq, struct json_object *resp, const char *errstr)
 {
-	if (obj)
+	if (resp)
 		jbus_reply(jreq, resp);
 	else
 		jbus_replyj(jreq, errstr);
@@ -62,48 +64,54 @@ static void on_detail(struct jreq *jreq, struct json_object *obj)
 static void on_start(struct jreq *jreq, struct json_object *obj)
 {
 	const char *appid = getappid(obj);
-	const char *runid = appfwk_start(appfwk, appid);
+	struct json_object *appli = appid ? appfwk_get_application_public(appfwk, appid) : NULL;
+	int runid = appfwk_run_start(appli);
+	if (runid <= 0) {
+		
 	jbus_replyj(jreq, runid ? runid : error_not_found);
 	json_object_put(obj);
+}
 }
 
 static void on_stop(struct jreq *jreq, struct json_object *obj)
 {
-	const char *runid = getrunid(obj);
-	int status = appfwk_stop(appfwk, runid);
+	int runid = getrunid(obj);
+	int status = appfwk_run_stop(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
 
 static void on_suspend(struct jreq *jreq, struct json_object *obj)
 {
-	const char *runid = getrunid(obj);
-	int status = appfwk_suspend(appfwk, runid);
+	int runid = getrunid(obj);
+	int status = appfwk_run_suspend(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
 
 static void on_resume(struct jreq *jreq, struct json_object *obj)
 {
-	const char *runid = getrunid(obj);
-	int status = appfwk_resume(appfwk, runid);
+	int runid = getrunid(obj);
+	int status = appfwk_run_resume(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
 
 static void on_runners(struct jreq *jreq, struct json_object *obj)
 {
-	struct json_object *resp = appfwk_running_list(appfwk);
+	struct json_object *resp = appfwk_run_list();
 	jbus_reply(jreq, resp);
+	json_object_put(resp);
 	json_object_put(obj);
 }
 
 static void on_state(struct jreq *jreq, struct json_object *obj)
 {
-	const char *runid = getrunid(obj);
-	int status = appfwk_state(appfwk, runid);
-	jbus_replyj(jreq, status ? error_not_found : "true");
+	int runid = getrunid(obj);
+	struct json_object *resp = appfwk_run_state(runid);
+	reply(jreq, resp, error_not_found);
 	json_object_put(obj);
+	json_object_put(resp);
 }
 
 int main(int ac, char **av)
@@ -133,7 +141,7 @@ int main(int ac, char **av)
 	}
 	if(jbus_add_service(jbus, "runnables", on_runnables)
 	|| jbus_add_service(jbus, "detail", on_detail)
-	|| jbus_add_service(jbus, "start", on_run)
+	|| jbus_add_service(jbus, "start", on_start)
 	|| jbus_add_service(jbus, "stop", on_stop)
 	|| jbus_add_service(jbus, "suspend", on_suspend)
 	|| jbus_add_service(jbus, "resume", on_resume)

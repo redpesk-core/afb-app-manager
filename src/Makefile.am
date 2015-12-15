@@ -30,7 +30,8 @@ SECWRP = \
 	secmgr-wrap.c
 
 APPFWK = \
-	appfwk.c
+	appfwk.c \
+	appfwk-run.c
 
 
 AM_CFLAGS  = -Wall -Wno-pointer-sign

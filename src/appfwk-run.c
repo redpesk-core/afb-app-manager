@@ -41,7 +41,7 @@ enum appstate {
 
 struct apprun {
 	struct apprun *next;
-	int runid;
+	int id;
 	enum appstate state;
 	pid_t backend;
 	pid_t frontend;
@@ -64,7 +64,7 @@ static struct apprun *getrunner(int id)
 
 static void freerunner(struct apprun *runner)
 {
-	struct apprun **prev = &[runner->id & (ROOT_RUNNERS_COUNT - 1)];
+	struct apprun **prev = &runners[runner->id & (ROOT_RUNNERS_COUNT - 1)];
 	assert(*prev);
 	while(*prev != runner) {
 		prev = &(*prev)->next;
@@ -101,12 +101,35 @@ static struct apprun *createrunner()
 
 int appfwk_run_start(struct json_object *appli)
 {
+	return -1;
 }
 
-int appfwk_run_stop()
+int appfwk_run_stop(int runid)
 {
+	return -1;
 }
 
+int appfwk_run_suspend(int runid)
+{
+	return -1;
+}
+
+int appfwk_run_resume(int runid)
+{
+	return -1;
+}
+
+struct json_object *appfwk_run_list()
+{
+	return NULL;
+}
+
+struct json_object *appfwk_run_state(int runid)
+{
+	return NULL;
+}
+
+#if 0
 
 static struct json_object *mkrunner(const char *appid, const char *runid)
 {
@@ -136,7 +159,7 @@ const char *appfwk_start(struct appfwk *af, const char *appid)
 	}
 
 	/* prepare the execution */
-	snprintf(buffer, sizeof buffer, "{\"id\":\"%s\",\"runid\":\"%s\"
+	snprintf(buffer, sizeof buffer, "{\"id\":\"%s\",\"runid\":\"%s\""
 }
 
 int appfwk_stop(struct appfwk *af, const char *runid)
@@ -205,3 +228,82 @@ return 0;
 }
 #endif
 
+static struct json_object *mkrunner(const char *appid, const char *runid)
+{
+	struct json_object *result = json_object_new_object();
+	if (result) {
+		if(json_add_str(result, "id", appid)
+		|| json_add_str(result, "runid", runid)
+		|| json_add_str(result, "state", NULL)) {
+			json_object_put(result);
+			result = NULL;
+		}
+	}
+	return result;
+}
+
+const char *appfwk_start(struct appfwk *af, const char *appid)
+{
+	struct json_object *appli;
+	struct json_object *runner;
+	char buffer[250];
+
+	/* get the application description */
+	appli = appfwk_get_application(af, appid);
+	if (appli == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	/* prepare the execution */
+}
+
+int appfwk_stop(struct appfwk *af, const char *runid)
+{
+	struct json_object *runner;
+	runner = appfwk_state(af, runid);
+	if (runner == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+	json_object_get(runner);
+	json_object_object_del(af->runners, runid);
+
+
+
+
+
+
+..........
+
+
+
+
+
+
+	json_object_put(runner);
+}
+
+int appfwk_suspend(struct appfwk *af, const char *runid)
+{
+}
+
+int appfwk_resume(struct appfwk *af, const char *runid)
+{
+}
+
+struct json_object *appfwk_running_list(struct appfwk *af)
+{
+	return af->runners;
+}
+
+struct json_object *appfwk_state(struct appfwk *af, const char *runid)
+{
+	struct json_object *result;
+	int status = json_object_object_get_ex(af->runners, runid, &result);
+	return status ? result : NULL;
+}
+
+
+
+#endif

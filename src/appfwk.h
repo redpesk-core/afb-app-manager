@@ -28,9 +28,3 @@ extern struct json_object *appfwk_application_list(struct appfwk *af);
 extern struct json_object *appfwk_get_application(struct appfwk *af, const char *id);
 extern struct json_object *appfwk_get_application_public(struct appfwk *af, const char *id);
 
-extern const char *appfwk_start(struct appfwk *af, const char *appid);
-extern int appfwk_stop(struct appfwk *af, const char *runid);
-extern int appfwk_suspend(struct appfwk *af, const char *runid);
-extern int appfwk_resume(struct appfwk *af, const char *runid);
-extern struct json_object *appfwk_running_list(struct appfwk *af);
-extern struct json_object *appfwk_state(struct appfwk *af, const char *runid);
