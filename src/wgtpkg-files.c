@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "verbose.h"
 #include "wgtpkg.h"
