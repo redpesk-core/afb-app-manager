@@ -17,7 +17,6 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <syslog.h>
 
 #include <security-manager.h>
 

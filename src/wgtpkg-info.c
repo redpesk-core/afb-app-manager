@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
-#include <syslog.h>
 #include <getopt.h>
 
 #include "verbose.h"
@@ -59,7 +58,7 @@ int main(int ac, char **av)
 	int i;
 	char *wpath;
 
-	openlog(appname, LOG_PERROR, LOG_USER);
+	LOGUSER(appname);
 
 	xmlsec_init();
 

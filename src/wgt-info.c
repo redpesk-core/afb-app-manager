@@ -18,7 +18,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <syslog.h>
+
 #include <libxml/tree.h>
 
 #include "verbose.h"

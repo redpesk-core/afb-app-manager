@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <dirent.h>
 #include <string.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include "verbose.h"

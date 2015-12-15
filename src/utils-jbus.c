@@ -291,14 +291,22 @@ int jbus_start_serving(struct jbus *jbus)
 		return 0;
 	case DBUS_REQUEST_NAME_REPLY_EXISTS:
 	case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
+	default:
 		errno = EADDRINUSE;
 		return -1;
 	}
 }
 
+int jbus_read_write_dispatch(struct jbus *jbus, int toms)
+{
+	if (dbus_connection_read_write_dispatch(jbus->connection, toms));
+		return 0;
+	errno = EPIPE;
+	return -1;
+}
+
 int jbus_callj(struct jbus *jbus, const char *method, const char *query, void (*onresp)(int status, struct json_object *response, void *data), void *data)
 {
-	int rc;
 	DBusMessage *msg;
 	struct jrespw *resp;
 
@@ -374,7 +382,7 @@ int main()
 	int s2 = jbus_add_service(jbus, "incr", incr);
 	int s3 = jbus_start_serving(jbus);
 	printf("started %d %d %d\n", s1, s2, s3);
-	while (dbus_connection_read_write_dispatch (jbus->connection, -1))
+	while (!jbus_read_write_dispatch (jbus, -1))
 		;
 }
 #endif
@@ -393,9 +401,9 @@ int main()
 	while(i--) {
 		jbus_callj(jbus, "ping", "{\"toto\":[1,2,3,4,true,\"toto\"]}", onresp, "ping");
 		jbus_callj(jbus, "incr", "{\"doit\":\"for-me\"}", onresp, "incr");
-		dbus_connection_read_write_dispatch (jbus->connection, 1);
+		jbus_read_write_dispatch (jbus, 1);
 	}
-	while (dbus_connection_read_write_dispatch (jbus->connection, -1))
+	while (!jbus_read_write_dispatch (jbus, -1))
 		;
 }
 #endif

@@ -38,20 +38,28 @@ struct appfwk {
 	int nrroots;
 	char **roots;
 	struct afapps applications;
+	struct json_object *runners;
 };
 
 struct appfwk *appfwk_create()
 {
 	struct appfwk *appfwk = malloc(sizeof * appfwk);
-	if (!appfwk)
+	if (appfwk == NULL)
 		errno = ENOMEM;
 	else {
-		appfwk->refcount = 1;
-		appfwk->nrroots = 0;
-		appfwk->roots = NULL;
-		appfwk->applications.pubarr = NULL;
-		appfwk->applications.direct = NULL;
-		appfwk->applications.byapp = NULL;
+		appfwk->runners = json_object_new_object();
+		if (appfwk->runners == NULL) {
+			free(appfwk);
+			appfwk = NULL;
+			errno = ENOMEM;
+		} else {
+			appfwk->refcount = 1;
+			appfwk->nrroots = 0;
+			appfwk->roots = NULL;
+			appfwk->applications.pubarr = NULL;
+			appfwk->applications.direct = NULL;
+			appfwk->applications.byapp = NULL;
+		}
 	}
 	return appfwk;
 }
@@ -66,6 +74,10 @@ void appfwk_unref(struct appfwk *appfwk)
 {
 	assert(appfwk);
 	if (!--appfwk->refcount) {
+		json_object_put(appfwk->applications.pubarr);
+		json_object_put(appfwk->applications.direct);
+		json_object_put(appfwk->applications.byapp);
+		json_object_put(appfwk->runners);
 		while (appfwk->nrroots)
 			free(appfwk->roots[--appfwk->nrroots]);
 		free(appfwk->roots);
@@ -325,12 +337,110 @@ int appfwk_ensure_applications(struct appfwk *af)
 	return af->applications.pubarr ? 0 : appfwk_update_applications(af);
 }
 
-/* regenerate the list of applications */
 struct json_object *appfwk_application_list(struct appfwk *af)
 {
 	return appfwk_ensure_applications(af) ? NULL : af->applications.pubarr;
 }
 
+struct json_object *appfwk_get_application(struct appfwk *af, const char *id)
+{
+	struct json_object *result;
+	if (!appfwk_ensure_applications(af) && json_object_object_get_ex(obj, id, &result))
+		return result;
+	}
+	return NULL;
+}
+
+struct json_object *appfwk_get_application_public(struct appfwk *af, const char *id)
+{
+	struct json_object *result = appfwk_get_application(af, id);
+	return result && json_object_object_get_ex(result, "public", &result) ? result : NULL;
+}
+
+static struct json_object *mkrunner(const char *appid, const char *runid)
+{
+	struct json_object *result = json_object_new_object();
+	if (result) {
+		if(json_add_str(result, "id", appid)
+		|| json_add_str(result, "runid", runid)
+		|| json_add_str(result, "state", NULL)) {
+			json_object_put(result);
+			result = NULL;
+		}
+	}
+	return result;
+}
+
+const char *appfwk_start(struct appfwk *af, const char *appid)
+{
+	struct json_object *appli;
+	struct json_object *runner;
+	char buffer[250];
+
+	/* get the application description */
+	appli = appfwk_get_application(af, appid);
+	if (appli == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	/* prepare the execution */
+	snprintf(buffer, sizeof buffer, "{\"id\":\"%s\",\"runid\":\"%s\"
+}
+
+int appfwk_stop(struct appfwk *af, const char *runid)
+{
+	struct json_object *runner;
+	runner = appfwk_state(af, runid);
+	if (runner == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+	json_object_get(runner);
+	json_object_object_del(af->runners, runid);
+
+
+
+
+
+
+..........
+
+
+
+
+
+
+	json_object_put(runner);
+}
+
+int appfwk_suspend(struct appfwk *af, const char *runid)
+{
+}
+
+int appfwk_resume(struct appfwk *af, const char *runid)
+{
+}
+
+struct json_object *appfwk_running_list(struct appfwk *af)
+{
+	return af->runners;
+}
+
+struct json_object *appfwk_state(struct appfwk *af, const char *runid)
+{
+	struct json_object *result;
+	int status = json_object_object_get_ex(af->runners, runid, &result);
+	return status ? result : NULL;
+}
+
+
+
+
+
+
+
+#if defined(TESTAPPFWK)
 #include <stdio.h>
 int main()
 {
@@ -342,4 +452,5 @@ printf("direct = %s\n", json_object_to_json_string_ext(af->applications.direct, 
 printf("byapp = %s\n", json_object_to_json_string_ext(af->applications.byapp, 3));
 return 0;
 }
+#endif
 

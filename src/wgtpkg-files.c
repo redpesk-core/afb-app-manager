@@ -18,7 +18,6 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <syslog.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -55,7 +54,7 @@ static unsigned int what_signature(const char *name)
 	while ('0' <= name[len] && name[len] <= '9') {
 		nid = 10 * id + (unsigned int)(name[len++] - '0');
 		if (nid < id || nid == UINT_MAX) {
-			syslog(LOG_WARNING, "number too big for %s", name);
+			WARNING("number too big for %s", name);
 			return 0;
 		}
 		id = nid;

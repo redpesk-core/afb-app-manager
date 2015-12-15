@@ -17,7 +17,6 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
-#include <syslog.h>
 #include <string.h>
 
 #include "verbose.h"
@@ -30,7 +29,7 @@ struct permission {
 	unsigned level: 3;
 };
 
-static const char prefix_of_permissions[] = PREFIXPERMISSION;
+static const char prefix_of_permissions[] = FWK_PREFIX_PERMISSION;
 
 static int nrpermissions = 0;
 static struct permission *permissions = NULL;

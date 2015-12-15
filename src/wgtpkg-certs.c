@@ -15,7 +15,6 @@
 */
 
 
-#include <syslog.h>
 #include <openssl/x509.h>
 
 #include "verbose.h"

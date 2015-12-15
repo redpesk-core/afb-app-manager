@@ -17,6 +17,8 @@
 #if !defined(NDEBUG)
 #include <syslog.h>
 extern int verbosity;
+#define LOGUSER(app) openlog(app,LOG_PERROR,LOG_USER)
+#define LOGAUTH(app) openlog(app,LOG_PERROR,LOG_AUTH)
 #define ERROR(...)   syslog(LOG_ERR,__VA_ARGS__)
 #define WARNING(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
 #define NOTICE(...)  do{if(verbosity)syslog(LOG_NOTICE,__VA_ARGS__);}while(0)
@@ -24,6 +26,8 @@ extern int verbosity;
 #define DEBUG(...)   do{if(verbosity>1)syslog(LOG_DEBUG,__VA_ARGS__);}while(0)
 #else
 #include <syslog.h>
+#define LOGUSER(app) openlog(app,LOG_PERROR,LOG_USER)
+#define LOGAUTH(app) openlog(app,LOG_PERROR,LOG_AUTH)
 extern void verbose_error(const char *file, int line);
 #define ERROR(...)   verbose_error(__FILE__,__LINE__)
 #define WARNING(...) do{/*nothing*/}while(0)

@@ -16,7 +16,6 @@
 
 
 #include <string.h>
-#include <syslog.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>

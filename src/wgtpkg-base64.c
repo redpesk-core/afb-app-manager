@@ -17,7 +17,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 
 #include "verbose.h"
 #include "wgtpkg.h"

@@ -21,7 +21,6 @@
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
-#include <syslog.h>
 #include <getopt.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -91,7 +90,7 @@ int main(int ac, char **av)
 	char *keyfile, *certfiles[MAXCERT+1], *directory, **x;
 	struct stat s;
 
-	openlog(appname, LOG_PERROR, LOG_USER);
+	LOGUSER(appname);
 
 	force = ncert = author = 0;
 	number = UINT_MAX;

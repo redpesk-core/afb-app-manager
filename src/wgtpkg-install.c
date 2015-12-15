@@ -17,7 +17,6 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
-#include <syslog.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>

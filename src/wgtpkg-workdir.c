@@ -19,7 +19,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
-#include <syslog.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <assert.h>
@@ -175,7 +174,7 @@ int make_workdir(int reuse)
 
 static int move_real_workdir(const char *dest, int parents, int force)
 {
-	int rc, len, l;
+	int rc, len;
 	struct stat s;
 	char *copy;
 	const char *iter;

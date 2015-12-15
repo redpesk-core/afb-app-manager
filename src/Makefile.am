@@ -3,10 +3,11 @@ bin_PROGRAMS = \
 	wgtpkg-pack \
 	wgtpkg-sign \
 	wgtpkg-info \
-	appfwk
+	af-usrd
 
 OTHERSRCS = \
 	utils-dir.c \
+	utils-jbus.c \
 	verbose.c
 
 WGTPKGSRCS = \
@@ -80,6 +81,6 @@ wgtpkg_installer_SOURCES = wgtpkg-installer.c ${WGTPKGSRCS} ${WGTSRCS} ${SECWRP}
 
 wgtpkg_info_SOURCES = wgtpkg-info.c ${WGTPKGSRCS} ${WGTSRCS} ${OTHERSRCS}
 
-appfwk_SOURCES = ${APPFWK} ${WGTSRCS} ${OTHERSRCS}
+af_usrd_SOURCES = af-usrd.c ${APPFWK} ${WGTSRCS} ${OTHERSRCS}
 
 
