@@ -56,7 +56,7 @@ static unsigned int get_number(const char *value)
 static void usage()
 {
 	printf(
-		"usage: %s [-f] [-k keyfile] [-c certfile]... [-o wgtfile] [-d number | -a] directory\n"
+		"usage: %s [-f] [-k keyfile] [-c certfile]... [-d number | -a] directory\n"
 		"\n"
 		"   -k keyfile       the private key to use for author signing\n"
 		"   -c certfile      the certificate(s) to use for author signing\n"
