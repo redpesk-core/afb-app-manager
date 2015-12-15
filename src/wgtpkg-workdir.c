@@ -28,92 +28,17 @@
 
 #include "verbose.h"
 #include "wgtpkg.h"
+#include "utils-dir.h"
 
-static int mode = 0755;
+static const int dirmode = 0755;
 char workdir[PATH_MAX] = { 0, };
 int workdirfd = -1;
-
-/* removes recursively the content of a directory */
-static int clean_dirfd(int dirfd)
-{
-	int cr, fd;
-	DIR *dir;
-	struct dirent *ent;
-	struct {
-		struct dirent entry;
-		char spare[PATH_MAX];
-	} entry;
-
-	dirfd = dup(dirfd);
-	if (dirfd < 0) {
-		ERROR("failed to dup the dirfd");
-		return -1;
-	}
-	dir = fdopendir(dirfd);
-	if (dir == NULL) {
-		ERROR("fdopendir failed in clean_dirfd");
-		return -1;
-	}
-
-	cr = -1;
-	for (;;) {
-		if (readdir_r(dir, &entry.entry, &ent) != 0) {
-			ERROR("readdir_r failed in clean_dirfd");
-			goto error;
-		}
-		if (ent == NULL)
-			break;
-		if (ent->d_name[0] == '.' && (ent->d_name[1] == 0
-				|| (ent->d_name[1] == '.' && ent->d_name[2] == 0)))
-			continue;
-		cr = unlinkat(dirfd, ent->d_name, 0);
-		if (!cr)
-			continue;
-		if (errno != EISDIR) {
-			ERROR("unlink of %s failed in clean_dirfd", ent->d_name);
-			goto error;
-		}
-		fd = openat(dirfd, ent->d_name, O_DIRECTORY|O_RDONLY);
-		if (fd < 0) {
-			ERROR("opening directory %s failed in clean_dirfd", ent->d_name);
-			goto error;
-		}
-		cr = clean_dirfd(fd);
-		close(fd);
-		if (cr)
-			goto error;
-		cr = unlinkat(dirfd, ent->d_name, AT_REMOVEDIR);
-		if (cr) {
-			ERROR("rmdir of %s failed in clean_dirfd", ent->d_name);
-			goto error;
-		}
-	}
-	cr = 0;
-error:
-	closedir(dir);
-	return cr;
-}
-
-/* removes recursively the content of a directory */
-static int clean_dir(const char *directory)
-{
-	int fd, rc;
-
-	fd = openat(AT_FDCWD, directory, O_DIRECTORY|O_RDONLY);
-	if (fd < 0) {
-		ERROR("opening directory %s failed in clean_dir", directory);
-		return fd;
-	}
-	rc = clean_dirfd(fd);
-	close(fd);
-	return rc;
-}
 
 /* removes the working directory */
 void remove_workdir()
 {
 	assert(workdirfd >= 0);
-	clean_dirfd(workdirfd);
+	remove_directory_content_fd(workdirfd);
 	close(workdirfd);
 	workdirfd = -1;
 	rmdir(workdir);
@@ -140,7 +65,7 @@ static int set_real_workdir(const char *name, int create)
 			ERROR("no workdir %s", name);
 			return -1;
 		}
-		rc = mkdir(name, mode);
+		rc = mkdir(name, dirmode);
 		if (rc) {
 			ERROR("can't create workdir %s", name);
 			return -1;
@@ -206,7 +131,7 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 			errno = EINVAL;
 			return -1;
 		}
-		if (!mkdir(workdir, mode))
+		if (!mkdir(workdir, dirmode))
 			break;
 		if (errno != EEXIST) {
 			ERROR("error in creation of workdir %s: %m", workdir);
@@ -275,7 +200,7 @@ static int move_real_workdir(const char *dest, int parents, int force)
 			errno = EEXIST;
 			return -1;
 		}
-		rc = clean_dir(dest);
+		rc = remove_directory_content(dest);
 		if (rc) {
 			ERROR("in move_real_workdir, can't clean dir %s", dest);
 			return rc;
@@ -304,37 +229,9 @@ static int move_real_workdir(const char *dest, int parents, int force)
 				/* parent entry not found but not allowed to create it */
 				ERROR("in move_real_workdir, parent directory '%s' not found: %m", copy);
 				return -1;
-			} else {
-				/* parent entries to be created */
-				l = len;
-				for(;;) {
-					/* backward loop */
-					rc = mkdir(copy, mode);
-					if (!rc)
-						break;
-					if (errno != ENOENT) {
-						ERROR("in move_real_workdir, mkdir '%s' failed: %m", copy);
-						return -1;
-					}
-					while (l && copy[l] != '/')
-						l--;
-					if (l == 0) {
-						ERROR("in move_real_workdir, internal error");
-						errno = EINVAL;
-						return -1;
-					}
-					copy[l] = 0;
-				}
-				while(l < len) {
-					/* forward loop */
-					copy[l] = '/';
-					while (copy[++l]);
-					rc = mkdir(copy, mode);
-					if (rc && errno != EEXIST) {
-						ERROR("in move_real_workdir, mkdir '%s' failed: %m", copy);
-						return -1;
-					}
-				}
+			} else if (create_directory(copy, dirmode, 1)) {
+				ERROR("in move_real_workdir, creation of directory %s failed: %m", copy);
+				return -1;
 			}
 		}
 	}

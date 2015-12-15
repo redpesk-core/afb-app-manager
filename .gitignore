@@ -1,3 +1,4 @@
+appfwk
 wgtpkg-installer
 wgtpkg-pack
 wgtpkg-sign
@@ -16,14 +17,13 @@ depcomp
 install-sh
 missing
 
-UNPACK*/
-PACK*/
 TODO
 a.pem
 b.pem
 ca-certificates/
 certs/
 old/
+root/
 schemas/
 tests-w3c/
 tests/

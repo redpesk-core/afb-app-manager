@@ -25,6 +25,7 @@ PKG_CHECK_MODULES([XML2], [libxml-2.0])
 PKG_CHECK_MODULES([OPENSSL], [openssl])
 PKG_CHECK_MODULES([XMLSEC], [xmlsec1 xmlsec1-openssl])
 PKG_CHECK_MODULES([JSON], [json-c])
+PKG_CHECK_MODULES([DBUS], [dbus-1])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h limits.h stdlib.h string.h syslog.h unistd.h])

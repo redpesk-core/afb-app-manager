@@ -28,6 +28,7 @@
 #include "wgt.h"
 #include "wgt-info.h"
 #include "secmgr-wrap.h"
+#include "utils-dir.h"
 
 static int check_defined(const void *data, const char *name)
 {
@@ -126,7 +127,8 @@ static int install_icon(const struct wgt_desc *desc)
 	char target[PATH_MAX];
 	int rc;
 
-	rc = snprintf(link, sizeof link, "%s/%s@%s", ICONDESTDIR, desc->id, desc->version);
+	create_directory(FWK_ICON_DIR, 0755, 1);
+	rc = snprintf(link, sizeof link, "%s/%s@%s", FWK_ICON_DIR, desc->id, desc->version);
 	if (rc >= sizeof link) {
 		ERROR("link to long in install_icon");
 		errno = EINVAL;
@@ -221,6 +223,7 @@ void install_widget(const char *wgtfile, const char *root, int force)
 	NOTICE("-- INSTALLING widget %s --", wgtfile);
 
 	/* workdir */
+	create_directory(root, 0755, 1);
 	if (make_workdir_base(root, "TMP", 0)) {
 		ERROR("failed to create a working directory");
 		goto error1;

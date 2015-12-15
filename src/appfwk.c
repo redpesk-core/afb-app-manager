@@ -27,11 +27,17 @@
 
 #include <wgt-info.h>
 
+struct afapps {
+	struct json_object *pubarr;
+	struct json_object *direct;
+	struct json_object *byapp;
+};
+
 struct appfwk {
 	int refcount;
 	int nrroots;
 	char **roots;
-	struct json_object *applications;
+	struct afapps applications;
 };
 
 struct appfwk *appfwk_create()
@@ -43,7 +49,9 @@ struct appfwk *appfwk_create()
 		appfwk->refcount = 1;
 		appfwk->nrroots = 0;
 		appfwk->roots = NULL;
-		appfwk->applications = NULL;
+		appfwk->applications.pubarr = NULL;
+		appfwk->applications.direct = NULL;
+		appfwk->applications.byapp = NULL;
 	}
 	return appfwk;
 }
@@ -100,7 +108,6 @@ int appfwk_add_root(struct appfwk *appfwk, const char *path)
 	return 0;
 }
 
-
 static int json_add(struct json_object *obj, const char *key, struct json_object *val)
 {
 	json_object_object_add(obj, key, val);
@@ -119,66 +126,113 @@ static int json_add_int(struct json_object *obj, const char *key, int val)
 	return v ? json_add(obj, key, v) : -1;
 }
 
-static struct json_object *read_app_desc(const char *path)
+static int addapp(struct afapps *apps, const char *path)
 {
 	struct wgt_info *info;
 	const struct wgt_desc *desc;
-	struct json_object *result;
+	const struct wgt_desc_feature *feat;
+	struct json_object *priv = NULL, *pub, *bya, *plugs, *str;
 	char *appid, *end;
 
-	result = json_object_new_object();
-	if (!result)
-		goto error;
-
-	info = wgt_info_createat(AT_FDCWD, path, 0, 0, 0);
+	/* connect to the widget */
+	info = wgt_info_createat(AT_FDCWD, path, 0, 1, 0);
 	if (info == NULL)
-		goto error2;
+		goto error;
 	desc = wgt_info_desc(info);
 
+	/* create the application id */
 	appid = alloca(2 + strlen(desc->id) + strlen(desc->version));
 	end = stpcpy(appid, desc->id);
 	*end++ = '@';
 	strcpy(end, desc->version);
 
-	if(json_add_str(result, "appid", appid)
-	|| json_add_str(result, "id", desc->id)
-	|| json_add_str(result, "version", desc->version)
-	|| json_add_str(result, "path", path)
-	|| json_add_int(result, "width", desc->width)
-	|| json_add_int(result, "height", desc->height)
-	|| json_add_str(result, "name", desc->name)
-	|| json_add_str(result, "description", desc->description)
-	|| json_add_str(result, "shortname", desc->name_short)
-	|| json_add_str(result, "author", desc->author))
-		goto error3;
+	/* create the application structure */
+	priv = json_object_new_object();
+	if (!priv)
+		goto error2;
 
-	wgt_info_unref(info);
-	return result;
+	pub = json_object_new_object();
+	if (!priv)
+		goto error2;
 
-error3:
-	wgt_info_unref(info);
-error2:
-	json_object_put(result);
-error:
-	return NULL;
-}
-
-static int add_appdesc(struct json_object *appset, struct json_object *app)
-{
-	struct json_object *appid;
-
-	if (!json_object_object_get_ex(app, "appid", &appid)) {
-		errno = EINVAL;
-		return -1;
+	if (json_add(priv, "public", pub)) {
+		json_object_put(pub);
+		goto error2;
 	}
 
-	return json_add(appset, json_object_get_string(appid), app);
+	plugs = json_object_new_array();
+	if (!priv)
+		goto error2;
+
+	if (json_add(priv, "plugins", plugs)) {
+		json_object_put(plugs);
+		goto error2;
+	}
+
+	if(json_add_str(pub, "id", appid)
+	|| json_add_str(priv, "id", desc->id)
+	|| json_add_str(pub, "version", desc->version)
+	|| json_add_str(priv, "path", path)
+	|| json_add_int(pub, "width", desc->width)
+	|| json_add_int(pub, "height", desc->height)
+	|| json_add_str(pub, "name", desc->name)
+	|| json_add_str(pub, "description", desc->description)
+	|| json_add_str(pub, "shortname", desc->name_short)
+	|| json_add_str(pub, "author", desc->author))
+		goto error2;
+
+	feat = desc->features;
+	while (feat) {
+		static const char prefix[] = FWK_PREFIX_PLUGIN;
+		if (!memcmp(feat->name, prefix, sizeof prefix - 1)) {
+			str = json_object_new_string (feat->name + sizeof prefix - 1);
+			if (str == NULL)
+				goto error2;
+			if (json_object_array_add(plugs, str)) {
+				json_object_put(str);
+				goto error2;
+			}
+		}
+		feat = feat->next;
+	}
+
+	/* record the application structure */
+	if (!json_object_object_get_ex(apps->byapp, desc->id, &bya)) {
+		bya = json_object_new_object();
+		if (!bya)
+			goto error2;
+		if (json_add(apps->byapp, desc->id, bya)) {
+			json_object_put(bya);
+			goto error2;
+		}
+	}
+
+	if (json_add(apps->direct, appid, priv))
+		goto error2;
+	json_object_get(priv);
+
+	if (json_add(bya, desc->version, priv)) {
+		json_object_put(priv);
+		goto error2;
+	}
+
+	if (json_object_array_add(apps->pubarr, pub))
+		goto error2;
+
+	wgt_info_unref(info);
+	return 0;
+
+error2:
+	json_object_put(priv);
+	wgt_info_unref(info);
+error:
+	return -1;
 }
 
 struct enumdata {
 	char path[PATH_MAX];
 	int length;
-	struct json_object *apps;
+	struct afapps apps;
 };
 
 static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
@@ -217,15 +271,7 @@ static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
 
 static int recordapp(struct enumdata *data)
 {
-	struct json_object *app;
-
-	app = read_app_desc(data->path);
-	if (app != NULL) {
-		if (!add_appdesc(data->apps, app))
-			return 0;
-		json_object_put(app);
-	}
-	return -1;
+	return addapp(&data->apps, data->path);
 }
 
 /* enumerate the versions */
@@ -240,13 +286,15 @@ int appfwk_update_applications(struct appfwk *af)
 {
 	int rc, iroot;
 	struct enumdata edata;
-	struct json_object *oldapps;
+	struct afapps oldapps;
 
 	/* create the result */
-	edata.apps = json_object_new_object();
-	if (edata.apps == NULL) {
+	edata.apps.pubarr = json_object_new_array();
+	edata.apps.direct = json_object_new_object();
+	edata.apps.byapp = json_object_new_object();
+	if (edata.apps.pubarr == NULL || edata.apps.direct == NULL || edata.apps.byapp == NULL) {
 		errno = ENOMEM;
-		return -1;
+		goto error;
 	}
 	/* for each root */
 	for (iroot = 0 ; iroot < af->nrroots ; iroot++) {
@@ -254,25 +302,44 @@ int appfwk_update_applications(struct appfwk *af)
 		assert(edata.length < sizeof edata.path);
 		/* enumerate the applications */
 		rc = enumentries(&edata, enumvers);
-		if (rc) {
-			json_object_put(edata.apps);
-			return rc;
-		}
+		if (rc)
+			goto error;
 	}
 	/* commit the result */
 	oldapps = af->applications;
 	af->applications = edata.apps;
-	if (oldapps)
-		json_object_put(oldapps);
+	json_object_put(oldapps.pubarr);
+	json_object_put(oldapps.direct);
+	json_object_put(oldapps.byapp);
 	return 0;
+
+error:
+	json_object_put(edata.apps.pubarr);
+	json_object_put(edata.apps.direct);
+	json_object_put(edata.apps.byapp);
+	return -1;
 }
 
+int appfwk_ensure_applications(struct appfwk *af)
+{
+	return af->applications.pubarr ? 0 : appfwk_update_applications(af);
+}
+
+/* regenerate the list of applications */
+struct json_object *appfwk_application_list(struct appfwk *af)
+{
+	return appfwk_ensure_applications(af) ? NULL : af->applications.pubarr;
+}
+
+#include <stdio.h>
 int main()
 {
 struct appfwk *af = appfwk_create();
-appfwk_add_root(af,"af/apps/");
+appfwk_add_root(af,FWK_APP_DIR);
 appfwk_update_applications(af);
-json_object_to_file("/dev/stdout", af->applications);
+printf("array = %s\n", json_object_to_json_string_ext(af->applications.pubarr, 3));
+printf("direct = %s\n", json_object_to_json_string_ext(af->applications.direct, 3));
+printf("byapp = %s\n", json_object_to_json_string_ext(af->applications.byapp, 3));
 return 0;
 }
 

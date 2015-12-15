@@ -29,7 +29,7 @@
 #include "verbose.h"
 #include "wgtpkg.h"
 
-static const char appname[] = "wgtpkg-install";
+static const char appname[] = "wgtpkg-installer";
 static const char *root;
 static int force;
 
@@ -61,7 +61,6 @@ static struct option options[] = {
 int main(int ac, char **av)
 {
 	int i;
-	char *wpath;
 
 	openlog(appname, LOG_PERROR, LOG_AUTH);
 
@@ -104,19 +103,9 @@ int main(int ac, char **av)
 		return 1;
 	}
 
-	/* canonic names for files */
-	av += optind;
-	for (i = 0 ; av[i] != NULL ; i++) {
-		wpath = realpath(av[i], NULL);
-		if (wpath == NULL) {
-			ERROR("error while getting realpath of %dth widget: %s", i+1, av[i]);
-			return 1;
-		}
-		av[i] = wpath;
-	}
-	root = *av++;
-
 	/* install widgets */
+	av += optind;
+	root = *av++;
 	for ( ; *av ; av++)
 		install_widget(*av, root, force);
 
