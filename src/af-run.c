@@ -29,7 +29,7 @@
 
 #include "verbose.h"
 #include "utils-dir.h"
-#include "wgt-info.h"
+#include "af-launch.h"
 
 enum appstate {
 	as_starting,
@@ -43,7 +43,7 @@ struct apprun {
 	struct apprun *next_by_runid;
 	struct apprun *next_by_pgid;
 	int runid;
-	pid_t pgid;
+	pid_t pids[2]; /* 0: group leader, 1: slave (appli) */
 	enum appstate state;
 	json_object *appli;
 };
@@ -65,7 +65,7 @@ static char *homeappdir;
 static struct apprun *runner_of_pgid(pid_t pgid)
 {
 	struct apprun *result = runners_by_pgid[(int)(pgid & (ROOT_RUNNERS_COUNT - 1))];
-	while (result && result->pgid != pgid)
+	while (result && result->pids[0] != pgid)
 		result = result->next_by_pgid;
 	return result;
 }
@@ -73,7 +73,7 @@ static struct apprun *runner_of_pgid(pid_t pgid)
 /* insert a runner for its pgid */
 static void pgid_insert(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_runid[(int)(runner->pgid & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun **prev = &runners_by_runid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
 	runner->next_by_pgid = *prev;
 	*prev = runner;
 }
@@ -81,7 +81,7 @@ static void pgid_insert(struct apprun *runner)
 /* remove a runner for its pgid */
 static void pgid_remove(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_runid[(int)(runner->pgid & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun **prev = &runners_by_runid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
 	runner->next_by_pgid = *prev;
 	*prev = runner;
 }
@@ -93,8 +93,11 @@ static struct apprun *runner_of_pid(pid_t pid)
 {
 	/* try avoiding system call */
 	struct apprun *result = runner_of_pgid(pid);
-	if (result == NULL)
+	if (result == NULL) {
 		result = runner_of_pgid(getpgid(pid));
+		if (result && result->pids[1] != pid)
+			result = NULL;
+	}
 	return result;
 }
 
@@ -130,20 +133,24 @@ static struct apprun *createrunner(json_object *appli)
 	struct apprun *result;
 	struct apprun **prev;
 
-	if (runnercount >= MAX_RUNNER_COUNT)
+	if (runnercount >= MAX_RUNNER_COUNT) {
+		errno = EAGAIN;
 		return NULL;
+	}
 	do {
 		runnerid++;
 		if (runnerid > MAX_RUNNER_COUNT)
 			runnerid = 1;
 	} while(getrunner(runnerid));
 	result = calloc(1, sizeof * result);
-	if (result) {
+	if (result == NULL)
+		errno = ENOMEM;
+	else {
 		prev = &runners_by_runid[runnerid & (ROOT_RUNNERS_COUNT - 1)];
 		result->next_by_runid = *prev;
 		result->next_by_pgid = NULL;
 		result->runid = runnerid;
-		result->pgid = 0;
+		result->pids[0] = result->pids[1] = 0;
 		result->state = as_starting;
 		result->appli = json_object_get(appli);
 		*prev = result;
@@ -153,7 +160,7 @@ static struct apprun *createrunner(json_object *appli)
 }
 
 /**************** signaling ************************/
-
+#if 0
 static void started(int runid)
 {
 }
@@ -173,7 +180,7 @@ static void terminated(int runid)
 static void removed(int runid)
 {
 }
-
+#endif
 /**************** running ************************/
 
 static int killrunner(int runid, int sig, enum appstate tostate)
@@ -192,33 +199,126 @@ static int killrunner(int runid, int sig, enum appstate tostate)
 		rc = 0;
 	}
 	else {
-		rc = killpg(runner->pgid, sig);
+		rc = killpg(runner->pids[0], sig);
 		if (!rc)
 			runner->state = tostate;
 	}
 	return rc;
 }
 
-/**************** summarizing the application *********************/
+static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
+{
+	struct apprun *runner;
 
-struct applisum {
-	const char *path;
-	const char *tag;
-	const char *appid;
-	const char *content;
-	const char *type;
-	const char *name;
-	int width;
-	int height;
+	runner = runner_of_pgid(info->si_pid);
+	if (!runner)
+		return;
+
+	switch(info->si_code) {
+	case CLD_EXITED:
+	case CLD_KILLED:
+	case CLD_DUMPED:
+	case CLD_TRAPPED:
+		runner->state = as_terminated;
+		pgid_remove(runner);
+		break;
+
+	case CLD_STOPPED:
+		runner->state = as_stopped;
+		break;
+
+	case CLD_CONTINUED:
+		runner->state = as_running;
+		break;
+	}
+}
+
+/**************** handle af_launch_desc *********************/
+
+static int get_jstr(struct json_object *obj, const char *key, const char **value)
+{
+	json_object *data;
+	return json_object_object_get_ex(obj, key, &data)
+		&& json_object_get_type(data) == json_type_string
+		&& (*value = json_object_get_string(data)) != NULL;
+}
+
+static int get_jint(struct json_object *obj, const char *key, int *value)
+{
+	json_object *data;
+	return json_object_object_get_ex(obj, key, &data)
+		&& json_object_get_type(data) == json_type_int
+		&& ((*value = (int)json_object_get_int(data)), 1);
+}
+
+static int fill_launch_desc(struct json_object *appli, struct af_launch_desc *desc)
+{
+	json_object *pub;
+
+	/* main items */
+	if(!json_object_object_get_ex(appli, "public", &pub)
+	|| !get_jstr(appli, "path", &desc->path)
+	|| !get_jstr(appli, "id", &desc->tag)
+	|| !get_jstr(appli, "content", &desc->content)
+	|| !get_jstr(appli, "type", &desc->type)
+	|| !get_jstr(pub, "name", &desc->name)
+	|| !get_jint(pub, "width", &desc->width)
+	|| !get_jint(pub, "height", &desc->height)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* plugins */
+	{
+		/* TODO */
+		static const char *null = NULL;
+		desc->plugins = &null;
+	}
+
+	/* finaly */
+	desc->home = homeappdir;
+	return 0;
 };
 
 /**************** API handling ************************/
 
 int af_run_start(struct json_object *appli)
 {
-	const char *path;
-	const char *id;
-	return -1;
+	static struct apprun *runner;
+	struct af_launch_desc desc;
+	int rc;
+	sigset_t saved, blocked;
+
+	/* prepare to launch */
+	rc = fill_launch_desc(appli, &desc);
+	if (rc)
+		return rc;
+	runner = createrunner(appli);
+	if (!runner)
+		return -1;
+
+	/* block children signals until launched */
+	sigemptyset(&blocked);
+	sigaddset(&blocked, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &blocked, &saved);
+
+	/* launch now */
+	rc = af_launch(&desc, runner->pids);
+	if (rc < 0) {
+		/* fork failed */
+		sigprocmask(SIG_SETMASK, &saved, NULL);
+		ERROR("can't start, af_launch failed: %m");
+		freerunner(runner);
+		return -1;
+	}
+
+	/* insert the pid */
+	runner->state = as_running;
+	pgid_insert(runner);
+
+	/* unblock children signal now */
+	sigprocmask(SIG_SETMASK, &saved, NULL);
+	return 0;
 }
 
 int af_run_terminate(int runid)
@@ -340,6 +440,7 @@ int af_run_init()
 	int rc;
 	uid_t me;
 	struct passwd passwd, *pw;
+	struct sigaction siga;
 
 	/* computes the 'homeappdir' */
 	me = geteuid();
@@ -367,7 +468,11 @@ int af_run_init()
 	}
 
 	/* install signal handlers */
-	
+	siga.sa_flags = SA_SIGINFO | SA_NOCLDWAIT;
+	sigemptyset(&siga.sa_mask);
+	sigaddset(&siga.sa_mask, SIGCHLD);
+	siga.sa_sigaction = on_sigchld;
+	sigaction(SIGCHLD, &siga, NULL);
 	return 0;
 }
 

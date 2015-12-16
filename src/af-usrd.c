@@ -148,6 +148,9 @@ int main(int ac, char **av)
 {
 	LOGAUTH("afdb-usrd");
 
+	/* init random generator */
+	srandom((unsigned int)time(NULL));
+
 	/* init runners */
 	if (af_run_init()) {
 		ERROR("af_run_init failed");

@@ -31,6 +31,7 @@ SECWRP = \
 
 APPFWK = \
 	af-db.c \
+	af-launch.c \
 	af-run.c
 
 
@@ -87,6 +88,6 @@ wgtpkg_installer_SOURCES = wgtpkg-installer.c ${WGTPKGSRCS} ${WGTSRCS} ${SECWRP}
 
 wgtpkg_info_SOURCES = wgtpkg-info.c ${WGTPKGSRCS} ${WGTSRCS} ${OTHERSRCS}
 
-af_usrd_SOURCES = af-usrd.c ${APPFWK} ${WGTSRCS} ${OTHERSRCS}
+af_usrd_SOURCES = af-usrd.c ${APPFWK} ${WGTSRCS} ${OTHERSRCS} ${SECWRP}
 
 
