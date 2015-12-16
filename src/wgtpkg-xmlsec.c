@@ -39,9 +39,7 @@ static int initstatus;
 static int initdone;
 static xmlSecKeysMngrPtr keymgr;
 
-#ifndef CA_ROOT_DIRECTORY
-#define CA_ROOT_DIRECTORY "./ca-certificates"
-#endif
+static const char trusted_certificates_directory[] = WGTPKG_TRUSTED_CERT_DIR;
 
 /* checks if a file match  uri (should not be a distributor signature) */
 static int file_match_cb(const char *uri)
@@ -190,7 +188,7 @@ int xmlsec_init()
 		ERROR("xmlSecCryptoAppDefaultKeysMngrInit failed.");
 		goto end;
 	}
-	fill_trusted_keys_dir(CA_ROOT_DIRECTORY);
+	fill_trusted_keys_dir(trusted_certificates_directory);
 
 	initstatus = 0;
 end:
