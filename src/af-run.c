@@ -14,23 +14,22 @@
  limitations under the License.
 */
 
+#include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
-
-
-
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
-#include <dirent.h>
-#include <fcntl.h>
+#include <pwd.h>
 #include <sys/types.h>
+#include <errno.h>
+#include <assert.h>
+#include <stdio.h>
+#include <limits.h>
+#include <string.h>
 
 #include <json.h>
 
-#include <wgt-info.h>
-
+#include "verbose.h"
+#include "utils-dir.h"
+#include "wgt-info.h"
 
 enum appstate {
 	as_starting,
@@ -44,8 +43,7 @@ struct apprun {
 	struct apprun *next_by_runid;
 	struct apprun *next_by_pgid;
 	int runid;
-	pid_t backend;
-	pid_t frontend;
+	pid_t pgid;
 	enum appstate state;
 	json_object *appli;
 };
@@ -58,13 +56,16 @@ static struct apprun *runners_by_pgid[ROOT_RUNNERS_COUNT];
 static int runnercount = 0;
 static int runnerid = 0;
 
+static const char fwk_user_app_dir[] = FWK_USER_APP_DIR;
+static char *homeappdir;
+
 /****************** manages pgids **********************/
 
 /* get a runner by its pgid */
 static struct apprun *runner_of_pgid(pid_t pgid)
 {
 	struct apprun *result = runners_by_pgid[(int)(pgid & (ROOT_RUNNERS_COUNT - 1))];
-	while (result && result->backend != pgid)
+	while (result && result->pgid != pgid)
 		result = result->next_by_pgid;
 	return result;
 }
@@ -72,7 +73,7 @@ static struct apprun *runner_of_pgid(pid_t pgid)
 /* insert a runner for its pgid */
 static void pgid_insert(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_runid[(int)(runner->backend & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun **prev = &runners_by_runid[(int)(runner->pgid & (ROOT_RUNNERS_COUNT - 1))];
 	runner->next_by_pgid = *prev;
 	*prev = runner;
 }
@@ -80,7 +81,7 @@ static void pgid_insert(struct apprun *runner)
 /* remove a runner for its pgid */
 static void pgid_remove(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_runid[(int)(runner->backend & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun **prev = &runners_by_runid[(int)(runner->pgid & (ROOT_RUNNERS_COUNT - 1))];
 	runner->next_by_pgid = *prev;
 	*prev = runner;
 }
@@ -142,8 +143,7 @@ static struct apprun *createrunner(json_object *appli)
 		result->next_by_runid = *prev;
 		result->next_by_pgid = NULL;
 		result->runid = runnerid;
-		result->backend = 0;
-		result->frontend = 0;
+		result->pgid = 0;
 		result->state = as_starting;
 		result->appli = json_object_get(appli);
 		*prev = result;
@@ -192,31 +192,46 @@ static int killrunner(int runid, int sig, enum appstate tostate)
 		rc = 0;
 	}
 	else {
-		rc = killpg(runner->backend, sig);
+		rc = killpg(runner->pgid, sig);
 		if (!rc)
 			runner->state = tostate;
 	}
 	return rc;
 }
 
+/**************** summarizing the application *********************/
+
+struct applisum {
+	const char *path;
+	const char *tag;
+	const char *appid;
+	const char *content;
+	const char *type;
+	const char *name;
+	int width;
+	int height;
+};
+
 /**************** API handling ************************/
 
-int appfwk_run_start(struct json_object *appli)
+int af_run_start(struct json_object *appli)
 {
+	const char *path;
+	const char *id;
 	return -1;
 }
 
-int appfwk_run_terminate(int runid)
+int af_run_terminate(int runid)
 {
 	return killrunner(runid, SIGTERM, as_terminating);
 }
 
-int appfwk_run_stop(int runid)
+int af_run_stop(int runid)
 {
 	return killrunner(runid, SIGSTOP, as_stopped);
 }
 
-int appfwk_run_continue(int runid)
+int af_run_continue(int runid)
 {
 	return killrunner(runid, SIGCONT, as_running);
 }
@@ -276,7 +291,7 @@ error:
 	return NULL;
 }
 
-struct json_object *appfwk_run_list()
+struct json_object *af_run_list()
 {
 	struct json_object *result, *obj;
 	struct apprun *runner;
@@ -306,7 +321,7 @@ struct json_object *appfwk_run_list()
 	return result;
 }
 
-struct json_object *appfwk_run_state(int runid)
+struct json_object *af_run_state(int runid)
 {
 	struct apprun *runner = getrunner(runid);
 	if (runner == NULL || runner->state == as_terminating || runner->state == as_terminated) {
@@ -314,5 +329,45 @@ struct json_object *appfwk_run_state(int runid)
 		return NULL;
 	}
 	return mkstate(runner, NULL);
+}
+
+/**************** INITIALISATION **********************/
+
+int af_run_init()
+{
+	char buf[2048];
+	char dir[PATH_MAX];
+	int rc;
+	uid_t me;
+	struct passwd passwd, *pw;
+
+	/* computes the 'homeappdir' */
+	me = geteuid();
+	rc = getpwuid_r(me, &passwd, buf, sizeof buf, &pw);
+	if (rc || pw == NULL) {
+		errno = rc ? errno : ENOENT;
+		ERROR("getpwuid_r failed for uid=%d: %m",(int)me);
+		return -1;
+	}
+	rc = snprintf(dir, sizeof dir, "%s/%s", passwd.pw_dir, fwk_user_app_dir);
+	if (rc >= sizeof dir) {
+		ERROR("buffer overflow in user_app_dir for uid=%d",(int)me);
+		return -1;
+	}
+	rc = create_directory(dir, 0755, 1);
+	if (rc && errno != EEXIST) {
+		ERROR("creation of directory %s failed in user_app_dir: %m", dir);
+		return -1;
+	}
+	homeappdir = strdup(dir);
+	if (homeappdir == NULL) {
+		errno = ENOMEM;
+		ERROR("out of memory in user_app_dir for %s : %m", dir);
+		return -1;
+	}
+
+	/* install signal handlers */
+	
+	return 0;
 }
 

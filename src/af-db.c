@@ -25,7 +25,8 @@
 
 #include <json.h>
 
-#include <wgt-info.h>
+#include "wgt-info.h"
+#include "af-db.h"
 
 struct afapps {
 	struct json_object *pubarr;
@@ -33,55 +34,55 @@ struct afapps {
 	struct json_object *byapp;
 };
 
-struct appfwk {
+struct af_db {
 	int refcount;
 	int nrroots;
 	char **roots;
 	struct afapps applications;
 };
 
-struct appfwk *appfwk_create()
+struct af_db *af_db_create()
 {
-	struct appfwk *appfwk = malloc(sizeof * appfwk);
-	if (appfwk == NULL)
+	struct af_db *afdb = malloc(sizeof * afdb);
+	if (afdb == NULL)
 		errno = ENOMEM;
 	else {
-		appfwk->refcount = 1;
-		appfwk->nrroots = 0;
-		appfwk->roots = NULL;
-		appfwk->applications.pubarr = NULL;
-		appfwk->applications.direct = NULL;
-		appfwk->applications.byapp = NULL;
+		afdb->refcount = 1;
+		afdb->nrroots = 0;
+		afdb->roots = NULL;
+		afdb->applications.pubarr = NULL;
+		afdb->applications.direct = NULL;
+		afdb->applications.byapp = NULL;
 	}
-	return appfwk;
+	return afdb;
 }
 
-void appfwk_addref(struct appfwk *appfwk)
+void af_db_addref(struct af_db *afdb)
 {
-	assert(appfwk);
-	appfwk->refcount++;
+	assert(afdb);
+	afdb->refcount++;
 }
 
-void appfwk_unref(struct appfwk *appfwk)
+void af_db_unref(struct af_db *afdb)
 {
-	assert(appfwk);
-	if (!--appfwk->refcount) {
-		json_object_put(appfwk->applications.pubarr);
-		json_object_put(appfwk->applications.direct);
-		json_object_put(appfwk->applications.byapp);
-		while (appfwk->nrroots)
-			free(appfwk->roots[--appfwk->nrroots]);
-		free(appfwk->roots);
-		free(appfwk);
+	assert(afdb);
+	if (!--afdb->refcount) {
+		json_object_put(afdb->applications.pubarr);
+		json_object_put(afdb->applications.direct);
+		json_object_put(afdb->applications.byapp);
+		while (afdb->nrroots)
+			free(afdb->roots[--afdb->nrroots]);
+		free(afdb->roots);
+		free(afdb);
 	}
 }
 
-int appfwk_add_root(struct appfwk *appfwk, const char *path)
+int af_db_add_root(struct af_db *afdb, const char *path)
 {
 	int i, n;
 	char *r, **roots;
 
-	assert(appfwk);
+	assert(afdb);
 
 	/* don't depend on the cwd and unique name */
 	r = realpath(path, NULL);
@@ -89,8 +90,8 @@ int appfwk_add_root(struct appfwk *appfwk, const char *path)
 		return -1;
 
 	/* avoiding duplications */
-	n = appfwk->nrroots;
-	roots = appfwk->roots;
+	n = afdb->nrroots;
+	roots = afdb->roots;
 	for (i = 0 ; i < n ; i++) {
 		if (!strcmp(r, roots[i])) {
 			free(r);
@@ -106,8 +107,8 @@ int appfwk_add_root(struct appfwk *appfwk, const char *path)
 		return -1;
 	}
 	roots[n++] = r;
-	appfwk->roots = roots;
-	appfwk->nrroots = n;
+	afdb->roots = roots;
+	afdb->nrroots = n;
 	return 0;
 }
 
@@ -172,10 +173,12 @@ static int addapp(struct afapps *apps, const char *path)
 		goto error2;
 	}
 
-	if(json_add_str(pub, "id", appid)
-	|| json_add_str(priv, "id", desc->id)
-	|| json_add_str(pub, "version", desc->version)
+	if(json_add_str(priv, "id", desc->id)
 	|| json_add_str(priv, "path", path)
+	|| json_add_str(priv, "content", desc->content_src)
+	|| json_add_str(priv, "type", desc->content_type)
+	|| json_add_str(pub, "id", appid)
+	|| json_add_str(pub, "version", desc->version)
 	|| json_add_int(pub, "width", desc->width)
 	|| json_add_int(pub, "height", desc->height)
 	|| json_add_str(pub, "name", desc->name)
@@ -285,7 +288,7 @@ static int enumvers(struct enumdata *data)
 }
 
 /* regenerate the list of applications */
-int appfwk_update_applications(struct appfwk *af)
+int af_db_update_applications(struct af_db *afdb)
 {
 	int rc, iroot;
 	struct enumdata edata;
@@ -300,8 +303,8 @@ int appfwk_update_applications(struct appfwk *af)
 		goto error;
 	}
 	/* for each root */
-	for (iroot = 0 ; iroot < af->nrroots ; iroot++) {
-		edata.length = stpcpy(edata.path, af->roots[iroot]) - edata.path;
+	for (iroot = 0 ; iroot < afdb->nrroots ; iroot++) {
+		edata.length = stpcpy(edata.path, afdb->roots[iroot]) - edata.path;
 		assert(edata.length < sizeof edata.path);
 		/* enumerate the applications */
 		rc = enumentries(&edata, enumvers);
@@ -309,8 +312,8 @@ int appfwk_update_applications(struct appfwk *af)
 			goto error;
 	}
 	/* commit the result */
-	oldapps = af->applications;
-	af->applications = edata.apps;
+	oldapps = afdb->applications;
+	afdb->applications = edata.apps;
 	json_object_put(oldapps.pubarr);
 	json_object_put(oldapps.direct);
 	json_object_put(oldapps.byapp);
@@ -323,27 +326,27 @@ error:
 	return -1;
 }
 
-int appfwk_ensure_applications(struct appfwk *af)
+int af_db_ensure_applications(struct af_db *afdb)
 {
-	return af->applications.pubarr ? 0 : appfwk_update_applications(af);
+	return afdb->applications.pubarr ? 0 : af_db_update_applications(afdb);
 }
 
-struct json_object *appfwk_application_list(struct appfwk *af)
+struct json_object *af_db_application_list(struct af_db *afdb)
 {
-	return appfwk_ensure_applications(af) ? NULL : af->applications.pubarr;
+	return af_db_ensure_applications(afdb) ? NULL : afdb->applications.pubarr;
 }
 
-struct json_object *appfwk_get_application(struct appfwk *af, const char *id)
+struct json_object *af_db_get_application(struct af_db *afdb, const char *id)
 {
 	struct json_object *result;
-	if (!appfwk_ensure_applications(af) && json_object_object_get_ex(af->applications.direct, id, &result))
+	if (!af_db_ensure_applications(afdb) && json_object_object_get_ex(afdb->applications.direct, id, &result))
 		return result;
 	return NULL;
 }
 
-struct json_object *appfwk_get_application_public(struct appfwk *af, const char *id)
+struct json_object *af_db_get_application_public(struct af_db *afdb, const char *id)
 {
-	struct json_object *result = appfwk_get_application(af, id);
+	struct json_object *result = af_db_get_application(afdb, id);
 	return result && json_object_object_get_ex(result, "public", &result) ? result : NULL;
 }
 
@@ -354,12 +357,12 @@ struct json_object *appfwk_get_application_public(struct appfwk *af, const char 
 #include <stdio.h>
 int main()
 {
-struct appfwk *af = appfwk_create();
-appfwk_add_root(af,FWK_APP_DIR);
-appfwk_update_applications(af);
-printf("array = %s\n", json_object_to_json_string_ext(af->applications.pubarr, 3));
-printf("direct = %s\n", json_object_to_json_string_ext(af->applications.direct, 3));
-printf("byapp = %s\n", json_object_to_json_string_ext(af->applications.byapp, 3));
+struct af_db *afdb = af_db_create();
+af_db_add_root(afdb,FWK_APP_DIR);
+af_db_update_applications(afdb);
+printf("array = %s\n", json_object_to_json_string_ext(afdb->applications.pubarr, 3));
+printf("direct = %s\n", json_object_to_json_string_ext(afdb->applications.direct, 3));
+printf("byapp = %s\n", json_object_to_json_string_ext(afdb->applications.byapp, 3));
 return 0;
 }
 #endif

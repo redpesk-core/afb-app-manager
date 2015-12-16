@@ -30,8 +30,8 @@ SECWRP = \
 	secmgr-wrap.c
 
 APPFWK = \
-	appfwk.c \
-	appfwk-run.c
+	af-db.c \
+	af-run.c
 
 
 AM_CFLAGS  = -Wall -Wno-pointer-sign
@@ -45,6 +45,7 @@ fwk_icondir = $(fwk_datadir)/icons
 fwk_prefix = urn:agl:
 fwk_prefix_permission = $(fwk_prefix)perm:
 fwk_prefix_plugin = $(fwk_prefix)plugin:
+fwk_user_appdir = app-data
 wgtpkg_trusted_cert_dir = $(fwk_confdir)/certs
 
 AM_CFLAGS += -DFWK_CONFIG_DIR=\"$(fwk_confdir)\"
@@ -52,6 +53,7 @@ AM_CFLAGS += -DFWK_PREFIX_PERMISSION=\"$(fwk_prefix_permission)\"
 AM_CFLAGS += -DFWK_PREFIX_PLUGIN=\"$(fwk_prefix_plugin)\"
 AM_CFLAGS += -DFWK_ICON_DIR=\"$(fwk_icondir)\"
 AM_CFLAGS += -DFWK_APP_DIR=\"$(fwk_appdir)\"
+AM_CFLAGS += -DFWK_USER_APP_DIR=\"$(fwk_user_appdir)\"
 
 AM_CFLAGS += -DWGTPKG_TRUSTED_CERT_DIR=\"$(wgtpkg_trusted_cert_dir)\"
 

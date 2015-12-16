@@ -14,17 +14,18 @@
  limitations under the License.
 */
 
+#include <unistd.h>
 #include <stdio.h>
 
 #include <json.h>
 
 #include "verbose.h"
 #include "utils-jbus.h"
-#include "appfwk.h"
-#include "appfwk-run.h"
+#include "af-db.h"
+#include "af-run.h"
 
 static struct jbus *jbus;
-static struct appfwk *appfwk;
+static struct af_db *afdb;
 
 const char error_nothing[] = "[]";
 const char error_bad_request[] = "{\"status\":\"error: bad request\"}";
@@ -51,7 +52,7 @@ static void reply(struct jreq *jreq, struct json_object *resp, const char *errst
 
 static void on_runnables(struct jreq *jreq, struct json_object *obj)
 {
-	struct json_object *resp = appfwk_application_list(appfwk);
+	struct json_object *resp = af_db_application_list(afdb);
 	jbus_reply(jreq, resp);
 	json_object_put(obj);
 }
@@ -59,7 +60,7 @@ static void on_runnables(struct jreq *jreq, struct json_object *obj)
 static void on_detail(struct jreq *jreq, struct json_object *obj)
 {
 	const char *appid = getappid(obj);
-	struct json_object *resp = appfwk_get_application_public(appfwk, appid);
+	struct json_object *resp = af_db_get_application_public(afdb, appid);
 	reply(jreq, resp, error_not_found);
 	json_object_put(obj);
 }
@@ -75,11 +76,11 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 	if (appid == NULL)
 		jbus_replyj(jreq, error_bad_request);
 	else {
-		appli = appfwk_get_application(appfwk, appid);
+		appli = af_db_get_application(afdb, appid);
 		if (appli == NULL)
 			jbus_replyj(jreq, error_not_found);
 		else {
-			runid = appfwk_run_start(appli);
+			runid = af_run_start(appli);
 			if (runid <= 0)
 				jbus_replyj(jreq, error_cant_start);
 			else {
@@ -95,7 +96,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 static void on_stop(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
-	int status = appfwk_run_stop(runid);
+	int status = af_run_stop(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
@@ -103,7 +104,7 @@ static void on_stop(struct jreq *jreq, struct json_object *obj)
 static void on_continue(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
-	int status = appfwk_run_continue(runid);
+	int status = af_run_continue(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
@@ -111,14 +112,14 @@ static void on_continue(struct jreq *jreq, struct json_object *obj)
 static void on_terminate(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
-	int status = appfwk_run_terminate(runid);
+	int status = af_run_terminate(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
 
 static void on_runners(struct jreq *jreq, struct json_object *obj)
 {
-	struct json_object *resp = appfwk_run_list();
+	struct json_object *resp = af_run_list();
 	jbus_reply(jreq, resp);
 	json_object_put(resp);
 	json_object_put(obj);
@@ -127,7 +128,7 @@ static void on_runners(struct jreq *jreq, struct json_object *obj)
 static void on_state(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
-	struct json_object *resp = appfwk_run_state(runid);
+	struct json_object *resp = af_run_state(runid);
 	reply(jreq, resp, error_not_found);
 	json_object_put(resp);
 	json_object_put(obj);
@@ -145,25 +146,31 @@ static int daemonize()
 
 int main(int ac, char **av)
 {
-	LOGAUTH("af-usrd");
+	LOGAUTH("afdb-usrd");
 
-	/* init framework */
-	appfwk = appfwk_create();
-	if (!appfwk) {
-		ERROR("appfwk_create failed");
+	/* init runners */
+	if (af_run_init()) {
+		ERROR("af_run_init failed");
 		return 1;
 	}
-	if (appfwk_add_root(appfwk, FWK_APP_DIR)) {
+
+	/* init framework */
+	afdb = af_db_create();
+	if (!afdb) {
+		ERROR("af_create failed");
+		return 1;
+	}
+	if (af_db_add_root(afdb, FWK_APP_DIR)) {
 		ERROR("can't add root %s", FWK_APP_DIR);
 		return 1;
 	}
-	if (appfwk_update_applications(appfwk)) {
-		ERROR("appfwk_update_applications failed");
+	if (af_db_update_applications(afdb)) {
+		ERROR("af_update_applications failed");
 		return 1;
 	}
 
 	/* init service	*/
-	jbus = create_jbus(1, "/org/automotive/linux/framework");
+	jbus = create_jbus(1, "/org/AGL/framework");
 	if (!jbus) {
 		ERROR("create_jbus failed");
 		return 1;
