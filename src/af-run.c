@@ -1,6 +1,8 @@
 /*
  Copyright 2015 IoT.bzh
 
+ author: José Bollo <jose.bollo@iot.bzh>
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -315,10 +317,11 @@ int af_run_start(struct json_object *appli)
 	/* insert the pid */
 	runner->state = as_running;
 	pgid_insert(runner);
+	rc = runner->runid;
 
 	/* unblock children signal now */
 	sigprocmask(SIG_SETMASK, &saved, NULL);
-	return 0;
+	return rc;
 }
 
 int af_run_terminate(int runid)
@@ -336,10 +339,10 @@ int af_run_continue(int runid)
 	return killrunner(runid, SIGCONT, as_running);
 }
 
-static json_object *mkstate(struct apprun *runner, const char **runidstr)
+static json_object *mkstate(struct apprun *runner)
 {
 	const char *state;
-	struct json_object *result, *obj, *runid;
+	struct json_object *result, *obj;
 	int rc;
 
 	/* the structure */
@@ -348,8 +351,8 @@ static json_object *mkstate(struct apprun *runner, const char **runidstr)
 		goto error;
 
 	/* the runid */
-	runid = json_object_new_int(runner->runid);
-	if (runid == NULL)
+	obj = json_object_new_int(runner->runid);
+	if (obj == NULL)
 		goto error2;
 	json_object_object_add(result, "runid", obj); /* TODO TEST STATUS */
 
@@ -380,8 +383,6 @@ static json_object *mkstate(struct apprun *runner, const char **runidstr)
 	json_object_get(obj);
 
 	/* done */
-	if (runidstr)
-		*runidstr = json_object_get_string(runid);
 	return result;
 
 error2:
@@ -395,7 +396,7 @@ struct json_object *af_run_list()
 {
 	struct json_object *result, *obj;
 	struct apprun *runner;
-	const char *runidstr;
+	char runidstr[20];
 	int i;
 
 	/* creates the object */
@@ -408,11 +409,12 @@ struct json_object *af_run_list()
 	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
 		for (runner = runners_by_runid[i] ; runner ; runner = runner->next_by_runid) {
 			if (runner->state != as_terminating && runner->state != as_terminated) {
-				obj = mkstate(runner, &runidstr);
+				obj = mkstate(runner);
 				if (obj == NULL) {
 					json_object_put(result);
 					return NULL;
 				}
+				sprintf(runidstr, "%d", runner->runid);
 				/* TODO status ? */
 				json_object_object_add(result, runidstr, obj);
 			}
@@ -428,7 +430,7 @@ struct json_object *af_run_state(int runid)
 		errno = ENOENT;
 		return NULL;
 	}
-	return mkstate(runner, NULL);
+	return mkstate(runner);
 }
 
 /**************** INITIALISATION **********************/

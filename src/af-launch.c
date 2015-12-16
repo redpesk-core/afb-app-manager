@@ -1,6 +1,8 @@
 /*
  Copyright 2015 IoT.bzh
 
+ author: José Bollo <jose.bollo@iot.bzh>
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -154,6 +156,7 @@ int af_launch(struct af_launch_desc *desc, pid_t children[2])
 			close(spipe[1]);
 			return -1;
 		}
+		assert(rc == 5);
 		close(spipe[1]);
 		return 0;
 	}
@@ -218,11 +221,11 @@ static int launch_master(struct af_launch_desc *desc, struct launchparam *params
 {
 	int rc;
 	char *argv[6];
-	argv[0] = "/bin/echo";
+	argv[0] = "/usr/bin/echo";
 	(void)asprintf(&argv[1], "--alias=/icons:%s", FWK_ICON_DIR);
 	(void)asprintf(&argv[2], "--port=%d", params->port);
 	(void)asprintf(&argv[3], "--rootdir=%s", desc->path);
-	(void)asprintf(&argv[4], "--token=%", desc->path);
+	(void)asprintf(&argv[4], "--token=%s", params->secret);
 	argv[5] = NULL;
 
 	rc = write(fd, &child, sizeof child);
@@ -230,7 +233,7 @@ static int launch_master(struct af_launch_desc *desc, struct launchparam *params
 		ERROR("can't write master pipe: %m");
 		return -1;
 	}
-
+	close(fd);
 	rc = execve(argv[0], argv, environ);
 	ERROR("failed to exec master %s: %m", argv[0]);
 	return rc;
