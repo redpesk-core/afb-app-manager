@@ -14,6 +14,8 @@
  limitations under the License.
 */
 
+#include <stdio.h>
+
 #include <json.h>
 
 #include "verbose.h"
@@ -27,15 +29,16 @@ static struct appfwk *appfwk;
 const char error_nothing[] = "[]";
 const char error_bad_request[] = "{\"status\":\"error: bad request\"}";
 const char error_not_found[] = "{\"status\":\"error: not found\"}";
+const char error_cant_start[] = "{\"status\":\"error: can't start\"}";
 
 static const char *getappid(struct json_object *obj)
 {
-	return json_object_get_string(obj);
+	return json_type_string == json_object_get_type(obj) ? json_object_get_string(obj) : NULL;
 }
 
 static int getrunid(struct json_object *obj)
 {
-	return json_object_get_int(obj);
+	return json_type_int == json_object_get_type(obj) ? json_object_get_int(obj) : 0;
 }
 
 static void reply(struct jreq *jreq, struct json_object *resp, const char *errstr)
@@ -63,21 +66,29 @@ static void on_detail(struct jreq *jreq, struct json_object *obj)
 
 static void on_start(struct jreq *jreq, struct json_object *obj)
 {
-	const char *appid = getappid(obj);
-	struct json_object *appli = appid ? appfwk_get_application_public(appfwk, appid) : NULL;
-	int runid = appfwk_run_start(appli);
-	if (runid <= 0) {
-		
-	jbus_replyj(jreq, runid ? runid : error_not_found);
-	json_object_put(obj);
-}
-}
+	const char *appid;
+	struct json_object *appli;
+	int runid;
+	char runidstr[20];
 
-static void on_terminate(struct jreq *jreq, struct json_object *obj)
-{
-	int runid = getrunid(obj);
-	int status = appfwk_run_terminate(runid);
-	jbus_replyj(jreq, status ? error_not_found : "true");
+	appid = getappid(obj);
+	if (appid == NULL)
+		jbus_replyj(jreq, error_bad_request);
+	else {
+		appli = appfwk_get_application(appfwk, appid);
+		if (appli == NULL)
+			jbus_replyj(jreq, error_not_found);
+		else {
+			runid = appfwk_run_start(appli);
+			if (runid <= 0)
+				jbus_replyj(jreq, error_cant_start);
+			else {
+				snprintf(runidstr, sizeof runidstr, "%d", runid);
+				runidstr[sizeof runidstr - 1] = 0;
+				jbus_replyj(jreq, runidstr);
+			}
+		}
+	}
 	json_object_put(obj);
 }
 
@@ -97,6 +108,14 @@ static void on_continue(struct jreq *jreq, struct json_object *obj)
 	json_object_put(obj);
 }
 
+static void on_terminate(struct jreq *jreq, struct json_object *obj)
+{
+	int runid = getrunid(obj);
+	int status = appfwk_run_terminate(runid);
+	jbus_replyj(jreq, status ? error_not_found : "true");
+	json_object_put(obj);
+}
+
 static void on_runners(struct jreq *jreq, struct json_object *obj)
 {
 	struct json_object *resp = appfwk_run_list();
@@ -110,8 +129,18 @@ static void on_state(struct jreq *jreq, struct json_object *obj)
 	int runid = getrunid(obj);
 	struct json_object *resp = appfwk_run_state(runid);
 	reply(jreq, resp, error_not_found);
-	json_object_put(obj);
 	json_object_put(resp);
+	json_object_put(obj);
+}
+
+static int daemonize()
+{
+	int rc = fork();
+	if (rc < 0)
+		return rc;
+	if (rc)
+		_exit(0);
+	return 0;
 }
 
 int main(int ac, char **av)
