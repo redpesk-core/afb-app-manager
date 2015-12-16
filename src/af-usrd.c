@@ -73,6 +73,14 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 }
 }
 
+static void on_terminate(struct jreq *jreq, struct json_object *obj)
+{
+	int runid = getrunid(obj);
+	int status = appfwk_run_terminate(runid);
+	jbus_replyj(jreq, status ? error_not_found : "true");
+	json_object_put(obj);
+}
+
 static void on_stop(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
@@ -81,18 +89,10 @@ static void on_stop(struct jreq *jreq, struct json_object *obj)
 	json_object_put(obj);
 }
 
-static void on_suspend(struct jreq *jreq, struct json_object *obj)
+static void on_continue(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
-	int status = appfwk_run_suspend(runid);
-	jbus_replyj(jreq, status ? error_not_found : "true");
-	json_object_put(obj);
-}
-
-static void on_resume(struct jreq *jreq, struct json_object *obj)
-{
-	int runid = getrunid(obj);
-	int status = appfwk_run_resume(runid);
+	int status = appfwk_run_continue(runid);
 	jbus_replyj(jreq, status ? error_not_found : "true");
 	json_object_put(obj);
 }
@@ -142,9 +142,9 @@ int main(int ac, char **av)
 	if(jbus_add_service(jbus, "runnables", on_runnables)
 	|| jbus_add_service(jbus, "detail", on_detail)
 	|| jbus_add_service(jbus, "start", on_start)
+	|| jbus_add_service(jbus, "terminate", on_terminate)
 	|| jbus_add_service(jbus, "stop", on_stop)
-	|| jbus_add_service(jbus, "suspend", on_suspend)
-	|| jbus_add_service(jbus, "resume", on_resume)
+	|| jbus_add_service(jbus, "continue", on_continue)
 	|| jbus_add_service(jbus, "runners", on_runners)
 	|| jbus_add_service(jbus, "state", on_state)) {
 		ERROR("adding services failed");

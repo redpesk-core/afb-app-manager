@@ -15,9 +15,9 @@
 */
 
 extern int appfwk_run_start(struct json_object *appli);
+extern int appfwk_run_terminate(int runid);
 extern int appfwk_run_stop(int runid);
-extern int appfwk_run_suspend(int runid);
-extern int appfwk_run_resume(int runid);
+extern int appfwk_run_continue(int runid);
 extern struct json_object *appfwk_run_list();
 extern struct json_object *appfwk_run_state(int runid);
 

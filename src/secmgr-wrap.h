@@ -22,3 +22,4 @@ int secmgr_path_public_read_only(const char *pathname);
 int secmgr_path_read_only(const char *pathname);
 int secmgr_path_read_write(const char *pathname);
 
+int secmgr_prepare_exec(const char *appid);

@@ -113,3 +113,8 @@ int secmgr_path_read_write(const char *pathname)
 	return addpath(pathname, SECURITY_MANAGER_PATH_RW);
 }
 
+int secmgr_prepare_exec(const char *appid)
+{
+	return retcode(security_manager_prepare_app(appid));
+}
+

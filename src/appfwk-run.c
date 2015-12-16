@@ -15,7 +15,7 @@
 */
 
 #include <unistd.h>
-
+#include <signal.h>
 
 
 
@@ -33,51 +33,101 @@
 
 
 enum appstate {
-	as_in_progress,
+	as_starting,
 	as_running,
-	as_paused,
-	as_stopping
+	as_stopped,
+	as_terminating,
+	as_terminated
 };
 
 struct apprun {
-	struct apprun *next;
-	int id;
-	enum appstate state;
+	struct apprun *next_by_runid;
+	struct apprun *next_by_pgid;
+	int runid;
 	pid_t backend;
 	pid_t frontend;
+	enum appstate state;
+	json_object *appli;
 };
 
 #define ROOT_RUNNERS_COUNT  32
 #define MAX_RUNNER_COUNT    32767
 
-static struct apprun *runners[ROOT_RUNNERS_COUNT];
+static struct apprun *runners_by_runid[ROOT_RUNNERS_COUNT];
+static struct apprun *runners_by_pgid[ROOT_RUNNERS_COUNT];
 static int runnercount = 0;
 static int runnerid = 0;
 
-static struct apprun *getrunner(int id)
+/****************** manages pgids **********************/
+
+/* get a runner by its pgid */
+static struct apprun *runner_of_pgid(pid_t pgid)
 {
-	struct apprun *result = runners[id & (ROOT_RUNNERS_COUNT - 1)];
-	while (result && result->id != id)
-		result = result->next;
+	struct apprun *result = runners_by_pgid[(int)(pgid & (ROOT_RUNNERS_COUNT - 1))];
+	while (result && result->backend != pgid)
+		result = result->next_by_pgid;
 	return result;
 }
 
+/* insert a runner for its pgid */
+static void pgid_insert(struct apprun *runner)
+{
+	struct apprun **prev = &runners_by_runid[(int)(runner->backend & (ROOT_RUNNERS_COUNT - 1))];
+	runner->next_by_pgid = *prev;
+	*prev = runner;
+}
+
+/* remove a runner for its pgid */
+static void pgid_remove(struct apprun *runner)
+{
+	struct apprun **prev = &runners_by_runid[(int)(runner->backend & (ROOT_RUNNERS_COUNT - 1))];
+	runner->next_by_pgid = *prev;
+	*prev = runner;
+}
+
+/****************** manages pids **********************/
+
+/* get a runner by its pid */
+static struct apprun *runner_of_pid(pid_t pid)
+{
+	/* try avoiding system call */
+	struct apprun *result = runner_of_pgid(pid);
+	if (result == NULL)
+		result = runner_of_pgid(getpgid(pid));
+	return result;
+}
+
+/****************** manages runners (by runid) **********************/
+
+/* get a runner by its runid */
+static struct apprun *getrunner(int runid)
+{
+	struct apprun *result = runners_by_runid[runid & (ROOT_RUNNERS_COUNT - 1)];
+	while (result && result->runid != runid)
+		result = result->next_by_runid;
+	return result;
+}
+
+/* free an existing runner */
 static void freerunner(struct apprun *runner)
 {
-	struct apprun **prev = &runners[runner->id & (ROOT_RUNNERS_COUNT - 1)];
+	struct apprun **prev = &runners_by_runid[runner->runid & (ROOT_RUNNERS_COUNT - 1)];
 	assert(*prev);
 	while(*prev != runner) {
-		prev = &(*prev)->next;
+		prev = &(*prev)->next_by_runid;
 		assert(*prev);
 	}
-	*prev = runner->next;
+	*prev = runner->next_by_runid;
+	json_object_put(runner->appli);
 	free(runner);
 	runnercount--;
 }
 
-static struct apprun *createrunner()
+/* create a new runner */
+static struct apprun *createrunner(json_object *appli)
 {
 	struct apprun *result;
+	struct apprun **prev;
 
 	if (runnercount >= MAX_RUNNER_COUNT)
 		return NULL;
@@ -86,224 +136,183 @@ static struct apprun *createrunner()
 		if (runnerid > MAX_RUNNER_COUNT)
 			runnerid = 1;
 	} while(getrunner(runnerid));
-	result = malloc(sizeof * result);
+	result = calloc(1, sizeof * result);
 	if (result) {
-		result->id = runnerid;
-		result->state = as_in_progress;
+		prev = &runners_by_runid[runnerid & (ROOT_RUNNERS_COUNT - 1)];
+		result->next_by_runid = *prev;
+		result->next_by_pgid = NULL;
+		result->runid = runnerid;
 		result->backend = 0;
 		result->frontend = 0;
-		result->next = runners[runnerid & (ROOT_RUNNERS_COUNT - 1)];
-		runners[runnerid & (ROOT_RUNNERS_COUNT - 1)] = result;
+		result->state = as_starting;
+		result->appli = json_object_get(appli);
+		*prev = result;
 		runnercount++;
 	}
 	return result;
 }
+
+/**************** signaling ************************/
+
+static void started(int runid)
+{
+}
+
+static void stopped(int runid)
+{
+}
+
+static void continued(int runid)
+{
+}
+
+static void terminated(int runid)
+{
+}
+
+static void removed(int runid)
+{
+}
+
+/**************** running ************************/
+
+static int killrunner(int runid, int sig, enum appstate tostate)
+{
+	int rc;
+	struct apprun *runner = getrunner(runid);
+	if (runner == NULL) {
+		errno = ENOENT;
+		rc = -1;
+	}
+	else if (runner->state != as_running && runner->state != as_stopped) {
+		errno = EPERM;
+		rc = -1;
+	}
+	else if (runner->state == tostate) {
+		rc = 0;
+	}
+	else {
+		rc = killpg(runner->backend, sig);
+		if (!rc)
+			runner->state = tostate;
+	}
+	return rc;
+}
+
+/**************** API handling ************************/
 
 int appfwk_run_start(struct json_object *appli)
 {
 	return -1;
 }
 
+int appfwk_run_terminate(int runid)
+{
+	return killrunner(runid, SIGTERM, as_terminating);
+}
+
 int appfwk_run_stop(int runid)
 {
-	return -1;
+	return killrunner(runid, SIGSTOP, as_stopped);
 }
 
-int appfwk_run_suspend(int runid)
+int appfwk_run_continue(int runid)
 {
-	return -1;
+	return killrunner(runid, SIGCONT, as_running);
 }
 
-int appfwk_run_resume(int runid)
+static json_object *mkstate(struct apprun *runner, const char **runidstr)
 {
-	return -1;
+	const char *state;
+	struct json_object *result, *obj, *runid;
+	int rc;
+
+	/* the structure */
+	result = json_object_new_object();
+	if (result == NULL)
+		goto error;
+
+	/* the runid */
+	runid = json_object_new_int(runner->runid);
+	if (runid == NULL)
+		goto error2;
+	json_object_object_add(result, "runid", obj); /* TODO TEST STATUS */
+
+	/* the state */
+	switch(runner->state) {
+	case as_starting:
+	case as_running:
+		state = "running";
+		break;
+	case as_stopped:
+		state = "stopped";
+		break;
+	default:
+		state = "terminated";
+		break;
+	}
+	obj = json_object_new_string(state);
+	if (obj == NULL)
+		goto error2;
+	json_object_object_add(result, "state", obj); /* TODO TEST STATUS */
+
+	/* the application id */
+	rc = json_object_object_get_ex(runner->appli, "public", &obj);
+	assert(rc);
+	rc = json_object_object_get_ex(obj, "id", &obj);
+	assert(rc);
+	json_object_object_add(result, "id", obj); /* TODO TEST STATUS */
+	json_object_get(obj);
+
+	/* done */
+	if (runidstr)
+		*runidstr = json_object_get_string(runid);
+	return result;
+
+error2:
+	json_object_put(result);
+error:
+	errno = ENOMEM;
+	return NULL;
 }
 
 struct json_object *appfwk_run_list()
 {
-	return NULL;
+	struct json_object *result, *obj;
+	struct apprun *runner;
+	const char *runidstr;
+	int i;
+
+	/* creates the object */
+	result = json_object_new_object();
+	if (result == NULL) {
+		errno = ENOMEM;
+		return NULL;		
+	}
+
+	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
+		for (runner = runners_by_runid[i] ; runner ; runner = runner->next_by_runid) {
+			if (runner->state != as_terminating && runner->state != as_terminated) {
+				obj = mkstate(runner, &runidstr);
+				if (obj == NULL) {
+					json_object_put(result);
+					return NULL;
+				}
+				/* TODO status ? */
+				json_object_object_add(result, runidstr, obj);
+			}
+		}
+	}
+	return result;
 }
 
 struct json_object *appfwk_run_state(int runid)
 {
-	return NULL;
-}
-
-#if 0
-
-static struct json_object *mkrunner(const char *appid, const char *runid)
-{
-	struct json_object *result = json_object_new_object();
-	if (result) {
-		if(json_add_str(result, "id", appid)
-		|| json_add_str(result, "runid", runid)
-		|| json_add_str(result, "state", NULL)) {
-			json_object_put(result);
-			result = NULL;
-		}
-	}
-	return result;
-}
-
-const char *appfwk_start(struct appfwk *af, const char *appid)
-{
-	struct json_object *appli;
-	struct json_object *runner;
-	char buffer[250];
-
-	/* get the application description */
-	appli = appfwk_get_application(af, appid);
-	if (appli == NULL) {
+	struct apprun *runner = getrunner(runid);
+	if (runner == NULL || runner->state == as_terminating || runner->state == as_terminated) {
 		errno = ENOENT;
-		return -1;
+		return NULL;
 	}
-
-	/* prepare the execution */
-	snprintf(buffer, sizeof buffer, "{\"id\":\"%s\",\"runid\":\"%s\""
+	return mkstate(runner, NULL);
 }
 
-int appfwk_stop(struct appfwk *af, const char *runid)
-{
-	struct json_object *runner;
-	runner = appfwk_state(af, runid);
-	if (runner == NULL) {
-		errno = ENOENT;
-		return -1;
-	}
-	json_object_get(runner);
-	json_object_object_del(af->runners, runid);
-
-
-
-
-
-
-..........
-
-
-
-
-
-
-	json_object_put(runner);
-}
-
-int appfwk_suspend(struct appfwk *af, const char *runid)
-{
-}
-
-int appfwk_resume(struct appfwk *af, const char *runid)
-{
-}
-
-struct json_object *appfwk_running_list(struct appfwk *af)
-{
-	return af->runners;
-}
-
-struct json_object *appfwk_state(struct appfwk *af, const char *runid)
-{
-	struct json_object *result;
-	int status = json_object_object_get_ex(af->runners, runid, &result);
-	return status ? result : NULL;
-}
-
-
-
-
-
-
-
-#if defined(TESTAPPFWK)
-#include <stdio.h>
-int main()
-{
-struct appfwk *af = appfwk_create();
-appfwk_add_root(af,FWK_APP_DIR);
-appfwk_update_applications(af);
-printf("array = %s\n", json_object_to_json_string_ext(af->applications.pubarr, 3));
-printf("direct = %s\n", json_object_to_json_string_ext(af->applications.direct, 3));
-printf("byapp = %s\n", json_object_to_json_string_ext(af->applications.byapp, 3));
-return 0;
-}
-#endif
-
-static struct json_object *mkrunner(const char *appid, const char *runid)
-{
-	struct json_object *result = json_object_new_object();
-	if (result) {
-		if(json_add_str(result, "id", appid)
-		|| json_add_str(result, "runid", runid)
-		|| json_add_str(result, "state", NULL)) {
-			json_object_put(result);
-			result = NULL;
-		}
-	}
-	return result;
-}
-
-const char *appfwk_start(struct appfwk *af, const char *appid)
-{
-	struct json_object *appli;
-	struct json_object *runner;
-	char buffer[250];
-
-	/* get the application description */
-	appli = appfwk_get_application(af, appid);
-	if (appli == NULL) {
-		errno = ENOENT;
-		return -1;
-	}
-
-	/* prepare the execution */
-}
-
-int appfwk_stop(struct appfwk *af, const char *runid)
-{
-	struct json_object *runner;
-	runner = appfwk_state(af, runid);
-	if (runner == NULL) {
-		errno = ENOENT;
-		return -1;
-	}
-	json_object_get(runner);
-	json_object_object_del(af->runners, runid);
-
-
-
-
-
-
-..........
-
-
-
-
-
-
-	json_object_put(runner);
-}
-
-int appfwk_suspend(struct appfwk *af, const char *runid)
-{
-}
-
-int appfwk_resume(struct appfwk *af, const char *runid)
-{
-}
-
-struct json_object *appfwk_running_list(struct appfwk *af)
-{
-	return af->runners;
-}
-
-struct json_object *appfwk_state(struct appfwk *af, const char *runid)
-{
-	struct json_object *result;
-	int status = json_object_object_get_ex(af->runners, runid, &result);
-	return status ? result : NULL;
-}
-
-
-
-#endif
