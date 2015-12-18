@@ -276,8 +276,6 @@ int jbus_add_service(struct jbus *jbus, const char *method, void (*oncall)(struc
 
 	return 0;
 
-error3:
-	free(srv->method);
 error2:
 	free(srv);
 error:
