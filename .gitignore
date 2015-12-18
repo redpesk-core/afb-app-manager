@@ -4,18 +4,7 @@ wgtpkg-pack
 wgtpkg-sign
 wgtpkg-info
 *.o
-
-.deps/
-Makefile
-Makefile.in
-aclocal.m4
-autom4te.cache/
-config.*
-stamp-h1
-configure
-depcomp
-install-sh
-missing
+*.a
 
 TODO
 a.pem
@@ -28,7 +17,5 @@ schemas/
 tests-w3c/
 tests/
 tizen-certificates/
-truc
-*.wgt
 wrt-widgets
 
