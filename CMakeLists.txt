@@ -20,9 +20,14 @@ cmake_minimum_required(VERSION 2.8)
 
 project("afm-main" LANGUAGES "C")
 
+set(rootdir                 ".")
+set(sysconfdir              "${rootdir}/etc")
+set(prefix                  "${rootdir}/usr")
+set(datadir                 "${prefix}/share")
+
 set(afm_name                "aglfwk")
 set(afm_confdir             "${sysconfdir}/${afm_name}")
-set(afm_datadir             "${datadir}/$(afm_name}")
+set(afm_datadir             "${datadir}/${afm_name}")
 set(afm_appdir              "${afm_datadir}/applications")
 set(afm_icondir             "${afm_datadir}/icons")
 set(afm_prefix              "urn:agl:")

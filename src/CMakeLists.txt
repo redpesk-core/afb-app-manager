@@ -39,13 +39,13 @@ include_directories(simulation)
 
 add_compile_options(-Wall -Wno-pointer-sign)
 add_compile_options(-ffunction-sections -fdata-sections)
+add_compile_options(-fPIC)
 add_compile_options(-Wl,--gc-sections)
 
-#SET(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
-#SET(CMAKE_C_FLAGS_DEBUG        "-g -O0 -ggdb -Wp,-U_FORTIFY_SOURCE")
-#SET(CMAKE_C_FLAGS_RELEASE      "-g -O2")
-#SET(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
-#ADD_COMPILE_OPTIONS("-fPIC")
+set(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
+set(CMAKE_C_FLAGS_DEBUG        "-g -O0 -ggdb -Wp,-U_FORTIFY_SOURCE")
+set(CMAKE_C_FLAGS_RELEASE      "-g -O2")
+set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
 
 ###########################################################################
 
