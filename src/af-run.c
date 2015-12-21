@@ -396,11 +396,10 @@ struct json_object *af_run_list()
 {
 	struct json_object *result, *obj;
 	struct apprun *runner;
-	char runidstr[20];
 	int i;
 
 	/* creates the object */
-	result = json_object_new_object();
+	result = json_object_new_array();
 	if (result == NULL) {
 		errno = ENOMEM;
 		return NULL;		
@@ -414,9 +413,8 @@ struct json_object *af_run_list()
 					json_object_put(result);
 					return NULL;
 				}
-				sprintf(runidstr, "%d", runner->runid);
 				/* TODO status ? */
-				json_object_object_add(result, runidstr, obj);
+				json_object_array_add(result, obj);
 			}
 		}
 	}

@@ -31,9 +31,9 @@ static struct jbus *jbus;
 static struct af_db *afdb;
 
 const char error_nothing[] = "[]";
-const char error_bad_request[] = "{\"status\":\"error: bad request\"}";
-const char error_not_found[] = "{\"status\":\"error: not found\"}";
-const char error_cant_start[] = "{\"status\":\"error: can't start\"}";
+const char error_bad_request[] = "bad request";
+const char error_not_found[] = "not found";
+const char error_cant_start[] = "can't start";
 
 static const char *getappid(struct json_object *obj)
 {
@@ -48,15 +48,23 @@ static int getrunid(struct json_object *obj)
 static void reply(struct jreq *jreq, struct json_object *resp, const char *errstr)
 {
 	if (resp)
-		jbus_reply(jreq, resp);
+		jbus_reply_j(jreq, resp);
 	else
-		jbus_replyj(jreq, errstr);
+		jbus_reply_error_s(jreq, errstr);
+}
+
+static void reply_status(struct jreq *jreq, int status)
+{
+	if (status)
+		jbus_reply_error_s(jreq, error_not_found);
+	else
+		jbus_reply_s(jreq, "true");
 }
 
 static void on_runnables(struct jreq *jreq, struct json_object *obj)
 {
 	struct json_object *resp = af_db_application_list(afdb);
-	jbus_reply(jreq, resp);
+	jbus_reply_j(jreq, resp);
 	json_object_put(obj);
 }
 
@@ -77,19 +85,19 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 
 	appid = getappid(obj);
 	if (appid == NULL)
-		jbus_replyj(jreq, error_bad_request);
+		jbus_reply_error_s(jreq, error_bad_request);
 	else {
 		appli = af_db_get_application(afdb, appid);
 		if (appli == NULL)
-			jbus_replyj(jreq, error_not_found);
+			jbus_reply_error_s(jreq, error_not_found);
 		else {
 			runid = af_run_start(appli);
 			if (runid <= 0)
-				jbus_replyj(jreq, error_cant_start);
+				jbus_reply_error_s(jreq, error_cant_start);
 			else {
 				snprintf(runidstr, sizeof runidstr, "%d", runid);
 				runidstr[sizeof runidstr - 1] = 0;
-				jbus_replyj(jreq, runidstr);
+				jbus_reply_s(jreq, runidstr);
 			}
 		}
 	}
@@ -100,7 +108,7 @@ static void on_stop(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
 	int status = af_run_stop(runid);
-	jbus_replyj(jreq, status ? error_not_found : "true");
+	reply_status(jreq, status);
 	json_object_put(obj);
 }
 
@@ -108,7 +116,7 @@ static void on_continue(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
 	int status = af_run_continue(runid);
-	jbus_replyj(jreq, status ? error_not_found : "true");
+	reply_status(jreq, status);
 	json_object_put(obj);
 }
 
@@ -116,14 +124,14 @@ static void on_terminate(struct jreq *jreq, struct json_object *obj)
 {
 	int runid = getrunid(obj);
 	int status = af_run_terminate(runid);
-	jbus_replyj(jreq, status ? error_not_found : "true");
+	reply_status(jreq, status);
 	json_object_put(obj);
 }
 
 static void on_runners(struct jreq *jreq, struct json_object *obj)
 {
 	struct json_object *resp = af_run_list();
-	jbus_reply(jreq, resp);
+	jbus_reply_j(jreq, resp);
 	json_object_put(resp);
 	json_object_put(obj);
 }
@@ -181,14 +189,14 @@ int main(int ac, char **av)
 		ERROR("create_jbus failed");
 		return 1;
 	}
-	if(jbus_add_service(jbus, "runnables", on_runnables)
-	|| jbus_add_service(jbus, "detail", on_detail)
-	|| jbus_add_service(jbus, "start", on_start)
-	|| jbus_add_service(jbus, "terminate", on_terminate)
-	|| jbus_add_service(jbus, "stop", on_stop)
-	|| jbus_add_service(jbus, "continue", on_continue)
-	|| jbus_add_service(jbus, "runners", on_runners)
-	|| jbus_add_service(jbus, "state", on_state)) {
+	if(jbus_add_service_j(jbus, "runnables", on_runnables)
+	|| jbus_add_service_j(jbus, "detail", on_detail)
+	|| jbus_add_service_j(jbus, "start", on_start)
+	|| jbus_add_service_j(jbus, "terminate", on_terminate)
+	|| jbus_add_service_j(jbus, "stop", on_stop)
+	|| jbus_add_service_j(jbus, "continue", on_continue)
+	|| jbus_add_service_j(jbus, "runners", on_runners)
+	|| jbus_add_service_j(jbus, "state", on_state)) {
 		ERROR("adding services failed");
 		return 1;
 	}
