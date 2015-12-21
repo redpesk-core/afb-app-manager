@@ -3,8 +3,7 @@ Installation Instructions
 
 In a shell, type the following commands:
 
-autoreconf -if
-./configure
+cmake -DCMAKE_INSTALL_PREFIX=/ .
 make
 sudo make install
 

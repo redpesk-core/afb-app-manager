@@ -102,4 +102,6 @@ target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
 add_executable(af-usrd af-usrd.c)
 target_link_libraries(af-usrd afm secwrp wgt utils)
 
+install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+install(TARGETS af-usrd DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 

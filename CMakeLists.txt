@@ -20,20 +20,17 @@ cmake_minimum_required(VERSION 2.8)
 
 project("afm-main" LANGUAGES "C")
 
+include(GNUInstallDirs)
+
 macro(setc name value)
 	if(NOT DEFINED ${name})
 		set(${name} "${value}")
 	endif(NOT DEFINED ${name})
 endmacro(setc)
 
-setc(rootdir                 "")
-setc(sysconfdir              "${rootdir}/etc")
-setc(prefix                  "${rootdir}/usr")
-setc(datadir                 "${prefix}/share")
-
 setc(afm_name                "aglfwk")
-setc(afm_confdir             "${sysconfdir}/${afm_name}")
-setc(afm_datadir             "${datadir}/${afm_name}")
+setc(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}")
+setc(afm_datadir             "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}")
 setc(afm_appdir              "${afm_datadir}/applications")
 setc(afm_icondir             "${afm_datadir}/icons")
 setc(afm_prefix              "urn:agl:")
@@ -43,7 +40,7 @@ setc(afm_user_appdir         "app-data")
 setc(wgtpkg_trusted_cert_dir "${afm_confdir}/certs")
 
 macro(defstr name value)
-	add_definitions("-D${name}=\"${value}\"")
+	add_definitions(-D${name}="${value}")
 endmacro(defstr)
 
 defstr(FWK_CONFIG_DIR          "${afm_confdir}")

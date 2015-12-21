@@ -3,10 +3,14 @@ wgtpkg-installer
 wgtpkg-pack
 wgtpkg-sign
 wgtpkg-info
-*.o
 *.a
 
-TODO
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
 a.pem
 b.pem
 ca-certificates/
