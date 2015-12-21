@@ -184,7 +184,7 @@ int main(int ac, char **av)
 	}
 
 	/* init service	*/
-	jbus = create_jbus(1, "/org/AGL/framework");
+	jbus = create_jbus(1, "/org/AGL/afm-main");
 	if (!jbus) {
 		ERROR("create_jbus failed");
 		return 1;
