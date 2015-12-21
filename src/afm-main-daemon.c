@@ -157,7 +157,7 @@ static int daemonize()
 
 int main(int ac, char **av)
 {
-	LOGAUTH("afdb-usrd");
+	LOGAUTH("afm-main-daemon");
 
 	/* init random generator */
 	srandom((unsigned int)time(NULL));
@@ -184,7 +184,7 @@ int main(int ac, char **av)
 	}
 
 	/* init service	*/
-	jbus = create_jbus(1, "/org/AGL/afm-main");
+	jbus = create_jbus(1, "/org/AGL/afmMain");
 	if (!jbus) {
 		ERROR("create_jbus failed");
 		return 1;
