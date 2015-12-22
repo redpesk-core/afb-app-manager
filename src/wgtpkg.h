@@ -92,7 +92,7 @@ extern const char *file_get_prop(struct filedesc *file, const char *name);
 /**************************************************************/
 /* from wgtpkg-install */
 
-extern void install_widget(const char *wgtfile, const char *root, int force);
+extern int install_widget(const char *wgtfile, const char *root, int force);
 
 /**************************************************************/
 /* from wgtpkg-permission */

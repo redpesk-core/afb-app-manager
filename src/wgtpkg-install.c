@@ -216,12 +216,12 @@ error:
 }
 
 /* install the widget of the file */
-void install_widget(const char *wgtfile, const char *root, int force)
+int install_widget(const char *wgtfile, const char *root, int force)
 {
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 
-	NOTICE("-- INSTALLING widget %s --", wgtfile);
+	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
 
 	/* workdir */
 	create_directory(root, 0755, 1);
@@ -253,7 +253,7 @@ void install_widget(const char *wgtfile, const char *root, int force)
 	if (install_security(desc))
 		goto error3;
 	
-	return;
+	return 0;
 
 error3:
 	wgt_info_unref(ifo);
@@ -262,6 +262,6 @@ error2:
 	remove_workdir();
 
 error1:
-	return;
+	return -1;
 }
 

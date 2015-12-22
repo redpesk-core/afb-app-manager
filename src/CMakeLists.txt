@@ -16,6 +16,8 @@
 # limitations under the License.
 ###########################################################################
 
+cmake_minimum_required(VERSION 2.8)
+
 include(FindPkgConfig)
 
 pkg_check_modules(EXTRAS REQUIRED
@@ -78,30 +80,30 @@ add_library(secwrp
 	)
 
 add_library(afm
-	af-db.c
-	af-launch.c
-	af-run.c
+	afm-db.c
+	afm-launch.c
+	afm-run.c
 	)
 
 add_executable(wgtpkg-sign wgtpkg-sign.c)
 target_link_libraries(wgtpkg-sign wgtpkg utils)
 
-
 add_executable(wgtpkg-pack wgtpkg-pack.c)
 target_link_libraries(wgtpkg-pack wgtpkg utils)
-
 
 add_executable(wgtpkg-info wgtpkg-info.c)
 target_link_libraries(wgtpkg-info wgtpkg wgt utils)
 
-
 add_executable(wgtpkg-installer wgtpkg-installer.c)
 target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
-
 
 add_executable(afm-user-daemon afm-user-daemon.c)
 target_link_libraries(afm-user-daemon afm secwrp wgt utils)
 
+add_executable(afm-system-daemon afm-system-daemon.c)
+target_link_libraries(afm-system-daemon wgtpkg afm secwrp wgt utils)
+
 install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 

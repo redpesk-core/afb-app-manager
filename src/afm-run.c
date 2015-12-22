@@ -31,7 +31,8 @@
 
 #include "verbose.h"
 #include "utils-dir.h"
-#include "af-launch.h"
+#include "afm-run.h"
+#include "afm-launch.h"
 
 enum appstate {
 	as_starting,
@@ -235,7 +236,7 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 	}
 }
 
-/**************** handle af_launch_desc *********************/
+/**************** handle afm_launch_desc *********************/
 
 static int get_jstr(struct json_object *obj, const char *key, const char **value)
 {
@@ -253,7 +254,7 @@ static int get_jint(struct json_object *obj, const char *key, int *value)
 		&& ((*value = (int)json_object_get_int(data)), 1);
 }
 
-static int fill_launch_desc(struct json_object *appli, struct af_launch_desc *desc)
+static int fill_launch_desc(struct json_object *appli, struct afm_launch_desc *desc)
 {
 	json_object *pub;
 
@@ -284,10 +285,10 @@ static int fill_launch_desc(struct json_object *appli, struct af_launch_desc *de
 
 /**************** API handling ************************/
 
-int af_run_start(struct json_object *appli)
+int afm_run_start(struct json_object *appli)
 {
 	static struct apprun *runner;
-	struct af_launch_desc desc;
+	struct afm_launch_desc desc;
 	int rc;
 	sigset_t saved, blocked;
 
@@ -305,11 +306,11 @@ int af_run_start(struct json_object *appli)
 	sigprocmask(SIG_BLOCK, &blocked, &saved);
 
 	/* launch now */
-	rc = af_launch(&desc, runner->pids);
+	rc = afm_launch(&desc, runner->pids);
 	if (rc < 0) {
 		/* fork failed */
 		sigprocmask(SIG_SETMASK, &saved, NULL);
-		ERROR("can't start, af_launch failed: %m");
+		ERROR("can't start, afm_launch failed: %m");
 		freerunner(runner);
 		return -1;
 	}
@@ -324,17 +325,17 @@ int af_run_start(struct json_object *appli)
 	return rc;
 }
 
-int af_run_terminate(int runid)
+int afm_run_terminate(int runid)
 {
 	return killrunner(runid, SIGTERM, as_terminating);
 }
 
-int af_run_stop(int runid)
+int afm_run_stop(int runid)
 {
 	return killrunner(runid, SIGSTOP, as_stopped);
 }
 
-int af_run_continue(int runid)
+int afm_run_continue(int runid)
 {
 	return killrunner(runid, SIGCONT, as_running);
 }
@@ -392,7 +393,7 @@ error:
 	return NULL;
 }
 
-struct json_object *af_run_list()
+struct json_object *afm_run_list()
 {
 	struct json_object *result, *obj;
 	struct apprun *runner;
@@ -421,7 +422,7 @@ struct json_object *af_run_list()
 	return result;
 }
 
-struct json_object *af_run_state(int runid)
+struct json_object *afm_run_state(int runid)
 {
 	struct apprun *runner = getrunner(runid);
 	if (runner == NULL || runner->state == as_terminating || runner->state == as_terminated) {
@@ -433,7 +434,7 @@ struct json_object *af_run_state(int runid)
 
 /**************** INITIALISATION **********************/
 
-int af_run_init()
+int afm_run_init()
 {
 	char buf[2048];
 	char dir[PATH_MAX];

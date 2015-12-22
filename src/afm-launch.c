@@ -32,7 +32,7 @@
 extern char **environ;
 
 #include "verbose.h"
-#include "af-launch.h"
+#include "afm-launch.h"
 #include "secmgr-wrap.h"
 
 /*
@@ -102,7 +102,7 @@ struct launchparam {
 	const char *datadir;
 };
 
-static char **instantiate_arguments(const char **args, struct af_launch_desc *desc, struct launchparam *params)
+static char **instantiate_arguments(const char **args, struct afm_launch_desc *desc, struct launchparam *params)
 {
 	const char **iter, *p, *v;
 	char *data, **result, port[20], width[20], height[20], mini[3], c;
@@ -189,7 +189,7 @@ static int mkport()
 	return port;
 }
 
-int af_launch(struct af_launch_desc *desc, pid_t children[2])
+int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 {
 	char datadir[PATH_MAX];
 	int ikl, nkl, rc;

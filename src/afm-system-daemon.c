@@ -27,9 +27,8 @@
 #include "utils-jbus.h"
 #include "afm.h"
 #include "afm-db.h"
-#include "afm-run.h"
 
-static const char appname[] = "afm-user-daemon";
+static const char appname[] = "afm-system-daemon";
 
 static void usage()
 {
@@ -57,7 +56,6 @@ static struct option options[] = {
 };
 
 static struct jbus *jbus;
-static struct jbus *jbusys;
 static struct afm_db *afdb;
 
 const char error_nothing[] = "[]";
@@ -70,25 +68,12 @@ static const char *getappid(struct json_object *obj)
 	return json_type_string == json_object_get_type(obj) ? json_object_get_string(obj) : NULL;
 }
 
-static int getrunid(struct json_object *obj)
-{
-	return json_type_int == json_object_get_type(obj) ? json_object_get_int(obj) : 0;
-}
-
 static void reply(struct jreq *jreq, struct json_object *resp, const char *errstr)
 {
 	if (resp)
 		jbus_reply_j(jreq, resp);
 	else
 		jbus_reply_error_s(jreq, errstr);
-}
-
-static void reply_status(struct jreq *jreq, int status)
-{
-	if (status)
-		jbus_reply_error_s(jreq, error_not_found);
-	else
-		jbus_reply_s(jreq, "true");
 }
 
 static void on_runnables(struct jreq *jreq, struct json_object *obj)
@@ -106,75 +91,15 @@ static void on_detail(struct jreq *jreq, struct json_object *obj)
 	json_object_put(resp);
 }
 
-static void on_start(struct jreq *jreq, struct json_object *obj)
+extern void install_widget(const char *wgtfile, const char *root, int force);
+static void on_install(struct jreq *jreq, struct json_object *obj)
 {
-	const char *appid;
-	struct json_object *appli;
-	int runid;
-	char runidstr[20];
-
-	appid = getappid(obj);
-	if (appid == NULL)
-		jbus_reply_error_s(jreq, error_bad_request);
-	else {
-		appli = afm_db_get_application(afdb, appid);
-		if (appli == NULL)
-			jbus_reply_error_s(jreq, error_not_found);
-		else {
-			runid = afm_run_start(appli);
-			if (runid <= 0)
-				jbus_reply_error_s(jreq, error_cant_start);
-			else {
-				snprintf(runidstr, sizeof runidstr, "%d", runid);
-				runidstr[sizeof runidstr - 1] = 0;
-				jbus_reply_s(jreq, runidstr);
-			}
-		}
-	}
+	jbus_reply_error_s(jreq, "\"not yet implemented\"");
 }
 
-static void on_stop(struct jreq *jreq, struct json_object *obj)
+static void on_uninstall(struct jreq *jreq, struct json_object *obj)
 {
-	int runid = getrunid(obj);
-	int status = afm_run_stop(runid);
-	reply_status(jreq, status);
-}
-
-static void on_continue(struct jreq *jreq, struct json_object *obj)
-{
-	int runid = getrunid(obj);
-	int status = afm_run_continue(runid);
-	reply_status(jreq, status);
-}
-
-static void on_terminate(struct jreq *jreq, struct json_object *obj)
-{
-	int runid = getrunid(obj);
-	int status = afm_run_terminate(runid);
-	reply_status(jreq, status);
-}
-
-static void on_runners(struct jreq *jreq, struct json_object *obj)
-{
-	struct json_object *resp = afm_run_list();
-	jbus_reply_j(jreq, resp);
-	json_object_put(resp);
-}
-
-static void on_state(struct jreq *jreq, struct json_object *obj)
-{
-	int runid = getrunid(obj);
-	struct json_object *resp = afm_run_state(runid);
-	reply(jreq, resp, error_not_found);
-	json_object_put(resp);
-}
-
-static void on_signal_changed(struct json_object *obj)
-{
-	/* update the database */
-	afm_db_update_applications(afdb);
-	/* propagate now */
-	jbus_send_signal_j(jbus, "changed", obj);
+	jbus_reply_error_s(jreq, "\"not yet implemented\"");
 }
 
 static int daemonize()
@@ -222,15 +147,6 @@ int main(int ac, char **av)
 		}
 	}
 
-	/* init random generator */
-	srandom((unsigned int)time(NULL));
-
-	/* init runners */
-	if (afm_run_init()) {
-		ERROR("afm_run_init failed");
-		return 1;
-	}
-
 	/* init framework */
 	afdb = afm_db_create();
 	if (!afdb) {
@@ -272,31 +188,16 @@ int main(int ac, char **av)
 		return 1;
 	}
 
-	/* init observers */
-	jbusys = create_jbus(0, AFM_SYSTEM_DBUS_PATH);
-	if (!jbusys) {
-		ERROR("create_jbus failed for system");
-		return 1;
-	}
-	if(jbus_on_signal_j(jbusys, "changed", on_signal_changed)) {
-		ERROR("adding signal observer failed");
-		return 1;
-	}
-
 	/* init service	*/
-	jbus = create_jbus(1, AFM_USER_DBUS_PATH);
+	jbus = create_jbus(0, AFM_SYSTEM_DBUS_PATH);
 	if (!jbus) {
 		ERROR("create_jbus failed");
 		return 1;
 	}
 	if(jbus_add_service_j(jbus, "runnables", on_runnables)
 	|| jbus_add_service_j(jbus, "detail", on_detail)
-	|| jbus_add_service_j(jbus, "start", on_start)
-	|| jbus_add_service_j(jbus, "terminate", on_terminate)
-	|| jbus_add_service_j(jbus, "stop", on_stop)
-	|| jbus_add_service_j(jbus, "continue", on_continue)
-	|| jbus_add_service_j(jbus, "runners", on_runners)
-	|| jbus_add_service_j(jbus, "state", on_state)) {
+	|| jbus_add_service_j(jbus, "install", on_install)
+	|| jbus_add_service_j(jbus, "uninstall", on_uninstall)) {
 		ERROR("adding services failed");
 		return 1;
 	}

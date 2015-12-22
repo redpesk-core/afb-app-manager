@@ -16,7 +16,7 @@
  limitations under the License.
 */
 
-struct af_launch_desc {
+struct afm_launch_desc {
 	const char *path;
 	const char *tag;
 	const char *appid;
@@ -29,5 +29,5 @@ struct af_launch_desc {
 	int height;
 };
 
-int af_launch(struct af_launch_desc *desc, pid_t children[2]);
+int afm_launch(struct afm_launch_desc *desc, pid_t children[2]);
 

@@ -1,4 +1,5 @@
 src/afm-user-daemon
+src/afm-system-daemon
 wgtpkg-installer
 wgtpkg-pack
 wgtpkg-sign

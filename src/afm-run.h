@@ -16,11 +16,11 @@
  limitations under the License.
 */
 
-extern int af_run_start(struct json_object *appli);
-extern int af_run_terminate(int runid);
-extern int af_run_stop(int runid);
-extern int af_run_continue(int runid);
-extern struct json_object *af_run_list();
-extern struct json_object *af_run_state(int runid);
+extern int afm_run_start(struct json_object *appli);
+extern int afm_run_terminate(int runid);
+extern int afm_run_stop(int runid);
+extern int afm_run_continue(int runid);
+extern struct json_object *afm_run_list();
+extern struct json_object *afm_run_state(int runid);
 
-extern int af_run_init();
+extern int afm_run_init();

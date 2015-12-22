@@ -28,7 +28,7 @@
 #include <json.h>
 
 #include "wgt-info.h"
-#include "af-db.h"
+#include "afm-db.h"
 
 struct afapps {
 	struct json_object *pubarr;
@@ -41,22 +41,22 @@ enum dir_type {
 	type_app
 };
 
-struct af_db_dir {
-	struct af_db_dir *next;
+struct afm_db_dir {
+	struct afm_db_dir *next;
 	char *path;
 	enum dir_type type;
 };
 
-struct af_db {
+struct afm_db {
 	int refcount;
-	struct af_db_dir *dirhead;
-	struct af_db_dir *dirtail;
+	struct afm_db_dir *dirhead;
+	struct afm_db_dir *dirtail;
 	struct afapps applications;
 };
 
-struct af_db *af_db_create()
+struct afm_db *afm_db_create()
 {
-	struct af_db *afdb = malloc(sizeof * afdb);
+	struct afm_db *afdb = malloc(sizeof * afdb);
 	if (afdb == NULL)
 		errno = ENOMEM;
 	else {
@@ -70,15 +70,15 @@ struct af_db *af_db_create()
 	return afdb;
 }
 
-void af_db_addref(struct af_db *afdb)
+void afm_db_addref(struct afm_db *afdb)
 {
 	assert(afdb);
 	afdb->refcount++;
 }
 
-void af_db_unref(struct af_db *afdb)
+void afm_db_unref(struct afm_db *afdb)
 {
-	struct af_db_dir *dir;
+	struct afm_db_dir *dir;
 	assert(afdb);
 	if (!--afdb->refcount) {
 		json_object_put(afdb->applications.pubarr);
@@ -94,9 +94,9 @@ void af_db_unref(struct af_db *afdb)
 	}
 }
 
-int add_dir(struct af_db *afdb, const char *path, enum dir_type type)
+int add_dir(struct afm_db *afdb, const char *path, enum dir_type type)
 {
-	struct af_db_dir *dir;
+	struct afm_db_dir *dir;
 	char *r;
 
 	assert(afdb);
@@ -135,12 +135,12 @@ int add_dir(struct af_db *afdb, const char *path, enum dir_type type)
 	return 0;
 }
 
-int af_db_add_root(struct af_db *afdb, const char *path)
+int afm_db_add_root(struct afm_db *afdb, const char *path)
 {
 	return add_dir(afdb, path, type_root);
 }
 
-int af_db_add_application(struct af_db *afdb, const char *path)
+int afm_db_add_application(struct afm_db *afdb, const char *path)
 {
 	return add_dir(afdb, path, type_app);
 }
@@ -324,12 +324,12 @@ static int enumvers(struct enumdata *data)
 }
 
 /* regenerate the list of applications */
-int af_db_update_applications(struct af_db *afdb)
+int afm_db_update_applications(struct afm_db *afdb)
 {
 	int rc;
 	struct enumdata edata;
 	struct afapps oldapps;
-	struct af_db_dir *dir;
+	struct afm_db_dir *dir;
 
 	/* create the result */
 	edata.apps.pubarr = json_object_new_array();
@@ -367,28 +367,28 @@ error:
 	return -1;
 }
 
-int af_db_ensure_applications(struct af_db *afdb)
+int afm_db_ensure_applications(struct afm_db *afdb)
 {
-	return afdb->applications.pubarr ? 0 : af_db_update_applications(afdb);
+	return afdb->applications.pubarr ? 0 : afm_db_update_applications(afdb);
 }
 
-struct json_object *af_db_application_list(struct af_db *afdb)
+struct json_object *afm_db_application_list(struct afm_db *afdb)
 {
-	return af_db_ensure_applications(afdb) ? NULL : afdb->applications.pubarr;
+	return afm_db_ensure_applications(afdb) ? NULL : json_object_get(afdb->applications.pubarr);
 }
 
-struct json_object *af_db_get_application(struct af_db *afdb, const char *id)
+struct json_object *afm_db_get_application(struct afm_db *afdb, const char *id)
 {
 	struct json_object *result;
-	if (!af_db_ensure_applications(afdb) && json_object_object_get_ex(afdb->applications.direct, id, &result))
-		return result;
+	if (!afm_db_ensure_applications(afdb) && json_object_object_get_ex(afdb->applications.direct, id, &result))
+		return json_object_get(result);
 	return NULL;
 }
 
-struct json_object *af_db_get_application_public(struct af_db *afdb, const char *id)
+struct json_object *afm_db_get_application_public(struct afm_db *afdb, const char *id)
 {
-	struct json_object *result = af_db_get_application(afdb, id);
-	return result && json_object_object_get_ex(result, "public", &result) ? result : NULL;
+	struct json_object *result = afm_db_get_application(afdb, id);
+	return result && json_object_object_get_ex(result, "public", &result) ? json_object_get(result) : NULL;
 }
 
 
@@ -398,9 +398,9 @@ struct json_object *af_db_get_application_public(struct af_db *afdb, const char 
 #include <stdio.h>
 int main()
 {
-struct af_db *afdb = af_db_create();
-af_db_add_root(afdb,FWK_APP_DIR);
-af_db_update_applications(afdb);
+struct afm_db *afdb = afm_db_create();
+afm_db_add_root(afdb,FWK_APP_DIR);
+afm_db_update_applications(afdb);
 printf("array = %s\n", json_object_to_json_string_ext(afdb->applications.pubarr, 3));
 printf("direct = %s\n", json_object_to_json_string_ext(afdb->applications.direct, 3));
 printf("byapp = %s\n", json_object_to_json_string_ext(afdb->applications.byapp, 3));
