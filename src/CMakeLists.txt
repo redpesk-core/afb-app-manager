@@ -99,9 +99,9 @@ add_executable(wgtpkg-installer wgtpkg-installer.c)
 target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
 
 
-add_executable(afm-main-daemon afm-main-daemon.c)
-target_link_libraries(afm-main-daemon afm secwrp wgt utils)
+add_executable(afm-user-daemon afm-user-daemon.c)
+target_link_libraries(afm-user-daemon afm secwrp wgt utils)
 
 install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
-install(TARGETS afm-main-daemon DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 
