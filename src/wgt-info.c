@@ -75,6 +75,34 @@ static xmlChar *optcontent(xmlNodePtr node)
 	return node ? xmlNodeGetContent(node) : NULL;
 }
 
+static char *mkidaver(char *id, char *version)
+{
+	int lid, lver;
+	char c, *r;
+	if (id && version) {
+		lid = strlen(id);
+		c = version[lver = 0];
+		while(c && c != ' ') {
+			if (c != '.')
+				c = version[++lver];
+			else {
+				do {
+					c = version[++lver];
+				} while (c && c != ' ' && c != '.');
+				break;
+			}
+		}
+		r = malloc(2 + lid + lver);
+		if (r) {
+			memcpy(r, id, lid);
+			r[lid] = '@';
+			memcpy(r + lid + 1, version, lver + 1);
+			return r;
+		}
+	}
+	return NULL;
+}
+
 static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, int want_preferences)
 {
 	xmlNodePtr node, pnode;
@@ -91,6 +119,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	}
 	desc->id = xmlGetProp(node, wgt_config_string_id);
 	desc->version = xmlGetProp(node, wgt_config_string_version);
+	desc->idaver = mkidaver(desc->id, desc->version);
 	desc->width = getpropnum(node, wgt_config_string_width, 0);
 	desc->height = getpropnum(node, wgt_config_string_height, 0);
 	desc->viewmodes = xmlGetProp(node, wgt_config_string_viewmodes);
@@ -237,6 +266,7 @@ static void free_desc(struct wgt_desc *desc)
 
 	xmlFree(desc->id);
 	xmlFree(desc->version);
+	free(desc->idaver);
 	xmlFree(desc->viewmodes);
 	xmlFree(desc->defaultlocale);
 	xmlFree(desc->name);
@@ -289,9 +319,10 @@ static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
 	struct wgt_desc_param *param;
 
 	if (desc->id) fprintf(f, "%sid: %s\n", prefix, desc->id);
+	if (desc->version) fprintf(f, "%sversion: %s\n", prefix, desc->version);
+	if (desc->idaver) fprintf(f, "%sidaver: %s\n", prefix, desc->idaver);
 	if (desc->width) fprintf(f, "%swidth: %d\n", prefix, desc->width);
 	if (desc->height) fprintf(f, "%sheight: %d\n", prefix, desc->height);
-	if (desc->version) fprintf(f, "%sversion: %s\n", prefix, desc->version);
 	if (desc->viewmodes) fprintf(f, "%sviewmodes: %s\n", prefix, desc->viewmodes);
 	if (desc->defaultlocale) fprintf(f, "%sdefaultlocale: %s\n", prefix, desc->defaultlocale);
 	if (desc->name) fprintf(f, "%sname: %s\n", prefix, desc->name);

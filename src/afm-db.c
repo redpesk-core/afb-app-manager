@@ -169,7 +169,6 @@ static int addapp(struct afapps *apps, const char *path)
 	const struct wgt_desc *desc;
 	const struct wgt_desc_feature *feat;
 	struct json_object *priv = NULL, *pub, *bya, *plugs, *str;
-	char *appid, *end;
 
 	/* connect to the widget */
 	info = wgt_info_createat(AT_FDCWD, path, 0, 1, 0);
@@ -179,12 +178,6 @@ static int addapp(struct afapps *apps, const char *path)
 		goto error;
 	}
 	desc = wgt_info_desc(info);
-
-	/* create the application id */
-	appid = alloca(2 + strlen(desc->id) + strlen(desc->version));
-	end = stpcpy(appid, desc->id);
-	*end++ = '@';
-	strcpy(end, desc->version);
 
 	/* create the application structure */
 	priv = json_object_new_object();
@@ -213,7 +206,7 @@ static int addapp(struct afapps *apps, const char *path)
 	|| json_add_str(priv, "path", path)
 	|| json_add_str(priv, "content", desc->content_src)
 	|| json_add_str(priv, "type", desc->content_type)
-	|| json_add_str(pub, "id", appid)
+	|| json_add_str(pub, "id", desc->idaver)
 	|| json_add_str(pub, "version", desc->version)
 	|| json_add_int(pub, "width", desc->width)
 	|| json_add_int(pub, "height", desc->height)
@@ -249,7 +242,7 @@ static int addapp(struct afapps *apps, const char *path)
 		}
 	}
 
-	if (json_add(apps->direct, appid, priv))
+	if (json_add(apps->direct, desc->idaver, priv))
 		goto error2;
 	json_object_get(priv);
 

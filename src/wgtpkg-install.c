@@ -28,6 +28,7 @@
 #include "wgtpkg.h"
 #include "wgt.h"
 #include "wgt-info.h"
+#include "wgtpkg-install.h"
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
 
@@ -216,7 +217,7 @@ error:
 }
 
 /* install the widget of the file */
-int install_widget(const char *wgtfile, const char *root, int force)
+struct wgt_info *install_widget(const char *wgtfile, const char *root, int force)
 {
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
@@ -253,7 +254,8 @@ int install_widget(const char *wgtfile, const char *root, int force)
 	if (install_security(desc))
 		goto error3;
 	
-	return 0;
+	file_reset();
+	return ifo;
 
 error3:
 	wgt_info_unref(ifo);
@@ -262,6 +264,7 @@ error2:
 	remove_workdir();
 
 error1:
-	return -1;
+	file_reset();
+	return NULL;
 }
 

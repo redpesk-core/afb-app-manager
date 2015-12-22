@@ -90,11 +90,6 @@ extern int file_set_prop(struct filedesc *file, const char *name, const char *va
 extern const char *file_get_prop(struct filedesc *file, const char *name);
 
 /**************************************************************/
-/* from wgtpkg-install */
-
-extern int install_widget(const char *wgtfile, const char *root, int force);
-
-/**************************************************************/
 /* from wgtpkg-permission */
 
 extern int is_standard_permission(const char *name);

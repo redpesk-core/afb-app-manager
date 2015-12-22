@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <getopt.h>
+#include <errno.h>
 
 #include <json.h>
 
@@ -27,6 +28,8 @@
 #include "utils-jbus.h"
 #include "afm.h"
 #include "afm-db.h"
+#include "wgt-info.h"
+#include "wgtpkg-install.h"
 
 static const char appname[] = "afm-system-daemon";
 
@@ -91,13 +94,90 @@ static void on_detail(struct jreq *jreq, struct json_object *obj)
 	json_object_put(resp);
 }
 
-extern void install_widget(const char *wgtfile, const char *root, int force);
-static void on_install(struct jreq *jreq, struct json_object *obj)
+static const char *j_get_string(struct json_object *obj, const char *key, const char *defval)
 {
-	jbus_reply_error_s(jreq, "\"not yet implemented\"");
+	struct json_object *o;
+	return json_object_object_get_ex(obj, key, &o) && json_object_get_type(o) == json_type_string ? json_object_get_string(o) : defval;
 }
 
-static void on_uninstall(struct jreq *jreq, struct json_object *obj)
+static int j_get_boolean(struct json_object *obj, const char *key, int defval)
+{
+	struct json_object *o;
+	return json_object_object_get_ex(obj, key, &o) && json_object_get_type(o) == json_type_boolean ? json_object_get_boolean(o) : defval;
+}
+
+static int json_add(struct json_object *obj, const char *key, struct json_object *val)
+{
+	json_object_object_add(obj, key, val);
+	return 0;
+}
+
+static int json_add_str(struct json_object *obj, const char *key, const char *val)
+{
+	struct json_object *str = json_object_new_string (val ? val : "");
+	return str ? json_add(obj, key, str) : (errno = ENOMEM, -1);
+}
+/*
+static int json_add_int(struct json_object *obj, const char *key, int val)
+{
+	struct json_object *v = json_object_new_int (val);
+	return v ? json_add(obj, key, v) : (errno = ENOMEM, -1);
+}
+*/
+static void on_install(struct jreq *jreq, struct json_object *req)
+{
+	const char *wgtfile;
+	const char *root;
+	int force;
+	struct wgt_info *ifo;
+	struct json_object *resp;
+
+	/* scan the request */
+	switch (json_object_get_type(req)) {
+	case json_type_string:
+		wgtfile = json_object_get_string(req);
+		root = FWK_APP_DIR;
+		force = 0;
+		break;
+	case json_type_object:
+		wgtfile = j_get_string(req, "wgt", NULL);
+		if (wgtfile != NULL) {
+			root = j_get_string(req, "root", FWK_APP_DIR);
+			force = j_get_boolean(req, "force", 0);
+			break;
+		}
+	default:
+		jbus_reply_error_s(jreq, error_bad_request);
+		return;
+	}
+
+	/* install the widget */
+	ifo = install_widget(wgtfile, root, force);
+	if (ifo == NULL) {
+		jbus_reply_error_s(jreq, "\"installation failed\"");
+		return;
+	}
+
+	/* build the response */
+	resp = json_object_new_object();
+	if(!resp || json_add_str(resp, "added", wgt_info_desc(ifo)->idaver)) {
+		json_object_put(resp);
+		wgt_info_unref(ifo);
+		jbus_reply_error_s(jreq, "\"out of memory but installed!\"");
+		return;
+	}
+	wgt_info_unref(ifo);
+
+	/* update the current database */
+	afm_db_update_applications(afdb);
+
+	/* reply and propagate event */
+	jbus_reply_j(jreq, resp);
+	jbus_send_signal_j(jbus, "changed", resp);
+	json_object_put(resp);
+}
+
+static void on_uninstall(struct jreq *jreq, struct json_object *req)
 {
 	jbus_reply_error_s(jreq, "\"not yet implemented\"");
 }
