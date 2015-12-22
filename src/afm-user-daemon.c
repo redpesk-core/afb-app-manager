@@ -31,9 +31,9 @@ static struct jbus *jbus;
 static struct af_db *afdb;
 
 const char error_nothing[] = "[]";
-const char error_bad_request[] = "bad request";
-const char error_not_found[] = "not found";
-const char error_cant_start[] = "can't start";
+const char error_bad_request[] = "\"bad request\"";
+const char error_not_found[] = "\"not found\"";
+const char error_cant_start[] = "\"can't start\"";
 
 static const char *getappid(struct json_object *obj)
 {
