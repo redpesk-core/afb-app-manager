@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
+#include <getopt.h>
 
 #include <json.h>
 
@@ -26,6 +27,33 @@
 #include "utils-jbus.h"
 #include "af-db.h"
 #include "af-run.h"
+
+static const char appname[] = "afm-user-daemon";
+
+static void usage()
+{
+	printf(
+		"usage: %s [-q] [-v] [-r rootdir]... [-a appdir]...\n"
+		"\n"
+		"   -a appdir    adds an application directory\n"
+		"   -r rootdir   adds a root directory of applications\n"
+		"   -d           run as a daemon\n"
+		"   -q           quiet\n"
+		"   -v           verbose\n"
+		"\n",
+		appname
+	);
+}
+
+static struct option options[] = {
+	{ "root",        required_argument, NULL, 'r' },
+	{ "application", required_argument, NULL, 'a' },
+	{ "daemon",      no_argument,       NULL, 'd' },
+	{ "quiet",       no_argument,       NULL, 'q' },
+	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "help",        no_argument,       NULL, 'h' },
+	{ NULL, 0, NULL, 0 }
+};
 
 static struct jbus *jbus;
 static struct af_db *afdb;
@@ -157,7 +185,38 @@ static int daemonize()
 
 int main(int ac, char **av)
 {
-	LOGAUTH("afm-main-daemon");
+	int i, daemon = 0;
+
+	LOGAUTH(appname);
+
+	/* first interpretation of arguments */
+	while ((i = getopt_long(ac, av, "hdqvr:a:", options, NULL)) >= 0) {
+		switch (i) {
+		case 'h':
+			usage();
+			return 0;
+		case 'q':
+			if (verbosity)
+				verbosity--;
+			break;
+		case 'v':
+			verbosity++;
+			break;
+		case 'd':
+			daemon = 1;
+			break;
+		case 'r':
+			break;
+		case 'a':
+			break;
+		case ':':
+			ERROR("missing argument value");
+			return 1;
+		default:
+			ERROR("unrecognized option");
+			return 1;
+		}
+	}
 
 	/* init random generator */
 	srandom((unsigned int)time(NULL));
@@ -178,8 +237,34 @@ int main(int ac, char **av)
 		ERROR("can't add root %s", FWK_APP_DIR);
 		return 1;
 	}
+
+	/* second interpretation of arguments */
+	optind = 1;
+	while ((i = getopt_long(ac, av, "hdqvr:a:", options, NULL)) >= 0) {
+		switch (i) {
+		case 'r':
+			if (af_db_add_root(afdb, optarg)) {
+				ERROR("can't add root %s", optarg);
+				return 1;
+			}
+			break;
+		case 'a':
+			if (af_db_add_application(afdb, optarg)) {
+                                ERROR("can't add application %s", optarg);
+                                return 1;
+                        }
+			break;
+		}
+	}
+
+	/* update the database */
 	if (af_db_update_applications(afdb)) {
 		ERROR("af_update_applications failed");
+		return 1;
+	}
+
+	if (daemon && daemonize()) {
+		ERROR("daemonization failed");
 		return 1;
 	}
 
@@ -209,6 +294,4 @@ int main(int ac, char **av)
 	while (!jbus_read_write_dispatch(jbus, -1));
 	return 0;
 }
-
-
 

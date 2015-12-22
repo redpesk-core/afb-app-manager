@@ -23,6 +23,7 @@ extern void af_db_addref(struct af_db *afdb);
 extern void af_db_unref(struct af_db *afdb);
 
 extern int af_db_add_root(struct af_db *afdb, const char *path);
+extern int af_db_add_application(struct af_db *afdb, const char *path);
 extern int af_db_update_applications(struct af_db *afdb);
 extern int af_db_ensure_applications(struct af_db *afdb);
 

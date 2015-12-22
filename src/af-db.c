@@ -36,10 +36,21 @@ struct afapps {
 	struct json_object *byapp;
 };
 
+enum dir_type {
+	type_root,
+	type_app
+};
+
+struct af_db_dir {
+	struct af_db_dir *next;
+	char *path;
+	enum dir_type type;
+};
+
 struct af_db {
 	int refcount;
-	int nrroots;
-	char **roots;
+	struct af_db_dir *dirhead;
+	struct af_db_dir *dirtail;
 	struct afapps applications;
 };
 
@@ -50,8 +61,8 @@ struct af_db *af_db_create()
 		errno = ENOMEM;
 	else {
 		afdb->refcount = 1;
-		afdb->nrroots = 0;
-		afdb->roots = NULL;
+		afdb->dirhead = NULL;
+		afdb->dirtail = NULL;
 		afdb->applications.pubarr = NULL;
 		afdb->applications.direct = NULL;
 		afdb->applications.byapp = NULL;
@@ -67,22 +78,26 @@ void af_db_addref(struct af_db *afdb)
 
 void af_db_unref(struct af_db *afdb)
 {
+	struct af_db_dir *dir;
 	assert(afdb);
 	if (!--afdb->refcount) {
 		json_object_put(afdb->applications.pubarr);
 		json_object_put(afdb->applications.direct);
 		json_object_put(afdb->applications.byapp);
-		while (afdb->nrroots)
-			free(afdb->roots[--afdb->nrroots]);
-		free(afdb->roots);
+		while (afdb->dirhead != NULL) {
+			dir = afdb->dirhead;
+			afdb->dirhead = dir->next;
+			free(dir->path);
+			free(dir);
+		}
 		free(afdb);
 	}
 }
 
-int af_db_add_root(struct af_db *afdb, const char *path)
+int add_dir(struct af_db *afdb, const char *path, enum dir_type type)
 {
-	int i, n;
-	char *r, **roots;
+	struct af_db_dir *dir;
+	char *r;
 
 	assert(afdb);
 
@@ -92,26 +107,42 @@ int af_db_add_root(struct af_db *afdb, const char *path)
 		return -1;
 
 	/* avoiding duplications */
-	n = afdb->nrroots;
-	roots = afdb->roots;
-	for (i = 0 ; i < n ; i++) {
-		if (!strcmp(r, roots[i])) {
-			free(r);
-			return 0;
-		}
+	dir = afdb->dirhead;
+	while(dir != NULL && (strcmp(dir->path, path) || dir->type != type))
+		dir = dir ->next;
+	if (dir != NULL) {
+		free(r);
+		return 0;
 	}
 
-	/* add */
-	roots = realloc(roots, (n + 1) * sizeof(roots[0]));
-	if (!roots) {
+	/* allocates the structure */
+	dir = malloc(sizeof * dir);
+	if (dir == NULL) {
 		free(r);
 		errno = ENOMEM;
 		return -1;
 	}
-	roots[n++] = r;
-	afdb->roots = roots;
-	afdb->nrroots = n;
+
+	/* add */
+	dir->next = NULL;
+	dir->path = r;
+	dir->type = type;
+	if (afdb->dirtail == NULL)
+		afdb->dirhead = dir;
+	else
+		afdb->dirtail->next = dir;
+	afdb->dirtail = dir;
 	return 0;
+}
+
+int af_db_add_root(struct af_db *afdb, const char *path)
+{
+	return add_dir(afdb, path, type_root);
+}
+
+int af_db_add_application(struct af_db *afdb, const char *path)
+{
+	return add_dir(afdb, path, type_app);
 }
 
 static int json_add(struct json_object *obj, const char *key, struct json_object *val)
@@ -142,8 +173,11 @@ static int addapp(struct afapps *apps, const char *path)
 
 	/* connect to the widget */
 	info = wgt_info_createat(AT_FDCWD, path, 0, 1, 0);
-	if (info == NULL)
+	if (info == NULL) {
+		if (errno == ENOENT)
+			return 0; /* silently ignore bad directories */
 		goto error;
+	}
 	desc = wgt_info_desc(info);
 
 	/* create the application id */
@@ -292,9 +326,10 @@ static int enumvers(struct enumdata *data)
 /* regenerate the list of applications */
 int af_db_update_applications(struct af_db *afdb)
 {
-	int rc, iroot;
+	int rc;
 	struct enumdata edata;
 	struct afapps oldapps;
+	struct af_db_dir *dir;
 
 	/* create the result */
 	edata.apps.pubarr = json_object_new_array();
@@ -305,13 +340,17 @@ int af_db_update_applications(struct af_db *afdb)
 		goto error;
 	}
 	/* for each root */
-	for (iroot = 0 ; iroot < afdb->nrroots ; iroot++) {
-		edata.length = stpcpy(edata.path, afdb->roots[iroot]) - edata.path;
-		assert(edata.length < sizeof edata.path);
-		/* enumerate the applications */
-		rc = enumentries(&edata, enumvers);
-		if (rc)
-			goto error;
+	for (dir = afdb->dirhead ; dir != NULL ; dir = dir->next) {
+		if (dir->type == type_root) {
+			edata.length = stpcpy(edata.path, dir->path) - edata.path;
+			assert(edata.length < sizeof edata.path);
+			/* enumerate the applications */
+			rc = enumentries(&edata, enumvers);
+			if (rc)
+				goto error;
+		} else {
+			rc = addapp(&edata.apps, dir->path);
+		}
 	}
 	/* commit the result */
 	oldapps = afdb->applications;
