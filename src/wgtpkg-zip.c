@@ -19,7 +19,6 @@
 #define _BSD_SOURCE /* see readdir */
 
 #include <limits.h>
-#include <zip.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -32,13 +31,19 @@
 #include "verbose.h"
 #include "wgtpkg.h"
 
-
-#if !defined(MODE_OF_FILE_CREATION)
 #define MODE_OF_FILE_CREATION 0640
-#endif
-#if !defined(MODE_OF_DIRECTORY_CREATION)
 #define MODE_OF_DIRECTORY_CREATION 0750
+
+#if !defined(USE_LIBZIP)
+#	define USE_LIBZIP 1
 #endif
+
+/***********************************************************
+ *        USING LIBZIP
+ ***********************************************************/
+#if USE_LIBZIP
+
+#include <zip.h>
 
 static int is_valid_filename(const char *filename)
 {
@@ -340,12 +345,90 @@ int zwrite(const char *zipfile)
 	return err;
 }
 
+/***********************************************************
+ *        NOT USING LIBZIP: FORKING
+ ***********************************************************/
+#else
+
+#include <sys/wait.h>
+
+extern char **environ;
+
+static int zrun(const char *path, const char *args[])
+{
+	int rc;
+	siginfo_t si;
+
+	rc = fork();
+	if (rc < 0) {
+		/* can't fork */
+		ERROR("error while forking in zrun: %m");
+		return rc;
+	}
+	if (!rc) {
+		rc = execve(realpath(path, NULL), (char * const*)args, environ);
+		ERROR("can't execute %s in zrun: %m", args[0]);
+		_exit(1);
+		return rc;
+	}
+	/* wait termination of the child */
+	rc = waitid(P_PID, (id_t)rc, &si, WEXITED);
+	if (rc)
+		ERROR("unexpected wait status in zrun of %s: %m", args[0]);
+	else if (si.si_code != CLD_EXITED)
+		ERROR("unexpected termination status of %s in zrun", args[0]);
+	else if (si.si_status != 0)
+		ERROR("child for %s terminated with error code %d in zwrite", args[0], si.si_status);
+	else
+		return 0;
+	return -1;
+}
+
+/* read (extract) 'zipfile' in current directory */
+int zread(const char *zipfile, unsigned long long maxsize)
+{
+	int rc;
+	const char *args[6];
+
+	args[0] = "unzip";
+	args[1] = "-q";
+	args[2] = "-d";
+	args[3] = workdir;
+	args[4] = zipfile;
+	args[5] = NULL;
+
+	file_reset();
+	rc = zrun(PATH_TO_UNZIP, args);
+	if (!rc)
+		rc = fill_files();
+	return rc;
+}
+
+/* write (pack) content of the current directory in 'zipfile' */
+int zwrite(const char *zipfile)
+{
+	const char *args[6];
+
+	args[0] = "zip";
+	args[1] = "-q";
+	args[2] = "-r";
+	args[3] = workdir;
+	args[4] = zipfile;
+	args[5] = NULL;
+
+	return zrun(PATH_TO_ZIP, args);
+}
+
+#endif
+/***********************************************************
+*        TESTING
+***********************************************************/
 
 #if defined(TEST_READ)
 int main(int ac, char **av)
 {
 	for(av++ ; *av ; av++)
-		zread(*av);
+		zread(*av, 0);
 	return 0;
 }
 #endif

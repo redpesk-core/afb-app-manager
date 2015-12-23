@@ -21,7 +21,6 @@ cmake_minimum_required(VERSION 2.8)
 include(FindPkgConfig)
 
 pkg_check_modules(EXTRAS REQUIRED
-	libzip>=0.11
 	libxml-2.0
 	openssl
 	xmlsec1 xmlsec1-openssl
@@ -32,6 +31,18 @@ pkg_check_modules(EXTRAS REQUIRED
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
+
+if(USE_LIBZIP)
+	pkg_check_modules(LIBZIP REQUIRED libzip>=0.11)
+	add_compile_options(${LIBZIP_CFLAGS})
+	include_directories(${LIBZIP_INCLUDE_DIRS})
+	link_libraries(${LIBZIP_LIBRARIES})
+	add_definitions(-DUSE_LIBZIP=1)
+else(USE_LIBZIP)
+	find_program(PATH_TO_ZIP zip)
+	find_program(PATH_TO_UNZIP unzip)
+	add_definitions(-DUSE_LIBZIP=0 -DPATH_TO_ZIP="${PATH_TO_ZIP}" -DPATH_TO_UNZIP="${PATH_TO_UNZIP}")
+endif(USE_LIBZIP)
 
 ###########################################################################
 

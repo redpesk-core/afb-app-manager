@@ -16,17 +16,19 @@
 # limitations under the License.
 ###########################################################################
 
-cmake_minimum_required(VERSION 2.8)
+project(afm-main C)
 
-project("afm-main" LANGUAGES "C")
+cmake_minimum_required(VERSION 2.8)
 
 include(GNUInstallDirs)
 
 macro(setc name value)
 	if(NOT DEFINED ${name})
-		set(${name} "${value}")
+		set(${name} ${value})
 	endif(NOT DEFINED ${name})
 endmacro(setc)
+
+setc(USE_LIBZIP 1)
 
 setc(afm_name                "aglfwk")
 setc(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}")
