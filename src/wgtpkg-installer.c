@@ -29,6 +29,8 @@
 
 #include "verbose.h"
 #include "wgtpkg.h"
+#include "wgt-info.h"
+#include "wgtpkg-install.h"
 
 static const char appname[] = "wgtpkg-installer";
 static const char *root;
@@ -62,6 +64,7 @@ static struct option options[] = {
 int main(int ac, char **av)
 {
 	int i;
+	struct wgt_info *ifo;
 
 	LOGAUTH(appname);
 
@@ -107,8 +110,11 @@ int main(int ac, char **av)
 	/* install widgets */
 	av += optind;
 	root = *av++;
-	for ( ; *av ; av++)
-		install_widget(*av, root, force);
+	for ( ; *av ; av++) {
+		ifo = install_widget(*av, root, force);
+		if (ifo)
+			wgt_info_unref(ifo);
+	}
 
 	return 0;
 }
