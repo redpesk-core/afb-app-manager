@@ -52,8 +52,8 @@ extern char **environ;
 %H height			desc->height
 */
 
-static const char *launch_master_args[] = {
-	"/usr/bin/echo",
+static const char *args_for_afb_daemon[] = {
+	"/usr/bin/afb-daemon",
 	"--alias=/icons:%I",
 	"--port=%P",
 	"--rootdir=%D",
@@ -61,45 +61,44 @@ static const char *launch_master_args[] = {
 	NULL
 };
 
-static const char *launch_html_args[] = {
-	"/usr/bin/chromium",
-	"--single-process",
-	"--user-data-dir=%D",
-	"--data-path=%r",
-	"file://%r/%c",
-/*
-	"http://localhost:%P",
-*/
+static const char *args_for_qmlviewer[] = {
+	"/usr/bin/qt5/qmlviewer",
+	"-frameless",
+	"-fullscreen",
+	"-script",
+	"%r/%c",
 	NULL
 };
 
-static const char *launch_bin_args[] = {
-	"/usr/bin/echo",
-	"BINARY",
+static const char *args_for_web_runtime[] = {
+	"/usr/share/qt5/examples/webkitwidgets/browser/browser",
+	"http://localhost:%P/%c?token=%S",
 	NULL
 };
 
-static const char *launch_qml_args[] = {
-	"/usr/bin/echo",
-	"QML",
+static const char *args_for_binary[] = {
+	"%r/%c",
 	NULL
 };
 
-static struct {
+struct execdesc {
 	const char *type;
-	const char **launch_args;
-}
-known_launchers[] = {
-	{ "text/html",                launch_html_args },
-	{ "application/x-executable", launch_bin_args },
-	{ "application/octet-stream", launch_bin_args },
-	{ "text/vnd.qt.qml",          launch_qml_args }
+	const char **master_args;
+	const char **slave_args;
+};
+
+static struct execdesc known_launchers[] = {
+	{ "text/html",                args_for_afb_daemon, args_for_web_runtime },
+	{ "application/x-executable", args_for_binary,     NULL },
+	{ "text/vnd.qt.qml",          args_for_qmlviewer,  NULL }
 };
 
 struct launchparam {
 	int port;
 	const char *secret;
 	const char *datadir;
+	const char **master_args;
+	const char **slave_args;
 };
 
 static char **instantiate_arguments(const char **args, struct afm_launch_desc *desc, struct launchparam *params)
@@ -189,46 +188,69 @@ static int mkport()
 	return port;
 }
 
-int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
+
+
+static int launchexec1(struct afm_launch_desc *desc, pid_t children[2], struct launchparam *params)
 {
-	char datadir[PATH_MAX];
-	int ikl, nkl, rc;
-	char secret[9];
-	int port;
+	int rc;
+	char **args;
+
+	/* fork the master child */
+	children[0] = fork();
+	if (children[0] < 0) {
+		ERROR("master fork failed: %m");
+		return -1;
+	}
+	if (children[0]) {
+		/********* in the parent process ************/
+		return 0;
+	}
+
+	/********* in the master child ************/
+	/* enter the process group */
+	rc = setpgid(0, 0);
+	if (rc) {
+		ERROR("setpgid failed");
+		_exit(1);
+	}
+
+	/* enter security mode */
+	rc = secmgr_prepare_exec(desc->tag);
+	if (rc < 0) {
+		ERROR("call to secmgr_prepare_exec failed: %m");
+		_exit(1);
+	}
+
+	/* enter the datadirectory */
+	rc = mkdir(params->datadir, 0755);
+	if (rc && errno != EEXIST) {
+		ERROR("creation of datadir %s failed: %m", params->datadir);
+		_exit(1);
+	}
+	rc = chdir(params->datadir);
+	if (rc) {
+		ERROR("can't enter the datadir %s: %m", params->datadir);
+		_exit(1);
+	}
+
+	args = instantiate_arguments(params->master_args, desc, params);
+	if (args == NULL) {
+		ERROR("out of memory in master");
+	}
+	else {
+		rc = execve(args[0], args, environ);
+		ERROR("failed to exec master %s: %m", args[0]);
+	}
+	_exit(1);
+}
+
+static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct launchparam *params)
+{
+	int rc;
 	char message[10];
 	int mpipe[2];
 	int spipe[2];
-	struct launchparam params;
 	char **args;
-
-	/* what launcher ? */
-	ikl = 0;
-	if (desc->type != NULL && *desc->type) {
-		nkl = sizeof known_launchers / sizeof * known_launchers;
-		while (ikl < nkl && strcmp(desc->type, known_launchers[ikl].type))
-			ikl++;
-		if (ikl == nkl) {
-			ERROR("type %s not found!", desc->type);
-			errno = ENOENT;
-			return -1;
-		}
-	}
-
-	/* prepare paths */
-	rc = snprintf(datadir, sizeof datadir, "%s/%s", desc->home, desc->tag);
-	if (rc < 0 || rc >= sizeof datadir) {
-		ERROR("overflow for datadir");
-		errno = EINVAL;
-		return -1;
-	}
-
-	/* make the secret and port */
-	mksecret(secret);
-	port = mkport();
-
-	params.port = port;
-	params.secret = secret;
-	params.datadir = datadir;
 
 	/* prepare the pipes */
 	rc = pipe2(mpipe, O_CLOEXEC);
@@ -299,14 +321,14 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 	}
 
 	/* enter the datadirectory */
-	rc = mkdir(datadir, 0755);
+	rc = mkdir(params->datadir, 0755);
 	if (rc && errno != EEXIST) {
-		ERROR("creation of datadir %s failed: %m", datadir);
+		ERROR("creation of datadir %s failed: %m", params->datadir);
 		_exit(1);
 	}
-	rc = chdir(datadir);
+	rc = chdir(params->datadir);
 	if (rc) {
-		ERROR("can't enter the datadir %s: %m", datadir);
+		ERROR("can't enter the datadir %s: %m", params->datadir);
 		_exit(1);
 	}
 
@@ -325,7 +347,7 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 			_exit(1);
 		}
 
-		args = instantiate_arguments(known_launchers[ikl].launch_args, desc, &params);
+		args = instantiate_arguments(params->slave_args, desc, params);
 		if (args == NULL) {
 			ERROR("out of memory in slave");
 		}
@@ -338,7 +360,7 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 
 	/********* still in the master child ************/
 	close(spipe[1]);
-	args = instantiate_arguments(launch_master_args, desc, &params);
+	args = instantiate_arguments(params->master_args, desc, params);
 	if (args == NULL) {
 		ERROR("out of memory in master");
 	}
@@ -354,5 +376,44 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 		}
 	}
 	_exit(1);
+}
+
+int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
+{
+	char datadir[PATH_MAX];
+	int ikl, nkl, rc;
+	char secret[9];
+	struct launchparam params;
+
+	/* what launcher ? */
+	ikl = 0;
+	if (desc->type != NULL && *desc->type) {
+		nkl = sizeof known_launchers / sizeof * known_launchers;
+		while (ikl < nkl && strcmp(desc->type, known_launchers[ikl].type))
+			ikl++;
+		if (ikl == nkl) {
+			ERROR("type %s not found!", desc->type);
+			errno = ENOENT;
+			return -1;
+		}
+	}
+
+	/* prepare paths */
+	rc = snprintf(datadir, sizeof datadir, "%s/%s", desc->home, desc->tag);
+	if (rc < 0 || rc >= sizeof datadir) {
+		ERROR("overflow for datadir");
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* make the secret and port */
+	mksecret(secret);
+	params.port = mkport();
+	params.secret = secret;
+	params.datadir = datadir;
+	params.master_args = known_launchers[ikl].master_args;
+	params.slave_args = known_launchers[ikl].slave_args;
+
+	return params.slave_args ? launchexec2(desc, children, &params) : launchexec1(desc, children, &params);
 }
 
