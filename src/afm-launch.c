@@ -62,10 +62,12 @@ static const char *args_for_afb_daemon[] = {
 };
 
 static const char *args_for_qmlviewer[] = {
-	"/usr/bin/qt5/qmlviewer",
-	"-frameless",
+	"/usr/bin/qt5/qmlscene",
 	"-fullscreen",
-	"-script",
+	"-I",
+	"%r",
+	"-I",
+	"%r/imports",
 	"%r/%c",
 	NULL
 };
