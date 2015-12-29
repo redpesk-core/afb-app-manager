@@ -5,7 +5,7 @@ Description=Application Framework Master, system side
 BusName=org.AGL.afm.system
 User=afm
 Group=afm
-ExecStart=/usr/bin/afm-system-daemon --daemon
+ExecStart=/usr/bin/afm-system-daemon
 Restart=on-failure
 RestartSec=5
 

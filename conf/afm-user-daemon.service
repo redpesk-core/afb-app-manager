@@ -5,7 +5,7 @@ Description=Application Framework Master, User side
 Environment=LD_PRELOAD=/usr/lib/libEGL.so
 BusName=org.AGL.afm.user
 Group=afm
-ExecStart=/usr/bin/afm-user-daemon --daemon
+ExecStart=/usr/bin/afm-user-daemon
 Restart=on-failure
 RestartSec=5
 
