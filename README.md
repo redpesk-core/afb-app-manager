@@ -32,14 +32,16 @@ use ***libzip***.
 The main scheme for compiling the project is:
 
 > cmake .
+> 
 > make
+> 
 > sudo make install
 
 By default, the installation is made in ***/usr***.
 To change this behaviour, you should set the variable
 CMAKE_INSTALL_PREFIX as in the below example:
 
-> cmake -DCMAKE_INSTALL_PREFIX=$(pwd)/root .
+> cmake -DCMAKE_INSTALL_PREFIX=/some/where .
 
 You could check the documentation of the standard CMake module 
 [GNUInstallDirs](https://cmake.org/cmake/help/v3.4/module/GNUInstallDirs.html).
