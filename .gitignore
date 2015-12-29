@@ -1,5 +1,5 @@
-src/afm-user-daemon
-src/afm-system-daemon
+afm-user-daemon
+afm-system-daemon
 wgtpkg-installer
 wgtpkg-pack
 wgtpkg-sign
@@ -12,13 +12,9 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 
-a.pem
-b.pem
 ca-certificates/
 certs/
-old/
 root/
-schemas/
 tests-w3c/
 tests/
 tizen-certificates/
