@@ -55,5 +55,6 @@ defstr(FWK_USER_APP_DIR        "${afm_user_appdir}")
 defstr(WGTPKG_TRUSTED_CERT_DIR "${wgtpkg_trusted_cert_dir}")
 
 add_subdirectory(src)
+add_subdirectory(conf)
 
 

@@ -1,0 +1,14 @@
+[Unit]
+Description=Application Framework Master, User side
+
+[Service]
+Environment=LD_PRELOAD=/usr/lib/libEGL.so
+BusName=org.AGL.afm.user
+Group=afm
+ExecStart=/usr/bin/afm-user-daemon --daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+

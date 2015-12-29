@@ -1,0 +1,14 @@
+[Unit]
+Description=Application Framework Master, system side
+
+[Service]
+BusName=org.AGL.afm.system
+User=afm
+Group=afm
+ExecStart=/usr/bin/afm-system-daemon --daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
