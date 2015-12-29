@@ -107,25 +107,26 @@ static char **instantiate_arguments(const char **args, struct afm_launch_desc *d
 {
 	const char **iter, *p, *v;
 	char *data, **result, port[20], width[20], height[20], mini[3], c;
-	int n, s, x;
+	int n, s;
 
 	/* init */
 	mini[0] = '%';
 	mini[2] = 0;
 
 	/* loop that either compute the size and build the result */
-	n = s = x = 0;
+	data = NULL;
+	n = s = 0;
 	for (;;) {
 		iter = args;
 		n = 0;
 		while (*iter) {
 			p = *iter++;
-			if (x)
+			if (data)
 				result[n] = data;
 			n++;
 			while((c = *p++) != 0) {
 				if (c != '%') {
-					if (x)
+					if (data)
 						*data++ = c;
 					else
 						s++;
@@ -133,7 +134,7 @@ static char **instantiate_arguments(const char **args, struct afm_launch_desc *d
 					c = *p++;
 					switch (c) {
 					case 'I': v = FWK_ICON_DIR; break;
-					case 'P': if(!x) sprintf(port, "%d", params->port); v = port; break;
+					case 'P': if(!data) sprintf(port, "%d", params->port); v = port; break;
 					case 'S': v = params->secret; break;
 					case 'D': v = params->datadir; break;
 					case 'r': v = desc->path; break;
@@ -144,23 +145,23 @@ static char **instantiate_arguments(const char **args, struct afm_launch_desc *d
 					case 'm': v = desc->type; break;
 					case 'n': v = desc->name; break;
 					case 'p': v = "" /*desc->plugins*/; break;
-					case 'W': if(!x) sprintf(width, "%d", desc->width); v = width; break;
-					case 'H': if(!x) sprintf(height, "%d", desc->height); v = height; break;
+					case 'W': if(!data) sprintf(width, "%d", desc->width); v = width; break;
+					case 'H': if(!data) sprintf(height, "%d", desc->height); v = height; break;
 					case '%': c = 0;
 					default: mini[1] = c; v = mini; break;
 					}
-					if (x)
+					if (data)
 						data = stpcpy(data, v);
 					else
 						s += strlen(v);
 				}
 			}
-			if (x)
+			if (data)
 				*data++ = 0;
 			else
 				s++;
 		}
-		if (x) {
+		if (data) {
 			result[n] = NULL;
 			return result;
 		}
@@ -171,7 +172,6 @@ static char **instantiate_arguments(const char **args, struct afm_launch_desc *d
 			return NULL;
 		}
 		data = (char*)(&result[n + 1]);
-		x = 1;
 	}
 }
 

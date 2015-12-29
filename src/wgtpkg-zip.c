@@ -16,7 +16,7 @@
  limitations under the License.
 */
 
-#define _BSD_SOURCE /* see readdir */
+#define _DEFAULT_SOURCE
 
 #include <limits.h>
 #include <sys/types.h>
@@ -353,6 +353,7 @@ int zwrite(const char *zipfile)
 #else
 
 #include <sys/wait.h>
+#include <stdlib.h>
 
 extern char **environ;
 

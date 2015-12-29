@@ -16,8 +16,6 @@
  limitations under the License.
 */
 
-#define _BSD_SOURCE /* see readdir */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <dirent.h>
