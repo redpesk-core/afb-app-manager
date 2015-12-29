@@ -27,8 +27,11 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include <libxml/tree.h>
+
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-permissions.h"
+#include "wgtpkg-xmlsec.h"
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
 

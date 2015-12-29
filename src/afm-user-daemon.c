@@ -303,7 +303,7 @@ int main(int ac, char **av)
 
 	/* start and run */
 	if (jbus_start_serving(jbus)) {
-		ERROR("cant start server");
+		ERROR("can't start server");
 		return 1;
 	}
 	while (!jbus_read_write_dispatch(jbus, -1));

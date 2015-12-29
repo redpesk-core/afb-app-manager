@@ -18,16 +18,22 @@
 
 #define _GNU_SOURCE
 
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
 #include "wgt.h"
 #include "wgt-info.h"
+#include "wgtpkg-files.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-zip.h"
+#include "wgtpkg-permissions.h"
+#include "wgtpkg-digsig.h"
 #include "wgtpkg-install.h"
 #include "secmgr-wrap.h"
 #include "utils-dir.h"

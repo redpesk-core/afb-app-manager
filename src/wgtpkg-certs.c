@@ -20,7 +20,8 @@
 #include <openssl/x509.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-certs.h"
+#include "wgtpkg-base64.h"
 
 struct x509l {
 	int count;

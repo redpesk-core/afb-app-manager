@@ -16,4 +16,11 @@
  limitations under the License.
 */
 
-extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+
+/* read (extract) 'zipfile' in current directory */
+extern int zread(const char *zipfile, unsigned long long maxsize);
+
+/* write (pack) content of the current directory in 'zipfile' */
+extern int zwrite(const char *zipfile);
+
+

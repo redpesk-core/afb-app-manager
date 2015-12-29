@@ -20,6 +20,8 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -29,7 +31,7 @@
 #include <limits.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-workdir.h"
 #include "utils-dir.h"
 
 static const int dirmode = 0755;

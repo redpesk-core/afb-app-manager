@@ -26,8 +26,14 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include <libxml/tree.h>
+
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-files.h"
+#include "wgtpkg-zip.h"
+#include "wgtpkg-digsig.h"
+#include "wgtpkg-xmlsec.h"
 #include "wgt.h"
 #include "wgt-info.h"
 

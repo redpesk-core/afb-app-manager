@@ -27,7 +27,8 @@
 #include <limits.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-files.h"
 
 struct fdb {
 	unsigned int count;

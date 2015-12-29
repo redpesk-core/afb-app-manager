@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-base64.h"
 
 static char tob64(char x)
 {

@@ -20,9 +20,10 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-permissions.h"
 
 struct permission {
 	char *name;

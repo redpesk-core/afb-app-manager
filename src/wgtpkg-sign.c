@@ -27,8 +27,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <libxml/tree.h>
+
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-files.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-digsig.h"
+#include "wgtpkg-xmlsec.h"
 
 #if !defined(MAXCERT)
 #define MAXCERT 20

@@ -28,17 +28,9 @@
 #include <fcntl.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
-
-#if !defined(MAXCERT)
-#define MAXCERT 20
-#endif
-#if !defined(DEFAULT_KEY_FILE)
-#define DEFAULT_KEY_FILE "key.pem"
-#endif
-#if !defined(DEFAULT_CERT_FILE)
-#define DEFAULT_CERT_FILE "cert.pem"
-#endif
+#include "wgtpkg-files.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-zip.h"
 
 const char appname[] = "wgtpkg-pack";
 

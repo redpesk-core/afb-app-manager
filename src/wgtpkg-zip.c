@@ -29,7 +29,9 @@
 #include <unistd.h>
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-files.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-zip.h"
 
 #define MODE_OF_FILE_CREATION 0640
 #define MODE_OF_DIRECTORY_CREATION 0750

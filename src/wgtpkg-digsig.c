@@ -29,7 +29,11 @@
 
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-files.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-certs.h"
+#include "wgtpkg-xmlsec.h"
+#include "wgtpkg-digsig.h"
 
 
 

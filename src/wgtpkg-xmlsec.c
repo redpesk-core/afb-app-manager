@@ -35,7 +35,9 @@
 
 
 #include "verbose.h"
-#include "wgtpkg.h"
+#include "wgtpkg-files.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-xmlsec.h"
 
 static int initstatus;
 static int initdone;

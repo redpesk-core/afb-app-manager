@@ -16,4 +16,8 @@
  limitations under the License.
 */
 
-extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+extern int xmlsec_init();
+extern void xmlsec_shutdown();
+extern int xmlsec_verify(xmlNodePtr node);
+extern xmlDocPtr xmlsec_create(int index, const char *key, const char **certs);
+

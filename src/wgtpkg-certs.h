@@ -16,4 +16,7 @@
  limitations under the License.
 */
 
-extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+
+extern void clear_certificates();
+extern int add_certificate_b64(const char *b64);
+

@@ -16,4 +16,13 @@
  limitations under the License.
 */
 
-extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+
+/* verify the digital signature in file */
+extern int verify_digsig(struct filedesc *fdesc);
+
+/* create a digital signature */
+extern int create_digsig(int index, const char *key, const char **certs);
+
+/* check the signatures of the current directory */
+extern int check_all_signatures();
+

@@ -16,4 +16,11 @@
  limitations under the License.
 */
 
-extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+extern char workdir[PATH_MAX];
+extern int workdirfd;
+extern void remove_workdir();
+extern int set_workdir(const char *name, int create);
+extern int make_workdir_base(const char *root, const char *prefix, int reuse);
+extern int make_workdir(int reuse);
+extern int move_workdir(const char *dest, int parents, int force);
+
