@@ -29,6 +29,7 @@ macro(setc name value)
 endmacro(setc)
 
 setc(USE_LIBZIP 1)
+setc(USE_SIMULATION 1)
 
 setc(afm_name                "aglfwk")
 setc(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}")

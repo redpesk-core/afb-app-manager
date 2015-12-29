@@ -2,5 +2,5 @@ List of things to do
 - Implement CRL and OCSP parts of x509
 - Implement permissions grant based on certificates
 - more documentation
-- more launchers
 - notifications
+- manage upgrade packages

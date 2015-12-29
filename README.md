@@ -22,6 +22,7 @@ This package requires the following libraries or modules:
 - ***xmlsec1-openssl***
 - ***json-c***
 - ***dbus-1***
+- ***security-manager***
 
 This package also requires either ***libzip*** (version >= 0.11) 
 or the binaries ***zip*** and ***unzip***. By default, it will
@@ -78,6 +79,10 @@ The installed programs are:
 - ***wgtpkg-sign***: command line tool to add a signature
   to a widget directory.
 
+## Description
+
+The framework defined by afm-main 
+
 ## Comparison with Tizen framework
 
 This package is providing few less behaviour than
@@ -93,6 +98,10 @@ the following Tizen packages:
 
 ### Details about widgets
 
+The widgets are specified in that W3C recommandation: 
+[Packaged Web Apps](http://www.w3.org/TR/widgets).
+This model was initially designed for HTML applications.
+But it is well suited for other kind of applications.
 
 ### Details about dependencies
 
@@ -105,5 +114,5 @@ For details, you can dig into internet the following links:
 - [D-Bus](http://www.freedesktop.org/wiki/Software/dbus)
 - [libzip](http://www.nih.at/libzip)
 - [CMake](https://cmake.org)
-
+- [Security-Manager](https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager)
 

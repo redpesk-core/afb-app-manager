@@ -46,7 +46,14 @@ endif(USE_LIBZIP)
 
 ###########################################################################
 
-include_directories(simulation)
+if(USE_SIMULATION)
+	include_directories(simulation)
+else(USE_SIMULATION)
+	pkg_check_modules(SECMGR REQUIRED security-manager)
+	add_compile_options(${SECMGR_CFLAGS})
+	include_directories(${SECMGR_INCLUDE_DIRS})
+	link_libraries(${SECMGR_LIBRARIES})
+endif(USE_SIMULATION)
 
 ###########################################################################
 
