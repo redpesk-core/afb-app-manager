@@ -415,8 +415,8 @@ int zwrite(const char *zipfile)
 	args[0] = "zip";
 	args[1] = "-q";
 	args[2] = "-r";
-	args[3] = workdir;
-	args[4] = zipfile;
+	args[3] = zipfile;
+	args[4] = workdir;
 	args[5] = NULL;
 
 	return zrun(PATH_TO_ZIP, args);
