@@ -48,6 +48,7 @@ struct wgt_desc {
 	int refcount;
 	char *id;
 	char *version;
+	char *ver;
 	char *idaver;
 	int width;
 	int height;

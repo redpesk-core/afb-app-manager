@@ -71,6 +71,7 @@ static int check_temporary_constraints(const struct wgt_desc *desc)
 {
 	int result = check_valid_string(desc->id, "id");
 	result |= check_valid_string(desc->version, "version");
+	result |= check_valid_string(desc->ver, "ver");
 	result |= check_defined(desc->icons, "icon");
 	result |= check_defined(desc->content_src, "content");
 	if (result)
@@ -119,7 +120,7 @@ static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 	char newdir[PATH_MAX];
 	int rc;
 
-	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->version);
+	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->ver);
 	if (rc >= sizeof newdir) {
 		ERROR("path to long in move_widget");
 		errno = EINVAL;
@@ -136,7 +137,7 @@ static int install_icon(const struct wgt_desc *desc)
 	int rc;
 
 	create_directory(FWK_ICON_DIR, 0755, 1);
-	rc = snprintf(link, sizeof link, "%s/%s@%s", FWK_ICON_DIR, desc->id, desc->version);
+	rc = snprintf(link, sizeof link, "%s/%s@%s", FWK_ICON_DIR, desc->id, desc->ver);
 	if (rc >= sizeof link) {
 		ERROR("link to long in install_icon");
 		errno = EINVAL;

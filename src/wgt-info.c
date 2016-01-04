@@ -75,28 +75,42 @@ static xmlChar *optcontent(xmlNodePtr node)
 	return node ? xmlNodeGetContent(node) : NULL;
 }
 
-static char *mkidaver(char *id, char *version)
+static char *mkver(char *version)
+{
+	int lver;
+	char c, *r;
+	if (version) {
+		c = version[lver = 0];
+		while(c && c != ' ' && c != '.')
+			c = version[++lver];
+		if (c == '.') {
+			c = version[++lver];
+			while(c && c != ' ' && c != '.')
+				c = version[++lver];
+		}
+		r = malloc(lver + 1);
+		if (r) {
+			memcpy(r, version, lver);
+			r[lver] = 0;
+			return r;
+		}
+	}
+	return NULL;
+}
+
+static char *mkidaver(char *id, char *ver)
 {
 	int lid, lver;
-	char c, *r;
-	if (id && version) {
+	char *r;
+	if (id && ver) {
 		lid = strlen(id);
-		c = version[lver = 0];
-		while(c && c != ' ') {
-			if (c != '.')
-				c = version[++lver];
-			else {
-				do {
-					c = version[++lver];
-				} while (c && c != ' ' && c != '.');
-				break;
-			}
-		}
+		lver = strlen(ver);
 		r = malloc(2 + lid + lver);
 		if (r) {
 			memcpy(r, id, lid);
 			r[lid] = '@';
-			memcpy(r + lid + 1, version, lver + 1);
+			memcpy(r + lid + 1, ver, lver);
+			r[lid + lver + 1] = 0;
 			return r;
 		}
 	}
@@ -119,7 +133,8 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	}
 	desc->id = xmlGetProp(node, wgt_config_string_id);
 	desc->version = xmlGetProp(node, wgt_config_string_version);
-	desc->idaver = mkidaver(desc->id, desc->version);
+	desc->ver = mkver(desc->version);
+	desc->idaver = mkidaver(desc->id, desc->ver);
 	desc->width = getpropnum(node, wgt_config_string_width, 0);
 	desc->height = getpropnum(node, wgt_config_string_height, 0);
 	desc->viewmodes = xmlGetProp(node, wgt_config_string_viewmodes);
@@ -266,6 +281,7 @@ static void free_desc(struct wgt_desc *desc)
 
 	xmlFree(desc->id);
 	xmlFree(desc->version);
+	free(desc->ver);
 	free(desc->idaver);
 	xmlFree(desc->viewmodes);
 	xmlFree(desc->defaultlocale);
@@ -320,6 +336,7 @@ static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
 
 	if (desc->id) fprintf(f, "%sid: %s\n", prefix, desc->id);
 	if (desc->version) fprintf(f, "%sversion: %s\n", prefix, desc->version);
+	if (desc->ver) fprintf(f, "%sver: %s\n", prefix, desc->ver);
 	if (desc->idaver) fprintf(f, "%sidaver: %s\n", prefix, desc->idaver);
 	if (desc->width) fprintf(f, "%swidth: %d\n", prefix, desc->width);
 	if (desc->height) fprintf(f, "%sheight: %d\n", prefix, desc->height);
