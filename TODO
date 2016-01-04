@@ -5,3 +5,5 @@ List of things to do
 - notifications
 - manage upgrade packages
 - use key facilities of kernel
+- remove the link to the icon on failure or create it lately
+- improves safety on power failure
