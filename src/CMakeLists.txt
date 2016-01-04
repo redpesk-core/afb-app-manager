@@ -39,9 +39,7 @@ if(USE_LIBZIP)
 	link_libraries(${LIBZIP_LIBRARIES})
 	add_definitions(-DUSE_LIBZIP=1)
 else(USE_LIBZIP)
-	find_program(PATH_TO_ZIP zip)
-	find_program(PATH_TO_UNZIP unzip)
-	add_definitions(-DUSE_LIBZIP=0 -DPATH_TO_ZIP="${PATH_TO_ZIP}" -DPATH_TO_UNZIP="${PATH_TO_UNZIP}")
+	add_definitions(-DUSE_LIBZIP=0)
 endif(USE_LIBZIP)
 
 ###########################################################################

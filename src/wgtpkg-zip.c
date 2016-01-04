@@ -357,23 +357,55 @@ int zwrite(const char *zipfile)
 
 extern char **environ;
 
-static int zrun(const char *path, const char *args[])
+static char *getbin(const char *progname)
+{
+	char name[PATH_MAX];
+	char *path;
+	int i;
+
+	if (progname[0] == '/')
+		return access(progname, X_OK) ? NULL : strdup(progname);
+
+	path = getenv("PATH");
+	while(path && *path) {
+		for (i = 0 ; path[i] && path[i] != ':' ; i++)
+			name[i] = path[i];
+		path += i + !!path[i];
+		name[i] = '/';
+		strcpy(name + i + 1, progname);
+		if (access(name, X_OK) == 0)
+			return realpath(name, NULL);
+	}
+	return NULL;
+}
+
+static int zrun(const char *name, const char *args[])
 {
 	int rc;
 	siginfo_t si;
+	char *binary;
+
+	binary = getbin(name);
+	if (binary == NULL) {
+		ERROR("error while forking in zrun: can't find %s", name);
+		return -1;
+	}
 
 	rc = fork();
+	if (rc == 0) {
+		rc = execve(binary, (char * const*)args, environ);
+		ERROR("can't execute %s in zrun: %m", args[0]);
+		_exit(1);
+		return rc;
+	}
+
+	free(binary);
 	if (rc < 0) {
 		/* can't fork */
 		ERROR("error while forking in zrun: %m");
 		return rc;
 	}
-	if (!rc) {
-		rc = execve(realpath(path, NULL), (char * const*)args, environ);
-		ERROR("can't execute %s in zrun: %m", args[0]);
-		_exit(1);
-		return rc;
-	}
+
 	/* wait termination of the child */
 	rc = waitid(P_PID, (id_t)rc, &si, WEXITED);
 	if (rc)
@@ -401,7 +433,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 	args[5] = NULL;
 
 	file_reset();
-	rc = zrun(PATH_TO_UNZIP, args);
+	rc = zrun(args[0], args);
 	if (!rc)
 		rc = fill_files();
 	return rc;
@@ -419,7 +451,7 @@ int zwrite(const char *zipfile)
 	args[4] = workdir;
 	args[5] = NULL;
 
-	return zrun(PATH_TO_ZIP, args);
+	return zrun(args[0], args);
 }
 
 #endif
