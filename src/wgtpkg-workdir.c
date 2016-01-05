@@ -49,7 +49,26 @@ void remove_workdir()
 	workdir[0] = 0;
 }
 
-static int set_real_workdir(const char *name, int create)
+static void put_workdir(int fd, const char *name, size_t length)
+{
+	/* close the previous directory if any */
+	if (workdirfd >= 0)
+		close(workdirfd);
+
+	/* copy the name and the fd if existing */
+	if (fd < 0) {
+		workdir[0] = '.';
+		workdir[1] = 0;
+		workdirfd = AT_FDCWD;
+	} else {
+		
+		assert(length < sizeof workdir);
+		memcpy(workdir, name, 1 + length);
+		workdirfd = fd;
+	}
+}
+
+int set_workdir(const char *name, int create)
 {
 	int rc, dirfd;
 	size_t length;
@@ -63,53 +82,38 @@ static int set_real_workdir(const char *name, int create)
 	}
 
 	/* opens the directory */
-	dirfd = openat(AT_FDCWD, name, O_DIRECTORY|O_RDONLY);
+	dirfd = openat(AT_FDCWD, name, O_PATH|O_DIRECTORY|O_RDONLY);
 	if (dirfd < 0) {
-		if (!create || errno != ENOENT) {
-			ERROR("no workdir %s", name);
+		if (errno != ENOENT) {
+			ERROR("error while opening workdir %s: %m", name);
 			return -1;
 		}
-		rc = mkdir(name, dirmode);
+		if (!create) {
+			ERROR("workdir %s doesn't exist", name);
+			return -1;
+		}
+		rc = mkdirat(AT_FDCWD, name, dirmode);
 		if (rc) {
 			ERROR("can't create workdir %s", name);
 			return -1;
 		}
-		dirfd = open(name, O_PATH|O_DIRECTORY);
+		dirfd = openat(AT_FDCWD, name, O_PATH|O_DIRECTORY|O_RDONLY);
 		if (dirfd < 0) {
 			ERROR("can't open workdir %s", name);
 			return -1;
 		}
 	}
 
-	/* close the previous directory if any */
-	if (workdirfd >= 0)
-		close(workdirfd);
-	workdirfd = dirfd;
-	memcpy(workdir, name, 1+length);
+	/* record new workdir */
+	put_workdir(dirfd, name, length);
 	return 0;
 }
 
-int set_workdir(const char *name, int create)
-{
-	char *rp;
-	int rc;
-
-	if (name[0] == '/')
-		return set_real_workdir(name, create);
-
-	rp = realpath(name, NULL);
-	if (!rp) {
-		ERROR("realpath failed for %s", name);
-		return -1;
-	}
-	rc = set_real_workdir(rp, create);
-	free(rp);
-	return rc;
-}
-
-static int make_real_workdir_base(const char *root, const char *prefix, int reuse)
+int make_workdir(const char *root, const char *prefix, int reuse)
 {
 	int i, n, r, l;
+
+	put_workdir(AT_FDCWD, ".", 1);
 
 	n = snprintf(workdir, sizeof workdir, "%s/%s", root, prefix);
 	if (n >= sizeof workdir) {
@@ -118,10 +122,6 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 		return -1;
 	}
 	r = (int)(sizeof workdir) - n;
-
-	if (workdirfd >= 0)
-		close(workdirfd);
-	workdirfd = -1;
 
 	/* create a temporary directory */
 	for (i = 0 ; ; i++) {
@@ -135,7 +135,7 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 			errno = EINVAL;
 			return -1;
 		}
-		if (!mkdir(workdir, dirmode))
+		if (!mkdirat(AT_FDCWD, workdir, dirmode))
 			break;
 		if (errno != EEXIST) {
 			ERROR("error in creation of workdir %s: %m", workdir);
@@ -154,30 +154,7 @@ static int make_real_workdir_base(const char *root, const char *prefix, int reus
 	return 0;
 }
 
-int make_workdir_base(const char *root, const char *prefix, int reuse)
-{
-	char *rp;
-	int rc;
-
-	if (root[0] == '/')
-		return make_real_workdir_base(root, prefix, reuse);
-
-	rp = realpath(root, NULL);
-	if (!rp) {
-		ERROR("realpath failed for %s", root);
-		return -1;
-	}
-	rc = make_real_workdir_base(rp, prefix, reuse);
-	free(rp);
-	return rc;
-}
-
-int make_workdir(int reuse)
-{
-	return make_workdir_base(".", "PACK", reuse);
-}
-
-static int move_real_workdir(const char *dest, int parents, int force)
+int move_workdir(const char *dest, int parents, int force)
 {
 	int rc, len;
 	struct stat s;
@@ -195,23 +172,23 @@ static int move_real_workdir(const char *dest, int parents, int force)
 	rc = stat(dest, &s);
 	if (rc == 0) {
 		if (!S_ISDIR(s.st_mode)) {
-			ERROR("in move_real_workdir, can't overwrite regular file %s", dest);
+			ERROR("in move_workdir, can't overwrite regular file %s", dest);
 			errno = EEXIST;
 			return -1;
 		}
 		if (!force) {
-			ERROR("in move_real_workdir, can't overwrite regular file %s", dest);
+			ERROR("in move_workdir, can't overwrite regular file %s", dest);
 			errno = EEXIST;
 			return -1;
 		}
 		rc = remove_directory_content(dest);
 		if (rc) {
-			ERROR("in move_real_workdir, can't clean dir %s", dest);
+			ERROR("in move_workdir, can't clean dir %s", dest);
 			return rc;
 		}
 		rc = rmdir(dest);
 		if (rc) {
-			ERROR("in move_real_workdir, can't remove dir %s", dest);
+			ERROR("in move_workdir, can't remove dir %s", dest);
 			return rc;
 		}
 	} else {
@@ -225,16 +202,16 @@ static int move_real_workdir(const char *dest, int parents, int force)
 			if (!rc) {
 				/* found an entry */
 				if (!S_ISDIR(s.st_mode)) {
-					ERROR("in move_real_workdir, '%s' isn't a directory", copy);
+					ERROR("in move_workdir, '%s' isn't a directory", copy);
 					errno = ENOTDIR;
 					return -1;
 				}
 			} else if (!parents) {
 				/* parent entry not found but not allowed to create it */
-				ERROR("in move_real_workdir, parent directory '%s' not found: %m", copy);
+				ERROR("in move_workdir, parent directory '%s' not found: %m", copy);
 				return -1;
 			} else if (create_directory(copy, dirmode, 1)) {
-				ERROR("in move_real_workdir, creation of directory %s failed: %m", copy);
+				ERROR("in move_workdir, creation of directory %s failed: %m", copy);
 				return -1;
 			}
 		}
@@ -245,28 +222,10 @@ static int move_real_workdir(const char *dest, int parents, int force)
 	workdirfd = -1;
 	rc = renameat(AT_FDCWD, workdir, AT_FDCWD, dest);
 	if (rc) {
-		ERROR("in move_real_workdir, renameat failed %s -> %s: %m", workdir, dest);
+		ERROR("in move_workdir, renameat failed %s -> %s: %m", workdir, dest);
 		return -1;
 	}
 
-	return set_real_workdir(dest, 0);
-}
-
-int move_workdir(const char *dest, int parents, int force)
-{
-	char *rp;
-	int rc;
-
-	if (dest[0] == '/')
-		return move_real_workdir(dest, parents, force);
-
-	rp = realpath(dest, NULL);
-	if (!rp) {
-		ERROR("realpath failed for %s", dest);
-		return -1;
-	}
-	rc = move_real_workdir(rp, parents, force);
-	free(rp);
-	return rc;
+	return set_workdir(dest, 0);
 }
 

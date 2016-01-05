@@ -233,7 +233,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 
 	/* workdir */
 	create_directory(root, 0755, 1);
-	if (make_workdir_base(root, "TMP", 0)) {
+	if (make_workdir(root, "TMP", 0)) {
 		ERROR("failed to create a working directory");
 		goto error1;
 	}

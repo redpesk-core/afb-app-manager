@@ -128,7 +128,7 @@ static void show(const char *wgtfile)
 	NOTICE("-- INFO for widget %s --", wgtfile);
 
 	/* workdir */
-	if (make_workdir_base("/tmp", "UNPACK", 0)) {
+	if (make_workdir("/tmp", "UNPACK", 0)) {
 		ERROR("failed to create a working directory");
 		return;
 	}
