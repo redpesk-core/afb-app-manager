@@ -284,13 +284,12 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 		close(spipe[0]);
 		/* wait the ready signal (that transmit the slave pid) */
 		rc = read(mpipe[0], &children[1], sizeof children[1]);
-		if (rc  < 0) {
+		close(mpipe[0]);
+		if (rc  <= 0) {
 			ERROR("reading master pipe failed: %m");
-			close(mpipe[0]);
 			close(spipe[1]);
 			return -1;
 		}
-		close(mpipe[0]);
 		assert(rc == sizeof children[1]);
 		/* start the child */
 		rc = write(spipe[1], "start", 5);
@@ -344,7 +343,7 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 		/********* in the slave child ************/
 		close(mpipe[0]);
 		rc = read(spipe[0], message, sizeof message);
-		if (rc < 0) {
+		if (rc <= 0) {
 			ERROR("reading slave pipe failed: %m");
 			_exit(1);
 		}
@@ -368,7 +367,7 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 	}
 	else {
 		rc = write(mpipe[1], &children[1], sizeof children[1]);
-		if (rc < 0) {
+		if (rc <= 0) {
 			ERROR("can't write master pipe: %m");
 		}
 		else {
