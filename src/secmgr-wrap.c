@@ -36,7 +36,7 @@ static int retcode(enum lib_retcode rc)
 	case SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE: errno = EBADMSG; break;
 	case SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED: errno = EPERM; break;
 	case SECURITY_MANAGER_ERROR_ACCESS_DENIED: errno = EACCES; break;
-	default: errno = 0; break;
+	default: errno = ECANCELED; break;
 	}
 	return -1;
 }
