@@ -73,7 +73,7 @@ static const char *args_for_qmlviewer[] = {
 };
 
 static const char *args_for_web_runtime[] = {
-	"/usr/share/qt5/examples/webkitwidgets/browser/browser",
+	"/usr/bin/web-runtime",
 	"http://localhost:%P/%c?token=%S",
 	NULL
 };
