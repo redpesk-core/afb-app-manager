@@ -104,6 +104,8 @@ struct launchparam {
 	const char **slave_args;
 };
 
+static gid_t groupid = 0;
+
 static char **instantiate_arguments(const char **args, struct afm_launch_desc *desc, struct launchparam *params)
 {
 	const char **iter, *p, *v;
@@ -210,6 +212,10 @@ static int launchexec1(struct afm_launch_desc *desc, pid_t children[2], struct l
 	}
 
 	/********* in the master child ************/
+
+	/* avoid set-gid effect */
+	setresgid(groupid, groupid, groupid);
+
 	/* enter the process group */
 	rc = setpgid(0, 0);
 	if (rc) {
@@ -308,6 +314,9 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 	close(mpipe[0]);
 	close(spipe[1]);
 
+	/* avoid set-gid effect */
+	setresgid(groupid, groupid, groupid);
+
 	/* enter the process group */
 	rc = setpgid(0, 0);
 	if (rc) {
@@ -380,12 +389,27 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 	_exit(1);
 }
 
+static void afm_launch_init_group()
+{
+	if (!groupid) {
+		gid_t r, e, s;
+		getresgid(&r, &e, &s);
+		if (s && s != e)
+			groupid = s;
+		else
+			groupid = -1;
+	}
+}
+
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 {
 	char datadir[PATH_MAX];
 	int ikl, nkl, rc;
 	char secret[9];
 	struct launchparam params;
+
+	/* static init */
+	afm_launch_init_group();
 
 	/* what launcher ? */
 	ikl = 0;

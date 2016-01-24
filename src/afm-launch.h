@@ -30,4 +30,3 @@ struct afm_launch_desc {
 };
 
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2]);
-
