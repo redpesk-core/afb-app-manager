@@ -56,8 +56,7 @@ static struct option options[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-static struct jbus *jbus;
-static struct jbus *jbusys;
+static struct jbus *jbuses[2];
 static struct afm_db *afdb;
 
 const char error_nothing[] = "[]";
@@ -174,7 +173,7 @@ static void on_signal_changed(struct json_object *obj)
 	/* update the database */
 	afm_db_update_applications(afdb);
 	/* propagate now */
-	jbus_send_signal_j(jbus, "changed", obj);
+	jbus_send_signal_j(jbuses[1], "changed", obj);
 }
 
 static int daemonize()
@@ -273,40 +272,40 @@ int main(int ac, char **av)
 	}
 
 	/* init observers */
-	jbusys = create_jbus(0, AFM_SYSTEM_DBUS_PATH);
-	if (!jbusys) {
+	jbuses[0] = create_jbus(0, AFM_SYSTEM_DBUS_PATH);
+	if (!jbuses[0]) {
 		ERROR("create_jbus failed for system");
 		return 1;
 	}
-	if(jbus_on_signal_j(jbusys, "changed", on_signal_changed)) {
+	if(jbus_on_signal_j(jbuses[0], "changed", on_signal_changed)) {
 		ERROR("adding signal observer failed");
 		return 1;
 	}
 
 	/* init service	*/
-	jbus = create_jbus(1, AFM_USER_DBUS_PATH);
-	if (!jbus) {
+	jbuses[1] = create_jbus(1, AFM_USER_DBUS_PATH);
+	if (!jbuses[1]) {
 		ERROR("create_jbus failed");
 		return 1;
 	}
-	if(jbus_add_service_j(jbus, "runnables", on_runnables)
-	|| jbus_add_service_j(jbus, "detail", on_detail)
-	|| jbus_add_service_j(jbus, "start", on_start)
-	|| jbus_add_service_j(jbus, "terminate", on_terminate)
-	|| jbus_add_service_j(jbus, "stop", on_stop)
-	|| jbus_add_service_j(jbus, "continue", on_continue)
-	|| jbus_add_service_j(jbus, "runners", on_runners)
-	|| jbus_add_service_j(jbus, "state", on_state)) {
+	if(jbus_add_service_j(jbuses[1], "runnables", on_runnables)
+	|| jbus_add_service_j(jbuses[1], "detail", on_detail)
+	|| jbus_add_service_j(jbuses[1], "start", on_start)
+	|| jbus_add_service_j(jbuses[1], "terminate", on_terminate)
+	|| jbus_add_service_j(jbuses[1], "stop", on_stop)
+	|| jbus_add_service_j(jbuses[1], "continue", on_continue)
+	|| jbus_add_service_j(jbuses[1], "runners", on_runners)
+	|| jbus_add_service_j(jbuses[1], "state", on_state)) {
 		ERROR("adding services failed");
 		return 1;
 	}
 
 	/* start and run */
-	if (jbus_start_serving(jbus)) {
+	if (jbus_start_serving(jbuses[1])) {
 		ERROR("can't start server");
 		return 1;
 	}
-	while (!jbus_read_write_dispatch(jbus, -1));
+	while (jbus_read_write_dispatch_multiple(jbuses, 2, -1, 20) >= 0);
 	return 0;
 }
 
