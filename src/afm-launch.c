@@ -54,7 +54,6 @@ extern char **environ;
 
 static const char *args_for_afb_daemon[] = {
 	"/usr/bin/afb-daemon",
-	"--daemon",
 	"--alias=/icons:%I",
 	"--port=%P",
 	"--rootdir=%D",
