@@ -63,6 +63,7 @@ const char error_nothing[] = "[]";
 const char error_bad_request[] = "\"bad request\"";
 const char error_not_found[] = "\"not found\"";
 const char error_cant_start[] = "\"can't start\"";
+const char error_system[] = "\"system error\"";
 
 static const char *getappid(struct json_object *obj)
 {
@@ -166,6 +167,25 @@ static void on_state(struct jreq *jreq, struct json_object *obj)
 	struct json_object *resp = afm_run_state(runid);
 	reply(jreq, resp, error_not_found);
 	json_object_put(resp);
+}
+
+static void propagate(struct jreq *jreq, const char *msg, const char *method)
+{
+	char *reply = jbus_call_ss_sync(jbuses[0], method, msg);
+	if (reply)
+		jbus_reply_s(jreq, reply);
+	else
+		jbus_reply_error_s(jreq, error_system);
+}
+
+static void on_install(struct jreq *jreq, const char *msg)
+{
+	return propagate(jreq, msg, "install");
+}
+
+static void on_uninstall(struct jreq *jreq, const char *msg)
+{
+	return propagate(jreq, msg, "uninstall");
 }
 
 static void on_signal_changed(struct json_object *obj)
@@ -295,7 +315,9 @@ int main(int ac, char **av)
 	|| jbus_add_service_j(jbuses[1], "stop", on_stop)
 	|| jbus_add_service_j(jbuses[1], "continue", on_continue)
 	|| jbus_add_service_j(jbuses[1], "runners", on_runners)
-	|| jbus_add_service_j(jbuses[1], "state", on_state)) {
+	|| jbus_add_service_j(jbuses[1], "state", on_state)
+	|| jbus_add_service_s(jbuses[1], "install", on_install)
+	|| jbus_add_service_s(jbuses[1], "uninstall", on_uninstall)) {
 		ERROR("adding services failed");
 		return 1;
 	}
