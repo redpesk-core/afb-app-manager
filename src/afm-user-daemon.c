@@ -93,15 +93,20 @@ static void reply_status(struct jreq *jreq, int status)
 
 static void on_runnables(struct jreq *jreq, struct json_object *obj)
 {
-	struct json_object *resp = afm_db_application_list(afdb);
+	struct json_object *resp;
+	INFO("method runnables called");
+	resp = afm_db_application_list(afdb);
 	jbus_reply_j(jreq, resp);
 	json_object_put(resp);
 }
 
 static void on_detail(struct jreq *jreq, struct json_object *obj)
 {
-	const char *appid = getappid(obj);
-	struct json_object *resp = afm_db_get_application_public(afdb, appid);
+	const char *appid;
+	struct json_object *resp;
+	appid = getappid(obj);
+	INFO("method detail called for %s", appid);
+	resp = afm_db_get_application_public(afdb, appid);
 	reply(jreq, resp, error_not_found);
 	json_object_put(resp);
 }
@@ -114,6 +119,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 	char runidstr[20];
 
 	appid = getappid(obj);
+	INFO("method start called for %s", appid);
 	if (appid == NULL)
 		jbus_reply_error_s(jreq, error_bad_request);
 	else {
@@ -135,45 +141,60 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 
 static void on_stop(struct jreq *jreq, struct json_object *obj)
 {
-	int runid = getrunid(obj);
-	int status = afm_run_stop(runid);
+	int runid, status;
+	runid = getrunid(obj);
+	INFO("method stop called for %d", runid);
+	status = afm_run_stop(runid);
 	reply_status(jreq, status);
 }
 
 static void on_continue(struct jreq *jreq, struct json_object *obj)
 {
-	int runid = getrunid(obj);
-	int status = afm_run_continue(runid);
+	int runid, status;
+	runid = getrunid(obj);
+	INFO("method continue called for %d", runid);
+	status = afm_run_continue(runid);
 	reply_status(jreq, status);
 }
 
 static void on_terminate(struct jreq *jreq, struct json_object *obj)
 {
-	int runid = getrunid(obj);
-	int status = afm_run_terminate(runid);
+	int runid, status;
+	runid = getrunid(obj);
+	INFO("method terminate called for %d", runid);
+	status = afm_run_terminate(runid);
 	reply_status(jreq, status);
 }
 
 static void on_runners(struct jreq *jreq, struct json_object *obj)
 {
-	struct json_object *resp = afm_run_list();
+	struct json_object *resp;
+	INFO("method runners called");
+	resp = afm_run_list();
 	jbus_reply_j(jreq, resp);
 	json_object_put(resp);
 }
 
 static void on_state(struct jreq *jreq, struct json_object *obj)
 {
-	int runid = getrunid(obj);
-	struct json_object *resp = afm_run_state(runid);
+	int runid;
+	struct json_object *resp;
+	runid = getrunid(obj);
+	INFO("method state called for %d", runid);
+	resp = afm_run_state(runid);
 	reply(jreq, resp, error_not_found);
 	json_object_put(resp);
 }
 
 static void propagate(struct jreq *jreq, const char *msg, const char *method)
 {
-	char *reply = jbus_call_ss_sync(jbuses[0], method, msg);
-	if (reply)
+	char *reply;
+	INFO("method %s propagated with %s", method, msg);
+	reply = jbus_call_ss_sync(jbuses[0], method, msg);
+	if (reply) {
 		jbus_reply_s(jreq, reply);
+		free(reply);
+	}
 	else
 		jbus_reply_error_s(jreq, error_system);
 }
@@ -192,7 +213,7 @@ static void on_signal_changed(struct json_object *obj)
 {
 	/* update the database */
 	afm_db_update_applications(afdb);
-	/* propagate now */
+	/* re-propagate now */
 	jbus_send_signal_j(jbuses[1], "changed", obj);
 }
 

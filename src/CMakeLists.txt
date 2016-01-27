@@ -55,7 +55,7 @@ endif(USE_SIMULATION)
 
 ###########################################################################
 
-add_compile_options(-Wall -Wno-pointer-sign)
+add_compile_options(-Wall -Wno-pointer-sign -Werror=maybe-uninitialized)
 add_compile_options(-ffunction-sections -fdata-sections)
 add_compile_options(-fPIC)
 add_compile_options(-Wl,--gc-sections)
