@@ -691,9 +691,14 @@ int jbus_read_write_dispatch_multiple(struct jbus **jbuses, int njbuses, int tom
 
 	r = jbus_dispatch_multiple(jbuses, njbuses, maxcount);
 	n = jbus_fill_pollfds(jbuses, njbuses, fds);
-	s = poll(fds, n, toms);
-	if (s < 0)
-		return r ? r : s;
+	for(;;) {
+		s = poll(fds, n, toms);
+		if (s >= 0)
+			break;
+		if (errno != EINTR)
+			return r ? r : s;
+		toms = 0;
+	}
 	n = jbus_dispatch_pollfds(jbuses, njbuses, fds, maxcount - r);
 	return n >= 0 ? r + n : r ? r : n;
 }
