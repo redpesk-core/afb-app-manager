@@ -117,6 +117,7 @@ static char **instantiate_arguments(const char **args, struct afm_launch_desc *d
 
 	/* loop that either compute the size and build the result */
 	data = NULL;
+	result = NULL;
 	n = s = 0;
 	for (;;) {
 		iter = args;
