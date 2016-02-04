@@ -26,20 +26,21 @@
 
 #include "verbose.h"
 #include "utils-jbus.h"
+#include "utils-json.h"
 #include "afm.h"
 #include "afm-db.h"
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
 
 static const char appname[] = "afm-system-daemon";
+static const char *rootdir = NULL;
 
 static void usage()
 {
 	printf(
-		"usage: %s [-q] [-v] [-r rootdir]... [-a appdir]...\n"
+		"usage: %s [-q] [-v] [-r rootdir]\n"
 		"\n"
-		"   -a appdir    adds an application directory\n"
-		"   -r rootdir   adds a root directory of applications\n"
+		"   -r rootdir   set root directory of applications\n"
 		"   -d           run as a daemon\n"
 		"   -q           quiet\n"
 		"   -v           verbose\n"
@@ -50,7 +51,6 @@ static void usage()
 
 static struct option options[] = {
 	{ "root",        required_argument, NULL, 'r' },
-	{ "application", required_argument, NULL, 'a' },
 	{ "daemon",      no_argument,       NULL, 'd' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -59,71 +59,12 @@ static struct option options[] = {
 };
 
 static struct jbus *jbus;
-static struct afm_db *afdb;
 
 const char error_nothing[] = "[]";
 const char error_bad_request[] = "\"bad request\"";
 const char error_not_found[] = "\"not found\"";
 const char error_cant_start[] = "\"can't start\"";
 
-static const char *getappid(struct json_object *obj)
-{
-	return json_type_string == json_object_get_type(obj) ? json_object_get_string(obj) : NULL;
-}
-
-static void reply(struct jreq *jreq, struct json_object *resp, const char *errstr)
-{
-	if (resp)
-		jbus_reply_j(jreq, resp);
-	else
-		jbus_reply_error_s(jreq, errstr);
-}
-
-static void on_runnables(struct jreq *jreq, struct json_object *obj)
-{
-	struct json_object *resp = afm_db_application_list(afdb);
-	jbus_reply_j(jreq, resp);
-	json_object_put(resp);
-}
-
-static void on_detail(struct jreq *jreq, struct json_object *obj)
-{
-	const char *appid = getappid(obj);
-	struct json_object *resp = afm_db_get_application_public(afdb, appid);
-	reply(jreq, resp, error_not_found);
-	json_object_put(resp);
-}
-
-static const char *j_get_string(struct json_object *obj, const char *key, const char *defval)
-{
-	struct json_object *o;
-	return json_object_object_get_ex(obj, key, &o) && json_object_get_type(o) == json_type_string ? json_object_get_string(o) : defval;
-}
-
-static int j_get_boolean(struct json_object *obj, const char *key, int defval)
-{
-	struct json_object *o;
-	return json_object_object_get_ex(obj, key, &o) && json_object_get_type(o) == json_type_boolean ? json_object_get_boolean(o) : defval;
-}
-
-static int json_add(struct json_object *obj, const char *key, struct json_object *val)
-{
-	json_object_object_add(obj, key, val);
-	return 0;
-}
-
-static int json_add_str(struct json_object *obj, const char *key, const char *val)
-{
-	struct json_object *str = json_object_new_string (val ? val : "");
-	return str ? json_add(obj, key, str) : (errno = ENOMEM, -1);
-}
-/*
-static int json_add_int(struct json_object *obj, const char *key, int val)
-{
-	struct json_object *v = json_object_new_int (val);
-	return v ? json_add(obj, key, v) : (errno = ENOMEM, -1);
-}
-*/
 static void on_install(struct jreq *jreq, struct json_object *req)
 {
 	const char *wgtfile;
@@ -136,13 +77,13 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 	switch (json_object_get_type(req)) {
 	case json_type_string:
 		wgtfile = json_object_get_string(req);
-		root = FWK_APP_DIR;
+		root = rootdir;
 		force = 0;
 		break;
 	case json_type_object:
 		wgtfile = j_get_string(req, "wgt", NULL);
 		if (wgtfile != NULL) {
-			root = j_get_string(req, "root", FWK_APP_DIR);
+			root = j_get_string(req, "root", rootdir);
 			force = j_get_boolean(req, "force", 0);
 			break;
 		}
@@ -160,16 +101,13 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 
 	/* build the response */
 	resp = json_object_new_object();
-	if(!resp || json_add_str(resp, "added", wgt_info_desc(ifo)->idaver)) {
+	if(!resp || !j_add_string(resp, "added", wgt_info_desc(ifo)->idaver)) {
 		json_object_put(resp);
 		wgt_info_unref(ifo);
 		jbus_reply_error_s(jreq, "\"out of memory but installed!\"");
 		return;
 	}
 	wgt_info_unref(ifo);
-
-	/* update the current database */
-	afm_db_update_applications(afdb);
 
 	/* reply and propagate event */
 	jbus_reply_j(jreq, resp);
@@ -198,8 +136,8 @@ int main(int ac, char **av)
 
 	LOGAUTH(appname);
 
-	/* first interpretation of arguments */
-	while ((i = getopt_long(ac, av, "hdqvr:a:", options, NULL)) >= 0) {
+	/* interpretation of arguments */
+	while ((i = getopt_long(ac, av, "hdqvr:", options, NULL)) >= 0) {
 		switch (i) {
 		case 'h':
 			usage();
@@ -215,8 +153,12 @@ int main(int ac, char **av)
 			daemon = 1;
 			break;
 		case 'r':
-			break;
-		case 'a':
+			if (rootdir == NULL)
+				rootdir = optarg;
+			else {
+				ERROR("duplicate definition of rootdir");
+				return 1;
+			}
 			break;
 		case ':':
 			ERROR("missing argument value");
@@ -227,42 +169,22 @@ int main(int ac, char **av)
 		}
 	}
 
-	/* init framework */
-	afdb = afm_db_create();
-	if (!afdb) {
-		ERROR("afm_create failed");
-		return 1;
-	}
-	if (afm_db_add_root(afdb, FWK_APP_DIR)) {
-		ERROR("can't add root %s", FWK_APP_DIR);
-		return 1;
-	}
-
-	/* second interpretation of arguments */
-	optind = 1;
-	while ((i = getopt_long(ac, av, "hdqvr:a:", options, NULL)) >= 0) {
-		switch (i) {
-		case 'r':
-			if (afm_db_add_root(afdb, optarg)) {
-				ERROR("can't add root %s", optarg);
-				return 1;
-			}
-			break;
-		case 'a':
-			if (afm_db_add_application(afdb, optarg)) {
-                                ERROR("can't add application %s", optarg);
-                                return 1;
-                        }
-			break;
+	/* check the rootdir */
+	if (rootdir == NULL)
+		rootdir = FWK_APP_DIR;
+	else {
+		rootdir = realpath(rootdir, NULL);
+		if (rootdir == NULL) {
+			ERROR("out of memory");
+			return 1;
 		}
 	}
-
-	/* update the database */
-	if (afm_db_update_applications(afdb)) {
-		ERROR("afm_update_applications failed");
+	if (chdir(rootdir)) {
+		ERROR("can't enter %s", rootdir);
 		return 1;
 	}
 
+	/* daemonize */
 	if (daemon && daemonize()) {
 		ERROR("daemonization failed");
 		return 1;
@@ -274,9 +196,7 @@ int main(int ac, char **av)
 		ERROR("create_jbus failed");
 		return 1;
 	}
-	if(jbus_add_service_j(jbus, "runnables", on_runnables)
-	|| jbus_add_service_j(jbus, "detail", on_detail)
-	|| jbus_add_service_j(jbus, "install", on_install)
+	if(jbus_add_service_j(jbus, "install", on_install)
 	|| jbus_add_service_j(jbus, "uninstall", on_uninstall)) {
 		ERROR("adding services failed");
 		return 1;

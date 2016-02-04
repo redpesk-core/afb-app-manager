@@ -27,6 +27,7 @@
 
 #include <json.h>
 
+#include "utils-json.h"
 #include "wgt-info.h"
 #include "afm-db.h"
 
@@ -145,24 +146,6 @@ int afm_db_add_application(struct afm_db *afdb, const char *path)
 	return add_dir(afdb, path, type_app);
 }
 
-static int json_add(struct json_object *obj, const char *key, struct json_object *val)
-{
-	json_object_object_add(obj, key, val);
-	return 0;
-}
-
-static int json_add_str(struct json_object *obj, const char *key, const char *val)
-{
-	struct json_object *str = json_object_new_string (val ? val : "");
-	return str ? json_add(obj, key, str) : -1;
-}
-
-static int json_add_int(struct json_object *obj, const char *key, int val)
-{
-	struct json_object *v = json_object_new_int (val);
-	return v ? json_add(obj, key, v) : -1;
-}
-
 static int addapp(struct afapps *apps, const char *path)
 {
 	struct wgt_info *info;
@@ -188,7 +171,7 @@ static int addapp(struct afapps *apps, const char *path)
 	if (!priv)
 		goto error2;
 
-	if (json_add(priv, "public", pub)) {
+	if (!j_add(priv, "public", pub)) {
 		json_object_put(pub);
 		goto error2;
 	}
@@ -197,23 +180,23 @@ static int addapp(struct afapps *apps, const char *path)
 	if (!priv)
 		goto error2;
 
-	if (json_add(priv, "plugins", plugs)) {
+	if (!j_add(priv, "plugins", plugs)) {
 		json_object_put(plugs);
 		goto error2;
 	}
 
-	if(json_add_str(priv, "id", desc->id)
-	|| json_add_str(priv, "path", path)
-	|| json_add_str(priv, "content", desc->content_src)
-	|| json_add_str(priv, "type", desc->content_type)
-	|| json_add_str(pub, "id", desc->idaver)
-	|| json_add_str(pub, "version", desc->version)
-	|| json_add_int(pub, "width", desc->width)
-	|| json_add_int(pub, "height", desc->height)
-	|| json_add_str(pub, "name", desc->name)
-	|| json_add_str(pub, "description", desc->description)
-	|| json_add_str(pub, "shortname", desc->name_short)
-	|| json_add_str(pub, "author", desc->author))
+	if(!j_add_string(priv, "id", desc->id)
+	|| !j_add_string(priv, "path", path)
+	|| !j_add_string(priv, "content", desc->content_src)
+	|| !j_add_string(priv, "type", desc->content_type)
+	|| !j_add_string(pub, "id", desc->idaver)
+	|| !j_add_string(pub, "version", desc->version)
+	|| !j_add_integer(pub, "width", desc->width)
+	|| !j_add_integer(pub, "height", desc->height)
+	|| !j_add_string(pub, "name", desc->name)
+	|| !j_add_string(pub, "description", desc->description)
+	|| !j_add_string(pub, "shortname", desc->name_short)
+	|| !j_add_string(pub, "author", desc->author))
 		goto error2;
 
 	feat = desc->features;
@@ -236,17 +219,17 @@ static int addapp(struct afapps *apps, const char *path)
 		bya = json_object_new_object();
 		if (!bya)
 			goto error2;
-		if (json_add(apps->byapp, desc->id, bya)) {
+		if (!j_add(apps->byapp, desc->id, bya)) {
 			json_object_put(bya);
 			goto error2;
 		}
 	}
 
-	if (json_add(apps->direct, desc->idaver, priv))
+	if (!j_add(apps->direct, desc->idaver, priv))
 		goto error2;
 	json_object_get(priv);
 
-	if (json_add(bya, desc->version, priv)) {
+	if (!j_add(bya, desc->version, priv)) {
 		json_object_put(priv);
 		goto error2;
 	}

@@ -31,6 +31,7 @@
 
 #include "verbose.h"
 #include "utils-dir.h"
+#include "utils-json.h"
 #include "afm-run.h"
 #include "afm-launch.h"
 
@@ -238,35 +239,19 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 
 /**************** handle afm_launch_desc *********************/
 
-static int get_jstr(struct json_object *obj, const char *key, const char **value)
-{
-	json_object *data;
-	return json_object_object_get_ex(obj, key, &data)
-		&& json_object_get_type(data) == json_type_string
-		&& (*value = json_object_get_string(data)) != NULL;
-}
-
-static int get_jint(struct json_object *obj, const char *key, int *value)
-{
-	json_object *data;
-	return json_object_object_get_ex(obj, key, &data)
-		&& json_object_get_type(data) == json_type_int
-		&& ((*value = (int)json_object_get_int(data)), 1);
-}
-
 static int fill_launch_desc(struct json_object *appli, struct afm_launch_desc *desc)
 {
 	json_object *pub;
 
 	/* main items */
-	if(!json_object_object_get_ex(appli, "public", &pub)
-	|| !get_jstr(appli, "path", &desc->path)
-	|| !get_jstr(appli, "id", &desc->tag)
-	|| !get_jstr(appli, "content", &desc->content)
-	|| !get_jstr(appli, "type", &desc->type)
-	|| !get_jstr(pub, "name", &desc->name)
-	|| !get_jint(pub, "width", &desc->width)
-	|| !get_jint(pub, "height", &desc->height)) {
+	if(!j_object(appli, "public", &pub)
+	|| !j_string(appli, "path", &desc->path)
+	|| !j_string(appli, "id", &desc->tag)
+	|| !j_string(appli, "content", &desc->content)
+	|| !j_string(appli, "type", &desc->type)
+	|| !j_string(pub, "name", &desc->name)
+	|| !j_integer(pub, "width", &desc->width)
+	|| !j_integer(pub, "height", &desc->height)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -352,10 +337,8 @@ static json_object *mkstate(struct apprun *runner)
 		goto error;
 
 	/* the runid */
-	obj = json_object_new_int(runner->runid);
-	if (obj == NULL)
+	if (!j_add_integer(result, "runid", runner->runid))
 		goto error2;
-	json_object_object_add(result, "runid", obj); /* TODO TEST STATUS */
 
 	/* the state */
 	switch(runner->state) {
@@ -370,17 +353,16 @@ static json_object *mkstate(struct apprun *runner)
 		state = "terminated";
 		break;
 	}
-	obj = json_object_new_string(state);
-	if (obj == NULL)
+	if (!j_add_string(result, "state", state))
 		goto error2;
-	json_object_object_add(result, "state", obj); /* TODO TEST STATUS */
 
 	/* the application id */
 	rc = json_object_object_get_ex(runner->appli, "public", &obj);
 	assert(rc);
 	rc = json_object_object_get_ex(obj, "id", &obj);
 	assert(rc);
-	json_object_object_add(result, "id", obj); /* TODO TEST STATUS */
+	if (!j_add(result, "id", obj))
+		goto error2;
 	json_object_get(obj);
 
 	/* done */
@@ -401,25 +383,29 @@ struct json_object *afm_run_list()
 
 	/* creates the object */
 	result = json_object_new_array();
-	if (result == NULL) {
-		errno = ENOMEM;
-		return NULL;		
-	}
+	if (result == NULL)
+		goto error;
 
 	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
 		for (runner = runners_by_runid[i] ; runner ; runner = runner->next_by_runid) {
 			if (runner->state != as_terminating && runner->state != as_terminated) {
 				obj = mkstate(runner);
-				if (obj == NULL) {
-					json_object_put(result);
-					return NULL;
+				if (obj == NULL)
+					goto error2;
+				if (json_object_array_add(result, obj) == -1) {
+					json_object_put(obj);
+					goto error2;
 				}
-				/* TODO status ? */
-				json_object_array_add(result, obj);
 			}
 		}
 	}
 	return result;
+
+error2:
+	json_object_put(result);
+error:
+	errno = ENOMEM;
+	return NULL;
 }
 
 struct json_object *afm_run_state(int runid)

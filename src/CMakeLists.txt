@@ -55,7 +55,8 @@ endif(USE_SIMULATION)
 
 ###########################################################################
 
-add_compile_options(-Wall -Wno-pointer-sign -Werror=maybe-uninitialized)
+add_compile_options(-Wall -Wno-pointer-sign)
+add_compile_options(-Werror=maybe-uninitialized -Werror=implicit-function-declaration)
 add_compile_options(-ffunction-sections -fdata-sections)
 add_compile_options(-fPIC)
 add_compile_options(-Wl,--gc-sections)
@@ -82,6 +83,7 @@ add_library(wgtpkg
 add_library(utils
 	utils-dir.c
 	utils-jbus.c
+	utils-json.c
 	verbose.c
 	)
 
