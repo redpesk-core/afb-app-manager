@@ -31,6 +31,7 @@
 #include "afm-db.h"
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
+#include "wgtpkg-uninstall.h"
 
 static const char appname[] = "afm-system-daemon";
 static const char *rootdir = NULL;
@@ -117,7 +118,34 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 
 static void on_uninstall(struct jreq *jreq, struct json_object *req)
 {
-	jbus_reply_error_s(jreq, "\"not yet implemented\"");
+	const char *idaver;
+	const char *root;
+	int rc;
+
+	/* scan the request */
+	switch (json_object_get_type(req)) {
+	case json_type_string:
+		idaver = json_object_get_string(req);
+		root = rootdir;
+		break;
+	case json_type_object:
+		idaver = j_get_string(req, "id", NULL);
+		if (idaver != NULL) {
+			root = j_get_string(req, "root", rootdir);
+			break;
+		}
+	default:
+		jbus_reply_error_s(jreq, error_bad_request);
+		return;
+	}
+
+	/* install the widget */
+	rc = uninstall_widget(idaver, root);
+	if (rc) {
+		jbus_reply_error_s(jreq, "\"uninstallation had error\"");
+		return;
+	}
+	jbus_reply_s(jreq, "true");
 }
 
 static int daemonize()

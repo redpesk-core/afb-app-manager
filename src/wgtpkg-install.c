@@ -137,7 +137,7 @@ static int install_icon(const struct wgt_desc *desc)
 	int rc;
 
 	create_directory(FWK_ICON_DIR, 0755, 1);
-	rc = snprintf(link, sizeof link, "%s/%s@%s", FWK_ICON_DIR, desc->id, desc->ver);
+	rc = snprintf(link, sizeof link, "%s/%s", FWK_ICON_DIR, desc->idaver);
 	if (rc >= sizeof link) {
 		ERROR("link to long in install_icon");
 		errno = EINVAL;

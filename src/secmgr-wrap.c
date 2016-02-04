@@ -80,6 +80,17 @@ int secmgr_install()
 	return retcode(rc);
 }
 
+int secmgr_uninstall()
+{
+	int rc;
+	assert(request != NULL);
+	rc = security_manager_app_uninstall(request);
+	if (rc != SECURITY_MANAGER_SUCCESS)
+		ERROR("security_manager_app_uninstall failed");
+	secmgr_cancel();
+	return retcode(rc);
+}
+
 int secmgr_permit(const char *permission)
 {
 	int rc;

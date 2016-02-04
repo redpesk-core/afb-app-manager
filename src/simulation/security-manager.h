@@ -52,6 +52,9 @@ static int diese = 0;
 #define security_manager_app_install(r) \
  (printf("security_manager_app_install(%p)\n",r), SECURITY_MANAGER_SUCCESS)
 
+#define security_manager_app_uninstall(r) \
+ (printf("security_manager_app_uninstall(%p)\n",r), SECURITY_MANAGER_SUCCESS)
+
 #define security_manager_prepare_app(a) \
  (printf("security_manager_prepare_app(%s)\n",a), SECURITY_MANAGER_SUCCESS)
 

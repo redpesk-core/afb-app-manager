@@ -16,13 +16,5 @@
  limitations under the License.
 */
 
-extern int secmgr_init(const char *id);
-extern void secmgr_cancel();
-extern int secmgr_install();
-extern int secmgr_uninstall();
-extern int secmgr_permit(const char *permission);
-extern int secmgr_path_public_read_only(const char *pathname);
-extern int secmgr_path_read_only(const char *pathname);
-extern int secmgr_path_read_write(const char *pathname);
+extern int uninstall_widget(const char *idaver, const char *root);
 
-extern int secmgr_prepare_exec(const char *appid);

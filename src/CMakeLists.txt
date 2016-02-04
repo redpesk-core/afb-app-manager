@@ -75,6 +75,7 @@ add_library(wgtpkg
 	wgtpkg-files.c
 	wgtpkg-install.c
 	wgtpkg-permissions.c
+	wgtpkg-uninstall.c
 	wgtpkg-workdir.c
 	wgtpkg-xmlsec.c
 	wgtpkg-zip.c
