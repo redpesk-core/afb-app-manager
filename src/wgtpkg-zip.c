@@ -150,20 +150,10 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			ERROR("empty entry found in %s", zipfile);
 			goto error;
 		}
-		if (zstat.size == 0) {
-			/* directory name */
-			if (zstat.name[len - 1] != '/') {
-				ERROR("bad directory name %s in %s", zstat.name, zipfile);
-				goto error;
-			}
+		if (zstat.name[len - 1] == '/')
 			/* record */
 			fdesc = file_add_directory(zstat.name);
-		} else {
-			/* directory name */
-			if (zstat.name[len - 1] == '/') {
-				ERROR("bad file name %s in %s", zstat.name, zipfile);
-				goto error;
-			}
+		else {
 			/* get the size */
 			esize += zstat.size;
 			/* record */
