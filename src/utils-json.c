@@ -83,7 +83,7 @@ int j_add(struct json_object *obj, const char *key, struct json_object *val)
 
 int j_add_string(struct json_object *obj, const char *key, const char *val)
 {
-	struct json_object *str = json_object_new_string (val);
+	struct json_object *str = json_object_new_string (val ? val : "");
 	return str ? j_add(obj, key, str) : (errno = ENOMEM, 0);
 }
 
