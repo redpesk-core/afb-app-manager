@@ -95,25 +95,23 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 
 	/* install the widget */
 	ifo = install_widget(wgtfile, root, force);
-	if (ifo == NULL) {
+	if (ifo == NULL)
 		jbus_reply_error_s(jreq, "\"installation failed\"");
-		return;
-	}
+	else {
+		/* build the response */
+		resp = json_object_new_object();
+		if(!resp || !j_add_string(resp, "added", wgt_info_desc(ifo)->idaver))
+			jbus_reply_error_s(jreq, "\"out of memory but installed!\"");
+		else
+			jbus_reply_j(jreq, resp);
 
-	/* build the response */
-	resp = json_object_new_object();
-	if(!resp || !j_add_string(resp, "added", wgt_info_desc(ifo)->idaver)) {
-		json_object_put(resp);
+		/* clean-up */
 		wgt_info_unref(ifo);
-		jbus_reply_error_s(jreq, "\"out of memory but installed!\"");
-		return;
+		json_object_put(resp);
 	}
-	wgt_info_unref(ifo);
 
-	/* reply and propagate event */
-	jbus_reply_j(jreq, resp);
-	jbus_send_signal_j(jbus, "changed", resp);
-	json_object_put(resp);
+	/* still sends the signal */
+	jbus_send_signal_s(jbus, "changed", "true");
 }
 
 static void on_uninstall(struct jreq *jreq, struct json_object *req)
@@ -141,11 +139,13 @@ static void on_uninstall(struct jreq *jreq, struct json_object *req)
 
 	/* install the widget */
 	rc = uninstall_widget(idaver, root);
-	if (rc) {
+	if (rc)
 		jbus_reply_error_s(jreq, "\"uninstallation had error\"");
-		return;
-	}
-	jbus_reply_s(jreq, "true");
+	else
+		jbus_reply_s(jreq, "true");
+
+	/* still sends the signal */
+	jbus_send_signal_s(jbus, "changed", "true");
 }
 
 static int daemonize()
