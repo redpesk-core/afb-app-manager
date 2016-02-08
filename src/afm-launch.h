@@ -29,4 +29,5 @@ struct afm_launch_desc {
 	int height;
 };
 
+int afm_launch_initialize();
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2]);

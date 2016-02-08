@@ -429,6 +429,11 @@ int afm_run_init()
 	struct passwd passwd, *pw;
 	struct sigaction siga;
 
+	/* init launcher */
+	rc = afm_launch_initialize();
+	if (rc)
+		return rc;
+
 	/* computes the 'homeappdir' */
 	me = geteuid();
 	rc = getpwuid_r(me, &passwd, buf, sizeof buf, &pw);

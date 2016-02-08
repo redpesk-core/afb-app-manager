@@ -52,6 +52,16 @@ extern char **environ;
 %H height			desc->height
 */
 
+#define DEFAULT_TYPE "text/html"
+
+const char separators[] = " \t\n";
+
+struct execdesc {
+	char *type;
+	char **execs[2];
+};
+
+#if 0
 static const char *args_for_afb_daemon[] = {
 	"/usr/bin/afb-daemon",
 	"--alias=/icons:%I",
@@ -83,27 +93,184 @@ static const char *args_for_binary[] = {
 	NULL
 };
 
-struct execdesc {
-	const char *type;
-	const char **master_args;
-	const char **slave_args;
-};
-
 static struct execdesc known_launchers[] = {
 	{ "text/html",                args_for_afb_daemon, args_for_web_runtime },
 	{ "application/x-executable", args_for_binary,     NULL },
-	{ "text/vnd.qt.qml",          args_for_qmlviewer,  NULL }
+	{ "text/vnd.qt.qml",          args_for_qmlviewer,  NULL },
+	{ NULL, NULL, NULL }
 };
+#endif
+
+struct launchers {
+	int count;
+	struct execdesc *descs;
+};
+
+static struct launchers launchers = { 0, NULL };
 
 struct launchparam {
 	int port;
 	const char *secret;
 	const char *datadir;
-	const char **master_args;
-	const char **slave_args;
+	const char **master;
+	const char **slave;
 };
 
 static gid_t groupid = 0;
+
+static int read_type(const char *buffer, const char *filepath, int line)
+{
+	size_t length;
+	int count;
+	struct execdesc *descs;
+	char *type;
+
+	/* check the type */
+	length = strcspn(buffer, separators);
+	assert(length);
+	if (buffer[length + strspn(buffer + length, separators)] != 0) {
+		ERROR("%s:%d: extra characters found after type", filepath, line);
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* allocates data */
+	type = strndup(buffer, length);
+	count = launchers.count + 1;
+	descs = realloc(launchers.descs, count * sizeof(struct execdesc));
+	if (descs == NULL || type == NULL) {
+		free(type);
+		errno = ENOMEM;
+		return -1;
+	}
+
+	/* fill data */
+	launchers.descs = descs;
+	descs += count - 1;
+	descs->type = type;
+	descs->execs[0] = NULL;
+	descs->execs[1] = NULL;
+	launchers.count = count;
+	return 0;
+}
+
+static int read_args(const char *buffer, int bottom, int offset, const char *filepath, int line)
+{
+	char **vector, *args;
+	size_t index, len, length;
+	int count;
+
+	/* count */
+	count = 0;
+	length = index = 0;
+	while(buffer[index]) {
+		count++;
+		/* skips the spaces */
+		len = strcspn(buffer + index, separators);
+		length += len;
+		/* skips the spaces */
+		index += len;
+		index += strspn(buffer + index, separators);
+	}
+	/* allocates */
+	while (bottom < launchers.count) {
+		vector = malloc(length + count + (count + 1) * sizeof(char*));
+		if (vector == NULL) {
+			ERROR("%s:%d: out of memory", filepath, line);
+			return -1;
+		}
+		args = (char*)(vector + count + 1);
+		count = 0;
+		index = 0;
+		while(buffer[index]) {
+			/* skips the spaces */
+			len = strcspn(buffer + index, separators);
+			vector[count++] = args;
+			memcpy(args, buffer + index, len);
+			args += len;
+			index += len;
+			*args++ = 0;
+			/* skips the spaces */
+			len = strspn(buffer + index, separators);
+			index += len;
+		}
+		vector[count] = NULL;
+		launchers.descs[bottom++].execs[offset] = vector;
+	}
+	return 0;
+}
+
+static int read_launchers(FILE *file, const char *filepath)
+{
+	char buffer[4096];
+	int index, line, rc, bottom, offset, typed;
+
+	/* reads the file */
+	line = 0;
+	offset = 0;
+	typed = 0;
+	bottom = launchers.count;
+	while (fgets(buffer, sizeof buffer, file) != NULL) {
+		line++;
+
+		/* find start of line */
+		index = strspn(buffer, separators);
+
+		/* skip empty lines and comments */
+		if (buffer[index] == 0 || buffer[index] == '#')
+			continue;
+
+		if (index == 0) {
+			if (!typed)
+				bottom = launchers.count;
+			rc = read_type(buffer, filepath, line);
+			if (rc)
+				return rc;
+			if (!typed) {
+				typed = 1;
+				offset = 0;
+			}
+		} else if (!typed && !offset) {
+			ERROR("%s:%d: untyped launcher found", filepath, line);
+			errno = EINVAL;
+			return -1;
+		} else if (offset >= 2) {
+			ERROR("%s:%d: extra launcher found", filepath, line);
+			errno = EINVAL;
+			return -1;
+		} else {
+			rc = read_args(buffer + index, bottom, offset, filepath, line);
+			if (rc)
+				return rc;
+			offset++;
+			typed = 0;
+		}
+	}
+	if (ferror(file)) {
+		ERROR("%s:%d: error while reading, %m", filepath, line);
+		return -1;
+	}
+	return 0;
+}
+
+static int read_configuration_file(const char *filepath)
+{
+	int rc;
+	FILE *file;
+
+	/* opens the configuration file */
+	file = fopen(filepath, "r");
+	if (file == NULL) {
+		/* error */
+		ERROR("can't read file %s: %m", filepath);
+		rc = -1;
+	} else {
+		/* reads it */
+		rc = read_launchers(file, filepath);
+		fclose(file);
+	}
+	return rc;
+}
 
 static char **instantiate_arguments(const char **args, struct afm_launch_desc *desc, struct launchparam *params)
 {
@@ -193,8 +360,6 @@ static int mkport()
 	return port;
 }
 
-
-
 static int launchexec1(struct afm_launch_desc *desc, pid_t children[2], struct launchparam *params)
 {
 	int rc;
@@ -242,7 +407,7 @@ static int launchexec1(struct afm_launch_desc *desc, pid_t children[2], struct l
 		_exit(1);
 	}
 
-	args = instantiate_arguments(params->master_args, desc, params);
+	args = instantiate_arguments(params->master, desc, params);
 	if (args == NULL) {
 		ERROR("out of memory in master");
 	}
@@ -358,7 +523,7 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 			_exit(1);
 		}
 
-		args = instantiate_arguments(params->slave_args, desc, params);
+		args = instantiate_arguments(params->slave, desc, params);
 		if (args == NULL) {
 			ERROR("out of memory in slave");
 		}
@@ -371,7 +536,7 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 
 	/********* still in the master child ************/
 	close(spipe[1]);
-	args = instantiate_arguments(params->master_args, desc, params);
+	args = instantiate_arguments(params->master, desc, params);
 	if (args == NULL) {
 		ERROR("out of memory in master");
 	}
@@ -389,39 +554,41 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 	_exit(1);
 }
 
-static void afm_launch_init_group()
+int afm_launch_initialize()
 {
-	if (!groupid) {
-		gid_t r, e, s;
-		getresgid(&r, &e, &s);
-		if (s && s != e)
-			groupid = s;
-		else
-			groupid = -1;
-	}
+	gid_t r, e, s;
+	getresgid(&r, &e, &s);
+	if (s && s != e)
+		groupid = s;
+	else
+		groupid = -1;
+	return read_configuration_file(FWK_LAUNCH_CONF);
 }
 
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 {
 	char datadir[PATH_MAX];
-	int ikl, nkl, rc;
+	int ikl, rc;
 	char secret[9];
 	struct launchparam params;
+	const char *type;
 
-	/* static init */
-	afm_launch_init_group();
+	/* should be init */
+	assert(groupid != 0);
+
+	/* init */
+	children[0] = 0;
+	children[1] = 0;
 
 	/* what launcher ? */
+	type = desc->type != NULL && *desc->type ? desc->type : DEFAULT_TYPE;
 	ikl = 0;
-	if (desc->type != NULL && *desc->type) {
-		nkl = sizeof known_launchers / sizeof * known_launchers;
-		while (ikl < nkl && strcmp(desc->type, known_launchers[ikl].type))
-			ikl++;
-		if (ikl == nkl) {
-			ERROR("type %s not found!", desc->type);
-			errno = ENOENT;
-			return -1;
-		}
+	while (ikl < launchers.count && strcmp(type, launchers.descs[ikl].type))
+		ikl++;
+	if (ikl == launchers.count) {
+		ERROR("type %s not found!", type);
+		errno = ENOENT;
+		return -1;
 	}
 
 	/* prepare paths */
@@ -437,9 +604,9 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 	params.port = mkport();
 	params.secret = secret;
 	params.datadir = datadir;
-	params.master_args = known_launchers[ikl].master_args;
-	params.slave_args = known_launchers[ikl].slave_args;
+	params.master = (const char **)launchers.descs[ikl].execs[0];
+	params.slave = (const char **)launchers.descs[ikl].execs[1];
 
-	return params.slave_args ? launchexec2(desc, children, &params) : launchexec1(desc, children, &params);
+	return params.slave ? launchexec2(desc, children, &params) : launchexec1(desc, children, &params);
 }
 

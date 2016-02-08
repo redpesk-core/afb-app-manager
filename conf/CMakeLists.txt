@@ -27,4 +27,5 @@ install(FILES afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
 install(FILES afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
 install(FILES afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
 install(FILES afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
+install(FILES afm-launch.conf           DESTINATION ${afm_confdir})
 
