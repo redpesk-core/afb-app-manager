@@ -35,23 +35,6 @@ extern char **environ;
 #include "afm-launch.h"
 #include "secmgr-wrap.h"
 
-/*
-%I icondir			FWK_ICON_DIR
-%P port				params->port
-%S secret			params->secret
-%D datadir			params->datadir
-%r rootdir			desc->path
-%h homedir			desc->home
-%t tag (smack label)		desc->tag
-%a appid			desc->appid
-%c content			desc->content
-%m mime-type			desc->type
-%n name				desc->name
-%p plugins			desc->plugins
-%W width			desc->width
-%H height			desc->height
-*/
-
 #define DEFAULT_TYPE "text/html"
 
 const char separators[] = " \t\n";
@@ -60,46 +43,6 @@ struct execdesc {
 	char *type;
 	char **execs[2];
 };
-
-#if 0
-static const char *args_for_afb_daemon[] = {
-	"/usr/bin/afb-daemon",
-	"--alias=/icons:%I",
-	"--port=%P",
-	"--rootdir=%r",
-	"--token=%S",
-	NULL
-};
-
-static const char *args_for_qmlviewer[] = {
-	"/usr/bin/qt5/qmlscene",
-	"-fullscreen",
-	"-I",
-	"%r",
-	"-I",
-	"%r/imports",
-	"%r/%c",
-	NULL
-};
-
-static const char *args_for_web_runtime[] = {
-	"/usr/bin/web-runtime",
-	"http://localhost:%P/%c?token=%S",
-	NULL
-};
-
-static const char *args_for_binary[] = {
-	"%r/%c",
-	NULL
-};
-
-static struct execdesc known_launchers[] = {
-	{ "text/html",                args_for_afb_daemon, args_for_web_runtime },
-	{ "application/x-executable", args_for_binary,     NULL },
-	{ "text/vnd.qt.qml",          args_for_qmlviewer,  NULL },
-	{ NULL, NULL, NULL }
-};
-#endif
 
 struct launchers {
 	int count;
@@ -271,6 +214,24 @@ static int read_configuration_file(const char *filepath)
 	}
 	return rc;
 }
+
+/*
+%I icondir			FWK_ICON_DIR
+%P port				params->port
+%S secret			params->secret
+%D datadir			params->datadir
+%r rootdir			desc->path
+%h homedir			desc->home
+%t tag (smack label)		desc->tag
+%a appid			desc->appid
+%c content			desc->content
+%m mime-type			desc->type
+%n name				desc->name
+%p plugins			desc->plugins
+%W width			desc->width
+%H height			desc->height
+%% %
+*/
 
 static char **instantiate_arguments(const char **args, struct afm_launch_desc *desc, struct launchparam *params)
 {
