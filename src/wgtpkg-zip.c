@@ -177,7 +177,9 @@ int zread(const char *zipfile, unsigned long long maxsize)
 		assert(fdesc != NULL);
 		err = zip_stat_index(zip, fdesc->zindex, ZIP_FL_ENC_GUESS, &zstat);
 		assert(zstat.name[0] != '/');
-		if (zstat.size == 0) {
+		len = strlen(zstat.name);
+		assert(len > 0);
+		if (zstat.name[len - 1] == '/') {
 			/* directory name */
 			err = create_directory((char*)zstat.name, MODE_OF_DIRECTORY_CREATION);
 			if (err && errno != EEXIST)
