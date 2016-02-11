@@ -244,14 +244,14 @@ static int fill_launch_desc(struct json_object *appli, struct afm_launch_desc *d
 	json_object *pub;
 
 	/* main items */
-	if(!j_object(appli, "public", &pub)
-	|| !j_string(appli, "path", &desc->path)
-	|| !j_string(appli, "id", &desc->tag)
-	|| !j_string(appli, "content", &desc->content)
-	|| !j_string(appli, "type", &desc->type)
-	|| !j_string(pub, "name", &desc->name)
-	|| !j_integer(pub, "width", &desc->width)
-	|| !j_integer(pub, "height", &desc->height)) {
+	if(!j_read_object_at(appli, "public", &pub)
+	|| !j_read_string_at(appli, "path", &desc->path)
+	|| !j_read_string_at(appli, "id", &desc->tag)
+	|| !j_read_string_at(appli, "content", &desc->content)
+	|| !j_read_string_at(appli, "type", &desc->type)
+	|| !j_read_string_at(pub, "name", &desc->name)
+	|| !j_read_integer_at(pub, "width", &desc->width)
+	|| !j_read_integer_at(pub, "height", &desc->height)) {
 		errno = EINVAL;
 		return -1;
 	}

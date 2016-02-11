@@ -82,10 +82,10 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 		force = 0;
 		break;
 	case json_type_object:
-		wgtfile = j_get_string(req, "wgt", NULL);
+		wgtfile = j_string_at(req, "wgt", NULL);
 		if (wgtfile != NULL) {
-			root = j_get_string(req, "root", rootdir);
-			force = j_get_boolean(req, "force", 0);
+			root = j_string_at(req, "root", rootdir);
+			force = j_boolean_at(req, "force", 0);
 			break;
 		}
 	default:
@@ -127,9 +127,9 @@ static void on_uninstall(struct jreq *jreq, struct json_object *req)
 		root = rootdir;
 		break;
 	case json_type_object:
-		idaver = j_get_string(req, "id", NULL);
+		idaver = j_string_at(req, "id", NULL);
 		if (idaver != NULL) {
-			root = j_get_string(req, "root", rootdir);
+			root = j_string_at(req, "root", rootdir);
 			break;
 		}
 	default:

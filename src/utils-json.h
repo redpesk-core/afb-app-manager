@@ -16,14 +16,26 @@
  limitations under the License.
 */
 
-int j_object(struct json_object *obj, const char *key, struct json_object **value);
-int j_string(struct json_object *obj, const char *key, const char **value);
-int j_boolean(struct json_object *obj, const char *key, int *value);
-int j_integer(struct json_object *obj, const char *key, int *value);
+#define j_is_string(o)		(json_object_get_type(o) == json_type_string)
+#define j_is_boolean(o)		(json_object_get_type(o) == json_type_boolean)
+#define j_is_integer(o)		(json_object_get_type(o) == json_type_int)
 
-extern const char *j_get_string(struct json_object *obj, const char *key, const char *defval);
-extern int j_get_boolean(struct json_object *obj, const char *key, int defval);
-extern int j_get_integer(struct json_object *obj, const char *key, int defval);
+extern int j_read_string(struct json_object *obj, const char **value);
+extern int j_read_boolean(struct json_object *obj, int *value);
+extern int j_read_integer(struct json_object *obj, int *value);
+
+extern const char *j_string(struct json_object *obj, const char *defval);
+extern int j_boolean(struct json_object *obj, int defval);
+extern int j_integer(struct json_object *obj, int defval);
+
+extern int j_read_object_at(struct json_object *obj, const char *key, struct json_object **value);
+extern int j_read_string_at(struct json_object *obj, const char *key, const char **value);
+extern int j_read_boolean_at(struct json_object *obj, const char *key, int *value);
+extern int j_read_integer_at(struct json_object *obj, const char *key, int *value);
+
+extern const char *j_string_at(struct json_object *obj, const char *key, const char *defval);
+extern int j_boolean_at(struct json_object *obj, const char *key, int defval);
+extern int j_integer_at(struct json_object *obj, const char *key, int defval);
 
 extern int j_add(struct json_object *obj, const char *key, struct json_object *val);
 extern int j_add_string(struct json_object *obj, const char *key, const char *val);
