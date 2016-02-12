@@ -102,16 +102,15 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 		resp = json_object_new_object();
 		if(!resp || !j_add_string(resp, "added", wgt_info_desc(ifo)->idaver))
 			jbus_reply_error_s(jreq, "\"out of memory but installed!\"");
-		else
+		else {
+			jbus_send_signal_s(jbus, "changed", "true");
 			jbus_reply_j(jreq, resp);
+		}
 
 		/* clean-up */
 		wgt_info_unref(ifo);
 		json_object_put(resp);
 	}
-
-	/* still sends the signal */
-	jbus_send_signal_s(jbus, "changed", "true");
 }
 
 static void on_uninstall(struct jreq *jreq, struct json_object *req)
@@ -141,11 +140,10 @@ static void on_uninstall(struct jreq *jreq, struct json_object *req)
 	rc = uninstall_widget(idaver, root);
 	if (rc)
 		jbus_reply_error_s(jreq, "\"uninstallation had error\"");
-	else
+	else {
+		jbus_send_signal_s(jbus, "changed", "true");
 		jbus_reply_s(jreq, "true");
-
-	/* still sends the signal */
-	jbus_send_signal_s(jbus, "changed", "true");
+	}
 }
 
 static int daemonize()
