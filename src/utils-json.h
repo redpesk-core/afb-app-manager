@@ -16,27 +16,47 @@
  limitations under the License.
 */
 
+/*
+ * predicates on types
+ */
 #define j_is_string(o)		(json_object_get_type(o) == json_type_string)
 #define j_is_boolean(o)		(json_object_get_type(o) == json_type_boolean)
 #define j_is_integer(o)		(json_object_get_type(o) == json_type_int)
 
+/*
+ * Read the value if object is of the good type and return true.
+ * Returns false if the type is not correct.
+ */
 extern int j_read_string(struct json_object *obj, const char **value);
 extern int j_read_boolean(struct json_object *obj, int *value);
 extern int j_read_integer(struct json_object *obj, int *value);
 
+/*
+ * Get the value of the type or the default value if the type does not match.
+ */
 extern const char *j_string(struct json_object *obj, const char *defval);
 extern int j_boolean(struct json_object *obj, int defval);
 extern int j_integer(struct json_object *obj, int defval);
 
+/*
+ * Read the value of the entry of key in object if exist and of the good type and return true.
+ * Returns false if the key does not exist or if the type is not correct.
+ */
 extern int j_read_object_at(struct json_object *obj, const char *key, struct json_object **value);
 extern int j_read_string_at(struct json_object *obj, const char *key, const char **value);
 extern int j_read_boolean_at(struct json_object *obj, const char *key, int *value);
 extern int j_read_integer_at(struct json_object *obj, const char *key, int *value);
 
+/*
+ * Get the value of the key of type or the default value if the key or type does not match.
+ */
 extern const char *j_string_at(struct json_object *obj, const char *key, const char *defval);
 extern int j_boolean_at(struct json_object *obj, const char *key, int defval);
 extern int j_integer_at(struct json_object *obj, const char *key, int defval);
 
+/*
+ * Adds a keyed value (of type) and returns true if done or false in case of error
+ */
 extern int j_add(struct json_object *obj, const char *key, struct json_object *val);
 extern int j_add_string(struct json_object *obj, const char *key, const char *val);
 extern int j_add_boolean(struct json_object *obj, const char *key, int val);
