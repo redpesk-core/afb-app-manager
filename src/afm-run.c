@@ -282,6 +282,8 @@ int afm_run_start(struct json_object *appli, enum afm_launch_mode mode, char **u
 	sigset_t saved, blocked;
 
 	assert(launch_mode_is_valid(mode));
+	assert(mode == mode_local || uri != NULL);
+	assert(uri == NULL || *uri == NULL);
 
 	/* prepare to launch */
 	rc = fill_launch_desc(appli, mode, &desc);
