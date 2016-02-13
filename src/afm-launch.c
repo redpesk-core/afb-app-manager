@@ -61,27 +61,128 @@ struct launchparam {
 
 static gid_t groupid = 0;
 
-static int read_type(const char *buffer, const char *filepath, int line)
+struct confread {
+	const char *filepath;
+	FILE *file;
+	int lineno;
+	int index;
+	int length;
+	char buffer[4096];
+};
+
+static void dump_launchers(struct launchers *launchs)
 {
-	size_t length;
+	int i, j, k;
+	for (i = 0 ; i < launchs->count ; i++) {
+		printf("%s\n", launchs->descs[i].type);
+		for ( j = 0 ; j < 2 ; j++)
+			if (launchs->descs[i].execs[j] != NULL) {
+				for (k = 0 ; launchs->descs[i].execs[j][k] != NULL ; k++)
+					printf("  %s", launchs->descs[i].execs[j][k]);
+				printf("\n");
+			}
+	}
+}
+
+static int next_token(struct confread *cread)
+{
+	cread->index += cread->length + strspn(&cread->buffer[cread->index + cread->length], separators);
+	cread->length = strcspn(&cread->buffer[cread->index], separators);
+	return cread->length;
+}
+
+static int read_line(struct confread *cread)
+{
+	while (fgets(cread->buffer, sizeof cread->buffer, cread->file) != NULL) {
+		cread->lineno++;
+		cread->index = strspn(cread->buffer, separators);
+		if (cread->buffer[cread->index] && cread->buffer[cread->index] != '#') {
+			cread->length = strcspn(&cread->buffer[cread->index], separators);
+			assert(cread->length > 0);
+			return cread->length;
+		}
+	}
+	if (ferror(cread->file)) {
+		ERROR("%s:%d: error while reading, %m", cread->filepath, cread->lineno);
+		return -1;
+	}
+	return 0;
+}
+
+static char *dup_token(struct confread *cread)
+{
+	assert(cread->length);
+	return strndup(&cread->buffer[cread->index], cread->length);
+}
+
+static char **dup_tokens_vector(struct confread *cread)
+{
+	int index0, length0;
+	char **vector, *args;
+	int count, length;
+
+	/* record origin */
+	index0 = cread->index;
+	length0 = cread->length;
+
+	/* count */
+	count = 0;
+	length = 0;
+	while(cread->length) {
+		count++;
+		length += cread->length;
+		next_token(cread);
+	}
+
+	/* allocates */
+	cread->index = index0;
+	cread->length = length0;
+	vector = malloc(length + count + (count + 1) * sizeof(char*));
+	if (vector == NULL)
+		return NULL;
+
+	/* copies */
+	args = (char*)(vector + count + 1);
+	count = 0;
+	while(cread->length) {
+		vector[count++] = args;
+		memcpy(args, &cread->buffer[cread->index], cread->length);
+		args += cread->length;
+		*args++ = 0;
+		next_token(cread);
+	}
+	vector[count] = NULL;
+	cread->index = index0;
+	cread->length = length0;
+	return vector;
+}
+
+static int read_type(struct confread *cread)
+{
 	int count;
 	struct execdesc *descs;
 	char *type;
 
+	/* get the type */
+	type = dup_token(cread);
+	if (type == NULL) {
+		ERROR("%s:%d: out of memory", cread->filepath, cread->lineno);
+		errno = ENOMEM;
+		return -1;
+	}
+
 	/* check the type */
-	length = strcspn(buffer, separators);
-	assert(length);
-	if (buffer[length + strspn(buffer + length, separators)] != 0) {
-		ERROR("%s:%d: extra characters found after type", filepath, line);
+	if (next_token(cread)) {
+		ERROR("%s:%d: extra characters found after type %s", cread->filepath, cread->lineno, type);
+		free(type);
 		errno = EINVAL;
 		return -1;
 	}
 
 	/* allocates data */
-	type = strndup(buffer, length);
 	count = launchers.count + 1;
 	descs = realloc(launchers.descs, count * sizeof(struct execdesc));
-	if (descs == NULL || type == NULL) {
+	if (descs == NULL) {
 		free(type);
 		errno = ENOMEM;
 		return -1;
@@ -97,76 +198,35 @@ static int read_type(const char *buffer, const char *filepath, int line)
 	return 0;
 }
 
-static int read_args(const char *buffer, int bottom, int offset, const char *filepath, int line)
+static int read_args(struct confread *cread, int bottom, int offset)
 {
-	char **vector, *args;
-	size_t index, len, length;
-	int count;
+	char **vector;
 
-	/* count */
-	count = 0;
-	length = index = 0;
-	while(buffer[index]) {
-		count++;
-		/* skips the spaces */
-		len = strcspn(buffer + index, separators);
-		length += len;
-		/* skips the spaces */
-		index += len;
-		index += strspn(buffer + index, separators);
-	}
-	/* allocates */
 	while (bottom < launchers.count) {
-		vector = malloc(length + count + (count + 1) * sizeof(char*));
+		vector = dup_tokens_vector(cread);
 		if (vector == NULL) {
-			ERROR("%s:%d: out of memory", filepath, line);
+			ERROR("%s:%d: out of memory", cread->filepath, cread->lineno);
 			return -1;
 		}
-		args = (char*)(vector + count + 1);
-		count = 0;
-		index = 0;
-		while(buffer[index]) {
-			/* skips the spaces */
-			len = strcspn(buffer + index, separators);
-			vector[count++] = args;
-			memcpy(args, buffer + index, len);
-			args += len;
-			index += len;
-			*args++ = 0;
-			/* skips the spaces */
-			len = strspn(buffer + index, separators);
-			index += len;
-		}
-		vector[count] = NULL;
 		launchers.descs[bottom++].execs[offset] = vector;
 	}
 	return 0;
 }
 
-static int read_launchers(FILE *file, const char *filepath)
+static int read_launchers(struct confread *cread)
 {
-	char buffer[4096];
-	int index, line, rc, bottom, offset, typed;
+	int rc, bottom, offset, typed;
 
 	/* reads the file */
-	line = 0;
 	offset = 0;
 	typed = 0;
 	bottom = launchers.count;
-	while (fgets(buffer, sizeof buffer, file) != NULL) {
-		line++;
-
-		/* find start of line */
-		index = strspn(buffer, separators);
-
-		/* skip empty lines and comments */
-		if (buffer[index] == 0 || buffer[index] == '#')
-			continue;
-
-		if (index == 0) {
+	rc = read_line(cread);
+	while (rc > 0) {
+		if (cread->index == 0) {
 			if (!typed)
 				bottom = launchers.count;
-			rc = read_type(buffer, filepath, line);
+			rc = read_type(cread);
 			if (rc)
 				return rc;
 			if (!typed) {
@@ -174,43 +234,42 @@ static int read_launchers(FILE *file, const char *filepath)
 				offset = 0;
 			}
 		} else if (!typed && !offset) {
-			ERROR("%s:%d: untyped launcher found", filepath, line);
+			ERROR("%s:%d: untyped launcher found", cread->filepath, cread->lineno);
 			errno = EINVAL;
 			return -1;
 		} else if (offset >= 2) {
-			ERROR("%s:%d: extra launcher found", filepath, line);
+			ERROR("%s:%d: extra launcher found", cread->filepath, cread->lineno);
 			errno = EINVAL;
 			return -1;
 		} else {
-			rc = read_args(buffer + index, bottom, offset, filepath, line);
+			rc = read_args(cread, bottom, offset);
 			if (rc)
 				return rc;
 			offset++;
 			typed = 0;
 		}
+		rc = read_line(cread);
 	}
-	if (ferror(file)) {
-		ERROR("%s:%d: error while reading, %m", filepath, line);
-		return -1;
-	}
-	return 0;
+	return rc;
 }
 
 static int read_configuration_file(const char *filepath)
 {
 	int rc;
-	FILE *file;
+	struct confread cread;
 
 	/* opens the configuration file */
-	file = fopen(filepath, "r");
-	if (file == NULL) {
+	cread.file = fopen(filepath, "r");
+	if (cread.file == NULL) {
 		/* error */
 		ERROR("can't read file %s: %m", filepath);
 		rc = -1;
 	} else {
 		/* reads it */
-		rc = read_launchers(file, filepath);
-		fclose(file);
+		cread.filepath = filepath;
+		cread.lineno = 0;
+		rc = read_launchers(&cread);
+		fclose(cread.file);
 	}
 	return rc;
 }
@@ -517,13 +576,18 @@ static int launchexec2(struct afm_launch_desc *desc, pid_t children[2], struct l
 
 int afm_launch_initialize()
 {
+	int rc;
 	gid_t r, e, s;
+
 	getresgid(&r, &e, &s);
 	if (s && s != e)
 		groupid = s;
 	else
 		groupid = -1;
-	return read_configuration_file(FWK_LAUNCH_CONF);
+
+	rc = read_configuration_file(FWK_LAUNCH_CONF);
+	dump_launchers(&launchers);
+	return rc;
 }
 
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
