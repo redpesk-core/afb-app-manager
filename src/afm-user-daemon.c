@@ -140,7 +140,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 	}
 
 	/* get the application */
-	INFO("method start called for %s mode=%s", appid, mode);
+	INFO("method start called for %s mode=%s", appid, name_of_launch_mode(mode));
 	appli = afm_db_get_application(afdb, appid);
 	if (appli == NULL) {
 		jbus_reply_error_s(jreq, error_not_found);
