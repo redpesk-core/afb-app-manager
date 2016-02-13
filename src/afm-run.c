@@ -32,8 +32,9 @@
 #include "verbose.h"
 #include "utils-dir.h"
 #include "utils-json.h"
-#include "afm-run.h"
+#include "afm-launch-mode.h"
 #include "afm-launch.h"
+#include "afm-run.h"
 
 enum appstate {
 	as_starting,
@@ -239,9 +240,11 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 
 /**************** handle afm_launch_desc *********************/
 
-static int fill_launch_desc(struct json_object *appli, struct afm_launch_desc *desc)
+static int fill_launch_desc(struct json_object *appli, enum afm_launch_mode mode, struct afm_launch_desc *desc)
 {
 	json_object *pub;
+
+	assert(launch_mode_is_valid(mode));
 
 	/* main items */
 	if(!j_read_object_at(appli, "public", &pub)
@@ -265,20 +268,23 @@ static int fill_launch_desc(struct json_object *appli, struct afm_launch_desc *d
 
 	/* finaly */
 	desc->home = homeappdir;
+	desc->mode = mode;
 	return 0;
 };
 
 /**************** API handling ************************/
 
-int afm_run_start(struct json_object *appli)
+int afm_run_start(struct json_object *appli, enum afm_launch_mode mode, char **uri)
 {
 	static struct apprun *runner;
 	struct afm_launch_desc desc;
 	int rc;
 	sigset_t saved, blocked;
 
+	assert(launch_mode_is_valid(mode));
+
 	/* prepare to launch */
-	rc = fill_launch_desc(appli, &desc);
+	rc = fill_launch_desc(appli, mode, &desc);
 	if (rc)
 		return rc;
 	runner = createrunner(appli);
@@ -291,7 +297,7 @@ int afm_run_start(struct json_object *appli)
 	sigprocmask(SIG_BLOCK, &blocked, &saved);
 
 	/* launch now */
-	rc = afm_launch(&desc, runner->pids);
+	rc = afm_launch(&desc, runner->pids, uri);
 	if (rc < 0) {
 		/* fork failed */
 		sigprocmask(SIG_SETMASK, &saved, NULL);

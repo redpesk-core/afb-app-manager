@@ -101,6 +101,7 @@ add_library(secwrp
 add_library(afm
 	afm-db.c
 	afm-launch.c
+	afm-launch-mode.c
 	afm-run.c
 	)
 

@@ -16,11 +16,29 @@
  limitations under the License.
 */
 
-extern int afm_run_start(struct json_object *appli, enum afm_launch_mode mode, char **uri);
-extern int afm_run_terminate(int runid);
-extern int afm_run_stop(int runid);
-extern int afm_run_continue(int runid);
-extern struct json_object *afm_run_list();
-extern struct json_object *afm_run_state(int runid);
+#include <string.h>
 
-extern int afm_run_init();
+#include "afm-launch-mode.h"
+
+static const char s_mode_local[] = "local";
+static const char s_mode_remote[] = "remote";
+
+enum afm_launch_mode launch_mode_of_string(const char *s)
+{
+	if (s) {
+		if (!strcmp(s, s_mode_local))
+			return mode_local;
+		if (!strcmp(s, s_mode_remote))
+			return mode_remote;
+	}
+	return invalid_launch_mode;
+}
+
+const char *name_of_launch_mode(enum afm_launch_mode m)
+{
+	switch (m) {
+	case mode_local:  return s_mode_local;
+	case mode_remote: return s_mode_remote;
+	default:          return "(INVALID LAUNCH MODE)";
+	}
+}

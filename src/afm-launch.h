@@ -27,7 +27,8 @@ struct afm_launch_desc {
 	const char **plugins;
 	int width;
 	int height;
+	enum afm_launch_mode mode;
 };
 
 int afm_launch_initialize();
-int afm_launch(struct afm_launch_desc *desc, pid_t children[2]);
+int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri);

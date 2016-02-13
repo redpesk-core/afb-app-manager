@@ -20,13 +20,16 @@
 #include <stdio.h>
 #include <time.h>
 #include <getopt.h>
+#include <string.h>
 
 #include <json.h>
 
 #include "verbose.h"
 #include "utils-jbus.h"
+#include "utils-json.h"
 #include "afm.h"
 #include "afm-db.h"
+#include "afm-launch-mode.h"
 #include "afm-run.h"
 
 static const char appname[] = "afm-user-daemon";
@@ -113,30 +116,64 @@ static void on_detail(struct jreq *jreq, struct json_object *obj)
 
 static void on_start(struct jreq *jreq, struct json_object *obj)
 {
-	const char *appid;
-	struct json_object *appli;
+	const char *appid, *modestr;
+	char *uri;
+	struct json_object *appli, *resp;
 	int runid;
 	char runidstr[20];
+	enum afm_launch_mode mode;
 
-	appid = getappid(obj);
-	INFO("method start called for %s", appid);
-	if (appid == NULL)
-		jbus_reply_error_s(jreq, error_bad_request);
-	else {
-		appli = afm_db_get_application(afdb, appid);
-		if (appli == NULL)
-			jbus_reply_error_s(jreq, error_not_found);
-		else {
-			runid = afm_run_start(appli);
-			if (runid <= 0)
-				jbus_reply_error_s(jreq, error_cant_start);
-			else {
-				snprintf(runidstr, sizeof runidstr, "%d", runid);
-				runidstr[sizeof runidstr - 1] = 0;
-				jbus_reply_s(jreq, runidstr);
-			}
+	/* get the parameters */
+	mode = invalid_launch_mode;
+	if (j_read_string(obj, &appid)) {
+		mode = default_launch_mode;
+	} else if (j_read_string_at(obj, "id", &appid)) {
+		if (j_read_string_at(obj, "mode", &modestr)) {
+			mode = launch_mode_of_string(modestr);
+		} else {
+			mode = default_launch_mode;
 		}
 	}
+	if (!launch_mode_is_valid(mode)) {
+		jbus_reply_error_s(jreq, error_bad_request);
+		return;
+	}
+
+	/* get the application */
+	INFO("method start called for %s mode=%s", appid, mode);
+	appli = afm_db_get_application(afdb, appid);
+	if (appli == NULL) {
+		jbus_reply_error_s(jreq, error_not_found);
+		return;
+	}
+
+	/* launch the application */
+	uri = NULL;
+	runid = afm_run_start(appli, mode, &uri);
+	if (runid <= 0) {
+		jbus_reply_error_s(jreq, error_cant_start);
+		free(uri);
+		return;
+	}
+
+	if (uri == NULL) {
+		/* returns only the runid */
+		snprintf(runidstr, sizeof runidstr, "%d", runid);
+		runidstr[sizeof runidstr - 1] = 0;
+		jbus_reply_s(jreq, runidstr);
+		return;
+	}
+
+	/* returns the runid and its uri */
+	resp = json_object_new_object();
+	if (resp != NULL && j_add_integer(resp, "runid", runid) && j_add_string(resp, "uri", uri))
+		jbus_reply_j(jreq, resp);
+	else {
+		afm_run_stop(runid);
+		jbus_reply_error_s(jreq, error_cant_start);
+	}
+	json_object_put(resp);
+	free(uri);
 }
 
 static void on_stop(struct jreq *jreq, struct json_object *obj)

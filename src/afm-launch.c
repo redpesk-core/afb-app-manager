@@ -32,6 +32,7 @@
 extern char **environ;
 
 #include "verbose.h"
+#include "afm-launch-mode.h"
 #include "afm-launch.h"
 #include "secmgr-wrap.h"
 
@@ -590,7 +591,7 @@ int afm_launch_initialize()
 	return rc;
 }
 
-int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
+int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 {
 	char datadir[PATH_MAX];
 	int ikl, rc;
@@ -600,6 +601,7 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2])
 
 	/* should be init */
 	assert(groupid != 0);
+	assert(launch_mode_is_valid(desc->mode));
 
 	/* init */
 	children[0] = 0;
