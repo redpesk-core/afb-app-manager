@@ -403,6 +403,8 @@ static union arguments instantiate_arguments(
 	mini[2] = 0;
 
 	/* loop that either compute the size and build the result */
+	result.vector = NULL;
+	result.scalar = NULL;
 	data = NULL;
 	n = s = 0;
 	for (;;) {
@@ -735,7 +737,7 @@ static int launch_remote(
 
 	/* instanciate the uri */
 	if (params->slave == NULL)
-		uri = strdup("");
+		uri = NULL;
 	else
 		uri = instantiate_arguments(params->slave, desc, params, 0).scalar;
 	if (uri == NULL) {
