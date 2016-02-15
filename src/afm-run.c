@@ -66,6 +66,7 @@ static char *homeappdir;
 
 /****************** manages pgids **********************/
 
+#if 0
 /* get a runner by its pgid */
 static struct apprun *runner_of_pgid(pid_t pgid)
 {
@@ -74,6 +75,7 @@ static struct apprun *runner_of_pgid(pid_t pgid)
 		result = result->next_by_pgid;
 	return result;
 }
+#endif
 
 /* insert a runner for its pgid */
 static void pgid_insert(struct apprun *runner)
@@ -96,14 +98,14 @@ static void pgid_remove(struct apprun *runner)
 /* get a runner by its pid */
 static struct apprun *runner_of_pid(pid_t pid)
 {
-	/* try avoiding system call */
-	struct apprun *result = runner_of_pgid(pid);
-	if (result == NULL) {
-		result = runner_of_pgid(getpgid(pid));
-		if (result && result->pids[1] != pid)
-			result = NULL;
-	}
-	return result;
+	int i;
+	struct apprun *result;
+
+	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++)
+		for (result = runners_by_pgid[i] ; result != NULL ; result = result->next_by_pgid)
+			if (result->pids[0] == pid || result->pids[1] == pid)
+				return result;
+	return NULL;
 }
 
 /****************** manages runners (by runid) **********************/
@@ -215,7 +217,7 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 {
 	struct apprun *runner;
 
-	runner = runner_of_pgid(info->si_pid);
+	runner = runner_of_pid(info->si_pid);
 	if (!runner)
 		return;
 
@@ -226,6 +228,7 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 	case CLD_TRAPPED:
 		runner->state = as_terminated;
 		pgid_remove(runner);
+		killpg(runner->pids[0], SIGKILL);
 		break;
 
 	case CLD_STOPPED:
