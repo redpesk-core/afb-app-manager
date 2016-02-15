@@ -755,22 +755,6 @@ static int launch_remote(
 	return rc;
 }
 
-int afm_launch_initialize()
-{
-	int rc;
-	gid_t r, e, s;
-
-	getresgid(&r, &e, &s);
-	if (s && s != e)
-		groupid = s;
-	else
-		groupid = -1;
-
-	rc = read_configuration_file(FWK_LAUNCH_CONF);
-	dump_launchers();
-	return rc;
-}
-
 static struct desc_list *search_launcher(const char *type, enum afm_launch_mode mode)
 {
 	struct desc_list *dl;
@@ -838,5 +822,21 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 		assert(0);
 		return -1;
 	}
+}
+
+int afm_launch_initialize()
+{
+	int rc;
+	gid_t r, e, s;
+
+	getresgid(&r, &e, &s);
+	if (s && s != e)
+		groupid = s;
+	else
+		groupid = -1;
+
+	rc = read_configuration_file(FWK_LAUNCH_CONF);
+	dump_launchers();
+	return rc;
 }
 
