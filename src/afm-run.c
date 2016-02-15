@@ -64,35 +64,6 @@ static int runnerid = 0;
 static const char fwk_user_app_dir[] = FWK_USER_APP_DIR;
 static char *homeappdir;
 
-/****************** manages pgids **********************/
-
-#if 0
-/* get a runner by its pgid */
-static struct apprun *runner_of_pgid(pid_t pgid)
-{
-	struct apprun *result = runners_by_pgid[(int)(pgid & (ROOT_RUNNERS_COUNT - 1))];
-	while (result && result->pids[0] != pgid)
-		result = result->next_by_pgid;
-	return result;
-}
-#endif
-
-/* insert a runner for its pgid */
-static void pgid_insert(struct apprun *runner)
-{
-	struct apprun **prev = &runners_by_runid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
-	runner->next_by_pgid = *prev;
-	*prev = runner;
-}
-
-/* remove a runner for its pgid */
-static void pgid_remove(struct apprun *runner)
-{
-	struct apprun **prev = &runners_by_runid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
-	runner->next_by_pgid = *prev;
-	*prev = runner;
-}
-
 /****************** manages pids **********************/
 
 /* get a runner by its pid */
@@ -106,6 +77,38 @@ static struct apprun *runner_of_pid(pid_t pid)
 			if (result->pids[0] == pid || result->pids[1] == pid)
 				return result;
 	return NULL;
+}
+
+/****************** manages pgids **********************/
+
+/* get a runner by its pgid */
+static struct apprun *runner_of_pgid(pid_t pgid)
+{
+	struct apprun *result = runners_by_pgid[(int)(pgid & (ROOT_RUNNERS_COUNT - 1))];
+	while (result && result->pids[0] != pgid)
+		result = result->next_by_pgid;
+	return result;
+}
+
+/* insert a runner for its pgid */
+static void pgid_insert(struct apprun *runner)
+{
+	struct apprun **prev = &runners_by_pgid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
+	runner->next_by_pgid = *prev;
+	*prev = runner;
+}
+
+/* remove a runner for its pgid */
+static void pgid_remove(struct apprun *runner)
+{
+	struct apprun **prev = &runners_by_pgid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
+	while (*prev) {
+		if (*prev == runner) {
+			*prev = runner->next_by_pgid;
+			break;
+		}
+		prev = &(*prev)->next_by_pgid;
+	}
 }
 
 /****************** manages runners (by runid) **********************/
