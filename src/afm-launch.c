@@ -28,6 +28,8 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <poll.h>
+#include <signal.h>
 
 extern char **environ;
 
@@ -61,8 +63,7 @@ struct launchparam {
 	char **uri;
 	const char *secret;
 	const char *datadir;
-	struct exec_vector *master;
-	struct exec_vector *slave;
+	struct exec_vector *execs;
 };
 
 struct confread {
@@ -78,7 +79,9 @@ struct desc_list *launchers = NULL;
 
 static gid_t groupid = 0;
 
-const char separators[] = " \t\n";
+static const char separators[] = " \t\n";
+static const char readystr[] = "READY=1";
+static const int ready_timeout = 1500;
 
 static void dump_launchers()
 {
@@ -516,6 +519,159 @@ static union arguments instantiate_arguments(
 	}
 }
 
+static pid_t launch(
+	struct afm_launch_desc *desc,
+	struct launchparam     *params,
+	struct exec_vector     *exec,
+	pid_t                   progrp
+)
+{
+	int rc;
+	char **args;
+	pid_t pid;
+	int rpipe[2];
+	struct pollfd pfd;
+
+	/* prepare the pipes */
+	rc = pipe(rpipe);
+	if (rc < 0) {
+		ERROR("error while calling pipe2: %m");
+		return -1;
+	}
+
+	/* instanciate the arguments */
+	params->readyfd = rpipe[1];
+	args = instantiate_arguments(exec->args, desc, params, 1).vector;
+	if (args == NULL) {
+		close(rpipe[0]);
+		close(rpipe[1]);
+		ERROR("out of memory in master");
+		errno = ENOMEM;
+		return -1;
+	}
+
+	/* fork the master child */
+	pid = fork();
+	if (pid < 0) {
+
+		/********* can't fork ************/
+
+		close(rpipe[0]);
+		close(rpipe[1]);
+		free(args);
+		ERROR("master fork failed: %m");
+		return -1;
+	}
+	if (pid) {
+
+		/********* in the parent process ************/
+
+		close(rpipe[1]);
+		free(args);
+		pfd.fd = rpipe[0];
+		pfd.events = POLLIN;
+		poll(&pfd, 1, ready_timeout);
+		close(rpipe[0]);
+		return pid;
+	}
+
+	/********* in the child process ************/
+
+	close(rpipe[0]);
+
+	/* avoid set-gid effect */
+	setresgid(groupid, groupid, groupid);
+
+	/* enter the process group */
+	rc = setpgid(0, progrp);
+	if (rc) {
+		ERROR("setpgid failed");
+		_exit(1);
+	}
+
+	/* enter security mode */
+	rc = secmgr_prepare_exec(desc->tag);
+	if (rc < 0) {
+		ERROR("call to secmgr_prepare_exec failed: %m");
+		_exit(1);
+	}
+
+	/* enter the datadirectory */
+	rc = mkdir(params->datadir, 0755);
+	if (rc && errno != EEXIST) {
+		ERROR("creation of datadir %s failed: %m", params->datadir);
+		_exit(1);
+	}
+	rc = chdir(params->datadir);
+	if (rc) {
+		ERROR("can't enter the datadir %s: %m", params->datadir);
+		_exit(1);
+	}
+
+	/* signal if needed */
+	if (!exec->has_readyfd) {
+		write(rpipe[1], readystr, sizeof(readystr) - 1);
+		close(rpipe[1]);
+	}
+
+	/* executes the process */
+	rc = execve(args[0], args, environ);
+	ERROR("failed to exec master %s: %m", args[0]);
+	_exit(1);
+	return -1;
+}
+
+static int launch_local(
+	struct afm_launch_desc *desc,
+	pid_t                   children[2],
+	struct launchparam     *params
+)
+{
+	children[0] = launch(desc, params, &params->execs[0], 0);
+	if (children[0] <= 0)
+		return -1;
+
+	if (params->execs[1].args == NULL)
+		return 0;
+
+	children[1] = launch(desc, params, &params->execs[1], children[0]);
+	if (children[1] > 0)
+		return 0;
+
+	killpg(children[0], SIGKILL);
+	return -1;
+}
+
+static int launch_remote(
+	struct afm_launch_desc *desc,
+	pid_t                   children[2],
+	struct launchparam     *params
+)
+{
+	char *uri;
+
+	/* instanciate the uri */
+	if (params->execs[1].args == NULL)
+		uri = NULL;
+	else
+		uri = instantiate_arguments(params->execs[1].args, desc, params, 0).scalar;
+	if (uri == NULL) {
+		ERROR("out of memory for remote uri");
+		errno = ENOMEM;
+		return -1;
+	}
+
+	/* launch the command */
+	children[0] = launch(desc, params, &params->execs[0], 0);
+	if (children[0] <= 0) {
+		free(uri);
+		return -1;
+	}
+
+	*params->uri = uri;
+	return 0;
+}
+
 static void mksecret(char buffer[9])
 {
 	snprintf(buffer, 9, "%08lX", (0xffffffff & random()));
@@ -529,248 +685,6 @@ static int mkport()
 		port = 12345;
 	port_ring = port + 1;
 	return port;
-}
-
-static int launch_local_1(
-	struct afm_launch_desc *desc,
-	pid_t                   children[2],
-	struct launchparam     *params
-)
-{
-	int rc;
-	char **args;
-
-	/* fork the master child */
-	children[0] = fork();
-	if (children[0] < 0) {
-		ERROR("master fork failed: %m");
-		return -1;
-	}
-	if (children[0]) {
-		/********* in the parent process ************/
-		return 0;
-	}
-
-	/********* in the master child ************/
-
-	/* avoid set-gid effect */
-	setresgid(groupid, groupid, groupid);
-
-	/* enter the process group */
-	rc = setpgid(0, 0);
-	if (rc) {
-		ERROR("setpgid failed");
-		_exit(1);
-	}
-
-	/* enter security mode */
-	rc = secmgr_prepare_exec(desc->tag);
-	if (rc < 0) {
-		ERROR("call to secmgr_prepare_exec failed: %m");
-		_exit(1);
-	}
-
-	/* enter the datadirectory */
-	rc = mkdir(params->datadir, 0755);
-	if (rc && errno != EEXIST) {
-		ERROR("creation of datadir %s failed: %m", params->datadir);
-		_exit(1);
-	}
-	rc = chdir(params->datadir);
-	if (rc) {
-		ERROR("can't enter the datadir %s: %m", params->datadir);
-		_exit(1);
-	}
-
-	args = instantiate_arguments(params->master->args, desc, params, 1).vector;
-	if (args == NULL) {
-		ERROR("out of memory in master");
-	}
-	else {
-		rc = execve(args[0], args, environ);
-		ERROR("failed to exec master %s: %m", args[0]);
-	}
-	_exit(1);
-}
-
-static int launch_local_2(
-	struct afm_launch_desc *desc,
-	pid_t                   children[2],
-	struct launchparam     *params
-)
-{
-	int rc;
-	char message[10];
-	int mpipe[2];
-	int spipe[2];
-	char **args;
-
-	/* prepare the pipes */
-	rc = pipe2(mpipe, O_CLOEXEC);
-	if (rc < 0) {
-		ERROR("error while calling pipe2: %m");
-		return -1;
-	}
-	rc = pipe2(spipe, O_CLOEXEC);
-	if (rc < 0) {
-		ERROR("error while calling pipe2: %m");
-		close(spipe[0]);
-		close(spipe[1]);
-		return -1;
-	}
-
-	/* fork the master child */
-	children[0] = fork();
-	if (children[0] < 0) {
-		ERROR("master fork failed: %m");
-		close(mpipe[0]);
-		close(mpipe[1]);
-		close(spipe[0]);
-		close(spipe[1]);
-		return -1;
-	}
-	if (children[0]) {
-		/********* in the parent process ************/
-		close(mpipe[1]);
-		close(spipe[0]);
-		/* wait the ready signal (that transmit the slave pid) */
-		rc = read(mpipe[0], &children[1], sizeof children[1]);
-		close(mpipe[0]);
-		if (rc  <= 0) {
-			ERROR("reading master pipe failed: %m");
-			close(spipe[1]);
-			return -1;
-		}
-		assert(rc == sizeof children[1]);
-		/* start the child */
-		rc = write(spipe[1], "start", 5);
-		if (rc < 0) {
-			ERROR("writing slave pipe failed: %m");
-			close(spipe[1]);
-			return -1;
-		}
-		assert(rc == 5);
-		close(spipe[1]);
-		return 0;
-	}
-
-	/********* in the master child ************/
-	close(mpipe[0]);
-	close(spipe[1]);
-
-	/* avoid set-gid effect */
-	setresgid(groupid, groupid, groupid);
-
-	/* enter the process group */
-	rc = setpgid(0, 0);
-	if (rc) {
-		ERROR("setpgid failed");
-		_exit(1);
-	}
-
-	/* enter security mode */
-	rc = secmgr_prepare_exec(desc->tag);
-	if (rc < 0) {
-		ERROR("call to secmgr_prepare_exec failed: %m");
-		_exit(1);
-	}
-
-	/* enter the datadirectory */
-	rc = mkdir(params->datadir, 0755);
-	if (rc && errno != EEXIST) {
-		ERROR("creation of datadir %s failed: %m", params->datadir);
-		_exit(1);
-	}
-	rc = chdir(params->datadir);
-	if (rc) {
-		ERROR("can't enter the datadir %s: %m", params->datadir);
-		_exit(1);
-	}
-
-	/* fork the slave child */
-	children[1] = fork();
-	if (children[1] < 0) {
-		ERROR("slave fork failed: %m");
-		_exit(1);
-	}
-	if (children[1] == 0) {
-		/********* in the slave child ************/
-		close(mpipe[0]);
-		rc = read(spipe[0], message, sizeof message);
-		if (rc <= 0) {
-			ERROR("reading slave pipe failed: %m");
-			_exit(1);
-		}
-
-		args = instantiate_arguments(params->slave->args, desc, params, 1).vector;
-		if (args == NULL) {
-			ERROR("out of memory in slave");
-		}
-		else {
-			rc = execve(args[0], args, environ);
-			ERROR("failed to exec slave %s: %m", args[0]);
-		}
-		_exit(1);
-	}
-
-	/********* still in the master child ************/
-	close(spipe[1]);
-	args = instantiate_arguments(params->master->args, desc, params, 1).vector;
-	if (args == NULL) {
-		ERROR("out of memory in master");
-	}
-	else {
-		rc = write(mpipe[1], &children[1], sizeof children[1]);
-		if (rc <= 0) {
-			ERROR("can't write master pipe: %m");
-		}
-		else {
-			close(mpipe[1]);
-			rc = execve(args[0], args, environ);
-			ERROR("failed to exec master %s: %m", args[0]);
-		}
-	}
-	_exit(1);
-}
-
-static int launch_local(
-	struct afm_launch_desc *desc,
-	pid_t                   children[2],
-	struct launchparam     *params
-)
-{
-	if (params->slave == NULL)
-		return launch_local_1(desc, children, params);
-	return launch_local_2(desc, children, params);
-}
-
-static int launch_remote(
-	struct afm_launch_desc *desc,
-	pid_t                   children[2],
-	struct launchparam     *params
-)
-{
-	int rc;
-	char *uri;
-
-	/* instanciate the uri */
-	if (params->slave == NULL)
-		uri = NULL;
-	else
-		uri = instantiate_arguments(params->slave->args, desc, params, 0).scalar;
-	if (uri == NULL) {
-		ERROR("out of memory for remote uri");
-		errno = ENOMEM;
-		return -1;
-	}
-
-	/* launch the command */
-	rc = launch_local_1(desc, children, params);
-	if (rc)
-		free(uri);
-	else
-		*params->uri = uri;
-	return rc;
 }
 
 static struct desc_list *search_launcher(const char *type, enum afm_launch_mode mode)
@@ -828,8 +742,7 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	params.port = mkport();
 	params.secret = secret;
 	params.datadir = datadir;
-	params.master = &dl->execs[0];
-	params.slave = &dl->execs[1];
+	params.execs = dl->execs;
 
 	switch (desc->mode) {
 	case mode_local:
@@ -854,7 +767,7 @@ int afm_launch_initialize()
 		groupid = -1;
 
 	rc = read_configuration_file(FWK_LAUNCH_CONF);
-	dump_launchers();
+	/* dump_launchers(); */
 	return rc;
 }
 
