@@ -43,20 +43,26 @@ struct type_list {
 	char type[1];
 };
 
+struct exec_vector {
+	int has_readyfd;
+	const char **args;
+};
+
 struct desc_list {
 	struct desc_list *next;
 	enum afm_launch_mode mode;
 	struct type_list *types;
-	char **execs[2];
+	struct exec_vector execs[2];
 };
 
 struct launchparam {
 	int port;
+	int readyfd;
 	char **uri;
 	const char *secret;
 	const char *datadir;
-	const char **master;
-	const char **slave;
+	struct exec_vector *master;
+	struct exec_vector *slave;
 };
 
 struct confread {
@@ -85,9 +91,9 @@ static void dump_launchers()
 		for (type = desc->types ; type != NULL ; type = type->next)
 			printf("%s\n", type->type);
 		for ( j = 0 ; j < 2 ; j++)
-			if (desc->execs[j] != NULL) {
-				for (k = 0 ; desc->execs[j][k] != NULL ; k++)
-					printf("  %s", desc->execs[j][k]);
+			if (desc->execs[j].args != NULL) {
+				for (k = 0 ; desc->execs[j].args[k] != NULL ; k++)
+					printf("  %s", desc->execs[j].args[k]);
 				printf("\n");
 			}
 		printf("\n");
@@ -120,10 +126,11 @@ static int read_line(struct confread *cread)
 	return 0;
 }
 
-static char **read_vector(struct confread *cread)
+static const char **read_vector(struct confread *cread)
 {
 	int index0, length0;
-	char **vector, *args;
+	const char **vector;
+	char *args;
 	int count, length;
 
 	/* record origin */
@@ -242,11 +249,11 @@ static void free_type_list(struct type_list *types)
 
 static int read_launchers(struct confread *cread)
 {
-	int rc;
+	int rc, has_readyfd;
 	struct type_list *types, *lt;
 	struct desc_list *desc;
 	enum afm_launch_mode mode;
-	char **vector;
+	const char **vector;
 
 	/* reads the file */
 	lt = NULL;
@@ -299,6 +306,7 @@ static int read_launchers(struct confread *cread)
 			errno = EINVAL;
 			return -1;
 		} else {
+			has_readyfd = NULL != strstr(&cread->buffer[cread->index], "%R");
 			vector = read_vector(cread);
 			if (vector == NULL) {
 				ERROR("%s:%d: out of memory",
@@ -320,12 +328,15 @@ static int read_launchers(struct confread *cread)
 				desc->next = launchers;
 				desc->mode = mode;
 				desc->types = types;
-				desc->execs[0] = vector;
-				desc->execs[1] = NULL;
+				desc->execs[0].has_readyfd = has_readyfd;
+				desc->execs[0].args = vector;
+				desc->execs[1].has_readyfd = 0;
+				desc->execs[1].args = NULL;
 				types = NULL;
 				launchers = desc;
 			} else {
-				desc->execs[1] = vector;
+				desc->execs[1].has_readyfd = has_readyfd;
+				desc->execs[1].args = vector;
 				desc = NULL;
 			}
 		}
@@ -363,21 +374,22 @@ static int read_configuration_file(const char *filepath)
 }
 
 /*
-%I icondir			FWK_ICON_DIR
-%P port				params->port
-%S secret			params->secret
-%D datadir			params->datadir
-%r rootdir			desc->path
-%h homedir			desc->home
-%t tag (smack label)		desc->tag
+%% %
 %a appid			desc->appid
 %c content			desc->content
+%D datadir			params->datadir
+%H height			desc->height
+%h homedir			desc->home
+%I icondir			FWK_ICON_DIR
 %m mime-type			desc->type
 %n name				desc->name
 %p plugins			desc->plugins
+%P port				params->port
+%r rootdir			desc->path
+%R readyfd                      params->readyfd
+%S secret			params->secret
+%t tag (smack label)		desc->tag
 %W width			desc->width
-%H height			desc->height
-%% %
 */
 
 union arguments {
@@ -386,14 +398,15 @@ union arguments {
 };
 
 static union arguments instantiate_arguments(
-	const char            **args,
+	const char * const     *args,
 	struct afm_launch_desc *desc,
 	struct launchparam     *params,
 	int                     wants_vector
 )
 {
-	const char **iter, *p, *v;
-	char *data, port[20], width[20], height[20], mini[3], c, sep;
+	const char * const *iter;
+	const char *p, *v;
+	char *data, port[20], width[20], height[20], readyfd[20], mini[3], c, sep;
 	int n, s;
 	union arguments result;
 
@@ -424,31 +437,36 @@ static union arguments instantiate_arguments(
 				} else {
 					c = *p++;
 					switch (c) {
-					case 'I': v = FWK_ICON_DIR; break;
-					case 'S': v = params->secret; break;
-					case 'D': v = params->datadir; break;
-					case 'r': v = desc->path; break;
-					case 'h': v = desc->home; break;
-					case 't': v = desc->tag; break;
 					case 'a': v = desc->appid; break;
 					case 'c': v = desc->content; break;
+					case 'D': v = params->datadir; break;
+					case 'H':
+						if(!data)
+							sprintf(height, "%d", desc->height);
+						v = height;
+						break;
+					case 'h': v = desc->home; break;
+					case 'I': v = FWK_ICON_DIR; break;
 					case 'm': v = desc->type; break;
 					case 'n': v = desc->name; break;
-					case 'p': v = "" /*desc->plugins*/; break;
 					case 'P':
 						if(!data)
 							sprintf(port, "%d", params->port);
 						v = port;
 						break;
+					case 'p': v = "" /*desc->plugins*/; break;
+					case 'R':
+						if(!data)
+							sprintf(readyfd, "%d", params->readyfd);
+						v = readyfd;
+						break;
+					case 'r': v = desc->path; break;
+					case 'S': v = params->secret; break;
+					case 't': v = desc->tag; break;
 					case 'W':
 						if(!data)
 							sprintf(width, "%d", desc->width);
 						v = width;
-						break;
-					case 'H':
-						if(!data)
-							sprintf(height, "%d", desc->height);
-						v = height;
 						break;
 					case '%':
 						c = 0;
@@ -564,7 +582,7 @@ static int launch_local_1(
 		_exit(1);
 	}
 
-	args = instantiate_arguments(params->master, desc, params, 1).vector;
+	args = instantiate_arguments(params->master->args, desc, params, 1).vector;
 	if (args == NULL) {
 		ERROR("out of memory in master");
 	}
@@ -684,7 +702,7 @@ static int launch_local_2(
 			_exit(1);
 		}
 
-		args = instantiate_arguments(params->slave, desc, params, 1).vector;
+		args = instantiate_arguments(params->slave->args, desc, params, 1).vector;
 		if (args == NULL) {
 			ERROR("out of memory in slave");
 		}
@@ -697,7 +715,7 @@ static int launch_local_2(
 
 	/********* still in the master child ************/
 	close(spipe[1]);
-	args = instantiate_arguments(params->master, desc, params, 1).vector;
+	args = instantiate_arguments(params->master->args, desc, params, 1).vector;
 	if (args == NULL) {
 		ERROR("out of memory in master");
 	}
@@ -739,7 +757,7 @@ static int launch_remote(
 	if (params->slave == NULL)
 		uri = NULL;
 	else
-		uri = instantiate_arguments(params->slave, desc, params, 0).scalar;
+		uri = instantiate_arguments(params->slave->args, desc, params, 0).scalar;
 	if (uri == NULL) {
 		ERROR("out of memory for remote uri");
 		errno = ENOMEM;
@@ -810,8 +828,8 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	params.port = mkport();
 	params.secret = secret;
 	params.datadir = datadir;
-	params.master = (const char **)dl->execs[0];
-	params.slave = (const char **)dl->execs[1];
+	params.master = &dl->execs[0];
+	params.slave = &dl->execs[1];
 
 	switch (desc->mode) {
 	case mode_local:
