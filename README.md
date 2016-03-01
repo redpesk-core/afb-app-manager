@@ -271,6 +271,10 @@ the following Tizen packages:
 - platform/core/appfw/ail
 - platform/core/appfw/aul-1
 - platform/core/appfw/libslp-db-util
+- platform/core/appfw/pkgmgr-info
+- platform/core/appfw/slp-pkgmgr
+
+
 
 ## Links
 

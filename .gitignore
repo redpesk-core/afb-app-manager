@@ -6,6 +6,8 @@ wgtpkg-sign
 wgtpkg-info
 *.a
 
+framework.html
+
 CMakeCache.txt
 CMakeFiles/
 Makefile
