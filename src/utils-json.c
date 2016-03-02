@@ -117,3 +117,23 @@ int j_add_integer(struct json_object *obj, const char *key, int val)
 	return str ? j_add(obj, key, str) : (errno = ENOMEM, 0);
 }
 
+struct json_object *j_add_new_array(struct json_object *obj, const char *key)
+{
+	struct json_object *result = json_object_new_array();
+	if (result != NULL && !j_add(obj, key, result)) {
+		json_object_put(result);
+		result = NULL;
+	}
+	return result;
+}
+
+struct json_object *j_add_new_object(struct json_object *obj, const char *key)
+{
+	struct json_object *result = json_object_new_object();
+	if (result != NULL && !j_add(obj, key, result)) {
+		json_object_put(result);
+		result = NULL;
+	}
+	return result;
+}
+
