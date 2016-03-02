@@ -1,0 +1,106 @@
+#!/bin/sh
+
+if [ "x" = "x${DBUS_SESSION_BUS_ADDRESS}" ]; then
+	DBUS_SESSION_BUS_ADDRESS:=unix:path=/run/user/$UID/bus
+fi
+
+send() {
+	dbus-send --session --dest=org.AGL.afm.user --print-reply /org/AGL/afm/user org.AGL.afm.user.$1 "string:$2"
+}
+
+case "$1" in
+
+  list|runnables)
+    send runnables true
+    ;;
+
+  add|install)
+    f=$(realpath $2)
+    send install '{"wgt":"'"$f"'","force":true}'
+    ;;
+
+  remove|uninstall)
+    i=$2
+    send uninstall "\"$i\""
+    ;;
+
+  info|detail)
+    i=$2
+    send detail "\"$i\""
+    ;;
+
+  ps|runners)
+    send runners true
+    ;;
+
+  run|start)
+    i=$2
+    send start "\"$i\""
+    ;;
+
+  terminate|kill)
+    i=$2
+    send terminate "$i"
+    ;;
+
+  stop|pause)
+    i=$2
+    send stop "$i"
+    ;;
+
+  resume|continue)
+    i=$2
+    send continue "$i"
+    ;;
+
+  state|status)
+    i=$2
+    send state "$i"
+    ;;
+
+  -h|--help|help)
+    cat << EOC
+usage: $(basename $0) command [arg]
+
+The commands are:
+
+  list
+  runnables      list the runnable widgets installed
+
+  add wgt
+  install wgt    install the wgt file
+
+  remove id
+  uninstall id   remove the installed widget of id
+
+  info id
+  detail id      print detail about the installed widget of id
+
+  ps
+  runners        list the running instance
+
+  run id
+  start id       start an instance of the widget of id
+
+  terminate rid
+  kill rid       terminate the running instance rid
+
+  stop rid
+  pause rid      stop the running instance rid
+
+  resume rid
+  continue rid   continue the previously rid
+
+  state rid
+  status rid     get status of the running instance rid
+
+EOC
+    ;;
+
+  *)
+    echo "unknown command $1" >&2
+    exit 1
+    ;;
+esac
+
+

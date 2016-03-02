@@ -24,6 +24,7 @@ extern void afm_db_unref(struct afm_db *afdb);
 
 extern int afm_db_add_root(struct afm_db *afdb, const char *path);
 extern int afm_db_add_application(struct afm_db *afdb, const char *path);
+
 extern int afm_db_update_applications(struct afm_db *afdb);
 extern int afm_db_ensure_applications(struct afm_db *afdb);
 
