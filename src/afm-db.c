@@ -32,18 +32,44 @@
 #include "afm-db.h"
 
 /*
+ * The json object recorded by application widget
+ * has the following contents:
+ *  {
+ *    id: STRING, the application identifier without version info
+ *    path: STRING, the path of the root directory for the application
+ *    content: STRING, the relative path to the entryu point of the application
+ *    type: STRING, the mime type describing the type 'content'
+ *    plugins: ARRAY, array of plugins
+ *      [
+ *        STRING, path to the plugin
+ *      ]
+ *    public: OBJECT, public content describing the application widget
+ *      {  
+ *        id: STRING, the application identifier "idaver"
+ *        version: STRING, the full version of the application
+ *        width: INTEGER, the width indication or 0
+ *        height: INTEGER, the height indication or 0
+ *        name: STRING, the name of the application
+ *        description: STRING, the description of the application
+ *        shortname: STRING, the short name of the application
+ *        author: STRING, the author of the application
+ *      }
+ */
+
+/*
  * The structure afm_apps records the data about applications
  * for several accesses.
  */
 struct afm_apps {
-	struct json_object *pubarr; /* array of the public data of applications */
-	struct json_object *direct; /* hash of applications by their id */
-	struct json_object *byapp;  /* hash of versions of applications by their appid */
+	struct json_object *pubarr; /* array of the public data of apps */
+	struct json_object *direct; /* hash of applications by their "idaver" */
+	struct json_object *byapp;  /* hash of applications by their id */
 };
 
 /*
  * Two types of directory are handled:
- *  - root directories: contains subdirectories appid/versio containing the applications
+ *  - root directories: contains subdirectories appid/version
+ *         containing the applications
  *  - application directories: it contains an application
  */
 enum dir_type {
@@ -67,8 +93,8 @@ struct afm_db_dir {
  */
 struct afm_db {
 	int refcount;               /* count of references to the structure */
-	struct afm_db_dir *dirhead; /* first directory of the set of directories */
-	struct afm_db_dir *dirtail; /* last directory of the set of directories */
+	struct afm_db_dir *dirhead; /* first directory of the set */
+	struct afm_db_dir *dirtail; /* last directory of the set */
 	struct afm_apps applications; /* the data about applications */
 };
 
@@ -98,7 +124,8 @@ static void apps_put(struct afm_apps *apps)
  * Returns 0 in case of success.
  * Returns -1 and set errno in case of error
  */
-static int addwgt(struct afm_apps *apps, const char *path, const struct wgt_desc *desc)
+static int addwgt(struct afm_apps *apps, const char *path,
+						const struct wgt_desc *desc)
 {
 	const struct wgt_desc_feature *feat;
 	struct json_object *priv, *pub, *bya, *plugs, *str;
@@ -135,7 +162,8 @@ static int addwgt(struct afm_apps *apps, const char *path, const struct wgt_desc
 	while (feat) {
 		static const char prefix[] = FWK_PREFIX_PLUGIN;
 		if (!memcmp(feat->name, prefix, sizeof prefix - 1)) {
-			str = json_object_new_string (feat->name + sizeof prefix - 1);
+			str = json_object_new_string (
+					feat->name + sizeof prefix - 1);
 			if (str == NULL)
 				goto error;
 			if (json_object_array_add(plugs, str)) {
@@ -218,7 +246,8 @@ static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
 	/* enumerate entries */
 	rc = readdir_r(dir, &entry, &e);
 	while (!rc && e) {
-		if (entry.d_name[0] != '.' || (entry.d_name[1] && (entry.d_name[1] != '.' || entry.d_name[2]))) {
+		if (entry.d_name[0] != '.' || (entry.d_name[1]
+			&& (entry.d_name[1] != '.' || entry.d_name[2]))) {
 			/* prepare callto */
 			len = strlen(entry.d_name);
 			if (beg + len >= data->path + sizeof data->path) {
@@ -393,14 +422,16 @@ int afm_db_update_applications(struct afm_db *afdb)
 	edata.apps.pubarr = json_object_new_array();
 	edata.apps.direct = json_object_new_object();
 	edata.apps.byapp = json_object_new_object();
-	if (edata.apps.pubarr == NULL || edata.apps.direct == NULL || edata.apps.byapp == NULL) {
+	if (edata.apps.pubarr == NULL || edata.apps.direct == NULL
+						|| edata.apps.byapp == NULL) {
 		errno = ENOMEM;
 		goto error;
 	}
 	/* for each directory of afdb */
 	for (dir = afdb->dirhead ; dir != NULL ; dir = dir->next) {
 		if (dir->type == type_root) {
-			edata.length = stpcpy(edata.path, dir->path) - edata.path;
+			edata.length = stpcpy(edata.path, dir->path)
+								- edata.path;
 			assert(edata.length < sizeof edata.path);
 			/* enumerate the applications */
 			rc = enumentries(&edata, enumvers);
@@ -433,12 +464,14 @@ int afm_db_ensure_applications(struct afm_db *afdb)
 
 /*
  * Get the list of the applications public data of the afm_db object 'afdb'.
- * The list is returned as a JSON-array that must be released using 'json_object_put'.
+ * The list is returned as a JSON-array that must be released using
+ * 'json_object_put'.
  * Returns NULL in case of error.
  */
 struct json_object *afm_db_application_list(struct afm_db *afdb)
 {
-	return afm_db_ensure_applications(afdb) ? NULL : json_object_get(afdb->applications.pubarr);
+	return afm_db_ensure_applications(afdb) ? NULL
+			: json_object_get(afdb->applications.pubarr);
 }
 
 /*
@@ -449,7 +482,8 @@ struct json_object *afm_db_application_list(struct afm_db *afdb)
 struct json_object *afm_db_get_application(struct afm_db *afdb, const char *id)
 {
 	struct json_object *result;
-	if (!afm_db_ensure_applications(afdb) && json_object_object_get_ex(afdb->applications.direct, id, &result))
+	if (!afm_db_ensure_applications(afdb) && json_object_object_get_ex(
+				afdb->applications.direct, id, &result))
 		return json_object_get(result);
 	return NULL;
 }
@@ -459,7 +493,8 @@ struct json_object *afm_db_get_application(struct afm_db *afdb, const char *id)
  * It returns a JSON-object that must be released using 'json_object_put'.
  * Returns NULL in case of error.
  */
-struct json_object *afm_db_get_application_public(struct afm_db *afdb, const char *id)
+struct json_object *afm_db_get_application_public(struct afm_db *afdb,
+							const char *id)
 {
 	struct json_object *result;
 	struct json_object *priv = afm_db_get_application(afdb, id);
