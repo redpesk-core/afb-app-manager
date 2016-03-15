@@ -57,5 +57,6 @@ defstr(FWK_LAUNCH_CONF         "${afm_confdir}/afm-launch.conf")
 
 add_subdirectory(src)
 add_subdirectory(conf)
+add_subdirectory(scripts)
 
 

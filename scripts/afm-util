@@ -4,8 +4,21 @@ if [ "x" = "x${DBUS_SESSION_BUS_ADDRESS}" ]; then
 	DBUS_SESSION_BUS_ADDRESS:=unix:path=/run/user/$UID/bus
 fi
 
+pretty() {
+	sed \
+		-e '/^method return .*/d' \
+		-e 's/^Error org.freedesktop.DBus.Error.Failed: "\?\(.*\)"\?$/ERROR: \1/' \
+		-e 's/^   string "\(.*\)"/\1/' \
+		-e 's/},/&\n/'
+}
+
 send() {
-	dbus-send --session --dest=org.AGL.afm.user --print-reply /org/AGL/afm/user org.AGL.afm.user.$1 "string:$2"
+	dbus-send --session --print-reply \
+		--dest=org.AGL.afm.user \
+		/org/AGL/afm/user \
+		org.AGL.afm.user.$1 \
+		"string:$2" |
+	pretty
 }
 
 case "$1" in
@@ -82,8 +95,8 @@ The commands are:
   run id
   start id       start an instance of the widget of id
 
-  terminate rid
-  kill rid       terminate the running instance rid
+  kill rid
+  terminate rid       terminate the running instance rid
 
   stop rid
   pause rid      stop the running instance rid
@@ -91,8 +104,8 @@ The commands are:
   resume rid
   continue rid   continue the previously rid
 
-  state rid
-  status rid     get status of the running instance rid
+  status rid
+  state rid     get status of the running instance rid
 
 EOC
     ;;
