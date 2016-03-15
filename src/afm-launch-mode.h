@@ -25,6 +25,7 @@ enum afm_launch_mode {
 #define default_launch_mode  mode_local
 
 #define launch_mode_is_valid(x)  ((x)==mode_local || (x)==mode_remote)
+#define is_valid_launch_mode(x)  ((x)==mode_local || (x)==mode_remote)
 
 enum afm_launch_mode launch_mode_of_string(const char *s);
 const char *name_of_launch_mode(enum afm_launch_mode m);

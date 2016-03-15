@@ -36,72 +36,128 @@
 #include "afm-launch.h"
 #include "afm-run.h"
 
+/*
+ * State of a launched/running application
+ */
 enum appstate {
-	as_starting,
-	as_running,
-	as_stopped,
-	as_terminating,
-	as_terminated
+	as_starting,    /* start in progress */
+	as_running,     /* started and running */
+	as_stopped,     /* stopped */
+	as_terminating, /* termination in progress */
+	as_terminated   /* terminated */
 };
 
+/*
+ * Structure for recording a runner
+ */
 struct apprun {
-	struct apprun *next_by_runid;
-	struct apprun *next_by_pgid;
-	int runid;
-	pid_t pids[2]; /* 0: group leader, 1: slave (appli) */
-	enum appstate state;
-	json_object *appli;
+	struct apprun *next_by_runid; /* link for hashing by runid */
+	struct apprun *next_by_pgid;  /* link for hashing by pgid */
+	int runid;           /* runid */
+	pid_t pids[2];       /* pids (0: group leader, 1: slave) */
+	enum appstate state; /* current state of the application */
+	json_object *appli;  /* json object describing the application */
 };
 
+/*
+ * Count of item by hash table
+ */
 #define ROOT_RUNNERS_COUNT  32
+
+/*
+ * Maximum count of simultaneous running application
+ */
 #define MAX_RUNNER_COUNT    32767
 
+/*
+ * Hash tables of runners by runid and by pgid
+ */
 static struct apprun *runners_by_runid[ROOT_RUNNERS_COUNT];
 static struct apprun *runners_by_pgid[ROOT_RUNNERS_COUNT];
+
+/*
+ * List of terminated runners
+ */
+static struct apprun *terminated_runners = NULL;
+
+/*
+ * Count of runners
+ */
 static int runnercount = 0;
+
+/*
+ * Last given runid
+ */
 static int runnerid = 0;
 
+/*
+ * Path name of the directory for applications in the
+ * home directory of the user.
+ */
 static const char fwk_user_app_dir[] = FWK_USER_APP_DIR;
+
+/*
+ * Path of the root directory for applications of the
+ * current user
+ */
 static char *homeappdir;
 
 /****************** manages pids **********************/
 
-/* get a runner by its pid */
+/*
+ * Get a runner by its 'pid' (NULL if not found)
+ */
 static struct apprun *runner_of_pid(pid_t pid)
 {
 	int i;
 	struct apprun *result;
 
-	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++)
-		for (result = runners_by_pgid[i] ; result != NULL ; result = result->next_by_pgid)
+	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
+		result = runners_by_pgid[i];
+		while (result != NULL) {
 			if (result->pids[0] == pid || result->pids[1] == pid)
 				return result;
+			result = result->next_by_pgid;
+		}
+	}
 	return NULL;
 }
 
 /****************** manages pgids **********************/
 
-/* get a runner by its pgid */
+/*
+ * Get a runner by its 'pgid' (NULL if not found)
+ */
 static struct apprun *runner_of_pgid(pid_t pgid)
 {
-	struct apprun *result = runners_by_pgid[(int)(pgid & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun *result;
+
+	result = runners_by_pgid[pgid & (ROOT_RUNNERS_COUNT - 1)];
 	while (result && result->pids[0] != pgid)
 		result = result->next_by_pgid;
 	return result;
 }
 
-/* insert a runner for its pgid */
+/*
+ * Insert a 'runner' for its pgid
+ */
 static void pgid_insert(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_pgid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun **prev;
+
+	prev = &runners_by_pgid[runner->pids[0] & (ROOT_RUNNERS_COUNT - 1)];
 	runner->next_by_pgid = *prev;
 	*prev = runner;
 }
 
-/* remove a runner for its pgid */
+/*
+ * Remove a 'runner' for its pgid
+ */
 static void pgid_remove(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_pgid[(int)(runner->pids[0] & (ROOT_RUNNERS_COUNT - 1))];
+	struct apprun **prev;
+
+	prev = &runners_by_pgid[runner->pids[0] & (ROOT_RUNNERS_COUNT - 1)];
 	while (*prev) {
 		if (*prev == runner) {
 			*prev = runner->next_by_pgid;
@@ -113,36 +169,71 @@ static void pgid_remove(struct apprun *runner)
 
 /****************** manages runners (by runid) **********************/
 
-/* get a runner by its runid */
+/*
+ * Get a runner by its 'runid'  (NULL if not found)
+ */
 static struct apprun *getrunner(int runid)
 {
-	struct apprun *result = runners_by_runid[runid & (ROOT_RUNNERS_COUNT - 1)];
+	struct apprun *result;
+
+	result = runners_by_runid[runid & (ROOT_RUNNERS_COUNT - 1)];
 	while (result && result->runid != runid)
 		result = result->next_by_runid;
 	return result;
 }
 
-/* free an existing runner */
+/*
+ * Free an existing 'runner'
+ */
 static void freerunner(struct apprun *runner)
 {
-	struct apprun **prev = &runners_by_runid[runner->runid & (ROOT_RUNNERS_COUNT - 1)];
+	struct apprun **prev;
+
+	/* get previous pointer to runner */
+	prev = &runners_by_runid[runner->runid & (ROOT_RUNNERS_COUNT - 1)];
 	assert(*prev);
 	while(*prev != runner) {
 		prev = &(*prev)->next_by_runid;
 		assert(*prev);
 	}
+
+	/* unlink */
 	*prev = runner->next_by_runid;
+	runnercount--;
+
+	/* release/free */
 	json_object_put(runner->appli);
 	free(runner);
-	runnercount--;
 }
 
-/* create a new runner */
+/*
+ * Cleans the list of runners from its terminated
+ */
+static void cleanrunners()
+{
+	struct apprun *runner;
+	while (terminated_runners) {
+		runner = terminated_runners;
+		terminated_runners = runner->next_by_pgid;
+		freerunner(runner);
+	}
+}
+
+/*
+ * Create a new runner for the 'appli'
+ *
+ * Returns the created runner or NULL
+ * in case of error.
+ */
 static struct apprun *createrunner(json_object *appli)
 {
 	struct apprun *result;
 	struct apprun **prev;
 
+	/* cleanup */
+	cleanrunners();
+
+	/* get a runid */
 	if (runnercount >= MAX_RUNNER_COUNT) {
 		errno = EAGAIN;
 		return NULL;
@@ -152,10 +243,13 @@ static struct apprun *createrunner(json_object *appli)
 		if (runnerid > MAX_RUNNER_COUNT)
 			runnerid = 1;
 	} while(getrunner(runnerid));
+
+	/* create the structure */
 	result = calloc(1, sizeof * result);
 	if (result == NULL)
 		errno = ENOMEM;
 	else {
+		/* initialize it linked to the list */
 		prev = &runners_by_runid[runnerid & (ROOT_RUNNERS_COUNT - 1)];
 		result->next_by_runid = *prev;
 		result->next_by_pgid = NULL;
@@ -193,6 +287,16 @@ static void removed(int runid)
 #endif
 /**************** running ************************/
 
+/*
+ * Sends (with pgkill) the signal 'sig' to the process group
+ * for 'runid' and put the runner's state to 'tostate'
+ * in case of success.
+ *
+ * Only processes in the state 'as_running' or 'as_stopped'
+ * can be signalled.
+ *
+ * Returns 0 in case of success or -1 in case of error.
+ */
 static int killrunner(int runid, int sig, enum appstate tostate)
 {
 	int rc;
@@ -202,7 +306,7 @@ static int killrunner(int runid, int sig, enum appstate tostate)
 		rc = -1;
 	}
 	else if (runner->state != as_running && runner->state != as_stopped) {
-		errno = EPERM;
+		errno = EINVAL;
 		rc = -1;
 	}
 	else if (runner->state == tostate) {
@@ -216,29 +320,41 @@ static int killrunner(int runid, int sig, enum appstate tostate)
 	return rc;
 }
 
+/*
+ * Signal callback called on SIGCHLD. This is set using sigaction.
+ */
 static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 {
 	struct apprun *runner;
 
+	/* retrieves the runner */
 	runner = runner_of_pid(info->si_pid);
 	if (!runner)
 		return;
 
+	/* known runner, inspect cause of signal */
 	switch(info->si_code) {
 	case CLD_EXITED:
 	case CLD_KILLED:
 	case CLD_DUMPED:
 	case CLD_TRAPPED:
+		/* update the state */
 		runner->state = as_terminated;
+		/* remove it from pgid list */
 		pgid_remove(runner);
+		runner->next_by_pgid = terminated_runners;
+		terminated_runners = runner;
+		/* ensures that all the group stops */
 		killpg(runner->pids[0], SIGKILL);
 		break;
 
 	case CLD_STOPPED:
+		/* update the state */
 		runner->state = as_stopped;
 		break;
 
 	case CLD_CONTINUED:
+		/* update the state */
 		runner->state = as_running;
 		break;
 	}
@@ -246,16 +362,23 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 
 /**************** handle afm_launch_desc *********************/
 
-static int fill_launch_desc(struct json_object *appli, enum afm_launch_mode mode, struct afm_launch_desc *desc)
+/*
+ * Initialize the data of the launch description 'desc'
+ * for the application 'appli' and the 'mode'.
+ *
+ * Returns 0 in case of success or -1 in case of error.
+ */
+static int fill_launch_desc(struct json_object *appli,
+		enum afm_launch_mode mode, struct afm_launch_desc *desc)
 {
 	json_object *pub;
 
-	assert(launch_mode_is_valid(mode));
+	assert(is_valid_launch_mode(mode));
 
 	/* main items */
 	if(!j_read_object_at(appli, "public", &pub)
 	|| !j_read_string_at(appli, "path", &desc->path)
-	|| !j_read_string_at(appli, "id", &desc->tag)
+	|| !j_read_string_at(appli, "id", &desc->appid)
 	|| !j_read_string_at(appli, "content", &desc->content)
 	|| !j_read_string_at(appli, "type", &desc->type)
 	|| !j_read_string_at(pub, "name", &desc->name)
@@ -278,67 +401,13 @@ static int fill_launch_desc(struct json_object *appli, enum afm_launch_mode mode
 	return 0;
 };
 
-/**************** API handling ************************/
+/**************** report state of runner *********************/
 
-int afm_run_start(struct json_object *appli, enum afm_launch_mode mode, char **uri)
-{
-	static struct apprun *runner;
-	struct afm_launch_desc desc;
-	int rc;
-	sigset_t saved, blocked;
-
-	assert(launch_mode_is_valid(mode));
-	assert(mode == mode_local || uri != NULL);
-	assert(uri == NULL || *uri == NULL);
-
-	/* prepare to launch */
-	rc = fill_launch_desc(appli, mode, &desc);
-	if (rc)
-		return rc;
-	runner = createrunner(appli);
-	if (!runner)
-		return -1;
-
-	/* block children signals until launched */
-	sigemptyset(&blocked);
-	sigaddset(&blocked, SIGCHLD);
-	sigprocmask(SIG_BLOCK, &blocked, &saved);
-
-	/* launch now */
-	rc = afm_launch(&desc, runner->pids, uri);
-	if (rc < 0) {
-		/* fork failed */
-		sigprocmask(SIG_SETMASK, &saved, NULL);
-		ERROR("can't start, afm_launch failed: %m");
-		freerunner(runner);
-		return -1;
-	}
-
-	/* insert the pid */
-	runner->state = as_running;
-	pgid_insert(runner);
-	rc = runner->runid;
-
-	/* unblock children signal now */
-	sigprocmask(SIG_SETMASK, &saved, NULL);
-	return rc;
-}
-
-int afm_run_terminate(int runid)
-{
-	return killrunner(runid, SIGTERM, as_terminating);
-}
-
-int afm_run_stop(int runid)
-{
-	return killrunner(runid, SIGSTOP, as_stopped);
-}
-
-int afm_run_continue(int runid)
-{
-	return killrunner(runid, SIGCONT, as_running);
-}
-
+/*
+ * Creates a json object that describes the state of 'runner'.
+ *
+ * Returns the created object or NULL in case of error.
+ */
 static json_object *mkstate(struct apprun *runner)
 {
 	const char *state;
@@ -389,6 +458,99 @@ error:
 	return NULL;
 }
 
+/**************** API handling ************************/
+
+/*
+ * Starts the application described by 'appli' for the 'mode'.
+ * In case of remote start, it returns in uri the uri to
+ * connect to.
+ *
+ * A reference to 'appli' is kept during the live of the
+ * runner. This is made using json_object_get. Thus be aware
+ * that further modifications to 'appli' might create errors.
+ *
+ * Returns 0 in case of success or -1 in case of error
+ */
+int afm_run_start(struct json_object *appli, enum afm_launch_mode mode,
+							char **uri)
+{
+	static struct apprun *runner;
+	struct afm_launch_desc desc;
+	int rc;
+	sigset_t saved, blocked;
+
+	assert(is_valid_launch_mode(mode));
+	assert(mode == mode_local || uri != NULL);
+	assert(uri == NULL || *uri == NULL);
+
+	/* prepare to launch */
+	rc = fill_launch_desc(appli, mode, &desc);
+	if (rc)
+		return rc;
+	runner = createrunner(appli);
+	if (!runner)
+		return -1;
+
+	/* block children signals until launched */
+	sigemptyset(&blocked);
+	sigaddset(&blocked, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &blocked, &saved);
+
+	/* launch now */
+	rc = afm_launch(&desc, runner->pids, uri);
+	if (rc < 0) {
+		/* fork failed */
+		sigprocmask(SIG_SETMASK, &saved, NULL);
+		ERROR("can't start, afm_launch failed: %m");
+		freerunner(runner);
+		return -1;
+	}
+
+	/* insert the pid */
+	runner->state = as_running;
+	pgid_insert(runner);
+	rc = runner->runid;
+
+	/* unblock children signal now */
+	sigprocmask(SIG_SETMASK, &saved, NULL);
+	return rc;
+}
+
+/*
+ * Terminates the runner of 'runid'
+ *
+ * Returns 0 in case of success or -1 in case of error
+ */
+int afm_run_terminate(int runid)
+{
+	return killrunner(runid, SIGTERM, as_terminating);
+}
+
+/*
+ * Stops (aka pause) the runner of 'runid'
+ *
+ * Returns 0 in case of success or -1 in case of error
+ */
+int afm_run_stop(int runid)
+{
+	return killrunner(runid, SIGSTOP, as_stopped);
+}
+
+/*
+ * Continue (aka resume) the runner of 'runid'
+ *
+ * Returns 0 in case of success or -1 in case of error
+ */
+int afm_run_continue(int runid)
+{
+	return killrunner(runid, SIGCONT, as_running);
+}
+
+/*
+ * Get the list of the runners.
+ *
+ * Returns the list or NULL in case of error.
+ */
 struct json_object *afm_run_list()
 {
 	struct json_object *result, *obj;
@@ -400,9 +562,13 @@ struct json_object *afm_run_list()
 	if (result == NULL)
 		goto error;
 
+	/* iterate over runners */
 	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
-		for (runner = runners_by_runid[i] ; runner ; runner = runner->next_by_runid) {
-			if (runner->state != as_terminating && runner->state != as_terminated) {
+		runner = runners_by_runid[i];
+		while (runner) {
+			if (runner->state != as_terminating
+					&& runner->state != as_terminated) {
+				/* adds the living runner */
 				obj = mkstate(runner);
 				if (obj == NULL)
 					goto error2;
@@ -411,6 +577,7 @@ struct json_object *afm_run_list()
 					goto error2;
 				}
 			}
+			runner = runner->next_by_runid;
 		}
 	}
 	return result;
@@ -422,10 +589,16 @@ error:
 	return NULL;
 }
 
+/*
+ * Get the state of the runner of 'runid'.
+ *
+ * Returns the state or NULL in case of success
+ */
 struct json_object *afm_run_state(int runid)
 {
 	struct apprun *runner = getrunner(runid);
-	if (runner == NULL || runner->state == as_terminating || runner->state == as_terminated) {
+	if (runner == NULL || runner->state == as_terminating
+				|| runner->state == as_terminated) {
 		errno = ENOENT;
 		return NULL;
 	}
@@ -434,6 +607,9 @@ struct json_object *afm_run_state(int runid)
 
 /**************** INITIALISATION **********************/
 
+/*
+ * Initialize the module
+ */
 int afm_run_init()
 {
 	char buf[2048];
@@ -456,14 +632,16 @@ int afm_run_init()
 		ERROR("getpwuid_r failed for uid=%d: %m",(int)me);
 		return -1;
 	}
-	rc = snprintf(dir, sizeof dir, "%s/%s", passwd.pw_dir, fwk_user_app_dir);
+	rc = snprintf(dir, sizeof dir, "%s/%s", passwd.pw_dir,
+							fwk_user_app_dir);
 	if (rc >= sizeof dir) {
 		ERROR("buffer overflow in user_app_dir for uid=%d",(int)me);
 		return -1;
 	}
 	rc = create_directory(dir, 0755, 1);
 	if (rc && errno != EEXIST) {
-		ERROR("creation of directory %s failed in user_app_dir: %m", dir);
+		ERROR("creation of directory %s failed in user_app_dir: %m",
+									dir);
 		return -1;
 	}
 	homeappdir = strdup(dir);
