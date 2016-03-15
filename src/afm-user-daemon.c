@@ -37,10 +37,11 @@ static const char appname[] = "afm-user-daemon";
 static void usage()
 {
 	printf(
-		"usage: %s [-q] [-v] [-r rootdir]... [-a appdir]...\n"
+		"usage: %s [-q] [-v] [-m mode] [-r rootdir]... [-a appdir]...\n"
 		"\n"
 		"   -a appdir    adds an application directory\n"
 		"   -r rootdir   adds a root directory of applications\n"
+		"   -m mode      set default launch mode (local or remote)\n"
 		"   -d           run as a daemon\n"
 		"   -q           quiet\n"
 		"   -v           verbose\n"
@@ -52,6 +53,7 @@ static void usage()
 static struct option options[] = {
 	{ "root",        required_argument, NULL, 'r' },
 	{ "application", required_argument, NULL, 'a' },
+	{ "mode",        required_argument, NULL, 'm' },
 	{ "daemon",      no_argument,       NULL, 'd' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -126,15 +128,15 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 	/* get the parameters */
 	mode = invalid_launch_mode;
 	if (j_read_string(obj, &appid)) {
-		mode = default_launch_mode;
+		mode = get_default_launch_mode();
 	} else if (j_read_string_at(obj, "id", &appid)) {
 		if (j_read_string_at(obj, "mode", &modestr)) {
-			mode = launch_mode_of_string(modestr);
+			mode = launch_mode_of_name(modestr);
 		} else {
-			mode = default_launch_mode;
+			mode = get_default_launch_mode();
 		}
 	}
-	if (!launch_mode_is_valid(mode)) {
+	if (!is_valid_launch_mode(mode)) {
 		jbus_reply_error_s(jreq, error_bad_request);
 		return;
 	}
@@ -267,11 +269,12 @@ static int daemonize()
 int main(int ac, char **av)
 {
 	int i, daemon = 0;
+	enum afm_launch_mode mode;
 
 	LOGAUTH(appname);
 
 	/* first interpretation of arguments */
-	while ((i = getopt_long(ac, av, "hdqvr:a:", options, NULL)) >= 0) {
+	while ((i = getopt_long(ac, av, "hdqvr:a:m:", options, NULL)) >= 0) {
 		switch (i) {
 		case 'h':
 			usage();
@@ -289,6 +292,14 @@ int main(int ac, char **av)
 		case 'r':
 			break;
 		case 'a':
+			break;
+		case 'm':
+			mode = launch_mode_of_name(optarg);
+			if (!is_valid_launch_mode(mode)) {
+				ERROR("invalid mode '%s'", optarg);
+				return 1;
+			}
+			set_default_launch_mode(mode);
 			break;
 		case ':':
 			ERROR("missing argument value");
@@ -321,7 +332,7 @@ int main(int ac, char **av)
 
 	/* second interpretation of arguments */
 	optind = 1;
-	while ((i = getopt_long(ac, av, "hdqvr:a:", options, NULL)) >= 0) {
+	while ((i = getopt_long(ac, av, "hdqvr:a:m:", options, NULL)) >= 0) {
 		switch (i) {
 		case 'r':
 			if (afm_db_add_root(afdb, optarg)) {

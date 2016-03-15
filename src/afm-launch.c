@@ -40,21 +40,27 @@ extern char **environ;
 
 #define DEFAULT_TYPE "text/html"
 
+/*
+ * structure for a launching type
+ */
 struct type_list {
-	struct type_list *next;
-	char type[1];
+	struct type_list *next; /* next type */
+	char type[1];           /* type name */
 };
 
+/*
+ * structure for launch vectors
+ */
 struct exec_vector {
-	int has_readyfd;
-	const char **args;
+	int has_readyfd;     /* has a request for readyness */
+	const char **args;   /* vector of arguments */
 };
 
-struct desc_list {
-	struct desc_list *next;
-	enum afm_launch_mode mode;
-	struct type_list *types;
-	struct exec_vector execs[2];
+struct desc_launcher {
+	struct desc_launcher *next;   /* next launcher description */
+	enum afm_launch_mode mode;    /* the launch mode */
+	struct type_list *types;      /* the launched types */
+	struct exec_vector execs[2];  /* the launching vectors */
 };
 
 struct launchparam {
@@ -66,43 +72,72 @@ struct launchparam {
 	struct exec_vector *execs;
 };
 
+/*
+ * Structure for reading the configuration file
+ */
 struct confread {
-	const char *filepath;
-	FILE *file;
-	int lineno;
-	int index;
-	int length;
-	char buffer[4096];
+	const char *filepath; /* path of the configuration file */
+	FILE *file;           /* handle to the file */
+	int lineno;           /* current line number */
+	int index;            /* start of the current token (in buffer) */
+	int length;           /* length of the current token */
+	char buffer[4096];    /* current line */
 };
 
-struct desc_list *launchers = NULL;
+/*
+ * list of launch descriptions
+ */
+struct desc_launcher *launchers = NULL;
 
+/*
+ * the group when launched (to avoid the setgid effect)
+ */
 static gid_t groupid = 0;
 
+/*
+ * separators within configuration files
+ */
 static const char separators[] = " \t\n";
+
+/*
+ * default string emitted when for application not having signal
+ */
 static const char readystr[] = "READY=1";
+
+/*
+ * default time out for readiness of signaling applications
+ */
 static const int ready_timeout = 1500;
 
-static void dump_launchers()
+/*
+ * dump all the known launchers to the 'file'
+ */
+static void dump_launchers(FILE *file)
 {
 	int j, k;
-	struct desc_list *desc;
+	struct desc_launcher *desc;
 	struct type_list *type;
 
 	for (desc = launchers ; desc != NULL ; desc = desc->next) {
-		printf("mode %s\n", name_of_launch_mode(desc->mode));
+		fprintf(file, "mode %s\n", name_of_launch_mode(desc->mode));
 		for (type = desc->types ; type != NULL ; type = type->next)
-			printf("%s\n", type->type);
+			fprintf(file, "%s\n", type->type);
 		for ( j = 0 ; j < 2 ; j++)
 			if (desc->execs[j].args != NULL) {
-				for (k = 0 ; desc->execs[j].args[k] != NULL ; k++)
-					printf("  %s", desc->execs[j].args[k]);
-				printf("\n");
+				for (k = 0; desc->execs[j].args[k] != NULL; k++)
+					fprintf(file, "  %s",
+							desc->execs[j].args[k]);
+				fprintf(file, "\n");
 			}
-		printf("\n");
+		fprintf(file, "\n");
 	}
 }
 
+/*
+ * update 'cread' to point the the next token
+ * returns the length of the token that is nul if no
+ * more token exists in the line
+ */
 static int next_token(struct confread *cread)
 {
 	int idx = cread->index + cread->length;
@@ -111,24 +146,38 @@ static int next_token(struct confread *cread)
 	return cread->length;
 }
 
+/*
+ * reads the next line, skipping empty lines or lines
+ * having only comments.
+ * returns either 0 at end of the file, -1 in case of error or
+ * in case of success the length of the first token.
+ */
 static int read_line(struct confread *cread)
 {
 	while (fgets(cread->buffer, sizeof cread->buffer, cread->file) != NULL) {
 		cread->lineno++;
 		cread->index = strspn(cread->buffer, separators);
-		if (cread->buffer[cread->index] && cread->buffer[cread->index] != '#') {
-			cread->length = strcspn(&cread->buffer[cread->index], separators);
+		if (cread->buffer[cread->index]
+		  && cread->buffer[cread->index] != '#') {
+			cread->length = strcspn(&cread->buffer[cread->index],
+								separators);
 			assert(cread->length > 0);
 			return cread->length;
 		}
 	}
 	if (ferror(cread->file)) {
-		ERROR("%s:%d: error while reading, %m", cread->filepath, cread->lineno);
+		ERROR("%s:%d: error while reading, %m", cread->filepath,
+								cread->lineno);
 		return -1;
 	}
 	return 0;
 }
 
+/*
+ * extract from 'cread' a launch vector that is allocated in
+ * one piece of memory.
+ * 'cread' is left unchanged (index and length are not changed)
+ */
 static const char **read_vector(struct confread *cread)
 {
 	int index0, length0;
@@ -172,6 +221,13 @@ static const char **read_vector(struct confread *cread)
 	return vector;
 }
 
+/*
+ * Reads the type from 'cread' directly in the list item and return it.
+ * returns NULL in case or error.
+ * errno:
+ *  - EINVAL     extra characters
+ *  - ENOMEM     memory depletion
+ */
 static struct type_list *read_type(struct confread *cread)
 {
 	int index, length;
@@ -184,7 +240,8 @@ static struct type_list *read_type(struct confread *cread)
 	/* check no extra characters */
 	if (next_token(cread)) {
 		ERROR("%s:%d: extra characters found after type %.*s",
-			cread->filepath, cread->lineno, length, &cread->buffer[index]);
+			cread->filepath, cread->lineno, length,
+						&cread->buffer[index]);
 		errno = EINVAL;
 		return NULL;
 	}
@@ -203,6 +260,12 @@ static struct type_list *read_type(struct confread *cread)
 	return result;
 }
 
+/*
+ * Reads the mode from 'cread' and return it.
+ * returns invalid_launch_mode in case or error.
+ * errno:
+ *  - EINVAL     no mode or extra characters or invalid mode
+ */
 static enum afm_launch_mode read_mode(struct confread *cread)
 {
 	int index, length;
@@ -213,7 +276,8 @@ static enum afm_launch_mode read_mode(struct confread *cread)
 
 	/* get the next token: the mode string */
 	if (!next_token(cread)) {
-		ERROR("%s:%d: no mode value set", cread->filepath, cread->lineno);
+		ERROR("%s:%d: no mode value set", cread->filepath,
+							cread->lineno);
 		errno = EINVAL;
 		return invalid_launch_mode;
 	}
@@ -225,14 +289,15 @@ static enum afm_launch_mode read_mode(struct confread *cread)
 	/* check no extra characters */
 	if (next_token(cread)) {
 		ERROR("%s:%d: extra characters found after mode %.*s",
-			cread->filepath, cread->lineno, length, &cread->buffer[index]);
+			cread->filepath, cread->lineno, length,
+						&cread->buffer[index]);
 		errno = EINVAL;
 		return invalid_launch_mode;
 	}
 
 	/* get the mode */
 	cread->buffer[index + length] = 0;
-	result = launch_mode_of_string(&cread->buffer[index]);
+	result = launch_mode_of_name(&cread->buffer[index]);
 	if (result == invalid_launch_mode) {
 		ERROR("%s:%d: invalid mode value %s",
 			cread->filepath, cread->lineno, &cread->buffer[index]);
@@ -241,6 +306,9 @@ static enum afm_launch_mode read_mode(struct confread *cread)
 	return result;
 }
 
+/*
+ * free the memory used by 'types'
+ */
 static void free_type_list(struct type_list *types)
 {
 	while (types != NULL) {
@@ -250,11 +318,17 @@ static void free_type_list(struct type_list *types)
 	}
 }
 
+/*
+ * reads the configuration file handled by 'cread'
+ * and adds its contents to the launcher list
+ *
+ * returns 0 in case of success or -1 in case of error.
+ */
 static int read_launchers(struct confread *cread)
 {
 	int rc, has_readyfd;
 	struct type_list *types, *lt;
-	struct desc_list *desc;
+	struct desc_launcher *desc;
 	enum afm_launch_mode mode;
 	const char **vector;
 
@@ -270,8 +344,10 @@ static int read_launchers(struct confread *cread)
 			&& !memcmp(&cread->buffer[cread->index], "mode", 4)) {
 				/* check if allowed */
 				if (types != NULL) {
-					ERROR("%s:%d: mode found before launch vector",
-						cread->filepath, cread->lineno);
+					ERROR("%s:%d: mode found before"
+							" launch vector",
+							cread->filepath,
+							cread->lineno);
 					errno = EINVAL;
 					free_type_list(types);
 					return -1;
@@ -283,8 +359,10 @@ static int read_launchers(struct confread *cread)
 					return -1;
 			} else {
 				if (mode == invalid_launch_mode) {
-					ERROR("%s:%d: mode not found before type",
-							cread->filepath, cread->lineno);
+					ERROR("%s:%d: mode not found"
+							" before type",
+							cread->filepath,
+							cread->lineno);
 					errno = EINVAL;
 					assert(types == NULL);
 					return -1;
@@ -304,12 +382,14 @@ static int read_launchers(struct confread *cread)
 				ERROR("%s:%d: untyped launch vector found",
 					cread->filepath, cread->lineno);
 			else
-				ERROR("%s:%d: extra launch vector found (2 max)",
+				ERROR("%s:%d: extra launch vector found"
+					" (the maximum count is 2)",
 					cread->filepath, cread->lineno);
 			errno = EINVAL;
 			return -1;
 		} else {
-			has_readyfd = NULL != strstr(&cread->buffer[cread->index], "%R");
+			has_readyfd = NULL != strstr(
+					&cread->buffer[cread->index], "%R");
 			vector = read_vector(cread);
 			if (vector == NULL) {
 				ERROR("%s:%d: out of memory",
@@ -355,6 +435,12 @@ static int read_launchers(struct confread *cread)
 	return rc;
 }
 
+/*
+ * reads the configuration file 'filepath'
+ * and adds its contents to the launcher list
+ *
+ * returns 0 in case of success or -1 in case of error.
+ */
 static int read_configuration_file(const char *filepath)
 {
 	int rc;
@@ -377,6 +463,27 @@ static int read_configuration_file(const char *filepath)
 }
 
 /*
+ * Creates a secret in 'buffer'
+ */
+static void mksecret(char buffer[9])
+{
+	snprintf(buffer, 9, "%08lX", (0xffffffff & random()));
+}
+
+/*
+ * Allocates a port and return it.
+ */
+static int mkport()
+{
+	static int port_ring = 12345;
+	int port = port_ring;
+	if (port < 12345 || port > 15432)
+		port = 12345;
+	port_ring = port + 1;
+	return port;
+}
+
+/*
 %% %
 %a appid			desc->appid
 %c content			desc->content
@@ -394,11 +501,26 @@ static int read_configuration_file(const char *filepath)
 %W width			desc->width
 */
 
+/*
+ * Union for handling either scalar arguments or vectorial arguments.
+ */
 union arguments {
-	char *scalar;
-	char **vector;
+	char *scalar;  /* string of space separated arguments */
+	char **vector; /* vector of arguments */
 };
 
+/*
+ * Computes the substitutions of 'args' according to the
+ * data of 'desc' and 'params'. The result is a single
+ * piece of memory (that must be freed in one time)
+ * containing either a vector or a string depending on
+ * the value of 'wants_vector'.
+ *
+ * The vectors are made of an array pointers terminated by
+ * the NULL pointer.
+ *
+ * Returns the resulting value or NULL in case of error
+ */
 static union arguments instantiate_arguments(
 	const char * const     *args,
 	struct afm_launch_desc *desc,
@@ -408,35 +530,43 @@ static union arguments instantiate_arguments(
 {
 	const char * const *iter;
 	const char *p, *v;
-	char *data, port[20], width[20], height[20], readyfd[20], mini[3], c, sep;
+	char *data, c, sep;
 	int n, s;
 	union arguments result;
+	char port[20], width[20], height[20], readyfd[20], mini[3];
 
 	/* init */
 	sep = wants_vector ? 0 : ' ';
 	mini[0] = '%';
 	mini[2] = 0;
 
-	/* loop that either compute the size and build the result */
-	result.vector = NULL;
-	result.scalar = NULL;
-	data = NULL;
+	/*
+	 * loop that either compute the size and build the result
+	 * advantage: appears only in one place
+	 */
+	result.vector = NULL; /* initialise both to avoid */
+	result.scalar = NULL; /* a very stupid compiler warning */
+	data = NULL;          /* no data for the first iteration */
 	n = s = 0;
 	for (;;) {
-		iter = args;
-		n = 0;
-		while (*iter) {
-			p = *iter++;
+		/* iterate over arguments */
+		for (n = 0, iter = args ; (p = *iter) != NULL ; iter++) {
+			/* init the vector */
 			if (data && !sep)
 				result.vector[n] = data;
 			n++;
+
+			/* scan the argument */
 			while((c = *p++) != 0) {
 				if (c != '%') {
+					/* standard character */
 					if (data)
 						*data++ = c;
 					else
 						s++;
 				} else {
+					/* substitutions */
+					/* (convert num->string only once) */
 					c = *p++;
 					switch (c) {
 					case 'a': v = desc->appid; break;
@@ -444,7 +574,8 @@ static union arguments instantiate_arguments(
 					case 'D': v = params->datadir; break;
 					case 'H':
 						if(!data)
-							sprintf(height, "%d", desc->height);
+							sprintf(height, "%d",
+								desc->height);
 						v = height;
 						break;
 					case 'h': v = desc->home; break;
@@ -453,20 +584,25 @@ static union arguments instantiate_arguments(
 					case 'n': v = desc->name; break;
 					case 'P':
 						if(!data)
-							sprintf(port, "%d", params->port);
+							sprintf(port, "%d",
+								params->port);
 						v = port;
 						break;
-					case 'p': v = "" /*desc->plugins*/; break;
+					case 'p':
+						v = "" /*TODO:desc->plugins*/;
+						break;
 					case 'R':
 						if(!data)
-							sprintf(readyfd, "%d", params->readyfd);
+							sprintf(readyfd, "%d",
+							     params->readyfd);
 						v = readyfd;
 						break;
 					case 'r': v = desc->path; break;
 					case 'S': v = params->secret; break;
 					case 'W':
 						if(!data)
-							sprintf(width, "%d", desc->width);
+							sprintf(width, "%d",
+								desc->width);
 						v = width;
 						break;
 					case '%':
@@ -482,41 +618,48 @@ static union arguments instantiate_arguments(
 						s += strlen(v);
 				}
 			}
+			/* terminate the argument */
 			if (data)
 				*data++ = sep;
 			else
 				s++;
 		}
-		if (sep) {
-			assert(!wants_vector);
-			if (data) {
-				*--data = 0;
-				return result;
+		if (!data) {
+			/* first iteration: allocation */
+			if (sep) {
+				result.scalar = malloc(s);
+				data = result.scalar;
+			} else {
+				result.vector = malloc((n+1)*sizeof(char*) + s);
+				if (result.vector != NULL)
+					data = (char*)(&result.vector[n + 1]);
 			}
-			/* allocation */
-			result.scalar = malloc(s);
-			if (result.scalar == NULL) {
+			if (!data) {
 				errno = ENOMEM;
 				return result;
 			}
-			data = result.scalar;
 		} else {
-			assert(wants_vector);
-			if (data) {
+			/* second iteration: termination */
+			if (sep)
+				*--data = 0;
+			else
 				result.vector[n] = NULL;
-				return result;
-			}
-			/* allocation */
-			result.vector = malloc((n+1)*sizeof(char*) + s);
-			if (result.vector == NULL) {
-				errno = ENOMEM;
-				return result;
-			}
-			data = (char*)(&result.vector[n + 1]);
+			return result;
 		}
 	}
 }
 
+/*
+ * Launchs (fork-execs) the program described by 'exec'
+ * using the parameters of 'desc' and 'params' to instantiate
+ * it. The created process is attached to the process group 'progrp'.
+ *
+ * After being created and before to be launched, the process
+ * is put in its security environment and its directory is
+ * changed to params->datadir.
+ *
+ * Returns the pid of the created process or -1 in case of error.
+ */
 static pid_t launch(
 	struct afm_launch_desc *desc,
 	struct launchparam     *params,
@@ -568,6 +711,8 @@ static pid_t launch(
 		free(args);
 		pfd.fd = rpipe[0];
 		pfd.events = POLLIN;
+
+		/* wait for readyness */
 		poll(&pfd, 1, ready_timeout);
 		close(rpipe[0]);
 		return pid;
@@ -619,27 +764,43 @@ static pid_t launch(
 	return -1;
 }
 
+/*
+ * Launches the application 'desc' in local mode using
+ * 'params' and store the resulting pids in 'children'.
+ *
+ * Returns 0 in case of success or -1 in case of error.
+ */
 static int launch_local(
 	struct afm_launch_desc *desc,
 	pid_t                   children[2],
 	struct launchparam     *params
 )
 {
+	/* launches the first, making it group leader */
 	children[0] = launch(desc, params, &params->execs[0], 0);
 	if (children[0] <= 0)
 		return -1;
 
+	/* nothing more to launch ? */
 	if (params->execs[1].args == NULL)
 		return 0;
 
+	/* launches the second in the group of the first */
 	children[1] = launch(desc, params, &params->execs[1], children[0]);
 	if (children[1] > 0)
 		return 0;
 
+	/* kill all on error */
 	killpg(children[0], SIGKILL);
 	return -1;
 }
 
+/*
+ * Launches the application 'desc' in remote mode using
+ * 'params' and store the resulting pids in 'children'.
+ *
+ * Returns 0 in case of success or -1 in case of error.
+ */
 static int launch_remote(
 	struct afm_launch_desc *desc,
 	pid_t                   children[2],
@@ -652,7 +813,8 @@ static int launch_remote(
 	if (params->execs[1].args == NULL)
 		uri = NULL;
 	else
-		uri = instantiate_arguments(params->execs[1].args, desc, params, 0).scalar;
+		uri = instantiate_arguments(params->execs[1].args, desc,
+							params, 0).scalar;
 	if (uri == NULL) {
 		ERROR("out of memory for remote uri");
 		errno = ENOMEM;
@@ -666,28 +828,20 @@ static int launch_remote(
 		return -1;
 	}
 
+	/* returns the uri in params */
 	*params->uri = uri;
 	return 0;
 }
 
-static void mksecret(char buffer[9])
+/*
+ * Searchs the launcher descritpion for the given 'type' and 'mode'
+ *
+ * Returns the description found or NULL if nothing matches.
+ */
+static struct desc_launcher *search_launcher(const char *type,
+						enum afm_launch_mode mode)
 {
-	snprintf(buffer, 9, "%08lX", (0xffffffff & random()));
-}
-
-static int mkport()
-{
-	static int port_ring = 12345;
-	int port = port_ring;
-	if (port < 12345 || port > 15432)
-		port = 12345;
-	port_ring = port + 1;
-	return port;
-}
-
-static struct desc_list *search_launcher(const char *type, enum afm_launch_mode mode)
-{
-	struct desc_list *dl;
+	struct desc_launcher *dl;
 	struct type_list *tl;
 
 	for (dl = launchers ; dl ; dl = dl->next)
@@ -698,6 +852,13 @@ static struct desc_list *search_launcher(const char *type, enum afm_launch_mode 
 	return NULL;
 }
 
+/*
+ * Launches the application described by 'desc'
+ * and, in case of success, returns the resulting data
+ * in 'children' and 'uri'.
+ *
+ * Returns 0 in case of success or -1 in case of error.
+ */
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 {
 	int rc;
@@ -705,11 +866,11 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	char secret[9];
 	struct launchparam params;
 	const char *type;
-	struct desc_list *dl;
+	struct desc_launcher *dl;
 
 	/* should be init */
 	assert(groupid != 0);
-	assert(launch_mode_is_valid(desc->mode));
+	assert(is_valid_launch_mode(desc->mode));
 	assert(desc->mode == mode_local || uri != NULL);
 	assert(uri == NULL || *uri == NULL);
 
@@ -721,13 +882,15 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	type = desc->type != NULL && *desc->type ? desc->type : DEFAULT_TYPE;
 	dl = search_launcher(type, desc->mode);
 	if (dl == NULL) {
-		ERROR("type %s not found for mode %s!", type, name_of_launch_mode(desc->mode));
+		ERROR("launcher not found for type %s and mode %s!",
+				type, name_of_launch_mode(desc->mode));
 		errno = ENOENT;
 		return -1;
 	}
 
 	/* prepare paths */
-	rc = snprintf(datadir, sizeof datadir, "%s/%s", desc->home, desc->appid);
+	rc = snprintf(datadir, sizeof datadir, "%s/%s",
+						desc->home, desc->appid);
 	if (rc < 0 || rc >= sizeof datadir) {
 		ERROR("overflow for datadir");
 		errno = EINVAL;
@@ -753,19 +916,25 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	}
 }
 
+/*
+ * Initialise the module
+ *
+ * Returns 0 on success or else -1 in case of failure
+ */
 int afm_launch_initialize()
 {
 	int rc;
 	gid_t r, e, s;
 
+	/* compute the groupid to set at launch */
 	getresgid(&r, &e, &s);
 	if (s && s != e)
-		groupid = s;
+		groupid = s; /* the original groupid is used */
 	else
 		groupid = -1;
 
 	rc = read_configuration_file(FWK_LAUNCH_CONF);
-	/* dump_launchers(); */
+	/* dump_launchers(stderr); */
 	return rc;
 }
 

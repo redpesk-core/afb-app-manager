@@ -22,11 +22,11 @@ enum afm_launch_mode {
 	mode_remote  = 2
 };
 
-#define default_launch_mode  mode_local
+extern int is_valid_launch_mode(enum afm_launch_mode mode);
 
-#define launch_mode_is_valid(x)  ((x)==mode_local || (x)==mode_remote)
-#define is_valid_launch_mode(x)  ((x)==mode_local || (x)==mode_remote)
+extern enum afm_launch_mode get_default_launch_mode();
+extern void set_default_launch_mode(enum afm_launch_mode mode);
 
-enum afm_launch_mode launch_mode_of_string(const char *s);
-const char *name_of_launch_mode(enum afm_launch_mode m);
+extern enum afm_launch_mode launch_mode_of_name(const char *name);
+extern const char *name_of_launch_mode(enum afm_launch_mode mode);
 

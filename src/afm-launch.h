@@ -16,18 +16,23 @@
  limitations under the License.
 */
 
+/*
+ * Structure describing what is to be launched
+ */
 struct afm_launch_desc {
-	const char *path;
-	const char *appid;
-	const char *content;
-	const char *type;
-	const char *name;
-	const char *home;
-	const char **plugins;
-	int width;
-	int height;
-	enum afm_launch_mode mode;
+	const char *path;          /* to the widget directory */
+	const char *appid;         /* application identifier */
+	const char *content;       /* content to launch */
+	const char *type;          /* type to launch */
+	const char *name;          /* name of the application */
+	const char *home;          /* home directory of the applications */
+	const char **plugins;      /* plugins for the application */
+	int width;                 /* requested width */
+	int height;                /* requested height */
+	enum afm_launch_mode mode; /* launch mode */
 };
 
 int afm_launch_initialize();
+
 int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri);
+
