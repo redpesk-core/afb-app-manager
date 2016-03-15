@@ -66,7 +66,7 @@ const char error_bad_request[] = "\"bad request\"";
 const char error_not_found[] = "\"not found\"";
 const char error_cant_start[] = "\"can't start\"";
 
-static void on_install(struct jreq *jreq, struct json_object *req)
+static void on_install(struct jreq *jreq, struct json_object *req, void *unused)
 {
 	const char *wgtfile;
 	const char *root;
@@ -113,7 +113,7 @@ static void on_install(struct jreq *jreq, struct json_object *req)
 	}
 }
 
-static void on_uninstall(struct jreq *jreq, struct json_object *req)
+static void on_uninstall(struct jreq *jreq, struct json_object *req, void *unused)
 {
 	const char *idaver;
 	const char *root;
@@ -222,8 +222,8 @@ int main(int ac, char **av)
 		ERROR("create_jbus failed");
 		return 1;
 	}
-	if(jbus_add_service_j(jbus, "install", on_install)
-	|| jbus_add_service_j(jbus, "uninstall", on_uninstall)) {
+	if(jbus_add_service_j(jbus, "install", on_install, NULL)
+	|| jbus_add_service_j(jbus, "uninstall", on_uninstall, NULL)) {
 		ERROR("adding services failed");
 		return 1;
 	}

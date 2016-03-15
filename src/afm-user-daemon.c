@@ -144,7 +144,7 @@ static void reply_status(struct jreq *jreq, int status, const char *errstr)
  *
  * Nothing is expected in 'obj' that can be anything.
  */
-static void on_runnables(struct jreq *jreq, struct json_object *obj)
+static void on_runnables(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	struct json_object *resp;
 	INFO("method runnables called");
@@ -156,7 +156,7 @@ static void on_runnables(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "detail" from 'jreq' with parameters of 'obj'.
  */
-static void on_detail(struct jreq *jreq, struct json_object *obj)
+static void on_detail(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	const char *appid;
 	struct json_object *resp;
@@ -183,7 +183,7 @@ static void on_detail(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "start" from 'jreq' with parameters of 'obj'.
  */
-static void on_start(struct jreq *jreq, struct json_object *obj)
+static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	const char *appid, *modestr;
 	char *uri;
@@ -250,7 +250,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "stop" from 'jreq' with parameters of 'obj'.
  */
-static void on_stop(struct jreq *jreq, struct json_object *obj)
+static void on_stop(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	int runid, status;
 	if (onrunid(jreq, obj, "stop", &runid)) {
@@ -262,7 +262,7 @@ static void on_stop(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "continue" from 'jreq' with parameters of 'obj'.
  */
-static void on_continue(struct jreq *jreq, struct json_object *obj)
+static void on_continue(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	int runid, status;
 	if (onrunid(jreq, obj, "continue", &runid)) {
@@ -274,7 +274,7 @@ static void on_continue(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "terminate" from 'jreq' with parameters of 'obj'.
  */
-static void on_terminate(struct jreq *jreq, struct json_object *obj)
+static void on_terminate(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	int runid, status;
 	if (onrunid(jreq, obj, "terminate", &runid)) {
@@ -286,7 +286,7 @@ static void on_terminate(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "runners" from 'jreq' with parameters of 'obj'.
  */
-static void on_runners(struct jreq *jreq, struct json_object *obj)
+static void on_runners(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	struct json_object *resp;
 	INFO("method runners called");
@@ -298,7 +298,7 @@ static void on_runners(struct jreq *jreq, struct json_object *obj)
 /*
  * On query "state" from 'jreq' with parameters of 'obj'.
  */
-static void on_state(struct jreq *jreq, struct json_object *obj)
+static void on_state(struct jreq *jreq, struct json_object *obj, void *unused)
 {
 	int runid;
 	struct json_object *resp;
@@ -337,7 +337,7 @@ static void propagate(struct jreq *jreq, const char *msg, const char *method)
 /*
  * On query "install" from 'jreq' with parameters of 'msg'.
  */
-static void on_install(struct jreq *jreq, const char *msg)
+static void on_install(struct jreq *jreq, const char *msg, void *unused)
 {
 	return propagate(jreq, msg, "install");
 }
@@ -345,7 +345,7 @@ static void on_install(struct jreq *jreq, const char *msg)
 /*
  * On query "uninstall" from 'jreq' with parameters of 'msg'.
  */
-static void on_uninstall(struct jreq *jreq, const char *msg)
+static void on_uninstall(struct jreq *jreq, const char *msg, void *unused)
 {
 	return propagate(jreq, msg, "uninstall");
 }
@@ -353,7 +353,7 @@ static void on_uninstall(struct jreq *jreq, const char *msg)
 /*
  * On system signaling that applications list changed
  */
-static void on_signal_changed(struct json_object *obj)
+static void on_signal_changed(struct json_object *obj, void *unused)
 {
 	/* update the database */
 	afm_db_update_applications(afdb);
@@ -481,7 +481,7 @@ int main(int ac, char **av)
 	}
 
 	/* observe signals of system */
-	if(jbus_on_signal_j(system_bus, "changed", on_signal_changed)) {
+	if(jbus_on_signal_j(system_bus, "changed", on_signal_changed, NULL)) {
 		ERROR("adding signal observer failed");
 		return 1;
 	}
@@ -494,16 +494,16 @@ int main(int ac, char **av)
 	}
 
 	/* init services */
-	if (jbus_add_service_j(user_bus, "runnables", on_runnables)
-	 || jbus_add_service_j(user_bus, "detail",    on_detail)
-	 || jbus_add_service_j(user_bus, "start",     on_start)
-	 || jbus_add_service_j(user_bus, "terminate", on_terminate)
-	 || jbus_add_service_j(user_bus, "stop",      on_stop)
-	 || jbus_add_service_j(user_bus, "continue",  on_continue)
-	 || jbus_add_service_j(user_bus, "runners",   on_runners)
-	 || jbus_add_service_j(user_bus, "state",     on_state)
-	 || jbus_add_service_s(user_bus, "install",   on_install)
-	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall)) {
+	if (jbus_add_service_j(user_bus, "runnables", on_runnables, NULL)
+	 || jbus_add_service_j(user_bus, "detail",    on_detail, NULL)
+	 || jbus_add_service_j(user_bus, "start",     on_start, NULL)
+	 || jbus_add_service_j(user_bus, "terminate", on_terminate, NULL)
+	 || jbus_add_service_j(user_bus, "stop",      on_stop, NULL)
+	 || jbus_add_service_j(user_bus, "continue",  on_continue, NULL)
+	 || jbus_add_service_j(user_bus, "runners",   on_runners, NULL)
+	 || jbus_add_service_j(user_bus, "state",     on_state, NULL)
+	 || jbus_add_service_s(user_bus, "install",   on_install, NULL)
+	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall, NULL)) {
 		ERROR("adding services failed");
 		return 1;
 	}

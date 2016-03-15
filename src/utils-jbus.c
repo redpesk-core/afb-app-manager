@@ -45,16 +45,18 @@ struct jreq {
 struct jservice {
 	struct jservice *next;
 	char *method;
-	void (*oncall_s)(struct jreq *, const char *);
-	void (*oncall_j)(struct jreq *, struct json_object *);
+	void (*oncall_s)(struct jreq *, const char *, void *);
+	void (*oncall_j)(struct jreq *, struct json_object *, void *);
+	void *data;
 };
 
 /* structure for signal handlers */
 struct jsignal {
 	struct jsignal *next;
 	char *name;
-	void (*onsignal_s)(const char *);
-	void (*onsignal_j)(struct json_object *);
+	void (*onsignal_s)(const char *, void *);
+	void (*onsignal_j)(struct json_object *, void *);
+	void *data;
 };
 
 /* structure for recording asynchronous requests */
@@ -120,8 +122,9 @@ static int matchitf(struct jbus *jbus, DBusMessage *message)
 static int add_service(
 		struct jbus *jbus,
 		const char *method,
-		void (*oncall_s)(struct jreq*, const char*),
-		void (*oncall_j)(struct jreq*, struct json_object*)
+		void (*oncall_s)(struct jreq*, const char*, void*),
+		void (*oncall_j)(struct jreq*, struct json_object*, void*),
+		void *data
 )
 {
 	struct jservice *srv;
@@ -141,6 +144,7 @@ static int add_service(
 	/* record the service */
 	srv->oncall_s = oncall_s;
 	srv->oncall_j = oncall_j;
+	srv->data = data;
 	srv->next = jbus->services;
 	jbus->services = srv;
 
@@ -155,8 +159,9 @@ error:
 static int add_signal(
 	struct jbus *jbus,
 	const char *name,
-	void (*onsignal_s)(const char*),
-	void (*onsignal_j)(struct json_object*)
+	void (*onsignal_s)(const char*, void*),
+	void (*onsignal_j)(struct json_object*, void*),
+	void *data
 )
 {
 	char *rule;
@@ -185,6 +190,7 @@ static int add_signal(
 	/* record the signal */
 	sig->onsignal_s = onsignal_s;
 	sig->onsignal_j = onsignal_j;
+	sig->data = data;
 	sig->next = jbus->signals;
 	jbus->signals = sig;
 
@@ -335,13 +341,13 @@ static DBusHandlerResult incoming_call(DBusConnection *connection, DBusMessage *
 		return reply_invalid_request(jreq);
 	if (srv->oncall_s) {
 		/* handling strings only */
-		srv->oncall_s(jreq, str);
+		srv->oncall_s(jreq, str, srv->data);
 	}
 	else {
 		/* handling json only */
 		if (!parse(jbus, str, &query))
 			return reply_invalid_request(jreq);
-		srv->oncall_j(jreq, query);
+		srv->oncall_j(jreq, query, srv->data);
 		json_object_put(query);
 	}
 	return DBUS_HANDLER_RESULT_HANDLED;
@@ -370,12 +376,12 @@ static DBusHandlerResult incoming_signal(DBusConnection *connection, DBusMessage
 	if (dbus_message_get_args(message, NULL, DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID)) {
 		if (sig->onsignal_s) {
 			/* handling strings only */
-			sig->onsignal_s(str);
+			sig->onsignal_s(str, sig->data);
 		}
 		else {
 			/* handling json only */
 			if (parse(jbus, str, &obj)) {
-				sig->onsignal_j(obj);
+				sig->onsignal_j(obj, sig->data);
 				json_object_put(obj);
 			}
 		}
@@ -630,14 +636,14 @@ int jbus_send_signal_j(struct jbus *jbus, const char *name, struct json_object *
 	return jbus_send_signal_s(jbus, name, str);
 }
 
-int jbus_add_service_s(struct jbus *jbus, const char *method, void (*oncall)(struct jreq *, const char *))
+int jbus_add_service_s(struct jbus *jbus, const char *method, void (*oncall)(struct jreq *, const char *, void *), void *data)
 {
-	return add_service(jbus, method, oncall, NULL);
+	return add_service(jbus, method, oncall, NULL, data);
 }
 
-int jbus_add_service_j(struct jbus *jbus, const char *method, void (*oncall)(struct jreq *, struct json_object *))
+int jbus_add_service_j(struct jbus *jbus, const char *method, void (*oncall)(struct jreq *, struct json_object *, void *), void *data)
 {
-	return add_service(jbus, method, NULL, oncall);
+	return add_service(jbus, method, NULL, oncall, data);
 }
 
 int jbus_start_serving(struct jbus *jbus)
@@ -812,14 +818,14 @@ struct json_object *jbus_call_jj_sync(struct jbus *jbus, const char *method, str
 	return jbus_call_sj_sync(jbus, method, str);
 }
 
-int jbus_on_signal_s(struct jbus *jbus, const char *name, void (*onsig)(const char *))
+int jbus_on_signal_s(struct jbus *jbus, const char *name, void (*onsig)(const char *, void *), void *data)
 {
-	return add_signal(jbus, name, onsig, NULL);
+	return add_signal(jbus, name, onsig, NULL, data);
 }
 
-int jbus_on_signal_j(struct jbus *jbus, const char *name, void (*onsig)(struct json_object *))
+int jbus_on_signal_j(struct jbus *jbus, const char *name, void (*onsig)(struct json_object *, void *), void *data)
 {
-	return add_signal(jbus, name, NULL, onsig);
+	return add_signal(jbus, name, NULL, onsig, data);
 }
 
 /************************** FEW LITTLE TESTS *****************************************/
@@ -828,13 +834,13 @@ int jbus_on_signal_j(struct jbus *jbus, const char *name, void (*onsig)(struct j
 #include <stdio.h>
 #include <unistd.h>
 struct jbus *jbus;
-void ping(struct jreq *jreq, struct json_object *request)
+void ping(struct jreq *jreq, struct json_object *request, void *unused)
 {
 printf("ping(%s) -> %s\n",json_object_to_json_string(request),json_object_to_json_string(request));
 	jbus_reply_j(jreq, request);
 	json_object_put(request);	
 }
-void incr(struct jreq *jreq, struct json_object *request)
+void incr(struct jreq *jreq, struct json_object *request, void *unused)
 {
 	static int counter = 0;
 	struct json_object *res = json_object_new_int(++counter);
@@ -848,8 +854,8 @@ int main()
 {
 	int s1, s2, s3;
 	jbus = create_jbus(1, "/bzh/iot/jdbus");
-	s1 = jbus_add_service_j(jbus, "ping", ping);
-	s2 = jbus_add_service_j(jbus, "incr", incr);
+	s1 = jbus_add_service_j(jbus, "ping", ping, NULL);
+	s2 = jbus_add_service_j(jbus, "incr", incr, NULL);
 	s3 = jbus_start_serving(jbus);
 	printf("started %d %d %d\n", s1, s2, s3);
 	while (!jbus_read_write_dispatch (jbus, -1));
