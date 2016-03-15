@@ -391,7 +391,6 @@ static int read_configuration_file(const char *filepath)
 %r rootdir			desc->path
 %R readyfd                      params->readyfd
 %S secret			params->secret
-%t tag (smack label)		desc->tag
 %W width			desc->width
 */
 
@@ -465,7 +464,6 @@ static union arguments instantiate_arguments(
 						break;
 					case 'r': v = desc->path; break;
 					case 'S': v = params->secret; break;
-					case 't': v = desc->tag; break;
 					case 'W':
 						if(!data)
 							sprintf(width, "%d", desc->width);
@@ -590,7 +588,7 @@ static pid_t launch(
 	}
 
 	/* enter security mode */
-	rc = secmgr_prepare_exec(desc->tag);
+	rc = secmgr_prepare_exec(desc->appid);
 	if (rc < 0) {
 		ERROR("call to secmgr_prepare_exec failed: %m");
 		_exit(1);
@@ -729,7 +727,7 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	}
 
 	/* prepare paths */
-	rc = snprintf(datadir, sizeof datadir, "%s/%s", desc->home, desc->tag);
+	rc = snprintf(datadir, sizeof datadir, "%s/%s", desc->home, desc->appid);
 	if (rc < 0 || rc >= sizeof datadir) {
 		ERROR("overflow for datadir");
 		errno = EINVAL;

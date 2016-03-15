@@ -18,7 +18,6 @@
 
 struct afm_launch_desc {
 	const char *path;
-	const char *tag;
 	const char *appid;
 	const char *content;
 	const char *type;
