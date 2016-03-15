@@ -18,24 +18,28 @@
 
 struct wgt;
 
+/* creation and reference */
 extern struct wgt *wgt_create();
-extern struct wgt *wgt_createat(int dirfd, const char *pathname);
-
 extern void wgt_addref(struct wgt *wgt);
 extern void wgt_unref(struct wgt *wgt);
 
+/* connection and disconnection */
+extern struct wgt *wgt_createat(int dirfd, const char *pathname);
 extern int wgt_connect(struct wgt *wgt, const char *pathname);
 extern int wgt_connectat(struct wgt *wgt, int dirfd, const char *pathname);
 extern void wgt_disconnect(struct wgt *wgt);
 extern int wgt_is_connected(struct wgt *wgt);
 
-extern int wgt_has(struct wgt *wgt, const char *filename);
-extern int wgt_open_read(struct wgt *wgt, const char *filename);
-
+/* management of locales */
 extern void wgt_locales_reset(struct wgt *wgt);
 extern int wgt_locales_add(struct wgt *wgt, const char *locstr);
 extern int wgt_locales_score(struct wgt *wgt, const char *lang);
 
+/* direct access to files */
+extern int wgt_has(struct wgt *wgt, const char *filename);
+extern int wgt_open_read(struct wgt *wgt, const char *filename);
+
+/* localised access to files */
 extern char *wgt_locales_locate(struct wgt *wgt, const char *filename);
 extern int wgt_locales_open_read(struct wgt *wgt, const char *filename);
 

@@ -42,8 +42,12 @@ struct wgt {
 static int validsubpath(const char *subpath)
 {
 	int l = 0, i = 0;
+
+	/* absolute path is not valid */
 	if (subpath[i] == '/')
 		return 0;
+
+	/* inspect the path */
 	while(subpath[i]) {
 		switch(subpath[i++]) {
 		case '.':
@@ -75,6 +79,14 @@ static int validsubpath(const char *subpath)
 	return l >= 0;
 }
 
+/*
+ * Normalizes and checks the 'subpath'.
+ * Removes any starting '/' and checks that 'subpath'
+ * does not contains sequence of '..' going deeper than
+ * root.
+ * Returns the normalized subpath or NULL in case of
+ * invalid subpath.
+ */
 static const char *normalsubpath(const char *subpath)
 {
 	while(*subpath == '/')
@@ -82,6 +94,10 @@ static const char *normalsubpath(const char *subpath)
 	return validsubpath(subpath) ? subpath : NULL;
 }
 
+/*
+ * Creates a wgt handler and returns it or return NULL
+ * in case of memory depletion.
+ */
 struct wgt *wgt_create()
 {
 	struct wgt *wgt = malloc(sizeof * wgt);
@@ -96,27 +112,19 @@ struct wgt *wgt_create()
 	return wgt;
 }
 
-void wgt_disconnect(struct wgt *wgt)
-{
-	assert(wgt);
-	if (wgt->rootfd >= 0)
-		close(wgt->rootfd);
-	wgt->rootfd = -1;
-}
-
-void wgt_locales_reset(struct wgt *wgt)
-{
-	assert(wgt);
-	while(wgt->nrlocales)
-		free(wgt->locales[--wgt->nrlocales]);
-}
-
+/*
+ * Adds a reference to 'wgt'
+ */
 void wgt_addref(struct wgt *wgt)
 {
 	assert(wgt);
 	wgt->refcount++;
 }
 
+/*
+ * Drops a reference to 'wgt' and destroys it
+ * if not more referenced
+ */
 void wgt_unref(struct wgt *wgt)
 {
 	assert(wgt);
@@ -128,6 +136,41 @@ void wgt_unref(struct wgt *wgt)
 	}
 }
 
+/*
+ * Creates a wgt handle and connect it to 'dirfd' and 'pathname'.
+ *
+ * Returns the created and connected wgt handle on success
+ * or returns NULL if allocation failed or connecting had
+ * error.
+ */
+struct wgt *wgt_createat(int dirfd, const char *pathname)
+{
+	struct wgt *wgt = wgt_create();
+	if (wgt) {
+		if (wgt_connectat(wgt, dirfd, pathname)) {
+			wgt_unref(wgt);
+			wgt = NULL;
+		}
+	}
+	return wgt;
+}
+
+/*
+ * Connect 'wgt' to the directory of 'pathname' relative
+ * to the directory handled by 'dirfd'.
+ *
+ * Use AT_FDCWD for connecting relatively to the current directory.
+ *
+ * Use 'pathname' == NULL or "" for connecting to 'dirfd'. In
+ * that case, 'dirfd' is duplicated and can safely be used later
+ * by the client.
+ *
+ * If 'wgt' is already connected, it will be diconnected before.
+ *
+ * The languages settings are not changed.
+ *
+ * Returns 0 in case of success or -1 in case or error.
+ */
 int wgt_connectat(struct wgt *wgt, int dirfd, const char *pathname)
 {
 	int rfd;
@@ -144,29 +187,46 @@ int wgt_connectat(struct wgt *wgt, int dirfd, const char *pathname)
 	return 0;
 }
 
+/*
+ * Connect 'wgt' to the directory of 'pathname'.
+ *
+ * Acts like wgt_connectat(wgt, AT_FDCWD, pathname)
+ */
 int wgt_connect(struct wgt *wgt, const char *pathname)
 {
 	return wgt_connectat(wgt, AT_FDCWD, pathname);
 }
 
-struct wgt *wgt_createat(int dirfd, const char *pathname)
+/*
+ * Disconnetcs 'wgt' if connected.
+ */
+void wgt_disconnect(struct wgt *wgt)
 {
-	struct wgt *wgt = wgt_create();
-	if (wgt) {
-		if (wgt_connectat(wgt, dirfd, pathname)) {
-			wgt_unref(wgt);
-			wgt = NULL;
-		}
-	}
-	return wgt;
+	assert(wgt);
+	if (wgt->rootfd >= 0)
+		close(wgt->rootfd);
+	wgt->rootfd = -1;
 }
 
+/*
+ * Checks if 'wgt' is connected and returns 1 if connected
+ * or 0 if not connected.
+ */
 int wgt_is_connected(struct wgt *wgt)
 {
 	assert(wgt);
 	return wgt->rootfd != -1;
 }
 
+/*
+ * Tests wether the connected 'wgt' has the 'filename'.
+ *
+ * It is an error (with errno = EINVAL) to test an
+ * invalid filename.
+ *
+ * Returns 0 if it hasn't it, 1 if it has it or
+ * -1 if an error occured.
+ */
 int wgt_has(struct wgt *wgt, const char *filename)
 {
 	assert(wgt);
@@ -180,6 +240,12 @@ int wgt_has(struct wgt *wgt, const char *filename)
 	return 0 == faccessat(wgt->rootfd, filename, F_OK, 0);
 }
 
+/*
+ * Opens 'filename' for read from the connected 'wgt'.
+ *
+ * Returns the file descriptor as returned by openat
+ * system call or -1 in case of error.
+ */
 int wgt_open_read(struct wgt *wgt, const char *filename)
 {
 	assert(wgt);
@@ -192,6 +258,10 @@ int wgt_open_read(struct wgt *wgt, const char *filename)
 	return openat(wgt->rootfd, filename, O_RDONLY);
 }
 
+/*
+ * Adds if needed the locale 'locstr' of 'length'
+ * to the list of locales.
+ */
 static int locadd(struct wgt *wgt, const char *locstr, int length)
 {
 	int i;
@@ -199,14 +269,18 @@ static int locadd(struct wgt *wgt, const char *locstr, int length)
 
 	item = strndup(locstr, length);
 	if (item != NULL) {
+		/* normalize in lower case */
 		for (i = 0 ; item[i] ; i++)
 			item[i] = tolower(item[i]);
+
+		/* search it (no duplication) */
 		for (i = 0 ; i < wgt->nrlocales ; i++)
 			if (!strcmp(item, wgt->locales[i])) {
 				free(item);
 				return 0;
 			}
 
+		/* append it to the list */
 		ptr = realloc(wgt->locales, (1 + wgt->nrlocales) * sizeof(wgt->locales[0]));
 		if (ptr) {
 			wgt->locales = ptr;
@@ -219,13 +293,35 @@ static int locadd(struct wgt *wgt, const char *locstr, int length)
 	return -1;
 }
 
+/*
+ * clears the list of locales of 'wgt'
+ */
+void wgt_locales_reset(struct wgt *wgt)
+{
+	assert(wgt);
+	while(wgt->nrlocales)
+		free(wgt->locales[--wgt->nrlocales]);
+}
+
+/*
+ * Adds to 'wgt' the locales defined by 'locstr'.
+ *
+ * Example: passing "fr-CH,en-GB" will add "fr-CH",
+ * "fr", "en-GB" and then "en" to the list of locales.
+ *
+ * Returns 0 in case of success or -1 in case of memory
+ * depletion.
+ */
 int wgt_locales_add(struct wgt *wgt, const char *locstr)
 {
 	const char *stop, *next;
 	assert(wgt);
+
+	/* iterate the comma separated languages */
 	while (*locstr) {
 		stop = strchrnul(locstr, ',');
 		next = stop + !!*stop;
+		/* iterate variant of languages in reverse order */
 		while (locstr != stop) {
 			if (locadd(wgt, locstr, stop - locstr))
 				return -1;
@@ -236,6 +332,12 @@ int wgt_locales_add(struct wgt *wgt, const char *locstr)
 	return 0;
 }
 
+/*
+ * Get the score of the language 'lang' for 'wgt'.
+ *
+ * The lower result means the higher priority of the language.
+ * The returned value of 0 is the top first priority.
+ */
 int wgt_locales_score(struct wgt *wgt, const char *lang)
 {
 	int i;
@@ -249,15 +351,26 @@ int wgt_locales_score(struct wgt *wgt, const char *lang)
 	return INT_MAX;
 }
 
+/*
+ * Applies the localisation algorithm of 'filename'
+ * within 'wgt'. Use the scratch buffer given by 'path'.
+ *
+ * Returns the filepath of the located file or NULL
+ * if not found. If not NULL, the returned value is either
+ * 'path' or the normalized version of 'filename'.
+ */
 static const char *localize(struct wgt *wgt, const char *filename, char path[PATH_MAX])
 {
 	int i;
 
+	/* get the normalized name */
 	filename = normalsubpath(filename);
 	if (!filename) {
 		errno = EINVAL;
 		return NULL;
 	}
+
+	/* search in locales */
 	for (i = 0 ; i < wgt->nrlocales ; i++) {
 		if (snprintf(path, PATH_MAX, "locales/%s/%s", wgt->locales[i], filename) >= PATH_MAX) {
 			errno = EINVAL;
@@ -272,6 +385,13 @@ static const char *localize(struct wgt *wgt, const char *filename, char path[PAT
 	return NULL;
 }
 
+/*
+ * Gets the localized file of 'filename' within 'wgt'.
+ *
+ * Returns a fresh allocated string for the found 'filename'.
+ * Returns NULL if file is not found (ENOENT) or memory
+ * exhausted (ENOMEM).
+ */
 char *wgt_locales_locate(struct wgt *wgt, const char *filename)
 {
 	char path[PATH_MAX];
@@ -280,6 +400,7 @@ char *wgt_locales_locate(struct wgt *wgt, const char *filename)
 
 	assert(wgt);
 	assert(wgt_is_connected(wgt));
+
 	loc = localize(wgt, filename, path);
 	if (!loc)
 		result = NULL;
@@ -291,7 +412,13 @@ char *wgt_locales_locate(struct wgt *wgt, const char *filename)
 	return result;
 }
 
-
+/*
+ * Opens for read the localized version of 'filename'
+ * from the connected 'wgt'.
+ *
+ * Returns the file descriptor as returned by openat
+ * system call or -1 in case of error.
+ */
 int wgt_locales_open_read(struct wgt *wgt, const char *filename)
 {
 	char path[PATH_MAX];
@@ -299,6 +426,7 @@ int wgt_locales_open_read(struct wgt *wgt, const char *filename)
 
 	assert(wgt);
 	assert(wgt_is_connected(wgt));
+
 	loc = localize(wgt, filename, path);
 	if (!loc)
 		return -1;
