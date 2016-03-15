@@ -1,0 +1,77 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="doc.css">
+  <meta charset="UTF-8">
+</head>
+<body>
+<a name="The.widgets"></a>
+<h1>The widgets</h1>
+
+<pre><code>version: 1
+Date:    14 March 2016
+Author:  José Bollo
+</code></pre>
+
+<a name="The.widgets"></a>
+<h2>The widgets</h2>
+
+<p>The widgets are described by the technical recommendations
+<a href="http://www.w3.org/TR/widgets" title="Packaged Web Apps">widgets</a> and <a href="http://www.w3.org/TR/widgets-digsig" title="XML Digital Signatures for Widgets">widgets-digsig</a>.</p>
+
+<a name="signature.of.the"></a>
+<h3>signature of the</h3>
+
+<p>The application framework</p>
+
+<p>This is the original part of our work here</p>
+
+<a name="directory.where.are.stored.applications"></a>
+<h3>directory where are stored applications</h3>
+
+<p>Applications can be installed in few places: on the system itself or on an extension device.
+For my phone, for example, it is the sd card.</p>
+
+<p>This translates to:</p>
+
+<ul>
+<li>/usr/applications: for system wide applications</li>
+<li>/opt/applications: for removable applications</li>
+</ul>
+
+
+<p>In the remaining of the document, these places are writen &ldquo;APPDIR&rdquo;.</p>
+
+<a name="Organisation.of.directory.of.applications"></a>
+<h1>Organisation of directory of applications</h1>
+
+<p>The main path for applivcations are: APPDIR/PKGID/VER.</p>
+
+<p>Where:</p>
+
+<ul>
+<li>APPDIR is as defined above</li>
+<li>PKGID is a directory whose name is the package identifier</li>
+<li>VER is the version of the package MAJOR.MINOR</li>
+</ul>
+
+
+<p>This organisation has the advantage to allow several versions to leave together.
+This is needed for some good reasons (rolling back) and also for less good reasons (user habits).</p>
+
+<a name="Identity.of.installed.files"></a>
+<h2>Identity of installed files</h2>
+
+<p>All the files are installed as the user &ldquo;userapp&rdquo; and group &ldquo;userapp&rdquo;.
+All files have rw(x) for user and r-(x) for group and others.</p>
+
+<p>This allows any user to read the files.</p>
+
+<a name="Labelling.the.directories.of.applications"></a>
+<h2>Labelling the directories of applications</h2>
+
+<a name="Organisation.of.data"></a>
+<h1>Organisation of data</h1>
+
+<p>The data of a user are in its directory and are labelled using the labels of the application</p>
+</body>
+</html>

@@ -1,10 +1,9 @@
 
-
-AGL framework, proposal of IoT.bzh
-==================================
+Application framework
+=====================
 
     version: 1
-    Date:    29 february 2016
+    Date:    14 March 2016
     Author:  José Bollo
 
 Foreword
@@ -260,7 +259,7 @@ The application framework
 -------------------------
 
 The application framework on top of the security framework
-provides the compoenents to install and uninstall applications
+provides the components to install and uninstall applications
 and to run it in a secured environment.
 
 The goal is to manage applications and to hide the details of
@@ -280,180 +279,16 @@ The management of signatures of the widget packages
 This basis is not meant as being rigid and it can be extended in the
 futur to include for example incremental delivery.
 
-The widgets
------------
 
-### signature of the 
+Comparison to other frameworks
+------------------------------
 
-The application framework 
+### Tizen framework
 
-This is the original part of our work here
+### xdg-app
 
-### directory where are stored applications
+### ostro
 
-Applications can be installed in few places: on the system itself or on an extension device.
-For my phone, for example, it is the sd card.
-
-This translates to:
-
- - /usr/applications: for system wide applications
- - /opt/applications: for removable applications
-
-In the remaining of the document, these places are writen "APPDIR".
-
-
-Organisation of directory of applications
-=========================================
-
-The main path for applivcations are: APPDIR/PKGID/VER.
-
-Where:
-
- - APPDIR is as defined above
- - PKGID is a directory whose name is the package identifier
- - VER is the version of the package MAJOR.MINOR
-
-This organisation has the advantage to allow several versions to leave together.
-This is needed for some good reasons (rolling back) and also for less good reasons (user habits).
-
-Identity of installed files
----------------------------
-
-All the files are installed as the user "userapp" and group "userapp".
-All files have rw(x) for user and r-(x) for group and others.
-
-This allows any user to read the files.
-
-
-Labelling the directories of applications
------------------------------------------
-
-
-Organisation of data
-====================
-
-The data of a user are in its directory and are labelled using the labels of the application
-
-Setting Smack rules for the application
-=======================================
-
-For Tizen, the following rules are set by the security manager for each application.
-
-    System ~APP~             rwx
-    System ~PKG~             rwxat
-    System ~PKG~::RO         rwxat
-    ~APP~  System            wx
-    ~APP~  System::Shared    rxl
-    ~APP~  System::Run       rwxat
-    ~APP~  System::Log       rwxa
-    ~APP~  _                 l
-    User   ~APP~             rwx
-    User   ~PKG~             rwxat
-    User   ~PKG~::RO         rwxat
-    ~APP~  User              wx
-    ~APP~  User::Home        rxl
-    ~APP~  User::App::Shared rwxat
-    ~APP~  ~PKG~             rwxat
-    ~APP~  ~PKG~::RO         rxl
-
-Here, ~PKG~ is the identifier of the package and ~APP~ is the identifier of the application.
-
-What user can run an application?
-=================================
-
-Not all user are able to run all applications.
-How to manage that?
-
-
-
-API of the framework
-====================
-
-Data handled
-------------
-
-=== description of an application
-
-the JSON object: APPDESC
-
-    {
-      "appid":       string, the application id for the framework
-      "id":          string, the application intrinsic id
-      "version":     string, the version of the application
-      "path":        string, the path of the directory of the application
-      "width":       integer, requested width of the application
-      "height":      integer, resqueted height of the application
-      "name":        string, the name of the application
-      "description": string, the description of the application
-      "shortname":   string, the short name of the application
-      "author":      string, the author of the application
-    }
-
-
-The base of the path is FWKAPI = /api/fwk
-
-
-request FWKAPI/runnables
-  -- get the list of applications
-  => [ APPDESC... ]
-
-request FWKAPI/detail?id=APPID
-  subject to languages tuning
-  => { "id": "APPID", "name": "name", "description": "description", "license": "license", "author": "author" }
-
-/*
-request FWKAPI/icon?id=APPID
-  subject to languages tuning
-  => the icon image
-*/
-
-request FWKAPI/run?id=APPID
-  => { "status": "done/error", "data": { "runid": "RUNID" } }
-
-request FWKAPI/running
-  => [ { "id": "RUNID", "appid": "APPID", "state": ... }... ]
-
-request FWKAPI/state?id=RUNID
-  => { "id": "RUNID", "appid": "APPID", "state": ... }
-
-request FWKAPI/stop?id=RUNID
-  => { "error": "message" ou "done": "RUNID" }
-
-request FWKAPI/suspend?id=RUNID
-  => { "error": "message" ou "done": "RUNID" }
-
-request FWKAPI/resume?id=RUNID
-  => { "error": "message" ou "done": "RUNID" }
-
-/*
-request FWKAPI/features
-  => returns the features of the current application
-
-request FWKAPI/preferences
-  => returns the features of the current application
-*/
-
-API of the store
-================
-
-The base of the path is STORAPI = /api/store
-
-request STORAPI/search[?q=...]
-  subject to languages tuning
-  => [ { "id": "APPID", "name": "name", "description": "description", "license": "license", "author": "author", "icon": "url" }... ]
-
-/*
-request STORAPI/icon?id=APPID
-  subject to languages tuning
-  => the icon image
-*/
-
-request STORAPI/detail?id=APPID
-  => { "id": "APPID", "name": "name", "description": "description", "license": "license", "author": "author", "icon": "url", "permissions": [ "perm"... ] }
-
-
-request STORAPI/install?id=APPID&permissions
-  => { "transaction": "XXX", "desc"= { see above }  } or error
 
 
 

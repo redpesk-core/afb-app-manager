@@ -1,0 +1,46 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="doc.css">
+  <meta charset="UTF-8">
+</head>
+<body>
+<a name="The.security.framework"></a>
+<h1>The security framework</h1>
+
+<pre><code>version: 1
+Date:    14 March 2016
+Author:  José Bollo
+</code></pre>
+
+<a name="Setting.Smack.rules.for.the.application"></a>
+<h1>Setting Smack rules for the application</h1>
+
+<p>For Tizen, the following rules are set by the security manager for each application.</p>
+
+<pre><code>System ~APP~             rwx
+System ~PKG~             rwxat
+System ~PKG~::RO         rwxat
+~APP~  System            wx
+~APP~  System::Shared    rxl
+~APP~  System::Run       rwxat
+~APP~  System::Log       rwxa
+~APP~  _                 l
+User   ~APP~             rwx
+User   ~PKG~             rwxat
+User   ~PKG~::RO         rwxat
+~APP~  User              wx
+~APP~  User::Home        rxl
+~APP~  User::App::Shared rwxat
+~APP~  ~PKG~             rwxat
+~APP~  ~PKG~::RO         rxl
+</code></pre>
+
+<p>Here, ~PKG~ is the identifier of the package and ~APP~ is the identifier of the application.</p>
+
+<a name="What.user.can.run.an.application."></a>
+<h1>What user can run an application?</h1>
+
+<p>Not all user are able to run all applications.
+How to manage that?</p>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="doc.css">
+  <meta charset="UTF-8">
+</head>
+<body>
+<a name="Application.framework"></a>
+<h1>Application framework</h1>
+
+<pre><code>version: 1
+Date:    14 March 2016
+Author:  José Bollo
+</code></pre>
+
+<a name="Foreword"></a>
+<h2>Foreword</h2>
+
+<p>This document describes what we intend to do. It may happen that our
+current implementation and the content of this document differ.</p>
+
+<p>In case of differences, it is assumed that this document is right
+and the implementation is wrong.</p>
+
+<a name="Introduction"></a>
+<h2>Introduction</h2>
+
+<p>During the first works in having the security model of Tizen
+integrated in AGL (Automotive Grade Linux) distribution, it became
+quickly obvious that the count of components specific to Tizen
+to integrate was huge.</p>
+
+<p>Here is a minimal list of what was needed:</p>
+
+<ul>
+<li>platform/appfw/app-installers</li>
+<li>platform/core/security/cert-svc</li>
+<li>platform/core/appfw/ail</li>
+<li>platform/core/appfw/aul-1</li>
+<li>platform/core/appfw/libslp-db-util</li>
+<li>platform/core/appfw/pkgmgr-info</li>
+<li>platform/core/appfw/slp-pkgmgr</li>
+</ul>
+
+
+<p>But this list is complete because many dependencies are hidden.
+Those hidden dependencies are including some common libraries but also many
+tizen specific sub-components (iniparser, bundle, dlog, libtzplatform-config,
+db-util, vconf-buxton, &hellip;).</p>
+
+<p>This is an issue because AGL is not expected to be Tizen. Taking it would
+either need to patch it for removing unwanted components or to take all
+of them.</p>
+
+<p>However, a careful study of the core components of the security framework
+of Tizen showed that their dependencies to Tizen are light (and since some
+of our work, there is no more dependency to tizen).
+Those components are <strong>cynara</strong>, <strong>security-manager</strong>, <strong>D-Bus aware of cynara</strong>.</p>
+
+<p>Luckyly, these core security components of Tizen are provided
+by <a href="https://github.com/01org/meta-intel-iot-security" title="A collection of layers providing security technologies">meta-intel-iot-security</a>, a set of yocto layers.
+These layers were created by Intel to isolate Tizen specific security
+components from the initial port of Tizen to Yocto.
+The 3 layers are providing components for:</p>
+
+<ul>
+<li>Implementing Smack LSM</li>
+<li>Implementing Integrity Measurement Architecture</li>
+<li>Implementing Tizen Security Framework</li>
+</ul>
+
+
+<p>The figure below shows the history of these layers.</p>
+
+<pre><code>                  2014         2015
+Tizen OBS ----------+---------------------------&gt;
+                     \
+                      \
+     Tizen Yocto       +---------+--------------&gt;
+                                  \
+                                   \
+       meta-intel-iot-security      +-----------&gt;
+</code></pre>
+
+<p>We took the decision to use these security layers that provides the
+basis of the Tizen security, the security framework.</p>
+
+<p>For the components of the application framework, built top of
+the security framework, instead of pulling the huge set of packages
+from Tizen, we decided to refit it by developping a tiny set of
+components that would implement the same behaviour but without all
+the dependencies and with minor architectural improvements for AGL.</p>
+
+<p>These components are <strong>afm-system-daemon</strong> and <strong>afm-user-daemon</strong>.
+They provides infrastructure for installing, uninstalling,
+launching, terminating, stopping and resuming applications in
+a multi user secure environment.</p>
+
+<p>A third component exists in the framework, the binder <strong>afb-daemon</strong>.
+The binder provides the easiest way to provide secured API for
+any tier. Currently, the use of the binder is not absolutely mandatory.</p>
+
+<p>This documentation explains the framework created by IoT.bzh
+by rewriting the Tizen Application Framework. Be aware of the
+previous foreword.</p>
+
+<a name="Overview"></a>
+<h2>Overview</h2>
+
+<p>The figure below shows the major components of the framework
+and their interactions going through the following scenario:
+APPLICATION installs an other application and then launch it.</p>
+
+<pre><code>+-----------------------------------------------------------------------+
+|                                 User                                  |
+|  ................................                                     |
+|  :   Smack isolation context    :                                     |
+|  :                              :      ...........................    |
+|  :  +-----------------------+   :      : Smack isolation context :    |
+|  :  |                       |   :      :                         :    |
+|  :  |      APPLICATION      |   :      :     OTHER application   :    |
+|  :  |                       |   :      :.........................:    |
+|  :  +-----------+-----------+   :                ^                    |
+|  :              |               :                |                    |
+|  :              |(1),(7)        :                |(13)                |
+|  :              |               :                |                    |
+|  :  +-----------v-----------+   :      +---------+---------------+    |
+|  :  |   binder afb-daemon   |   :      |                         |    |
+|  :  +-----------------------+   :      |      afm-user-daemon    |    |
+|  :  |    afm-main-plugin    |   :      |                         |    |
+|  :  +-----+--------------+--+   :      +------^-------+------+---+    |
+|  :........|..............|......:             |       |      :        |
+|           |(2)           |(8)                 |(10)   |      :        |
+|           |              |                    |       |      :        |
+|           |         +----v--------------------+---+   |      :        |
+|           |         |        D-Bus   session      |   |(11)  :(12)    |
+|           |         +-------------------------+---+   |      :        |
+|           |                                   |       |      :        |
+|           |                                   |(9)    |      :        |
+|           |                                   |       |      :        |
+:===========|===================================|=======|======:========:
+|           |                                   |       |      :        |
+|           |                               +---v-------v--+   :        |
+|    +------v-------------+     (3)         |              |   :        |
+|    |  D-Bus   system    +-----------------&gt;    CYNARA    |   :        |
+|    +------+-------------+                 |              |   :        |
+|           |                               +------^-------+   :        |
+|           |(4)                                   |           :        |
+|           |                                      |(6)        v        |
+|    +------v--------------+             +---------+---------------+    |
+|    |                     |    (5)      |                         |    |
+|    |  afm-system-daemon  +-------------&gt;     SECURITY-MANAGER    |    |
+|    |                     |             |                         |    |
+|    +---------------------+             +-------------------------+    |
+|                                                                       |
+|                              System                                   |
++-----------------------------------------------------------------------+
+</code></pre>
+
+<p>Let follow the sequence of calls:</p>
+
+<ol>
+<li><p>APPLICATION calls its <strong>binder</strong> to install the OTHER application.</p></li>
+<li><p>The plugin <strong>afm-main-plugin</strong> of the <strong>binder</strong> calls, through
+<strong>D-Bus</strong> system, the system daemon to install the OTHER application.</p></li>
+<li><p>The system <strong>D-Bus</strong> checks wether APPLICATION has the permission
+or not to install applications by calling <strong>CYNARA</strong>.</p></li>
+<li><p>The system <strong>D-Bus</strong> transmits the request to <strong>afm-system-daemon</strong>.</p>
+
+<p><strong>afm-system-daemon</strong> checks the application to install, its
+signatures and rights and install it.</p></li>
+<li><p><strong>afm-system-daemon</strong> calls <strong>SECURITY-MANAGER</strong> for fullfilling
+security context of the installed application.</p></li>
+<li><p><strong>SECURITY-MANAGER</strong> calls <strong>CYNARA</strong> to install initial permissions
+for the application.</p></li>
+<li><p>APPLICATION call its binder to start the nearly installed OTHER application.</p></li>
+<li><p>The plugin <strong>afm-main-plugin</strong> of the <strong>binder</strong> calls, through
+<strong>D-Bus</strong> session, the user daemon to launch the OTHER application.</p></li>
+<li><p>The session <strong>D-Bus</strong> checks wether APPLICATION has the permission
+or not to start an application by calling <strong>CYNARA</strong>.</p></li>
+<li><p>The session <strong>D-Bus</strong> transmits the request to <strong>afm-user-daemon</strong>.</p></li>
+<li><p><strong>afm-user-daemon</strong> checks wether APPLICATION has the permission
+or not to start the OTHER application <strong>CYNARA</strong>.</p></li>
+<li><p><strong>afm-user-daemon</strong> uses <strong>SECURITY-MANAGER</strong> features to set
+the seciruty context for the OTHER application.</p></li>
+<li><p><strong>afm-user-daemon</strong> launches the OTHER application.</p></li>
+</ol>
+
+
+<p>This scenario does not cover all the features of the frameworks.
+Shortly because details will be revealed in the next chapters,
+the components are:</p>
+
+<ul>
+<li><p><strong><em>SECURITY-MANAGER</em></strong>: in charge of setting Smack contexts and rules,
+of setting groups, and, of creating initial content of <em>CYNARA</em> rules
+for applications.</p></li>
+<li><p><strong><em>CYNARA</em></strong>: in charge of handling API access permissions by users and by
+applications.</p></li>
+<li><p><strong><em>D-Bus</em></strong>: in charge of checking security of messaging. The usual D-Bus
+security rules are enhanced by <em>CYNARA</em> checking rules.</p></li>
+<li><p><strong><em>afm-system-daemon</em></strong>: in charge of installing and uninstalling applications.</p></li>
+<li><p><strong><em>afm-user-daemon</em></strong>: in charge of listing applications, querying application details,
+starting, terminating, stopping, resuming applications and their instances
+for a given user context.</p></li>
+<li><p><strong><em>afb-binder</em></strong>: in charge of serving resources and features through an
+HTTP interface.</p></li>
+<li><p><strong><em>afm-main-plugin</em></strong>: This plugin allows applications to use the API
+of the AGL framework.</p></li>
+</ul>
+
+
+<a name="Links.between.the..Security.framework..and.the..Application.framework."></a>
+<h2>Links between the &ldquo;Security framework&rdquo; and the &ldquo;Application framework&rdquo;</h2>
+
+<p>The security framework refers to the security model used to ensure
+security and to the tools that are provided for implementing that model.</p>
+
+<p>The security model refers to how DAC (Discretionnary Access Control),
+MAC (Mandatory Access Control) and Capabilities are used by the system
+to ensure security and privacy. It also includes features of reporting
+using audit features and by managing logs and alerts.</p>
+
+<p>The application framework manages the applications:
+installing, uninstalling, starting, stopping, listing &hellip;</p>
+
+<p>The application framework uses the security model/framework
+to ensure the security and the privacy of the applications that
+it manages.</p>
+
+<p>The application framework must be compliant with the underlyiong
+security model/framework. But it should hide it to the applications.</p>
+
+<a name="The.security.framework"></a>
+<h2>The security framework</h2>
+
+<p>The implemented security model is the security model of Tizen 3.
+This model is described <a href="https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview" title="Tizen 3 security overview">here</a>.</p>
+
+<p>The security framework then comes from Tizen 3 but through
+the <a href="https://github.com/01org/meta-intel-iot-security" title="A collection of layers providing security technologies">meta-intel</a>.
+It includes: <strong>Security-Manager</strong>, <strong>Cynara</strong>
+and <strong>D-Bus</strong> compliant to Cynara.</p>
+
+<p>Two patches are applied to the security-manager. These patches are removing
+dependencies to packages specific of Tizen but that are not needed by AGL.
+None of these patches adds or removes any behaviour.</p>
+
+<p><strong>Theoritically, the security framework/model is an implementation details
+that should not impact the layers above the application framework</strong>.</p>
+
+<p>The security framework of Tizen provides &ldquo;nice lad&rdquo; a valuable component to
+scan log files and analyse auditing. This component is still in developement.</p>
+
+<a name="The.application.framework"></a>
+<h2>The application framework</h2>
+
+<p>The application framework on top of the security framework
+provides the components to install and uninstall applications
+and to run it in a secured environment.</p>
+
+<p>The goal is to manage applications and to hide the details of
+the security framework to the applications.</p>
+
+<p>For the reasons explained in introduction, we did not used the
+application framework of Tizen as is but used an adaptation of it.</p>
+
+<p>The basis is kept identical: the applications are distributed
+in a digitally signed container that must match the specifications
+of widgets (web applications). This is described by the technical
+recomendations <a href="http://www.w3.org/TR/widgets" title="Packaged Web Apps">widgets</a> and <a href="http://www.w3.org/TR/widgets-digsig" title="XML Digital Signatures for Widgets">widgets-digsig</a> of the W3 consortium.</p>
+
+<p>This model allows the distribution of HTML, QML and binary applications.</p>
+
+<p>The management of signatures of the widget packages
+This basis is not meant as being rigid and it can be extended in the
+futur to include for example incremental delivery.</p>
+
+<a name="Comparison.to.other.frameworks"></a>
+<h2>Comparison to other frameworks</h2>
+
+<a name="Tizen.framework"></a>
+<h3>Tizen framework</h3>
+
+<a name="xdg-app"></a>
+<h3>xdg-app</h3>
+
+<a name="ostro"></a>
+<h3>ostro</h3>
+</body>
+</html>
