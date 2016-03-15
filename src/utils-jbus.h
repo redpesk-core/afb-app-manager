@@ -20,7 +20,10 @@
 struct jreq;
 struct jbus;
 
-extern struct jbus *create_jbus(int session, const char *path);
+extern struct jbus *create_jbus(const char *path, int session);
+extern struct jbus *create_jbus_session(const char *path);
+extern struct jbus *create_jbus_system(const char *path);
+
 extern void jbus_addref(struct jbus *jbus);
 extern void jbus_unref(struct jbus *jbus);
 

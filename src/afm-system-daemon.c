@@ -217,7 +217,7 @@ int main(int ac, char **av)
 	}
 
 	/* init service	*/
-	jbus = create_jbus(0, AFM_SYSTEM_DBUS_PATH);
+	jbus = create_jbus_system(AFM_SYSTEM_DBUS_PATH);
 	if (!jbus) {
 		ERROR("create_jbus failed");
 		return 1;

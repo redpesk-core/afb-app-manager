@@ -350,7 +350,7 @@ int main(int ac, char **av)
 	}
 
 	/* init observers */
-	jbuses[0] = create_jbus(0, AFM_SYSTEM_DBUS_PATH);
+	jbuses[0] = create_jbus_system(AFM_SYSTEM_DBUS_PATH);
 	if (!jbuses[0]) {
 		ERROR("create_jbus failed for system");
 		return 1;
@@ -361,7 +361,7 @@ int main(int ac, char **av)
 	}
 
 	/* init service	*/
-	jbuses[1] = create_jbus(1, AFM_USER_DBUS_PATH);
+	jbuses[1] = create_jbus_session(AFM_USER_DBUS_PATH);
 	if (!jbuses[1]) {
 		ERROR("create_jbus failed");
 		return 1;

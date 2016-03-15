@@ -29,6 +29,8 @@
 
 #include "utils-jbus.h"
 
+#define MAX_JSON_DEPTH 5
+
 struct jreq;
 struct jservice;
 struct jbus;
@@ -73,6 +75,7 @@ struct respsync {
 /* structure for handling either client or server jbus on dbus */
 struct jbus {
 	int refcount;
+	struct json_tokener *tokener;
 	struct jservice *services;
 	DBusConnection *connection;
 	struct jsignal *signals;
@@ -250,6 +253,17 @@ static void sync_of_replies(int status, const char *value, void *data)
 	s->replied = 1;
 }
 
+static int parse(struct jbus *jbus, const char *msg, struct json_object **obj)
+{
+	json_tokener_reset(jbus->tokener);
+	*obj = json_tokener_parse_ex(jbus->tokener, msg, -1);
+	if (json_tokener_get_error(jbus->tokener) == json_tokener_success)
+		return 1;
+	json_object_put(*obj);
+	*obj = NULL;
+	return 0;
+}
+
 static DBusHandlerResult incoming_resp(DBusConnection *connection, DBusMessage *message, struct jbus *jbus, int iserror)
 {
 	int status;
@@ -280,8 +294,7 @@ static DBusHandlerResult incoming_resp(DBusConnection *connection, DBusMessage *
 	if (jrw->onresp_s)
 		jrw->onresp_s(iserror ? -1 : status, str, jrw->data);
 	else {
-		reply = json_tokener_parse(str);
-		status = reply ? 0 : -1;
+		status = parse(jbus, str, &reply) - 1;
 		jrw->onresp_j(iserror ? -1 : status, reply, jrw->data);
 		json_object_put(reply);
 	}
@@ -326,8 +339,7 @@ static DBusHandlerResult incoming_call(DBusConnection *connection, DBusMessage *
 	}
 	else {
 		/* handling json only */
-		query = json_tokener_parse(str);
-		if (query == NULL)
+		if (!parse(jbus, str, &query))
 			return reply_invalid_request(jreq);
 		srv->oncall_j(jreq, query);
 		json_object_put(query);
@@ -362,8 +374,7 @@ static DBusHandlerResult incoming_signal(DBusConnection *connection, DBusMessage
 		}
 		else {
 			/* handling json only */
-			obj = json_tokener_parse(str);
-			if (obj != NULL) {
+			if (parse(jbus, str, &obj)) {
 				sig->onsignal_j(obj);
 				json_object_put(obj);
 			}
@@ -444,7 +455,17 @@ static dbus_bool_t watchadd(DBusWatch *watch, void *data)
 
 /************************** MAIN FUNCTIONS *****************************************/
 
-struct jbus *create_jbus(int session, const char *path)
+struct jbus *create_jbus_system(const char *path)
+{
+	return create_jbus(path, 0);
+}
+
+struct jbus *create_jbus_session(const char *path)
+{
+	return create_jbus(path, 1);
+}
+
+struct jbus *create_jbus(const char *path, int session)
 {
 	struct jbus *jbus;
 	char *name;
@@ -456,6 +477,11 @@ struct jbus *create_jbus(int session, const char *path)
 		goto error;
 	}
 	jbus->refcount = 1;
+	jbus->tokener = json_tokener_new_ex(MAX_JSON_DEPTH);
+	if (jbus->tokener == NULL) {
+		errno = ENOMEM;
+		goto error2;
+	}
 	jbus->path = strdup(path);
 	if (jbus->path == NULL) {
 		errno = ENOMEM;
@@ -511,6 +537,8 @@ void jbus_unref(struct jbus *jbus)
 			free(srv->method);
 			free(srv);
 		}
+		if (jbus->tokener != NULL)
+			json_tokener_free(jbus->tokener);
 		free(jbus->name);
 		free(jbus->path);
 		free(jbus);
@@ -758,7 +786,7 @@ struct json_object *jbus_call_sj_sync(struct jbus *jbus, const char *method, con
 	if (str == NULL)
 		obj = NULL;
 	else {
-		obj = json_tokener_parse(str);
+		parse(jbus, str, &obj);
 		free(str);
 	}
 	return obj;
