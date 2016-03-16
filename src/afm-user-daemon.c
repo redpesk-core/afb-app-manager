@@ -334,6 +334,7 @@ static void propagate(struct jreq *jreq, const char *msg, const char *method)
 		jbus_reply_error_s(jreq, error_system);
 }
 
+#if defined(EXPLICIT_CALL)
 /*
  * On query "install" from 'jreq' with parameters of 'msg'.
  */
@@ -349,6 +350,7 @@ static void on_uninstall(struct jreq *jreq, const char *msg, void *unused)
 {
 	return propagate(jreq, msg, "uninstall");
 }
+#endif
 
 /*
  * On system signaling that applications list changed
@@ -502,8 +504,13 @@ int main(int ac, char **av)
 	 || jbus_add_service_j(user_bus, "continue",  on_continue, NULL)
 	 || jbus_add_service_j(user_bus, "runners",   on_runners, NULL)
 	 || jbus_add_service_j(user_bus, "state",     on_state, NULL)
+#if defined(EXPLICIT_CALL)
 	 || jbus_add_service_s(user_bus, "install",   on_install, NULL)
 	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall, NULL)) {
+#else
+	 || jbus_add_service_s(user_bus, "install",   (void (*)(struct jreq *, const char *, void *))propagate, "install")
+	 || jbus_add_service_s(user_bus, "uninstall", (void (*)(struct jreq *, const char *, void *))propagate, "uninstall")) {
+#endif
 		ERROR("adding services failed");
 		return 1;
 	}
