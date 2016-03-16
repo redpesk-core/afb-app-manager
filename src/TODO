@@ -17,3 +17,5 @@ List of things to do for the code
   (a kind of wait child ;)
 
 - allow to control the environment setting of the launched instances
+
+- send the SIGKILL after a short time if SIGTERM has no effect
