@@ -252,9 +252,10 @@ void file_clear_flags()
 		allfiles.files[i]->flags &= flag_signature;
 }
 
-static int fill_files_rec(char name[PATH_MAX], int offset)
+static int fill_files_rec(char name[PATH_MAX], unsigned offset)
 {
-	int len, err, fd;
+	int err, fd;
+	unsigned len;
 	DIR *dir;
 	struct dirent *ent;
 
@@ -274,7 +275,7 @@ static int fill_files_rec(char name[PATH_MAX], int offset)
 
 	ent = readdir(dir);
 	while (ent != NULL) {
-		len = strlen(ent->d_name);
+		len = (unsigned)strlen(ent->d_name);
 		if (ent->d_name[0] == '.' && (len == 1 || 
 			(ent->d_name[1] == '.' && len == 2)))
 			;

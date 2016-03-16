@@ -34,9 +34,9 @@ struct permission {
 
 static const char prefix_of_permissions[] = FWK_PREFIX_PERMISSION;
 
-static int nrpermissions = 0;
+static unsigned int nrpermissions = 0;
 static struct permission *permissions = NULL;
-static int indexiter = 0;
+static unsigned int indexiter = 0;
 
 /* check is the name has the correct prefix for permissions */
 int is_standard_permission(const char *name)
@@ -47,7 +47,7 @@ int is_standard_permission(const char *name)
 /* retrieves the permission of name */
 static struct permission *get_permission(const char *name)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0 ; i < nrpermissions ; i++)
 		if (0 == strcmp(permissions[i].name, name))
@@ -60,7 +60,8 @@ static struct permission *add_permission(const char *name)
 {
 	struct permission *p = get_permission(name);
 	if (!p) {
-		p = realloc(permissions, ((nrpermissions + 8) & ~7) * sizeof(*p));
+		p = realloc(permissions,
+			((nrpermissions + 8) & ~(unsigned)7) * sizeof(*p));
 		if (p) {
 			permissions = p;
 			p = permissions + nrpermissions;
@@ -68,6 +69,8 @@ static struct permission *add_permission(const char *name)
 			p->name = strdup(name);
 			if (!p->name)
 				p = NULL;
+			else
+				nrpermissions++;
 		}
 	}
 	return p;
@@ -76,7 +79,7 @@ static struct permission *add_permission(const char *name)
 /* remove any granting */
 void reset_permissions()
 {
-	int i;
+	unsigned int i;
 	for (i = 0 ; i < nrpermissions ; i++)
 		permissions[i].granted = 0;
 }
@@ -84,7 +87,7 @@ void reset_permissions()
 /* remove any granting */
 void crop_permissions(unsigned level)
 {
-	int i;
+	unsigned int i;
 	for (i = 0 ; i < nrpermissions ; i++)
 		if (permissions[i].level < level)
 			permissions[i].granted = 0;
@@ -95,13 +98,13 @@ void grant_permission_list(const char *list)
 {
 	struct permission *p;
 	char *iter, c;
-	int n;
+	unsigned int n;
 	static const char separators[] = " \t\n\r,";
 
 	iter = strdupa(list);
 	iter += strspn(iter, separators);
 	while(*iter) {
-		n = strcspn(iter, separators);
+		n = (unsigned)strcspn(iter, separators);
 		c = iter[n];
 		iter[n] = 0;
 		p = add_permission(iter);

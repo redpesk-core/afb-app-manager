@@ -24,7 +24,7 @@
 #include "wgtpkg-base64.h"
 
 struct x509l {
-	int count;
+	unsigned count;
 	X509 **certs;
 };
 
@@ -32,7 +32,8 @@ static struct x509l certificates = { .count = 0, .certs = NULL };
 
 static int add_certificate_x509(X509 *x)
 {
-	X509 **p = realloc(certificates.certs, (certificates.count + 1) * sizeof(X509*));
+	X509 **p = realloc(certificates.certs,
+			(certificates.count + 1) * sizeof(X509*));
 	if (!p) {
 		ERROR("reallocation failed for certificate");
 		return -1;
@@ -42,7 +43,7 @@ static int add_certificate_x509(X509 *x)
 	return 0;
 }
 
-static int add_certificate_bin(const char *bin, int len)
+static int add_certificate_bin(const char *bin, size_t len)
 {
 	int rc;
 	const char *b, *e;
@@ -66,12 +67,15 @@ static int add_certificate_bin(const char *bin, int len)
 int add_certificate_b64(const char *b64)
 {
 	char *d;
-	int l = base64dec(b64, &d);
-	if (l > 0) {
-		l = add_certificate_bin(d, l);
+	ssize_t l = base64dec(b64, &d);
+	int rc;
+	if (l < 0)
+		rc = -1;
+	else {
+		rc = add_certificate_bin(d, (size_t)l);
 		free(d);
 	}
-	return l;
+	return rc;
 }
 
 void clear_certificates()

@@ -47,12 +47,12 @@ int uninstall_widget(const char *idaver, const char *root)
 		errno = EINVAL;
 		return -1;
 	}
-	id = strndupa(idaver, at - idaver);
+	id = strndupa(idaver, (size_t)(at - idaver));
 	ver = strdupa(at + 1);
 
 	/* compute the path */
 	rc = snprintf(path, sizeof path, "%s/%s/%s", root, id, ver);
-	if (rc >= sizeof path) {
+	if (rc >= (int)sizeof path) {
 		ERROR("bad widget id '%s', too long", idaver);
 		errno = EINVAL;
 		return -1;
@@ -67,14 +67,14 @@ int uninstall_widget(const char *idaver, const char *root)
 
 	/* removes the icon of the application */
 	rc = snprintf(path, sizeof path, "%s/%s", FWK_ICON_DIR, idaver);
-	assert(rc < sizeof path);
+	assert(rc < (int)sizeof path);
 	rc = unlink(path);
 	if (rc < 0)
 		ERROR("can't removing '%s': %m", path);
 
 	/* removes the parent directory if empty */
 	rc2 = snprintf(path, sizeof path, "%s/%s", root, id);
-	assert(rc2 < sizeof path);
+	assert(rc2 < (int)sizeof path);
 	rc2 = rmdir(path);
 	if (rc < 0 && errno == ENOTEMPTY)
 		return rc;

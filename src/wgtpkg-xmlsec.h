@@ -19,5 +19,5 @@
 extern int xmlsec_init();
 extern void xmlsec_shutdown();
 extern int xmlsec_verify(xmlNodePtr node);
-extern xmlDocPtr xmlsec_create(int index, const char *key, const char **certs);
+extern xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs);
 

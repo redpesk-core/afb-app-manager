@@ -21,7 +21,7 @@
 extern int verify_digsig(struct filedesc *fdesc);
 
 /* create a digital signature */
-extern int create_digsig(int index, const char *key, const char **certs);
+extern int create_digsig(unsigned int index, const char *key, const char **certs);
 
 /* check the signatures of the current directory */
 extern int check_all_signatures();

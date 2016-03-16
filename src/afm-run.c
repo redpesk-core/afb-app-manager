@@ -634,7 +634,7 @@ int afm_run_init()
 	}
 	rc = snprintf(dir, sizeof dir, "%s/%s", passwd.pw_dir,
 							fwk_user_app_dir);
-	if (rc >= sizeof dir) {
+	if (rc >= (int)sizeof dir) {
 		ERROR("buffer overflow in user_app_dir for uid=%d",(int)me);
 		return -1;
 	}

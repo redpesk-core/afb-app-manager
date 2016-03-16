@@ -141,8 +141,8 @@ static void dump_launchers(FILE *file)
 static int next_token(struct confread *cread)
 {
 	int idx = cread->index + cread->length;
-	cread->index = idx + strspn(&cread->buffer[idx], separators);
-	cread->length = strcspn(&cread->buffer[cread->index], separators);
+	cread->index = idx + (int)strspn(&cread->buffer[idx], separators);
+	cread->length = (int)strcspn(&cread->buffer[cread->index], separators);
 	return cread->length;
 }
 
@@ -156,11 +156,11 @@ static int read_line(struct confread *cread)
 {
 	while (fgets(cread->buffer, sizeof cread->buffer, cread->file) != NULL) {
 		cread->lineno++;
-		cread->index = strspn(cread->buffer, separators);
+		cread->index = (int)strspn(cread->buffer, separators);
 		if (cread->buffer[cread->index]
 		  && cread->buffer[cread->index] != '#') {
-			cread->length = strcspn(&cread->buffer[cread->index],
-								separators);
+			cread->length = (int)strcspn(
+				&cread->buffer[cread->index], separators);
 			assert(cread->length > 0);
 			return cread->length;
 		}
@@ -183,7 +183,7 @@ static const char **read_vector(struct confread *cread)
 	int index0, length0;
 	const char **vector;
 	char *args;
-	int count, length;
+	unsigned count, length;
 
 	/* record origin */
 	index0 = cread->index;
@@ -194,7 +194,7 @@ static const char **read_vector(struct confread *cread)
 	length = 0;
 	while(cread->length) {
 		count++;
-		length += cread->length;
+		length += (unsigned)cread->length;
 		next_token(cread);
 	}
 
@@ -210,7 +210,8 @@ static const char **read_vector(struct confread *cread)
 	count = 0;
 	while(cread->length) {
 		vector[count++] = args;
-		memcpy(args, &cread->buffer[cread->index], cread->length);
+		memcpy(args, &cread->buffer[cread->index],
+						(unsigned)cread->length);
 		args += cread->length;
 		*args++ = 0;
 		next_token(cread);
@@ -247,7 +248,7 @@ static struct type_list *read_type(struct confread *cread)
 	}
 
 	/* allocate structure */
-	result = malloc(sizeof(struct type_list) + length);
+	result = malloc(sizeof(struct type_list) + (unsigned)length);
 	if (result == NULL) {
 		ERROR("%s:%d: out of memory", cread->filepath, cread->lineno);
 		errno = ENOMEM;
@@ -255,7 +256,7 @@ static struct type_list *read_type(struct confread *cread)
 	}
 
 	/* fill the structure */
-	memcpy(result->type, &cread->buffer[index], length);
+	memcpy(result->type, &cread->buffer[index], (unsigned)length);
 	result->type[length] = 0;
 	return result;
 }
@@ -531,7 +532,7 @@ static union arguments instantiate_arguments(
 	const char * const *iter;
 	const char *p, *v;
 	char *data, c, sep;
-	int n, s;
+	unsigned n, s;
 	union arguments result;
 	char port[20], width[20], height[20], readyfd[20], mini[3];
 
@@ -615,7 +616,7 @@ static union arguments instantiate_arguments(
 					if (data)
 						data = stpcpy(data, v);
 					else
-						s += strlen(v);
+						s += (unsigned)strlen(v);
 				}
 			}
 			/* terminate the argument */
@@ -891,7 +892,7 @@ int afm_launch(struct afm_launch_desc *desc, pid_t children[2], char **uri)
 	/* prepare paths */
 	rc = snprintf(datadir, sizeof datadir, "%s/%s",
 						desc->home, desc->appid);
-	if (rc < 0 || rc >= sizeof datadir) {
+	if (rc < 0 || rc >= (int)sizeof datadir) {
 		ERROR("overflow for datadir");
 		errno = EINVAL;
 		return -1;
@@ -931,7 +932,7 @@ int afm_launch_initialize()
 	if (s && s != e)
 		groupid = s; /* the original groupid is used */
 	else
-		groupid = -1;
+		groupid = (gid_t)-1;
 
 	rc = read_configuration_file(FWK_LAUNCH_CONF);
 	/* dump_launchers(stderr); */

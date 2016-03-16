@@ -73,10 +73,10 @@ static xmlNodePtr first(const char *type)
 	return next(xmlDocGetRootElement(configxml)->children, type);
 }
 
-static int scorelang(xmlNodePtr node)
+static unsigned int scorelang(xmlNodePtr node)
 {
 	char *lang = xmlNodeGetLang(node);
-	int score = wgt_locales_score(configwgt, lang);
+	unsigned int score = wgt_locales_score(configwgt, lang);
 	xmlFree(lang);
 	return score;
 }
@@ -84,7 +84,7 @@ static int scorelang(xmlNodePtr node)
 static xmlNodePtr element_based_localisation(const char *type)
 {
 	xmlNodePtr resu, elem;
-	int sr, s;
+	unsigned int sr, s;
 
 	resu = first(type);
 	if (resu) {

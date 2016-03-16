@@ -34,7 +34,7 @@
 #include "wgtpkg-workdir.h"
 #include "utils-dir.h"
 
-static const int dirmode = 0755;
+static const mode_t dirmode = 0755;
 char workdir[PATH_MAX] = { 0, };
 int workdirfd = -1;
 
@@ -116,7 +116,7 @@ int make_workdir(const char *root, const char *prefix, int reuse)
 	put_workdir(AT_FDCWD, ".", 1);
 
 	n = snprintf(workdir, sizeof workdir, "%s/%s", root, prefix);
-	if (n >= sizeof workdir) {
+	if (n >= (int)sizeof workdir) {
 		ERROR("workdir prefix too long");
 		errno = EINVAL;
 		return -1;
@@ -129,7 +129,7 @@ int make_workdir(const char *root, const char *prefix, int reuse)
 			ERROR("exhaustion of workdirs");
 			return -1;
 		}
-		l = snprintf(workdir + n, r, "%d", i);
+		l = snprintf(workdir + n, (unsigned)r, "%d", i);
 		if (l >= r) {
 			ERROR("computed workdir too long");
 			errno = EINVAL;
@@ -156,7 +156,8 @@ int make_workdir(const char *root, const char *prefix, int reuse)
 
 int move_workdir(const char *dest, int parents, int force)
 {
-	int rc, len;
+	int rc;
+	size_t len;
 	struct stat s;
 	char *copy;
 	const char *iter;
@@ -194,7 +195,7 @@ int move_workdir(const char *dest, int parents, int force)
 	} else {
 		/* check parent of dest */
 		iter = strrchr(dest, '/');
-		len = iter ? iter - dest : 0;
+		len = iter ? (size_t)(iter - dest) : 0;
 		if (len) {
 			/* is parent existing? */
 			copy = strndupa(dest, len);

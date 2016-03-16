@@ -254,7 +254,8 @@ static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
 				errno = ENAMETOOLONG;
 				return -1;
 			}
-			data->length = stpcpy(beg, entry.d_name) - data->path;
+			data->length = (int)(stpcpy(beg, entry.d_name)
+								- data->path);
 			/* call the function */
 			rc = callto(data);
 			if (rc)
@@ -430,9 +431,9 @@ int afm_db_update_applications(struct afm_db *afdb)
 	/* for each directory of afdb */
 	for (dir = afdb->dirhead ; dir != NULL ; dir = dir->next) {
 		if (dir->type == type_root) {
-			edata.length = stpcpy(edata.path, dir->path)
-								- edata.path;
-			assert(edata.length < sizeof edata.path);
+			edata.length = (int)(stpcpy(edata.path, dir->path)
+								- edata.path);
+			assert(edata.length < (int)sizeof edata.path);
 			/* enumerate the applications */
 			rc = enumentries(&edata, enumvers);
 			if (rc)

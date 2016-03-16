@@ -114,9 +114,10 @@ int remove_directory_at(int dirfd, const char *directory, int force)
 }
 
 /* create a directory */
-int create_directory_at(int dirfd, const char *directory, int mode, int mkparents)
+int create_directory_at(int dirfd, const char *directory, mode_t mode, int mkparents)
 {
-	int rc, len, l;
+	int rc;
+	size_t len, l;
 	char *copy;
 	const char *iter;
 
@@ -126,7 +127,7 @@ int create_directory_at(int dirfd, const char *directory, int mode, int mkparent
 
 	/* check parent of dest */
 	iter = strrchr(directory, '/');
-	len = iter ? iter - directory : 0;
+	len = iter ? (size_t)(iter - directory) : 0;
 	if (!len)
 		return rc;
 	copy = strndupa(directory, len);
@@ -157,7 +158,7 @@ int create_directory_at(int dirfd, const char *directory, int mode, int mkparent
 	return mkdirat(dirfd, directory, mode);
 }
 
-int create_directory(const char *directory, int mode, int mkparents)
+int create_directory(const char *directory, mode_t mode, int mkparents)
 {
 	return create_directory_at(AT_FDCWD, directory, mode, mkparents);
 }

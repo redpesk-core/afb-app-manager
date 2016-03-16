@@ -33,7 +33,7 @@ extern int wgt_is_connected(struct wgt *wgt);
 /* management of locales */
 extern void wgt_locales_reset(struct wgt *wgt);
 extern int wgt_locales_add(struct wgt *wgt, const char *locstr);
-extern int wgt_locales_score(struct wgt *wgt, const char *lang);
+extern unsigned int wgt_locales_score(struct wgt *wgt, const char *lang);
 
 /* direct access to files */
 extern int wgt_has(struct wgt *wgt, const char *filename);

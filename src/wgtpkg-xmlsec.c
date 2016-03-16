@@ -80,7 +80,7 @@ static void *file_open_cb(const char *file)
 /* read the opened file */
 static int file_read_cb(void *context, char *buffer, int len)
 {
-	size_t r = fread(buffer, 1, len, (FILE*)context);
+	size_t r = fread(buffer, 1, (unsigned)len, (FILE*)context);
 	return r ? (int)r : feof((FILE*)context) ? 0 : - 1;
 }
 
@@ -274,7 +274,7 @@ static const struct { const char *id; const char *xml; } properties[2] = {
 /* create a signature of 'index' (0 for author, other values for distributors)
 using the private 'key' (filename) and the certificates 'certs' (filenames)
 as trusted chain */
-xmlDocPtr xmlsec_create(int index, const char *key, const char **certs)
+xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 {
 	unsigned int i, fc, mask;
 	struct filedesc *fdesc;

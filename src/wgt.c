@@ -34,7 +34,7 @@
 struct wgt {
 	int refcount;
 	int rootfd;
-	int nrlocales;
+	unsigned int nrlocales;
 	char **locales;
 };
 
@@ -262,16 +262,16 @@ int wgt_open_read(struct wgt *wgt, const char *filename)
  * Adds if needed the locale 'locstr' of 'length'
  * to the list of locales.
  */
-static int locadd(struct wgt *wgt, const char *locstr, int length)
+static int locadd(struct wgt *wgt, const char *locstr, size_t length)
 {
-	int i;
+	unsigned int i;
 	char *item, **ptr;
 
 	item = strndup(locstr, length);
 	if (item != NULL) {
 		/* normalize in lower case */
 		for (i = 0 ; item[i] ; i++)
-			item[i] = tolower(item[i]);
+			item[i] = (char)tolower(item[i]);
 
 		/* search it (no duplication) */
 		for (i = 0 ; i < wgt->nrlocales ; i++)
@@ -323,7 +323,7 @@ int wgt_locales_add(struct wgt *wgt, const char *locstr)
 		next = stop + !!*stop;
 		/* iterate variant of languages in reverse order */
 		while (locstr != stop) {
-			if (locadd(wgt, locstr, stop - locstr))
+			if (locadd(wgt, locstr, (size_t)(stop - locstr)))
 				return -1;
 			do { stop--; } while(stop > locstr && *stop != '-');
 		}
@@ -338,9 +338,9 @@ int wgt_locales_add(struct wgt *wgt, const char *locstr)
  * The lower result means the higher priority of the language.
  * The returned value of 0 is the top first priority.
  */
-int wgt_locales_score(struct wgt *wgt, const char *lang)
+unsigned int wgt_locales_score(struct wgt *wgt, const char *lang)
 {
-	int i;
+	unsigned int i;
 
 	assert(wgt);
 	if (lang)
@@ -348,7 +348,7 @@ int wgt_locales_score(struct wgt *wgt, const char *lang)
 			if (!strcasecmp(lang, wgt->locales[i]))
 				return i;
 
-	return INT_MAX;
+	return UINT_MAX;
 }
 
 /*
@@ -361,7 +361,7 @@ int wgt_locales_score(struct wgt *wgt, const char *lang)
  */
 static const char *localize(struct wgt *wgt, const char *filename, char path[PATH_MAX])
 {
-	int i;
+	unsigned int i;
 
 	/* get the normalized name */
 	filename = normalsubpath(filename);

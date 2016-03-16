@@ -26,20 +26,20 @@
 static char tob64(char x)
 {
 	if (x < 26)
-		return 'A' + x;
+		return (char)('A' + x);
 	if (x < 52)
-		return 'a' + x - 26;
+		return (char)('a' + x - 26);
 	if (x < 62)
-		return '0' + x - 52;
+		return (char)('0' + x - 52);
 	return x == 62 ? '+' : '/';
 }
 
-char *base64encw(const char *buffer, int length, int width)
+char *base64encw(const char *buffer, size_t length, unsigned width)
 {
-	int remain, in, out;
+	size_t remain, in, out;
 	char *result;
 
-	if (width == 0 || width % 4) {
+	if (width == 0 || (width & 3) != 0) {
 		ERROR("bad width in base64enc");
 		return NULL;
 	}
@@ -54,8 +54,10 @@ char *base64encw(const char *buffer, int length, int width)
 		if (out % (width + 1) == width)
 			result[out++] = '\n'; 
 		result[out] = tob64((buffer[in] >> 2) & '\x3f');
-		result[out+1] = tob64(((buffer[in] << 4) & '\x30') | ((buffer[in+1] >> 4) & '\x0f'));
-		result[out+2] = tob64(((buffer[in+1] << 2) & '\x3c') | ((buffer[in+2] >> 6) & '\x03'));
+		result[out+1] = tob64((char)(((buffer[in] << 4) & '\x30')
+					| ((buffer[in+1] >> 4) & '\x0f')));
+		result[out+2] = tob64((char)(((buffer[in+1] << 2) & '\x3c')
+					| ((buffer[in+2] >> 6) & '\x03')));
 		result[out+3] = tob64(buffer[in+2] & '\x3f');
 		remain -= 3;
 		in += 3;
@@ -69,7 +71,8 @@ char *base64encw(const char *buffer, int length, int width)
 			result[out+1] = tob64((buffer[in] << 4) & '\x30');
 			result[out+2] = '=';
 		} else {
-			result[out+1] = tob64(((buffer[in] << 4) & '\x30') | ((buffer[in+1] >> 4) & '\x0f'));
+			result[out+1] = tob64((char)(((buffer[in] << 4) & '\x30')
+						| ((buffer[in+1] >> 4) & '\x0f')));
 			result[out+2] = tob64((buffer[in+1] << 2) & '\x3c');
 		}
 		result[out+3] = '=';
@@ -79,7 +82,7 @@ char *base64encw(const char *buffer, int length, int width)
 	return result;
 }
 
-char *base64enc(const char *buffer, int length)
+char *base64enc(const char *buffer, size_t length)
 {
 	return base64encw(buffer, length, 76);
 }
@@ -87,23 +90,24 @@ char *base64enc(const char *buffer, int length)
 static char fromb64(char x)
 {
 	if ('A' <= x && x <= 'Z')
-		return x - 'A';
+		return (char)(x - 'A');
 	if ('a' <= x && x <= 'z')
-		return x - 'a' + 26;
+		return (char)(x - 'a' + 26);
 	if ('0' <= x && x <= '9')
-		return x - '0' + 52;
+		return (char)(x - '0' + 52);
 	if (x == '+')
-		return 62;
+		return (char)62;
 	if (x == '/')
-		return 63;
+		return (char)63;
 	if (x == '=')
 		return '@';
 	return 'E';
 }
 
-int base64dec(const char *buffer, char **output)
+ssize_t base64dec(const char *buffer, char **output)
 {
-	int len, in, out;
+	size_t len, in;
+	ssize_t out;
 	char *result;
 	unsigned char x0, x1, x2, x3;
 
@@ -113,7 +117,8 @@ int base64dec(const char *buffer, char **output)
 		ERROR("malloc failed in base64dec");
 		return -1;
 	}
-	in = out = 0;
+	in = 0;
+	out = 0;
 	while (buffer[in] == '\r' || buffer[in] == '\n')
 		in++;
 	while (buffer[in]) {
@@ -145,9 +150,14 @@ int base64dec(const char *buffer, char **output)
 		if (x3 != '@')
 			out += 3;
 		else if (!buffer[in])
-			out += 1 + (x2 != '@');
+			out += 1 + (unsigned)(x2 != '@');
 		else {
 			ERROR("unexpected continuation in base64dec");
+			free(result);
+			return -1;
+		}
+		if (out < 0) {
+			ERROR("output too big in base64dec");
 			free(result);
 			return -1;
 		}

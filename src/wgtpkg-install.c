@@ -121,7 +121,7 @@ static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 	int rc;
 
 	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->ver);
-	if (rc >= sizeof newdir) {
+	if (rc >= (int)sizeof newdir) {
 		ERROR("path to long in move_widget");
 		errno = EINVAL;
 		return -1;
@@ -138,14 +138,14 @@ static int install_icon(const struct wgt_desc *desc)
 
 	create_directory(FWK_ICON_DIR, 0755, 1);
 	rc = snprintf(link, sizeof link, "%s/%s", FWK_ICON_DIR, desc->idaver);
-	if (rc >= sizeof link) {
+	if (rc >= (int)sizeof link) {
 		ERROR("link to long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
 
 	rc = snprintf(target, sizeof target, "%s/%s", workdir, desc->icons->src);
-	if (rc >= sizeof target) {
+	if (rc >= (int)sizeof target) {
 		ERROR("target to long in install_icon");
 		errno = EINVAL;
 		return -1;
@@ -162,8 +162,8 @@ static int install_security(const struct wgt_desc *desc)
 {
 	char path[PATH_MAX], *head;
 	const char *icon, *perm;
-	int rc, len, lic, lf;
-	unsigned int i, n;
+	int rc;
+	unsigned int i, n, len, lic, lf;
 	struct filedesc *f;
 
 	rc = secmgr_init(desc->id);
@@ -176,8 +176,8 @@ static int install_security(const struct wgt_desc *desc)
 
 	/* instal the files */
 	head = stpcpy(path, workdir);
-	assert(sizeof path > (head - path));
-	len = (int)(sizeof path - (head - path));
+	assert(head < path + sizeof path);
+	len = (unsigned)((path + sizeof path) - head);
 	if (!len) {
 		ERROR("root path too long in install_security");
 		errno = ENAMETOOLONG;
@@ -186,12 +186,12 @@ static int install_security(const struct wgt_desc *desc)
 	len--;
 	*head++ = '/';
 	icon = desc->icons->src;
-	lic = (int)strlen(icon);
+	lic = (unsigned)strlen(icon);
 	n = file_count();
 	i = 0;
 	while(i < n) {
 		f = file_of_index(i++);
-		lf = (int)strlen(f->name);
+		lf = (unsigned)strlen(f->name);
 		if (lf >= len) {
 			ERROR("path too long in install_security");
 			errno = ENAMETOOLONG;

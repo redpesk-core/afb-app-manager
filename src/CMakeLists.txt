@@ -55,11 +55,14 @@ endif(USE_SIMULATION)
 
 ###########################################################################
 
-add_compile_options(-Wall -Wno-pointer-sign)
-add_compile_options(-Werror=maybe-uninitialized -Werror=implicit-function-declaration)
+add_compile_options(-Wall -Wextra -Wconversion)
+add_compile_options(-Wno-unused-parameter) # frankly not using a parameter does it care?
+add_compile_options(-Werror=maybe-uninitialized)
+add_compile_options(-Werror=implicit-function-declaration)
+add_compile_options(-Wno-pointer-sign) # for XmlChar handling
 add_compile_options(-ffunction-sections -fdata-sections)
-add_compile_options(-fPIC)
 add_compile_options(-Wl,--gc-sections)
+add_compile_options(-fPIC)
 
 set(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
 set(CMAKE_C_FLAGS_DEBUG        "-g -O0 -ggdb -Wp,-U_FORTIFY_SOURCE")

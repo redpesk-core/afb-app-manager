@@ -68,7 +68,7 @@ static int is_valid_filename(const char *filename)
 	return !lastsp;
 }
 
-static int create_directory(char *file, int mode)
+static int create_directory(char *file, mode_t mode)
 {
 	int rc;
 	char *last = strrchr(file, '/');
@@ -91,7 +91,7 @@ static int create_directory(char *file, int mode)
 	return rc;
 }
 
-static int create_file(char *file, int fmode, int dmode)
+static int create_file(char *file, int fmode, mode_t dmode)
 {
 	int fd = openat(workdirfd, file, O_CREAT|O_WRONLY|O_TRUNC, fmode);
 	if (fd < 0 && errno == ENOENT) {
@@ -107,9 +107,11 @@ static int create_file(char *file, int fmode, int dmode)
 int zread(const char *zipfile, unsigned long long maxsize)
 {
 	struct filedesc *fdesc;
-	int err, fd, len;
+	int err, fd;
+	size_t len;
 	struct zip *zip;
 	zip_int64_t z64;
+	zip_uint64_t uz64;
 	unsigned int count, index;
 	struct zip_file *zfile;
 	struct zip_stat zstat;
@@ -195,19 +197,19 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			if (fd < 0)
 				goto errorz;
 			/* extract */
-			z64 = zstat.size;
-			while (z64) {
+			uz64 = zstat.size;
+			while (uz64) {
 				sizr = zip_fread(zfile, buffer, sizeof buffer);
 				if (sizr < 0) {
 					ERROR("error while reading %s in %s", zstat.name, zipfile);
 					goto errorzf;
 				}
-				sizw = write(fd, buffer, sizr);
+				sizw = write(fd, buffer, (size_t)sizr);
 				if (sizw < 0) {
 					ERROR("error while writing %s", zstat.name);
 					goto errorzf;
 				}
-				z64 -= sizw;
+				uz64 -= (size_t)sizw;
 			}
 			close(fd);
 			zip_fclose(zfile);
@@ -232,9 +234,10 @@ struct zws {
 	char buffer[32768];
 };
 
-static int zwr(struct zws *zws, int offset)
+static int zwr(struct zws *zws, size_t offset)
 {
-	int len, err, fd;
+	int err, fd;
+	size_t len;
 	DIR *dir;
 	struct dirent *ent;
 	zip_int64_t z64;
@@ -243,13 +246,13 @@ static int zwr(struct zws *zws, int offset)
 
 	fd = openat(workdirfd, offset ? zws->name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
-		ERROR("opendir %.*s failed in zwr", offset, zws->name);
+		ERROR("opendir %.*s failed in zwr", (int)offset, zws->name);
 		return -1;
 	}
 	dir = fdopendir(fd);
 	if (!dir) {
 		close(fd);
-		ERROR("opendir %.*s failed in zwr", offset, zws->name);
+		ERROR("opendir %.*s failed in zwr", (int)offset, zws->name);
 		return -1;
 	}
 

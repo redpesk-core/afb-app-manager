@@ -86,7 +86,7 @@ struct jbus {
 	char *name;
 	int watchnr;
 	int watchfd;
-	int watchflags;
+	short watchflags;
 };
 
 /*********************** STATIC COMMON METHODS *****************/
@@ -407,12 +407,11 @@ static DBusHandlerResult incoming(DBusConnection *connection, DBusMessage *messa
 static void watchset(DBusWatch *watch, struct jbus *jbus)
 {
 	unsigned int flags;
-	int wf, e;
+	short wf;
 
 	flags = dbus_watch_get_flags(watch);
-	e = dbus_watch_get_enabled(watch);
 	wf = jbus->watchflags;
-	if (e) {
+	if (dbus_watch_get_enabled(watch)) {
 		if (flags & DBUS_WATCH_READABLE)
 			wf |= POLLIN;
 		if (flags & DBUS_WATCH_WRITABLE)
@@ -721,7 +720,7 @@ int jbus_read_write_dispatch_multiple(struct jbus **jbuses, int njbuses, int tom
 		errno = EINVAL;
 		return -1;
 	}
-	fds = alloca(njbuses * sizeof * fds);
+	fds = alloca((unsigned)njbuses * sizeof * fds);
 	assert(fds != NULL);
 
 	r = jbus_dispatch_multiple(jbuses, njbuses, maxcount);
@@ -729,7 +728,7 @@ int jbus_read_write_dispatch_multiple(struct jbus **jbuses, int njbuses, int tom
 		return r;
 	n = jbus_fill_pollfds(jbuses, njbuses, fds);
 	for(;;) {
-		s = poll(fds, n, toms);
+		s = poll(fds, (nfds_t)n, toms);
 		if (s >= 0)
 			break;
 		if (errno != EINTR)

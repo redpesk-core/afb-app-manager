@@ -16,12 +16,13 @@
  limitations under the License.
 */
 
+#include <sys/types.h>
 int remove_directory_content_fd(int dirfd);
 int remove_directory_content(const char *directory);
 int remove_directory_content_at(int dirfd, const char *directory);
 int remove_directory(const char *directory, int force);
 int remove_directory_at(int dirfd, const char *directory, int force);
 
-int create_directory_at(int dirfd, const char *directory, int mode, int mkparents);
-int create_directory(const char *directory, int mode, int mkparents);
+int create_directory_at(int dirfd, const char *directory, mode_t mode, int mkparents);
+int create_directory(const char *directory, mode_t mode, int mkparents);
 

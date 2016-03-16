@@ -357,11 +357,12 @@ int check_all_signatures()
 /* create a signature of 'index' (0 for author, other values for distributors)
 using the private 'key' (filename) and the certificates 'certs' (filenames)
 as trusted chain */
-int create_digsig(int index, const char *key, const char **certs)
+int create_digsig(unsigned int index, const char *key, const char **certs)
 {
 	struct filedesc *fdesc;
 	xmlDocPtr doc;
-	int rc, len, fd;
+	int rc, fd;
+	long len;
 	xmlSaveCtxtPtr ctx;
 
 	rc = -1;

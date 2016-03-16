@@ -77,7 +77,7 @@ static xmlChar *optcontent(xmlNodePtr node)
 
 static char *mkver(char *version)
 {
-	int lver;
+	unsigned int lver;
 	char c, *r;
 	if (version) {
 		c = version[lver = 0];
@@ -100,7 +100,7 @@ static char *mkver(char *version)
 
 static char *mkidaver(char *id, char *ver)
 {
-	int lid, lver;
+	size_t lid, lver;
 	char *r;
 	if (id && ver) {
 		lid = strlen(id);

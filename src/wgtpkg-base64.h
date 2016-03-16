@@ -17,8 +17,8 @@
 */
 
 
-extern char *base64encw(const char *buffer, int length, int width);
-extern char *base64enc(const char *buffer, int length);
-extern int base64dec(const char *buffer, char **output);
+extern char *base64encw(const char *buffer, size_t length, unsigned width);
+extern char *base64enc(const char *buffer, size_t length);
+extern ssize_t base64dec(const char *buffer, char **output);
 extern int base64eq(const char *buf1, const char *buf2);
 
