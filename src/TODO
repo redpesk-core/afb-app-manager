@@ -19,3 +19,7 @@ List of things to do for the code
 - allow to control the environment setting of the launched instances
 
 - send the SIGKILL after a short time if SIGTERM has no effect
+
+- handle permission list at install
+
+- allows to check the requested permissions before to install it

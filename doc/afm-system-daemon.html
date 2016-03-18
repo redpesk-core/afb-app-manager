@@ -8,72 +8,224 @@
 <h1>The afm-system-daemon</h1>
 
 <pre><code>version: 1
-Date:    14 March 2016
+Date:    15 March 2016
 Author:  José Bollo
 </code></pre>
 
-<a name="Organisation.of.directory.of.applications"></a>
-<h1>Organisation of directory of applications</h1>
+<a name="Foreword"></a>
+<h2>Foreword</h2>
 
-<p>The main path for applivcations are: APPDIR/PKGID/VER.</p>
+<p>This document describes what we intend to do. It may happen that our
+current implementation and the content of this document differ.</p>
 
-<p>Where:</p>
+<p>In case of differences, it is assumed that this document is right
+and the implementation is wrong.</p>
+
+<a name="Introduction"></a>
+<h2>Introduction</h2>
+
+<p>The daemon <strong>afm-system-daemon</strong> is in charge of installing
+applications on the system. Its main tasks are:</p>
 
 <ul>
-<li>APPDIR is as defined above</li>
-<li>PKGID is a directory whose name is the package identifier</li>
-<li>VER is the version of the package MAJOR.MINOR</li>
+<li><p>installs the applications and setup the security framework
+to include it</p></li>
+<li><p>uninstall the applications</p></li>
 </ul>
 
 
-<p>This organisation has the advantage to allow several versions to leave together.
-This is needed for some good reasons (rolling back) and also for less good reasons (user habits).</p>
+<p>The <strong>afm-system-daemon</strong> takes its orders from the system
+instance of D-Bus.</p>
 
-<a name="Identity.of.installed.files"></a>
-<h2>Identity of installed files</h2>
+<p>The figure below summarizes the situation of the
+<strong>afm-system-daemon</strong> in the system.</p>
 
-<p>All the files are installed as the user &ldquo;userapp&rdquo; and group &ldquo;userapp&rdquo;.
-All files have rw(x) for user and r-(x) for group and others.</p>
-
-<p>This allows any user to read the files.</p>
-
-<a name="Labelling.the.directories.of.applications"></a>
-<h2>Labelling the directories of applications</h2>
-
-<a name="Organisation.of.data"></a>
-<h1>Organisation of data</h1>
-
-<p>The data of a user are in its directory and are labelled using the labels of the application</p>
-
-<a name="Setting.Smack.rules.for.the.application"></a>
-<h1>Setting Smack rules for the application</h1>
-
-<p>For Tizen, the following rules are set by the security manager for each application.</p>
-
-<pre><code>System ~APP~             rwx
-System ~PKG~             rwxat
-System ~PKG~::RO         rwxat
-~APP~  System            wx
-~APP~  System::Shared    rxl
-~APP~  System::Run       rwxat
-~APP~  System::Log       rwxa
-~APP~  _                 l
-User   ~APP~             rwx
-User   ~PKG~             rwxat
-User   ~PKG~::RO         rwxat
-~APP~  User              wx
-~APP~  User::Home        rxl
-~APP~  User::App::Shared rwxat
-~APP~  ~PKG~             rwxat
-~APP~  ~PKG~::RO         rxl
+<pre><code>+------------------------------------------------------------+
+|                          User                              |
+|                                                            |
+|     +-------------------------------------------------+    |
+|     |                                                 |    |
+|     |                  afm-user-daemon                |    |
+|     |                                                 |    |
+|     +----------+----------------------+----------+----+    |
+|                |                      |          :         |
+|                |                      |          :         |
+:================|======================|==========:=========:
+|                |                      |          :         |
+|     +----------+----------+     +-----+-----+    :         |
+|     |   D-Bus   system    +-----+  CYNARA   |    :         |
+|     +----------+----------+     +-----+-----+    :         |
+|                |                      |          :         |
+|     +----------+---------+    +-------+----------+----+    |
+|     | afm-system-daemon  +----+   SECURITY-MANAGER    |    |
+|     +--------------------+    +-----------------------+    |
+|                                                            |
+|                          System                            |
++------------------------------------------------------------+
 </code></pre>
 
-<p>Here, ~PKG~ is the identifier of the package and ~APP~ is the identifier of the application.</p>
+<a name="Starting..strong.afm-system-daemon..strong."></a>
+<h2>Starting <strong>afm-system-daemon</strong></h2>
 
-<a name="What.user.can.run.an.application."></a>
-<h1>What user can run an application?</h1>
+<p><strong>afm-system-daemon</strong> is launched as a <strong>systemd</strong> service
+attached to system. Normally, the service file is
+located at /lib/systemd/system/afm-system-daemon.service.</p>
 
-<p>Not all user are able to run all applications.
-How to manage that?</p>
+<p>The options for launching <strong>afm-system-daemon</strong> are:</p>
+
+<pre><code>-r
+--root directory
+
+     Set the root application directory.
+
+     Note that the default root directory is defined
+     to be /usr/share/afm/applications (may change).
+
+-d
+--daemon
+
+     Daemonizes the process. It is not needed by sytemd.
+
+-q
+--quiet
+
+     Reduces the verbosity (can be repeated).
+
+-v
+--verbose
+
+     Increases the verbosity (can be repeated).
+
+-h
+--help
+
+     Prints a short help.
+</code></pre>
+
+<a name="The.D-Bus.interface"></a>
+<h2>The D-Bus interface</h2>
+
+<a name="Overview.of.the.dbus.interface"></a>
+<h3>Overview of the dbus interface</h3>
+
+<p><strong><em>afm-system-daemon</em></strong> takes its orders from the session instance
+of D-Bus. The use of D-Bus is great because it allows to implement
+discovery and signaling.</p>
+
+<p>The <strong>afm-system-daemon</strong> is listening with the destination name
+<strong><em>org.AGL.afm.system</em></strong> at the object of path <strong><em>/org/AGL/afm/system</em></strong>
+on the interface <strong><em>org.AGL.afm.system</em></strong> for the below detailed
+members <strong><em>install</em></strong> and <strong><em>uninstall</em></strong>.</p>
+
+<p>D-Bus is mainly used for signaling and discovery. Its optimized
+typed protocol is not used except for transmitting only one string
+in both directions.</p>
+
+<p>The client and the service are using JSON serialisation to
+exchange data.</p>
+
+<p>The D-Bus interface is defined by:</p>
+
+<ul>
+<li><p>DESTINATION: <strong>org.AGL.afm.system</strong></p></li>
+<li><p>PATH: <strong>/org/AGL/afm/system</strong></p></li>
+<li><p>INTERFACE: <strong>org.AGL.afm.system</strong></p></li>
+</ul>
+
+
+<p>The signature of any member of the interface is <strong><em>string -> string</em></strong>
+for <strong><em>JSON -> JSON</em></strong>.</p>
+
+<p>This is the normal case. In case of error, the current implmentation
+returns a dbus error that is a string.</p>
+
+<p>Here is an example that use <em>dbus-send</em> to query data on
+installed applications.</p>
+
+<pre><code>dbus-send --session --print-reply \
+    --dest=org.AGL.afm.system \
+    /org/AGL/afm/system \
+    org.AGL.afm.system.install 'string:"/tmp/appli.wgt"'
+</code></pre>
+
+<a name="The.protocol.over.D-Bus"></a>
+<h3>The protocol over D-Bus</h3>
+
+<hr />
+
+<a name="Method.org.AGL.afm.system.install"></a>
+<h4>Method org.AGL.afm.system.install</h4>
+
+<p><strong>Description</strong>: Install an application from its widget file.</p>
+
+<p>If an application of the same <em>id</em> and <em>version</em> exists, it is not
+reinstalled except if <em>force=true</em>.</p>
+
+<p>Applications are installed in the subdirectories of the common directory
+of applications.
+If <em>root</em> is specified, the application is installed under the
+sub-directories of the <em>root</em> defined.</p>
+
+<p>Note that this methods is a simple accessor to the method
+<strong><em>org.AGL.afm.system.install</em></strong> of <strong><em>afm-system-daemon</em></strong>.</p>
+
+<p>After the installation and before returning to the sender,
+<strong><em>afm-system-daemon</em></strong> sends the signal <strong><em>org.AGL.afm.system.changed</em></strong>.</p>
+
+<p><strong>Input</strong>: The <em>path</em> of the widget file to install and, optionaly,
+a flag to <em>force</em> reinstallation, and, optionaly, a <em>root</em> directory.</p>
+
+<p>Either just a string being the absolute path of the widget file:</p>
+
+<pre><code>"/a/path/driving/to/the/widget"
+</code></pre>
+
+<p>Or an object:</p>
+
+<pre><code>{
+  "wgt": "/a/path/to/the/widget",
+  "force": false,
+  "root": "/a/path/to/the/root"
+}
+</code></pre>
+
+<p>&ldquo;wgt&rdquo; and &ldquo;root&rdquo; must be absolute paths.</p>
+
+<p><strong>output</strong>: An object with the field &ldquo;added&rdquo; being the string for
+the id of the added application.</p>
+
+<pre><code>{"added":"appli@x.y"}
+</code></pre>
+
+<hr />
+
+<a name="Method.org.AGL.afm.system.uninstall"></a>
+<h4>Method org.AGL.afm.system.uninstall</h4>
+
+<p><strong>Description</strong>: Uninstall an application from its id.</p>
+
+<p>Note that this methods is a simple accessor to the method
+<strong><em>org.AGL.afm.system.uninstall</em></strong> of <strong><em>afm-system-daemon</em></strong>.</p>
+
+<p>After the uninstallation and before returning to the sender,
+<strong><em>afm-system-daemon</em></strong> sends the signal <strong><em>org.AGL.afm.system.changed</em></strong>.</p>
+
+<p><strong>Input</strong>: the <em>id</em> of the application and, otpionaly, the path to
+<em>root</em> of the application.</p>
+
+<p>Either a string:</p>
+
+<pre><code>"appli@x.y"
+</code></pre>
+
+<p>Or an object:</p>
+
+<pre><code>{
+  "id": "appli@x.y",
+  "root": "/a/path/to/the/root"
+}
+</code></pre>
+
+<p><strong>output</strong>: the value &lsquo;true&rsquo;.</p>
 </body>
 </html>

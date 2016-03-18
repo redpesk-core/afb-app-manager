@@ -8,7 +8,7 @@
 <h1>The afm-user-daemon</h1>
 
 <pre><code>version: 1
-Date:    14 March 2016
+Date:    15 March 2016
 Author:  José Bollo
 </code></pre>
 
@@ -152,6 +152,8 @@ located at /usr/lib/systemd/user/afm-user-daemon.service.</p>
      Includes the given application directory to
      the database base of applications.
 
+     Can be repeated.
+
 -r
 --root directory
 
@@ -161,6 +163,8 @@ located at /usr/lib/systemd/user/afm-user-daemon.service.</p>
      Note that the default root directory for
      applications is always added. It is defined
      to be /usr/share/afm/applications (may change).
+
+     Can be repeated.
 
 -m
 --mode (local|remote)
@@ -601,7 +605,7 @@ a flag to <em>force</em> reinstallation, and, optionaly, a <em>root</em> directo
 <p><strong>output</strong>: An object with the field &ldquo;added&rdquo; being the string for
 the id of the added application.</p>
 
-<pre><code>{"added":"appli@x.y" }
+<pre><code>{"added":"appli@x.y"}
 </code></pre>
 
 <hr />
@@ -728,50 +732,5 @@ or &ldquo;stopped&rdquo;).</p>
 
 <p><strong>output</strong>: An array of states, one per running instance, as returned by
 the methodd <strong><em>org.AGL.afm.user.state</em></strong>.</p>
-
-<a name="The.afb.plugin"></a>
-<h2>The afb plugin</h2>
-
-<p>The base of the path is FWKAPI = /api/fwk</p>
-
-<p>request FWKAPI/runnables
-  &ndash; get the list of applications
-  => [ APPDESC&hellip; ]</p>
-
-<p>request FWKAPI/detail?id=APPID
-  subject to languages tuning
-  => { &ldquo;id&rdquo;: &ldquo;APPID&rdquo;, &ldquo;name&rdquo;: &ldquo;name&rdquo;, &ldquo;description&rdquo;: &ldquo;description&rdquo;, &ldquo;license&rdquo;: &ldquo;license&rdquo;, &ldquo;author&rdquo;: &ldquo;author&rdquo; }</p>
-
-<p>/<em>
-request FWKAPI/icon?id=APPID
-  subject to languages tuning
-  => the icon image
-</em>/</p>
-
-<p>request FWKAPI/run?id=APPID
-  => { &ldquo;status&rdquo;: &ldquo;done/error&rdquo;, &ldquo;data&rdquo;: { &ldquo;runid&rdquo;: &ldquo;RUNID&rdquo; } }</p>
-
-<p>request FWKAPI/running
-  => [ { &ldquo;id&rdquo;: &ldquo;RUNID&rdquo;, &ldquo;appid&rdquo;: &ldquo;APPID&rdquo;, &ldquo;state&rdquo;: &hellip; }&hellip; ]</p>
-
-<p>request FWKAPI/state?id=RUNID
-  => { &ldquo;id&rdquo;: &ldquo;RUNID&rdquo;, &ldquo;appid&rdquo;: &ldquo;APPID&rdquo;, &ldquo;state&rdquo;: &hellip; }</p>
-
-<p>request FWKAPI/stop?id=RUNID
-  => { &ldquo;error&rdquo;: &ldquo;message&rdquo; ou &ldquo;done&rdquo;: &ldquo;RUNID&rdquo; }</p>
-
-<p>request FWKAPI/suspend?id=RUNID
-  => { &ldquo;error&rdquo;: &ldquo;message&rdquo; ou &ldquo;done&rdquo;: &ldquo;RUNID&rdquo; }</p>
-
-<p>request FWKAPI/resume?id=RUNID
-  => { &ldquo;error&rdquo;: &ldquo;message&rdquo; ou &ldquo;done&rdquo;: &ldquo;RUNID&rdquo; }</p>
-
-<p>/*
-request FWKAPI/features
-  => returns the features of the current application</p>
-
-<p>request FWKAPI/preferences
-  => returns the features of the current application
-*/</p>
 </body>
 </html>

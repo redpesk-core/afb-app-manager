@@ -3,7 +3,7 @@ The afm-user-daemon
 ===================
 
     version: 1
-    Date:    14 March 2016
+    Date:    15 March 2016
     Author:  José Bollo
 
 
@@ -146,6 +146,8 @@ The options for launching **afm-user-daemon** are:
          Includes the given application directory to
          the database base of applications.
     
+         Can be repeated.
+    
     -r
     --root directory
     
@@ -155,6 +157,8 @@ The options for launching **afm-user-daemon** are:
          Note that the default root directory for
          applications is always added. It is defined
          to be /usr/share/afm/applications (may change).
+    
+         Can be repeated.
     
     -m
     --mode (local|remote)
@@ -591,7 +595,7 @@ Or an object:
 **output**: An object with the field "added" being the string for
 the id of the added application.
 
-    {"added":"appli@x.y" }
+    {"added":"appli@x.y"}
 
 ---
 
@@ -706,53 +710,4 @@ Example of returned state:
 
 **output**: An array of states, one per running instance, as returned by
 the methodd ***org.AGL.afm.user.state***.
-
-
-The afb plugin
---------------
-
-The base of the path is FWKAPI = /api/fwk
-
-
-request FWKAPI/runnables
-  -- get the list of applications
-  => [ APPDESC... ]
-
-request FWKAPI/detail?id=APPID
-  subject to languages tuning
-  => { "id": "APPID", "name": "name", "description": "description", "license": "license", "author": "author" }
-
-/*
-request FWKAPI/icon?id=APPID
-  subject to languages tuning
-  => the icon image
-*/
-
-request FWKAPI/run?id=APPID
-  => { "status": "done/error", "data": { "runid": "RUNID" } }
-
-request FWKAPI/running
-  => [ { "id": "RUNID", "appid": "APPID", "state": ... }... ]
-
-request FWKAPI/state?id=RUNID
-  => { "id": "RUNID", "appid": "APPID", "state": ... }
-
-request FWKAPI/stop?id=RUNID
-  => { "error": "message" ou "done": "RUNID" }
-
-request FWKAPI/suspend?id=RUNID
-  => { "error": "message" ou "done": "RUNID" }
-
-request FWKAPI/resume?id=RUNID
-  => { "error": "message" ou "done": "RUNID" }
-
-/*
-request FWKAPI/features
-  => returns the features of the current application
-
-request FWKAPI/preferences
-  => returns the features of the current application
-*/
-
-
 

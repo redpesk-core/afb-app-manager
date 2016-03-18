@@ -3,7 +3,7 @@ AGL framework, overview of the proposal of IoT.bzh
 ==================================================
 
     version: 1
-    Date:    14 March 2016
+    Date:    15 March 2016
     Author:  José Bollo
 
 Foreword
@@ -278,16 +278,6 @@ This model allows the distribution of HTML, QML and binary applications.
 The management of signatures of the widget packages 
 This basis is not meant as being rigid and it can be extended in the
 futur to include for example incremental delivery.
-
-
-Comparison to other frameworks
-------------------------------
-
-### Tizen framework
-
-### xdg-app
-
-### ostro
 
 
 
