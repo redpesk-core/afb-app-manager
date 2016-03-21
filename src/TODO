@@ -23,3 +23,8 @@ List of things to do for the code
 - handle permission list at install
 
 - allows to check the requested permissions before to install it
+
+- improve error reporting through dbus in utils-jbus
+
+- groups the dbus connections to reduce the count of pollfd and watch calback
+  (in utils-jbus)

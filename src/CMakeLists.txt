@@ -63,6 +63,7 @@ add_compile_options(-Wno-pointer-sign) # for XmlChar handling
 add_compile_options(-ffunction-sections -fdata-sections)
 add_compile_options(-Wl,--gc-sections)
 add_compile_options(-fPIC)
+#add_definitions(-DNDEBUG)
 
 set(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
 set(CMAKE_C_FLAGS_DEBUG        "-g -O0 -ggdb -Wp,-U_FORTIFY_SOURCE")
