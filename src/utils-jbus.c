@@ -719,9 +719,20 @@ void jbus_addref(struct jbus *jbus)
 void jbus_unref(struct jbus *jbus)
 {
 	struct jservice *srv;
+	struct jsignal *sig;
+	struct jrespw *wtr;
 	if (!--jbus->refcount) {
 		if (jbus->connection != NULL)
 			dbus_connection_unref(jbus->connection);
+		while ((wtr = jbus->waiters) != NULL) {
+			jbus->waiters = wtr->next;
+			free(wtr);
+		}
+		while ((sig = jbus->signals) != NULL) {
+			jbus->signals = sig->next;
+			free(sig->name);
+			free(sig);
+		}
 		while ((srv = jbus->services) != NULL) {
 			jbus->services = srv->next;
 			free(srv->method);
