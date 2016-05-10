@@ -22,6 +22,8 @@
 #include <getopt.h>
 #include <errno.h>
 
+#include <systemd/sd-bus.h>
+#include <systemd/sd-event.h>
 #include <json.h>
 
 #include "verbose.h"
@@ -66,7 +68,7 @@ const char error_bad_request[] = "\"bad request\"";
 const char error_not_found[] = "\"not found\"";
 const char error_cant_start[] = "\"can't start\"";
 
-static void on_install(struct jreq *jreq, struct json_object *req, void *unused)
+static void on_install(struct sd_bus_message *smsg, struct json_object *req, void *unused)
 {
 	const char *wgtfile;
 	const char *root;
@@ -89,22 +91,22 @@ static void on_install(struct jreq *jreq, struct json_object *req, void *unused)
 			break;
 		}
 	default:
-		jbus_reply_error_s(jreq, error_bad_request);
+		jbus_reply_error_s(smsg, error_bad_request);
 		return;
 	}
 
 	/* install the widget */
 	ifo = install_widget(wgtfile, root, force);
 	if (ifo == NULL)
-		jbus_reply_error_s(jreq, "\"installation failed\"");
+		jbus_reply_error_s(smsg, "\"installation failed\"");
 	else {
 		/* build the response */
 		resp = json_object_new_object();
 		if(!resp || !j_add_string(resp, "added", wgt_info_desc(ifo)->idaver))
-			jbus_reply_error_s(jreq, "\"out of memory but installed!\"");
+			jbus_reply_error_s(smsg, "\"out of memory but installed!\"");
 		else {
 			jbus_send_signal_s(jbus, "changed", "true");
-			jbus_reply_j(jreq, resp);
+			jbus_reply_j(smsg, resp);
 		}
 
 		/* clean-up */
@@ -113,7 +115,7 @@ static void on_install(struct jreq *jreq, struct json_object *req, void *unused)
 	}
 }
 
-static void on_uninstall(struct jreq *jreq, struct json_object *req, void *unused)
+static void on_uninstall(struct sd_bus_message *smsg, struct json_object *req, void *unused)
 {
 	const char *idaver;
 	const char *root;
@@ -132,17 +134,17 @@ static void on_uninstall(struct jreq *jreq, struct json_object *req, void *unuse
 			break;
 		}
 	default:
-		jbus_reply_error_s(jreq, error_bad_request);
+		jbus_reply_error_s(smsg, error_bad_request);
 		return;
 	}
 
 	/* install the widget */
 	rc = uninstall_widget(idaver, root);
 	if (rc)
-		jbus_reply_error_s(jreq, "\"uninstallation had error\"");
+		jbus_reply_error_s(smsg, "\"uninstallation had error\"");
 	else {
 		jbus_send_signal_s(jbus, "changed", "true");
-		jbus_reply_s(jreq, "true");
+		jbus_reply_s(smsg, "true");
 	}
 }
 
@@ -158,7 +160,9 @@ static int daemonize()
 
 int main(int ac, char **av)
 {
-	int i, daemon = 0;
+	int i, daemon = 0, rc;
+	struct sd_event *evloop;
+	struct sd_bus *sysbus;
 
 	LOGAUTH(appname);
 
@@ -216,8 +220,25 @@ int main(int ac, char **av)
 		return 1;
 	}
 
+	/* get systemd objects */
+	rc = sd_event_new(&evloop);
+	if (rc < 0) {
+		ERROR("can't create event loop");
+		return 1;
+	}
+	rc = sd_bus_open_system(&sysbus);
+	if (rc < 0) {
+		ERROR("can't create system bus");
+		return 1;
+	}
+	rc = sd_bus_attach_event(sysbus, evloop, 0);
+	if (rc < 0) {
+		ERROR("can't attach system bus to event loop");
+		return 1;
+	}
+
 	/* init service	*/
-	jbus = create_jbus_system(AFM_SYSTEM_DBUS_PATH);
+	jbus = create_jbus(sysbus, AFM_SYSTEM_DBUS_PATH);
 	if (!jbus) {
 		ERROR("create_jbus failed");
 		return 1;
@@ -229,11 +250,11 @@ int main(int ac, char **av)
 	}
 
 	/* start and run */
-	if (jbus_start_serving(jbus)) {
+	if (jbus_start_serving(jbus) < 0) {
 		ERROR("can't start server");
 		return 1;
 	}
-	while (!jbus_read_write_dispatch(jbus, -1));
+	for(;;)
+		sd_event_run(evloop, (uint64_t)-1);
 	return 0;
 }
-

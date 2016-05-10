@@ -25,7 +25,7 @@ pkg_check_modules(EXTRAS REQUIRED
 	openssl
 	xmlsec1 xmlsec1-openssl
 	json-c
-	dbus-1
+	libsystemd
 	)
 
 add_compile_options(${EXTRAS_CFLAGS})

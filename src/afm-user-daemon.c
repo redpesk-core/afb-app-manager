@@ -22,6 +22,8 @@
 #include <getopt.h>
 #include <string.h>
 
+#include <systemd/sd-bus.h>
+#include <systemd/sd-event.h>
 #include <json.h>
 
 #include "verbose.h"
@@ -93,20 +95,20 @@ const char error_system[] = "\"system error\"";
 
 /*
  * retrieves the 'runid' in 'obj' parameters received with the
- * request 'jreq' for the 'method'.
+ * request 'smsg' for the 'method'.
  *
  * Returns 1 in case of success.
  * Otherwise, if the 'runid' can't be retrived, an error stating
- * the bad request is replied for 'jreq' and 0 is returned.
+ * the bad request is replied for 'smsg' and 0 is returned.
  */
-static int onrunid(struct jreq *jreq, struct json_object *obj,
+static int onrunid(struct sd_bus_message *smsg, struct json_object *obj,
 						const char *method, int *runid)
 {
 	if (!j_read_integer(obj, runid)
 				&& !j_read_integer_at(obj, "runid", runid)) {
 		INFO("bad request method %s: %s", method,
 					json_object_to_json_string(obj));
-		jbus_reply_error_s(jreq, error_bad_request);
+		jbus_reply_error_s(smsg, error_bad_request);
 		return 0;
 	}
 
@@ -115,48 +117,48 @@ static int onrunid(struct jreq *jreq, struct json_object *obj,
 }
 
 /*
- * Sends the reply 'resp' to the request 'jreq' if 'resp' is not NULL.
+ * Sends the reply 'resp' to the request 'smsg' if 'resp' is not NULL.
  * Otherwise, when 'resp' is NULL replies the error string 'errstr'.
  */
-static void reply(struct jreq *jreq, struct json_object *resp,
+static void reply(struct sd_bus_message *smsg, struct json_object *resp,
 						const char *errstr)
 {
 	if (resp)
-		jbus_reply_j(jreq, resp);
+		jbus_reply_j(smsg, resp);
 	else
-		jbus_reply_error_s(jreq, errstr);
+		jbus_reply_error_s(smsg, errstr);
 }
 
 /*
- * Sends the reply "true" to the request 'jreq' if 'status' is zero.
+ * Sends the reply "true" to the request 'smsg' if 'status' is zero.
  * Otherwise, when 'status' is not zero replies the error string 'errstr'.
  */
-static void reply_status(struct jreq *jreq, int status, const char *errstr)
+static void reply_status(struct sd_bus_message *smsg, int status, const char *errstr)
 {
 	if (status)
-		jbus_reply_error_s(jreq, errstr);
+		jbus_reply_error_s(smsg, errstr);
 	else
-		jbus_reply_s(jreq, "true");
+		jbus_reply_s(smsg, "true");
 }
 
 /*
- * On query "runnables" from 'jreq' with parameters of 'obj'.
+ * On query "runnables" from 'smsg' with parameters of 'obj'.
  *
  * Nothing is expected in 'obj' that can be anything.
  */
-static void on_runnables(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_runnables(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	struct json_object *resp;
 	INFO("method runnables called");
 	resp = afm_db_application_list(afdb);
-	jbus_reply_j(jreq, resp);
+	jbus_reply_j(smsg, resp);
 	json_object_put(resp);
 }
 
 /*
- * On query "detail" from 'jreq' with parameters of 'obj'.
+ * On query "detail" from 'smsg' with parameters of 'obj'.
  */
-static void on_detail(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_detail(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	const char *appid;
 	struct json_object *resp;
@@ -168,22 +170,22 @@ static void on_detail(struct jreq *jreq, struct json_object *obj, void *unused)
 		; /* appid as obj.id string */
 	else {
 		INFO("method detail called but bad request!");
-		jbus_reply_error_s(jreq, error_bad_request);
+		jbus_reply_error_s(smsg, error_bad_request);
 		return;
 	}
 
 	/* wants details for appid */
 	INFO("method detail called for %s", appid);
 	resp = afm_db_get_application_public(afdb, appid);
-	reply(jreq, resp, error_not_found);
+	reply(smsg, resp, error_not_found);
 	json_object_put(resp);
 }
 
 
 /*
- * On query "start" from 'jreq' with parameters of 'obj'.
+ * On query "start" from 'smsg' with parameters of 'obj'.
  */
-static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	const char *appid, *modestr;
 	char *uri;
@@ -204,7 +206,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
 		}
 	}
 	if (!is_valid_launch_mode(mode)) {
-		jbus_reply_error_s(jreq, error_bad_request);
+		jbus_reply_error_s(smsg, error_bad_request);
 		return;
 	}
 
@@ -213,7 +215,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
 						name_of_launch_mode(mode));
 	appli = afm_db_get_application(afdb, appid);
 	if (appli == NULL) {
-		jbus_reply_error_s(jreq, error_not_found);
+		jbus_reply_error_s(smsg, error_not_found);
 		return;
 	}
 
@@ -221,7 +223,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
 	uri = NULL;
 	runid = afm_run_start(appli, mode, &uri);
 	if (runid <= 0) {
-		jbus_reply_error_s(jreq, error_cant_start);
+		jbus_reply_error_s(smsg, error_cant_start);
 		free(uri);
 		return;
 	}
@@ -230,7 +232,7 @@ static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
 		/* returns only the runid */
 		snprintf(runidstr, sizeof runidstr, "%d", runid);
 		runidstr[sizeof runidstr - 1] = 0;
-		jbus_reply_s(jreq, runidstr);
+		jbus_reply_s(smsg, runidstr);
 		return;
 	}
 
@@ -238,80 +240,80 @@ static void on_start(struct jreq *jreq, struct json_object *obj, void *unused)
 	resp = json_object_new_object();
 	if (resp != NULL && j_add_integer(resp, "runid", runid)
 					&& j_add_string(resp, "uri", uri))
-		jbus_reply_j(jreq, resp);
+		jbus_reply_j(smsg, resp);
 	else {
 		afm_run_stop(runid);
-		jbus_reply_error_s(jreq, error_system);
+		jbus_reply_error_s(smsg, error_system);
 	}
 	json_object_put(resp);
 	free(uri);
 }
 
 /*
- * On query "stop" from 'jreq' with parameters of 'obj'.
+ * On query "stop" from 'smsg' with parameters of 'obj'.
  */
-static void on_stop(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_stop(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	int runid, status;
-	if (onrunid(jreq, obj, "stop", &runid)) {
+	if (onrunid(smsg, obj, "stop", &runid)) {
 		status = afm_run_stop(runid);
-		reply_status(jreq, status, error_not_found);
+		reply_status(smsg, status, error_not_found);
 	}
 }
 
 /*
- * On query "continue" from 'jreq' with parameters of 'obj'.
+ * On query "continue" from 'smsg' with parameters of 'obj'.
  */
-static void on_continue(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_continue(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	int runid, status;
-	if (onrunid(jreq, obj, "continue", &runid)) {
+	if (onrunid(smsg, obj, "continue", &runid)) {
 		status = afm_run_continue(runid);
-		reply_status(jreq, status, error_not_found);
+		reply_status(smsg, status, error_not_found);
 	}
 }
 
 /*
- * On query "terminate" from 'jreq' with parameters of 'obj'.
+ * On query "terminate" from 'smsg' with parameters of 'obj'.
  */
-static void on_terminate(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_terminate(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	int runid, status;
-	if (onrunid(jreq, obj, "terminate", &runid)) {
+	if (onrunid(smsg, obj, "terminate", &runid)) {
 		status = afm_run_terminate(runid);
-		reply_status(jreq, status, error_not_found);
+		reply_status(smsg, status, error_not_found);
 	}
 }
 
 /*
- * On query "runners" from 'jreq' with parameters of 'obj'.
+ * On query "runners" from 'smsg' with parameters of 'obj'.
  */
-static void on_runners(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_runners(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	struct json_object *resp;
 	INFO("method runners called");
 	resp = afm_run_list();
-	jbus_reply_j(jreq, resp);
+	jbus_reply_j(smsg, resp);
 	json_object_put(resp);
 }
 
 /*
- * On query "state" from 'jreq' with parameters of 'obj'.
+ * On query "state" from 'smsg' with parameters of 'obj'.
  */
-static void on_state(struct jreq *jreq, struct json_object *obj, void *unused)
+static void on_state(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
 	int runid;
 	struct json_object *resp;
-	if (onrunid(jreq, obj, "state", &runid)) {
+	if (onrunid(smsg, obj, "state", &runid)) {
 		resp = afm_run_state(runid);
-		reply(jreq, resp, error_not_found);
+		reply(smsg, resp, error_not_found);
 		json_object_put(resp);
 	}
 }
 
 /*
  * Calls the system daemon to achieve application management of
- * the 'method' gotten from 'jreq' with the parameter's string 'msg'.
+ * the 'method' gotten from 'smsg' with the parameter's string 'msg'.
  *
  * The principle is very simple: call the corresponding system method
  * and reply its response to the caller.
@@ -319,36 +321,36 @@ static void on_state(struct jreq *jreq, struct json_object *obj, void *unused)
  * The request and reply is synchronous and is blocking.
  * It is possible to implment it in an asynchrounous way but it
  * would brake the common behaviour. It would be a call like
- * jbus_call_ss(system_bus, method, msg, callback, jreq)
+ * jbus_call_ss(system_bus, method, msg, callback, smsg)
  */
-static void propagate(struct jreq *jreq, const char *msg, const char *method)
+static void propagate(struct sd_bus_message *smsg, const char *msg, const char *method)
 {
 	char *reply;
 	INFO("method %s propagated with %s", method, msg);
 	reply = jbus_call_ss_sync(system_bus, method, msg);
 	if (reply) {
-		jbus_reply_s(jreq, reply);
+		jbus_reply_s(smsg, reply);
 		free(reply);
 	}
 	else
-		jbus_reply_error_s(jreq, error_system);
+		jbus_reply_error_s(smsg, error_system);
 }
 
 #if defined(EXPLICIT_CALL)
 /*
- * On query "install" from 'jreq' with parameters of 'msg'.
+ * On query "install" from 'smsg' with parameters of 'msg'.
  */
-static void on_install(struct jreq *jreq, const char *msg, void *unused)
+static void on_install(struct sd_bus_message *smsg, const char *msg, void *unused)
 {
-	return propagate(jreq, msg, "install");
+	return propagate(smsg, msg, "install");
 }
 
 /*
- * On query "uninstall" from 'jreq' with parameters of 'msg'.
+ * On query "uninstall" from 'smsg' with parameters of 'msg'.
  */
-static void on_uninstall(struct jreq *jreq, const char *msg, void *unused)
+static void on_uninstall(struct sd_bus_message *smsg, const char *msg, void *unused)
 {
-	return propagate(jreq, msg, "uninstall");
+	return propagate(smsg, msg, "uninstall");
 }
 #endif
 
@@ -382,8 +384,11 @@ static int daemonize()
  */
 int main(int ac, char **av)
 {
-	int i, daemon = 0;
+	int i, daemon = 0, rc;
 	enum afm_launch_mode mode;
+	struct sd_event *evloop;
+	struct sd_bus *sysbus, *usrbus;
+
 
 	LOGAUTH(appname);
 
@@ -475,8 +480,35 @@ int main(int ac, char **av)
 		return 1;
 	}
 
+	/* get systemd objects */
+	rc = sd_event_new(&evloop);
+	if (rc < 0) {
+		ERROR("can't create event loop");
+		return 1;
+	}
+	rc = sd_bus_open_system(&sysbus);
+	if (rc < 0) {
+		ERROR("can't create system bus");
+		return 1;
+	}
+	rc = sd_bus_attach_event(sysbus, evloop, 0);
+	if (rc < 0) {
+		ERROR("can't attach system bus to event loop");
+		return 1;
+	}
+	rc = sd_bus_open_user(&usrbus);
+	if (rc < 0) {
+		ERROR("can't create user bus");
+		return 1;
+	}
+	rc = sd_bus_attach_event(usrbus, evloop, 0);
+	if (rc < 0) {
+		ERROR("can't attach user bus to event loop");
+		return 1;
+	}
+
 	/* connects to the system bus */
-	system_bus = create_jbus_system(AFM_SYSTEM_DBUS_PATH);
+	system_bus = create_jbus(sysbus, AFM_SYSTEM_DBUS_PATH);
 	if (!system_bus) {
 		ERROR("create_jbus failed for system");
 		return 1;
@@ -489,7 +521,7 @@ int main(int ac, char **av)
 	}
 
 	/* connect to the session bus */
-	user_bus = create_jbus_session(AFM_USER_DBUS_PATH);
+	user_bus = create_jbus(usrbus, AFM_USER_DBUS_PATH);
 	if (!user_bus) {
 		ERROR("create_jbus failed");
 		return 1;
@@ -508,21 +540,22 @@ int main(int ac, char **av)
 	 || jbus_add_service_s(user_bus, "install",   on_install, NULL)
 	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall, NULL)) {
 #else
-	 || jbus_add_service_s(user_bus, "install",   (void (*)(struct jreq *, const char *, void *))propagate, "install")
-	 || jbus_add_service_s(user_bus, "uninstall", (void (*)(struct jreq *, const char *, void *))propagate, "uninstall")) {
+	 || jbus_add_service_s(user_bus, "install",   (void (*)(struct sd_bus_message *, const char *, void *))propagate, "install")
+	 || jbus_add_service_s(user_bus, "uninstall", (void (*)(struct sd_bus_message *, const char *, void *))propagate, "uninstall")) {
 #endif
 		ERROR("adding services failed");
 		return 1;
 	}
 
 	/* start servicing */
-	if (jbus_start_serving(user_bus)) {
+	if (jbus_start_serving(user_bus) < 0) {
 		ERROR("can't start server");
 		return 1;
 	}
 
 	/* run until error */
-	while (jbus_read_write_dispatch_multiple(jbuses, 2, -1, 20) >= 0);
+	for(;;)
+		sd_event_run(evloop, (uint64_t)-1);
 	return 0;
 }
 
