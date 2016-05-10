@@ -399,7 +399,7 @@ static int fill_launch_desc(struct json_object *appli,
 	desc->home = homeappdir;
 	desc->mode = mode;
 	return 0;
-};
+}
 
 /**************** report state of runner *********************/
 
