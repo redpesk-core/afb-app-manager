@@ -1,5 +1,5 @@
 /*
- Copyright 2015 IoT.bzh
+ Copyright 2016 IoT.bzh
 
  author: José Bollo <jose.bollo@iot.bzh>
 
@@ -18,12 +18,50 @@
 
 #include "verbose.h"
 
-#if !defined(NDEBUG)
+#if !defined(VERBOSE_WITH_SYSLOG)
+
+#include <stdio.h>
+#include <stdarg.h>
+
 int verbosity = 1;
-#else
+
+static const char *prefixes[] = {
+	"<0> EMERGENCY",
+	"<1> ALERT",
+	"<2> CRITICAL",
+	"<3> ERROR",
+	"<4> WARNING",
+	"<5> NOTICE",
+	"<6> INFO",
+	"<7> DEBUG"
+};
+
+void verbose(int level, const char *file, int line, const char *fmt, ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "%s: ", prefixes[level < 0 ? 0 : level > 7 ? 7 : level]);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, " [%s:%d]\n", file, line);
+}
+
+#endif
+
+#if defined(VERBOSE_WITH_SYSLOG) && !defined(NDEBUG)
+
+int verbosity = 1;
+
+#endif
+
+#if defined(VERBOSE_WITH_SYSLOG) && defined(NDEBUG)
+
 void verbose_error(const char *file, int line)
 {
 	syslog(LOG_ERR, "error file %s line %d", file, line);
 }
+
 #endif
+
 

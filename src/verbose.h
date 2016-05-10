@@ -1,5 +1,5 @@
 /*
- Copyright 2015 IoT.bzh
+ Copyright 2016 IoT.bzh
 
  author: José Bollo <jose.bollo@iot.bzh>
 
@@ -16,24 +16,47 @@
  limitations under the License.
 */
 
-#if !defined(NDEBUG)
-#include <syslog.h>
-extern int verbosity;
-#define LOGUSER(app) openlog(app,LOG_PERROR,LOG_USER)
-#define LOGAUTH(app) openlog(app,LOG_PERROR,LOG_AUTH)
-#define ERROR(...)   syslog(LOG_ERR,__VA_ARGS__)
-#define WARNING(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
-#define NOTICE(...)  do{if(verbosity)syslog(LOG_NOTICE,__VA_ARGS__);}while(0)
-#define INFO(...)    do{if(verbosity>1)syslog(LOG_INFO,__VA_ARGS__);}while(0)
-#define DEBUG(...)   do{if(verbosity>2)syslog(LOG_DEBUG,__VA_ARGS__);}while(0)
-#else
-#include <syslog.h>
-#define LOGUSER(app) openlog(app,LOG_PERROR,LOG_USER)
-#define LOGAUTH(app) openlog(app,LOG_PERROR,LOG_AUTH)
-extern void verbose_error(const char *file, int line);
-#define ERROR(...)   verbose_error(__FILE__,__LINE__)
-#define WARNING(...) do{/*nothing*/}while(0)
-#define NOTICE(...)  do{/*nothing*/}while(0)
-#define INFO(...)    do{/*nothing*/}while(0)
-#define DEBUG(...)   do{/*nothing*/}while(0)
+#pragma once
+
+#if !defined(VERBOSE_WITH_SYSLOG)
+
+  extern int verbosity;
+  extern void verbose(int level, const char *file, int line, const char *fmt, ...);
+
+# define ERROR(...)   do{if(verbosity>=0)verbose(3,__FILE__,__LINE__,__VA_ARGS__);}while(0)
+# define WARNING(...) do{if(verbosity>=1)verbose(4,__FILE__,__LINE__,__VA_ARGS__);}while(0)
+# define NOTICE(...)  do{if(verbosity>=1)verbose(5,__FILE__,__LINE__,__VA_ARGS__);}while(0)
+# define INFO(...)    do{if(verbosity>=2)verbose(6,__FILE__,__LINE__,__VA_ARGS__);}while(0)
+# define DEBUG(...)   do{if(verbosity>=3)verbose(7,__FILE__,__LINE__,__VA_ARGS__);}while(0)
+# define LOGUSER(app) NOTICE("Starting user application %s",app)
+# define LOGAUTH(app) NOTICE("Starting auth application %s",app)
+
+#else /* VERBOSE_WITH_SYSLOG is defined */
+
+# include <syslog.h>
+
+# define LOGUSER(app) openlog(app,LOG_PERROR,LOG_USER)
+# define LOGAUTH(app) openlog(app,LOG_PERROR,LOG_AUTH)
+
+# if !defined(NDEBUG)
+
+    extern int verbosity;
+#   define ERROR(...)   syslog(LOG_ERR,__VA_ARGS__)
+#   define WARNING(...) do{if(verbosity)syslog(LOG_WARNING,__VA_ARGS__);}while(0)
+#   define NOTICE(...)  do{if(verbosity)syslog(LOG_NOTICE,__VA_ARGS__);}while(0)
+#   define INFO(...)    do{if(verbosity>1)syslog(LOG_INFO,__VA_ARGS__);}while(0)
+#   define DEBUG(...)   do{if(verbosity>2)syslog(LOG_DEBUG,__VA_ARGS__);}while(0)
+
+# else
+
+    extern void verbose_error(const char *file, int line);
+#   define ERROR(...)   verbose_error(__FILE__,__LINE__)
+#   define WARNING(...) do{/*nothing*/}while(0)
+#   define NOTICE(...)  do{/*nothing*/}while(0)
+#   define INFO(...)    do{/*nothing*/}while(0)
+#   define DEBUG(...)   do{/*nothing*/}while(0)
+
+# endif
+
 #endif
+
