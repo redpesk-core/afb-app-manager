@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <json.h>
+#include <json-c/json.h>
 
 #include "utils-json.h"
 #include "wgt-info.h"

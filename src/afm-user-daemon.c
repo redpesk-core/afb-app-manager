@@ -24,7 +24,7 @@
 
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
-#include <json.h>
+#include <json-c/json.h>
 
 #include "verbose.h"
 #include "utils-jbus.h"

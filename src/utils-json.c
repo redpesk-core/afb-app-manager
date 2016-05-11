@@ -18,7 +18,7 @@
 
 #include <errno.h>
 
-#include <json.h>
+#include <json-c/json.h>
 
 #include "utils-json.h"
 

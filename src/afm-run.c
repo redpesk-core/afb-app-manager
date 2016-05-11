@@ -27,7 +27,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include <json.h>
+#include <json-c/json.h>
 
 #include "verbose.h"
 #include "utils-dir.h"
