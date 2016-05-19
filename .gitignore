@@ -1,19 +1,7 @@
 .*.swp
-afm-user-daemon
-afm-system-daemon
-wgtpkg-installer
-wgtpkg-pack
-wgtpkg-sign
-wgtpkg-info
-*.a
+build/
 
 framework.html
-
-CMakeCache.txt
-CMakeFiles/
-Makefile
-cmake_install.cmake
-install_manifest.txt
 
 ca-certificates/
 certs/
