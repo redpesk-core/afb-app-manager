@@ -143,8 +143,14 @@ install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 pkg_check_modules(afb afb-daemon)
 if(afb_FOUND)
-	MESSAGE(STATUS "Creation afm-main-plugin for AFB-DAEMON")
-	pkg_get_variable(afb_plugin_install_dir afb-daemon plugin_install_dir)
+	message(STATUS "Creation afm-main-plugin for AFB-DAEMON")
+	###############################################################
+	#pkg_get_variable(afb_plugin_install_dir afb-daemon plugin_install_dir)
+	execute_process(
+		COMMAND pkg-config --variable plugin_install_dir afb-daemon
+		OUTPUT_VARIABLE afb_plugin_install_dir OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+	###############################################################
 	add_library(afm-main-plugin MODULE afm-main-plugin.c)
 	target_compile_options(afm-main-plugin PRIVATE ${afb_CFLAGS})
 	target_include_directories(afm-main-plugin PRIVATE ${afb_INCLUDE_DIRS})
@@ -153,8 +159,8 @@ if(afb_FOUND)
 		PREFIX ""
 		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-plugin.export-map"
 	)
-	INSTALL(TARGETS afm-main-plugin LIBRARY DESTINATION ${afb_plugin_install_dir})
+	install(TARGETS afm-main-plugin LIBRARY DESTINATION ${afb_plugin_install_dir})
 else()
-	MESSAGE(STATUS "Not creating the plugin for AFB-DAEMON")
+	message(STATUS "Not creating the plugin for AFB-DAEMON")
 endif()
 
