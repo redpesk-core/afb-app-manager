@@ -18,5 +18,5 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-install(PROGRAMS afm-util DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+install(PROGRAMS afm-util DESTINATION ${CMAKE_INSTALL_BINDIR})
 

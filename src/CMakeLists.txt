@@ -18,29 +18,43 @@
 
 cmake_minimum_required(VERSION 2.8)
 
+###########################################################################
+
+link_libraries(-Wl,--as-needed -Wl,--gc-sections)
+
+add_compile_options(-Wall -Wextra -Wconversion)
+add_compile_options(-Wno-unused-parameter) # frankly not using a parameter does it care?
+add_compile_options(-Werror=maybe-uninitialized)
+add_compile_options(-Werror=implicit-function-declaration)
+add_compile_options(-Wno-pointer-sign) # for XmlChar handling
+add_compile_options(-ffunction-sections -fdata-sections)
+add_compile_options(-Wl,--as-needed -Wl,--gc-sections)
+add_compile_options(-fPIC)
+#add_definitions(-DNDEBUG)
+
+set(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
+set(CMAKE_C_FLAGS_DEBUG        "-g -O0 -ggdb -Wp,-U_FORTIFY_SOURCE")
+set(CMAKE_C_FLAGS_RELEASE      "-g -O2")
+set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
+
+###########################################################################
+
 include(FindPkgConfig)
 
-pkg_check_modules(EXTRAS REQUIRED
-	libxml-2.0
-	openssl
-	xmlsec1 xmlsec1-openssl
-	json-c
-	libsystemd
-	)
-
+pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c libsystemd)
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
 
-if(USE_LIBZIP)
-	pkg_check_modules(LIBZIP REQUIRED libzip>=0.11)
-	add_compile_options(${LIBZIP_CFLAGS})
-	include_directories(${LIBZIP_INCLUDE_DIRS})
-	link_libraries(${LIBZIP_LIBRARIES})
+pkg_check_modules(libzip libzip>=0.11)
+if(libzip_FOUND)
+	add_compile_options(${libzip_CFLAGS})
+	include_directories(${libzip_INCLUDE_DIRS})
+	link_libraries(${libzip_LIBRARIES})
 	add_definitions(-DUSE_LIBZIP=1)
-else(USE_LIBZIP)
+else()
 	add_definitions(-DUSE_LIBZIP=0)
-endif(USE_LIBZIP)
+endif()
 
 ###########################################################################
 
@@ -55,24 +69,7 @@ endif(USE_SIMULATION)
 
 ###########################################################################
 
-add_compile_options(-Wall -Wextra -Wconversion)
-add_compile_options(-Wno-unused-parameter) # frankly not using a parameter does it care?
-add_compile_options(-Werror=maybe-uninitialized)
-add_compile_options(-Werror=implicit-function-declaration)
-add_compile_options(-Wno-pointer-sign) # for XmlChar handling
-add_compile_options(-ffunction-sections -fdata-sections)
-add_compile_options(-Wl,--gc-sections)
-add_compile_options(-fPIC)
-#add_definitions(-DNDEBUG)
-
-set(CMAKE_C_FLAGS_PROFILING    "-g -O0 -pg -Wp,-U_FORTIFY_SOURCE")
-set(CMAKE_C_FLAGS_DEBUG        "-g -O0 -ggdb -Wp,-U_FORTIFY_SOURCE")
-set(CMAKE_C_FLAGS_RELEASE      "-g -O2")
-set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
-
-###########################################################################
-
-add_library(wgtpkg
+add_library(wgtpkg STATIC
 	wgtpkg-base64.c
 	wgtpkg-certs.c
 	wgtpkg-digsig.c
@@ -85,29 +82,34 @@ add_library(wgtpkg
 	wgtpkg-zip.c
 	)
 
-add_library(utils
+add_library(utils STATIC
 	utils-dir.c
 	utils-jbus.c
 	utils-json.c
 	verbose.c
 	)
 
-add_library(wgt
+add_library(wgt STATIC
 	wgt-config.c
 	wgt-info.c
 	wgt.c
 	)
 
-add_library(secwrp
+add_library(secwrp STATIC
 	secmgr-wrap.c
 	)
 
-add_library(afm
+add_library(afm STATIC
 	afm-db.c
 	afm-launch.c
 	afm-launch-mode.c
 	afm-run.c
 	)
+
+###########################################################################
+# packaging tools
+
+MESSAGE(STATUS "Creating packaging tools")
 
 add_executable(wgtpkg-sign wgtpkg-sign.c)
 target_link_libraries(wgtpkg-sign wgtpkg utils)
@@ -121,13 +123,38 @@ target_link_libraries(wgtpkg-info wgtpkg wgt utils)
 add_executable(wgtpkg-installer wgtpkg-installer.c)
 target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
 
+install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+###########################################################################
+# the daemons
+
+MESSAGE(STATUS "Creating daemons")
+
 add_executable(afm-user-daemon afm-user-daemon.c)
-target_link_libraries(afm-user-daemon afm secwrp wgt utils)
+target_link_libraries(afm-user-daemon afm secwrp wgt utils )
+install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_executable(afm-system-daemon afm-system-daemon.c)
 target_link_libraries(afm-system-daemon wgtpkg afm secwrp wgt utils)
+install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
-install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
-install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+###########################################################################
+# the plugin for afb
+
+pkg_check_modules(afb afb-daemon)
+if(afb_FOUND)
+	MESSAGE(STATUS "Creation afm-main-plugin for AFB-DAEMON")
+	pkg_get_variable(afb_plugin_install_dir afb-daemon plugin_install_dir)
+	add_library(afm-main-plugin MODULE afm-main-plugin.c)
+	target_compile_options(afm-main-plugin PRIVATE ${afb_CFLAGS})
+	target_include_directories(afm-main-plugin PRIVATE ${afb_INCLUDE_DIRS})
+	target_link_libraries(afm-main-plugin utils ${afb_LIBRARIES})
+	set_target_properties(afm-main-plugin PROPERTIES
+		PREFIX ""
+		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-plugin.export-map"
+	)
+	INSTALL(TARGETS afm-main-plugin LIBRARY DESTINATION ${afb_plugin_install_dir})
+else()
+	MESSAGE(STATUS "Not creating the plugin for AFB-DAEMON")
+endif()
 
