@@ -8,9 +8,54 @@
 <h1>The afm-user-daemon</h1>
 
 <pre><code>version: 1
-Date:    15 March 2016
+Date:    29 mai 2016
 Author:  José Bollo
 </code></pre>
+
+<p><ul>
+ <li><a href="#The.afm-user-daemon">The afm-user-daemon</a>
+ <ul>
+  <li><a href="#Foreword">Foreword</a></li>
+  <li><a href="#Introduction">Introduction</a></li>
+  <li><a href="#Tasks.of..strong.afm-user-daemon..strong.">Tasks of <strong>afm-user-daemon</strong></a>
+  <ul>
+   <li><a href="#Maintaining.list.of.applications">Maintaining list of applications</a></li>
+   <li><a href="#Launching.applications">Launching applications</a></li>
+   <li><a href="#Managing.instances.of.running.applications">Managing instances of running applications</a></li>
+   <li><a href="#Installing.and.uninstalling.applications">Installing and uninstalling applications</a></li>
+  </ul>
+  </li>
+  <li><a href="#Starting..strong.afm-user-daemon..strong.">Starting <strong>afm-user-daemon</strong></a></li>
+  <li><a href="#Configuration.of.the.launcher">Configuration of the launcher</a>
+  <ul>
+   <li><a href="#mode.local">mode local</a></li>
+   <li><a href="#mode.remote">mode remote</a></li>
+   <li><a href="#L.substitutions">%substitutions</a></li>
+  </ul>
+  </li>
+  <li><a href="#The.D-Bus.interface">The D-Bus interface</a>
+  <ul>
+   <li><a href="#Overview.of.the.dbus.interface">Overview of the dbus interface</a></li>
+   <li><a href="#Using..strong..em.afm-util..em...strong.">Using <strong><em>afm-util</em></strong></a></li>
+   <li><a href="#The.protocol.over.D-Bus">The protocol over D-Bus</a>
+   <ul>
+    <li><a href="#Method.org.AGL.afm.user.detail">Method org.AGL.afm.user.detail</a></li>
+    <li><a href="#Method.org.AGL.afm.user.runnables">Method org.AGL.afm.user.runnables</a></li>
+    <li><a href="#Method.org.AGL.afm.user.install">Method org.AGL.afm.user.install</a></li>
+    <li><a href="#Method.org.AGL.afm.user.uninstall">Method org.AGL.afm.user.uninstall</a></li>
+    <li><a href="#Method.org.AGL.afm.user.start">Method org.AGL.afm.user.start</a></li>
+    <li><a href="#Method.org.AGL.afm.user.terminate">Method org.AGL.afm.user.terminate</a></li>
+    <li><a href="#Method.org.AGL.afm.user.stop">Method org.AGL.afm.user.stop</a></li>
+    <li><a href="#Method.org.AGL.afm.user.continue">Method org.AGL.afm.user.continue</a></li>
+    <li><a href="#Method.org.AGL.afm.user.state">Method org.AGL.afm.user.state</a></li>
+    <li><a href="#Method.org.AGL.afm.user.runners">Method org.AGL.afm.user.runners</a></li>
+   </ul>
+   </li>
+  </ul>
+  </li>
+ </ul>
+ </li>
+</ul></p>
 
 <a name="Foreword"></a>
 <h2>Foreword</h2>
@@ -149,48 +194,48 @@ located at /usr/lib/systemd/user/afm-user-daemon.service.</p>
 <pre><code>-a
 --application directory
 
-     Includes the given application directory to
-     the database base of applications.
+ Includes the given application directory to
+ the database base of applications.
 
-     Can be repeated.
+ Can be repeated.
 
 -r
 --root directory
 
-     Includes the root application directory to
-     the database base of applications.
+ Includes the root application directory to
+ the database base of applications.
 
-     Note that the default root directory for
-     applications is always added. It is defined
-     to be /usr/share/afm/applications (may change).
+ Note that the default root directory for
+ applications is always added. It is defined
+ to be /usr/share/afm/applications (may change).
 
-     Can be repeated.
+ Can be repeated.
 
 -m
 --mode (local|remote)
 
-     Set the default launch mode.
-     The default value is 'local'
+ Set the default launch mode.
+ The default value is 'local'
 
 -d
 --daemon
 
-     Daemonizes the process. It is not needed by sytemd.
+ Daemonizes the process. It is not needed by sytemd.
 
 -q
 --quiet
 
-     Reduces the verbosity (can be repeated).
+ Reduces the verbosity (can be repeated).
 
 -v
 --verbose
 
-     Increases the verbosity (can be repeated).
+ Increases the verbosity (can be repeated).
 
 -h
 --help
 
-     Prints a short help.
+ Prints a short help.
 </code></pre>
 
 <a name="Configuration.of.the.launcher"></a>
@@ -257,11 +302,11 @@ to launch an application declared of types <em>application/x-executable</em>,
 
 application/x-executable
 text/x-shellscript
-    %r/%c
+%r/%c
 
 text/html
-    /usr/bin/afb-daemon --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
-    /usr/bin/web-runtime http://localhost:%P/%c?token=%S
+/usr/bin/afb-daemon --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
+/usr/bin/web-runtime http://localhost:%P/%c?token=%S
 </code></pre>
 
 <p>This shows that:</p>
@@ -443,9 +488,9 @@ returns a dbus error that is a string.</p>
 installed applications.</p>
 
 <pre><code>dbus-send --session --print-reply \
-    --dest=org.AGL.afm.user \
-    /org/AGL/afm/user \
-    org.AGL.afm.user.runnables string:true
+--dest=org.AGL.afm.user \
+/org/AGL/afm/user \
+org.AGL.afm.user.runnables string:true
 </code></pre>
 
 <a name="Using..strong..em.afm-util..em...strong."></a>

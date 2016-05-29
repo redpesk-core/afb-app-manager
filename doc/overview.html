@@ -8,9 +8,22 @@
 <h1>AGL framework, overview of the proposal of IoT.bzh</h1>
 
 <pre><code>version: 1
-Date:    15 March 2016
+Date:    29 mai 2016
 Author:  José Bollo
 </code></pre>
+
+<p><ul>
+ <li><a href="#AGL.framework..overview.of.the.proposal.of.IoT.bzh">AGL framework, overview of the proposal of IoT.bzh</a>
+ <ul>
+  <li><a href="#Foreword">Foreword</a></li>
+  <li><a href="#Introduction">Introduction</a></li>
+  <li><a href="#Overview">Overview</a></li>
+  <li><a href="#Links.between.the..Security.framework..and.the..Application.framework.">Links between the "Security framework" and the "Application framework"</a></li>
+  <li><a href="#The.security.framework">The security framework</a></li>
+  <li><a href="#The.application.framework">The application framework</a></li>
+ </ul>
+ </li>
+</ul></p>
 
 <a name="Foreword"></a>
 <h2>Foreword</h2>
@@ -71,14 +84,14 @@ The 3 layers are providing components for:</p>
 
 <p>The figure below shows the history of these layers.</p>
 
-<pre><code>                  2014         2015
+<pre><code>              2014         2015
 Tizen OBS ----------+---------------------------&gt;
-                     \
-                      \
-     Tizen Yocto       +---------+--------------&gt;
-                                  \
-                                   \
-       meta-intel-iot-security      +-----------&gt;
+                 \
+                  \
+ Tizen Yocto       +---------+--------------&gt;
+                              \
+                               \
+   meta-intel-iot-security      +-----------&gt;
 </code></pre>
 
 <p>We took the decision to use these security layers that provides the

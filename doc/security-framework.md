@@ -3,9 +3,11 @@ The security framework
 ======================
 
     version: 1
-    Date:    15 March 2016
+    Date:    29 mai 2016
     Author:  José Bollo
 
+
+TABLE-OF-CONTENT-HERE
 
 Setting Smack rules for the application
 =======================================

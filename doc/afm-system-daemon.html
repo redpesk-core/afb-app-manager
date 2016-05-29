@@ -8,9 +8,30 @@
 <h1>The afm-system-daemon</h1>
 
 <pre><code>version: 1
-Date:    15 March 2016
+Date:    29 mai 2016
 Author:  José Bollo
 </code></pre>
+
+<p><ul>
+ <li><a href="#The.afm-system-daemon">The afm-system-daemon</a>
+ <ul>
+  <li><a href="#Foreword">Foreword</a></li>
+  <li><a href="#Introduction">Introduction</a></li>
+  <li><a href="#Starting..strong.afm-system-daemon..strong.">Starting <strong>afm-system-daemon</strong></a></li>
+  <li><a href="#The.D-Bus.interface">The D-Bus interface</a>
+  <ul>
+   <li><a href="#Overview.of.the.dbus.interface">Overview of the dbus interface</a></li>
+   <li><a href="#The.protocol.over.D-Bus">The protocol over D-Bus</a>
+   <ul>
+    <li><a href="#Method.org.AGL.afm.system.install">Method org.AGL.afm.system.install</a></li>
+    <li><a href="#Method.org.AGL.afm.system.uninstall">Method org.AGL.afm.system.uninstall</a></li>
+   </ul>
+   </li>
+  </ul>
+  </li>
+ </ul>
+ </li>
+</ul></p>
 
 <a name="Foreword"></a>
 <h2>Foreword</h2>
@@ -76,30 +97,30 @@ located at /lib/systemd/system/afm-system-daemon.service.</p>
 <pre><code>-r
 --root directory
 
-     Set the root application directory.
+ Set the root application directory.
 
-     Note that the default root directory is defined
-     to be /usr/share/afm/applications (may change).
+ Note that the default root directory is defined
+ to be /usr/share/afm/applications (may change).
 
 -d
 --daemon
 
-     Daemonizes the process. It is not needed by sytemd.
+ Daemonizes the process. It is not needed by sytemd.
 
 -q
 --quiet
 
-     Reduces the verbosity (can be repeated).
+ Reduces the verbosity (can be repeated).
 
 -v
 --verbose
 
-     Increases the verbosity (can be repeated).
+ Increases the verbosity (can be repeated).
 
 -h
 --help
 
-     Prints a short help.
+ Prints a short help.
 </code></pre>
 
 <a name="The.D-Bus.interface"></a>
@@ -143,9 +164,9 @@ returns a dbus error that is a string.</p>
 installed applications.</p>
 
 <pre><code>dbus-send --session --print-reply \
-    --dest=org.AGL.afm.system \
-    /org/AGL/afm/system \
-    org.AGL.afm.system.install 'string:"/tmp/appli.wgt"'
+--dest=org.AGL.afm.system \
+/org/AGL/afm/system \
+org.AGL.afm.system.install 'string:"/tmp/appli.wgt"'
 </code></pre>
 
 <a name="The.protocol.over.D-Bus"></a>
