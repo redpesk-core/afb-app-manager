@@ -3,7 +3,7 @@ The afm-system-daemon
 =====================
 
     version: 1
-    Date:    29 mai 2016
+    Date:    30 mai 2016
     Author:  José Bollo
 
 TABLE-OF-CONTENT-HERE
@@ -12,29 +12,26 @@ TABLE-OF-CONTENT-HERE
 Foreword
 --------
 
-This document describes what we intend to do. It may happen that our
-current implementation and the content of this document differ.
-
-In case of differences, it is assumed that this document is right
-and the implementation is wrong.
+This document describes application framework system daemon fundamentals. 
+FCF (Fully Conform to Specification) implementation is still under development.
+It may happen that current implementation somehow diverges with specifications.
 
 
 Introduction
 ------------
 
 The daemon **afm-system-daemon** is in charge of installing
-applications on the system. Its main tasks are:
+applications on AGL system. Its main tasks are:
 
- - installs the applications and setup the security framework
-   to include it
+ - installs applications and setup security framework
+   for newly installed application.
 
- - uninstall the applications
+ - uninstall applications
 
-The **afm-system-daemon** takes its orders from the system
+The **afm-system-daemon** takes its orders from system
 instance of D-Bus.
 
-The figure below summarizes the situation of the
-**afm-system-daemon** in the system.
+The figure below summarizes the situation of **afm-system-daemon** in the system.
 
     +------------------------------------------------------------+
     |                          User                              |
@@ -115,7 +112,7 @@ D-Bus is mainly used for signaling and discovery. Its optimized
 typed protocol is not used except for transmitting only one string
 in both directions.
 
-The client and the service are using JSON serialisation to
+The client and the service are using JSON serialization to
 exchange data. 
 
 The D-Bus interface is defined by:
@@ -129,10 +126,10 @@ The D-Bus interface is defined by:
 The signature of any member of the interface is ***string -> string***
 for ***JSON -> JSON***.
 
-This is the normal case. In case of error, the current implmentation
+This is the normal case. In case of error, the current implementation
 returns a dbus error that is a string.
 
-Here is an example that use *dbus-send* to query data on
+Here is an example using *dbus-send* to query data on
 installed applications.
 
     dbus-send --session --print-reply \
@@ -146,24 +143,23 @@ installed applications.
 
 #### Method org.AGL.afm.system.install
 
-**Description**: Install an application from its widget file.
+**Description**: Install an application from a widget file.
 
-If an application of the same *id* and *version* exists, it is not
-reinstalled except if *force=true*.
+When an application with the same *id* and *version* already exists. Outside of
+using *force=true* the application is not reinstalled.
 
-Applications are installed in the subdirectories of the common directory
-of applications.
+Applications are installed the subdirectories of applications common directory.
 If *root* is specified, the application is installed under the
 sub-directories of the *root* defined.
 
-Note that this methods is a simple accessor to the method
-***org.AGL.afm.system.install*** of ***afm-system-daemon***.
+Note that this methods is a simple accessor method of
+***org.AGL.afm.system.install*** from ***afm-system-daemon***.
 
 After the installation and before returning to the sender,
-***afm-system-daemon*** sends the signal ***org.AGL.afm.system.changed***.
+***afm-system-daemon*** sends a signal ***org.AGL.afm.system.changed***.
 
-**Input**: The *path* of the widget file to install and, optionaly,
-a flag to *force* reinstallation, and, optionaly, a *root* directory.
+**Input**: The *path* of the widget file to install and, optionally,
+a flag to *force* reinstallation, and, optionally, a *root* directory.
 
 Either just a string being the absolute path of the widget file:
 
@@ -191,14 +187,13 @@ the id of the added application.
 **Description**: Uninstall an application from its id.
 
 
-Note that this methods is a simple accessor to the method
-***org.AGL.afm.system.uninstall*** of ***afm-system-daemon***.
+Note that this methods is a simple method accessor of 
+***org.AGL.afm.system.uninstall*** from ***afm-system-daemon***.
 
 After the uninstallation and before returning to the sender,
-***afm-system-daemon*** sends the signal ***org.AGL.afm.system.changed***.
+***afm-system-daemon*** sends a signal ***org.AGL.afm.system.changed***.
 
-**Input**: the *id* of the application and, otpionaly, the path to
-*root* of the application.
+**Input**: the *id* of the application and optionally the application *root* path.
 
 Either a string:
 
@@ -212,38 +207,6 @@ Or an object:
     }
 
 **output**: the value 'true'.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 [meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"
 [widgets]:          http://www.w3.org/TR/widgets                                    "Packaged Web Apps"

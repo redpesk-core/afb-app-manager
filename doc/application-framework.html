@@ -8,7 +8,7 @@
 <h1>Application framework</h1>
 
 <pre><code>version: 1
-Date:    29 mai 2016
+Date:    30 mai 2016
 Author:  José Bollo
 </code></pre>
 
@@ -27,13 +27,13 @@ Author:  José Bollo
   </li>
  </ul>
  </li>
- <li><a href="#Organisation.of.directory.of.applications">Organisation of directory of applications</a>
+ <li><a href="#organization.of.directory.of.applications">organization of directory of applications</a>
  <ul>
   <li><a href="#Identity.of.installed.files">Identity of installed files</a></li>
-  <li><a href="#Labelling.the.directories.of.applications">Labelling the directories of applications</a></li>
+  <li><a href="#labeling.the.directories.of.applications">labeling the directories of applications</a></li>
  </ul>
  </li>
- <li><a href="#Organisation.of.data">Organisation of data</a></li>
+ <li><a href="#organization.of.data">organization of data</a></li>
  <li><a href="#Setting.Smack.rules.for.the.application">Setting Smack rules for the application</a></li>
  <li><a href="#What.user.can.run.an.application.">What user can run an application?</a></li>
 </ul></p>
@@ -41,35 +41,34 @@ Author:  José Bollo
 <a name="Foreword"></a>
 <h2>Foreword</h2>
 
-<p>This document describes what we intend to do. It may happen that our
-current implementation and the content of this document differ.</p>
-
-<p>In case of differences, it is assumed that this document is right
-and the implementation is wrong.</p>
+<p>This document describes application framework fundamentals.
+FCF (Fully Conform to Specification) implementation is still under development.
+It may happen that current implementation somehow diverges with specifications.</p>
 
 <a name="Overview"></a>
 <h2>Overview</h2>
 
 <p>The application framework on top of the security framework
-provides the components to install and uninstall applications
-and to run it in a secured environment.</p>
+provides components to install and uninstall applications
+as well as to run them in a secured environment.</p>
 
-<p>The goal is to manage applications and to hide the details of
-the security framework to the applications.</p>
+<p>The goal of the framework is to manage applications and hide security details
+to applications.</p>
 
-<p>For the reasons explained in introduction, we did not used the
-application framework of Tizen as is but used an adaptation of it.</p>
+<p>For the reasons explained in introduction, it was choose not to reuse Tizen
+application framework directly, but to rework a new framework inspired from Tizen.</p>
 
-<p>The basis is kept identical: the applications are distributed
-in a digitally signed container that must match the specifications
-of widgets (web applications). This is described by the technical
-recomendations <a href="http://www.w3.org/TR/widgets" title="Packaged Web Apps">widgets</a> and <a href="http://www.w3.org/TR/widgets-digsig" title="XML Digital Signatures for Widgets">widgets-digsig</a> of the W3 consortium.</p>
+<p>fundamentals remain identical: the applications are distributed
+in a digitally signed container that should match widget specifications
+normalized by the W3C. This is described by the technical
+recommendations <a href="http://www.w3.org/TR/widgets" title="Packaged Web Apps">widgets</a> and <a href="http://www.w3.org/TR/widgets-digsig" title="XML Digital Signatures for Widgets">widgets-digsig</a> of the W3 consortium.</p>
 
-<p>This model allows the distribution of HTML, QML and binary applications.</p>
+<p>As today this model allows the distribution of HTML, QML and binary applications
+but it could be extended to any other class of applications.</p>
 
-<p>The management of signatures of the widget packages
-This basis is not meant as being rigid and it can be extended in the
-futur to include for example incremental delivery.</p>
+<p>The management of widget package signatures.
+Current model is only an initial step, it might be extended in the
+future to include new feature (ie: incremental delivery).</p>
 
 <a name="Comparison.to.other.frameworks"></a>
 <h2>Comparison to other frameworks</h2>
@@ -83,10 +82,10 @@ futur to include for example incremental delivery.</p>
 <a name="ostro"></a>
 <h3>ostro</h3>
 
-<a name="Organisation.of.directory.of.applications"></a>
-<h1>Organisation of directory of applications</h1>
+<a name="organization.of.directory.of.applications"></a>
+<h1>organization of directory of applications</h1>
 
-<p>The main path for applivcations are: APPDIR/PKGID/VER.</p>
+<p>The main path for applications are: APPDIR/PKGID/VER.</p>
 
 <p>Where:</p>
 
@@ -97,24 +96,24 @@ futur to include for example incremental delivery.</p>
 </ul>
 
 
-<p>This organisation has the advantage to allow several versions to leave together.
-This is needed for some good reasons (rolling back) and also for less good reasons (user habits).</p>
+<p>The advantage of such an organization is to allow several versions to live together.
+This is required for multiple reasons (ie: roll back) and to comply with developers habits.</p>
 
 <a name="Identity.of.installed.files"></a>
 <h2>Identity of installed files</h2>
 
-<p>All the files are installed as the user &ldquo;userapp&rdquo; and group &ldquo;userapp&rdquo;.
+<p>All the files are installed as user &ldquo;userapp&rdquo; and group &ldquo;userapp&rdquo;.
 All files have rw(x) for user and r-(x) for group and others.</p>
 
-<p>This allows any user to read the files.</p>
+<p>This allows any user to read files.</p>
 
-<a name="Labelling.the.directories.of.applications"></a>
-<h2>Labelling the directories of applications</h2>
+<a name="labeling.the.directories.of.applications"></a>
+<h2>labeling the directories of applications</h2>
 
-<a name="Organisation.of.data"></a>
-<h1>Organisation of data</h1>
+<a name="organization.of.data"></a>
+<h1>organization of data</h1>
 
-<p>The data of a user are in its directory and are labelled using the labels of the application</p>
+<p>The data of a user are contain within its directory and are labeled using the application labels</p>
 
 <a name="Setting.Smack.rules.for.the.application"></a>
 <h1>Setting Smack rules for the application</h1>

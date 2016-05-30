@@ -3,7 +3,7 @@ Application framework
 =====================
 
     version: 1
-    Date:    29 mai 2016
+    Date:    30 mai 2016
     Author:  José Bollo
 
 TABLE-OF-CONTENT-HERE
@@ -11,36 +11,34 @@ TABLE-OF-CONTENT-HERE
 Foreword
 --------
 
-This document describes what we intend to do. It may happen that our
-current implementation and the content of this document differ.
-
-In case of differences, it is assumed that this document is right
-and the implementation is wrong.
-
+This document describes application framework fundamentals. 
+FCF (Fully Conform to Specification) implementation is still under development.
+It may happen that current implementation somehow diverges with specifications.
 
 Overview
 --------
 
 The application framework on top of the security framework
-provides the components to install and uninstall applications
-and to run it in a secured environment.
+provides components to install and uninstall applications
+as well as to run them in a secured environment.
 
-The goal is to manage applications and to hide the details of
-the security framework to the applications.
+The goal of the framework is to manage applications and hide security details
+to applications.
 
-For the reasons explained in introduction, we did not used the
-application framework of Tizen as is but used an adaptation of it.
+For the reasons explained in introduction, it was choose not to reuse Tizen
+application framework directly, but to rework a new framework inspired from Tizen.
 
-The basis is kept identical: the applications are distributed
-in a digitally signed container that must match the specifications
-of widgets (web applications). This is described by the technical
-recomendations [widgets] and [widgets-digsig] of the W3 consortium.
+fundamentals remain identical: the applications are distributed
+in a digitally signed container that should match widget specifications
+normalized by the W3C. This is described by the technical
+recommendations [widgets] and [widgets-digsig] of the W3 consortium.
 
-This model allows the distribution of HTML, QML and binary applications.
+As today this model allows the distribution of HTML, QML and binary applications
+but it could be extended to any other class of applications.
 
-The management of signatures of the widget packages 
-This basis is not meant as being rigid and it can be extended in the
-futur to include for example incremental delivery.
+The management of widget package signatures.
+Current model is only an initial step, it might be extended in the
+future to include new feature (ie: incremental delivery).
 
 
 Comparison to other frameworks
@@ -52,10 +50,10 @@ Comparison to other frameworks
 
 ### ostro
 
-Organisation of directory of applications
+organization of directory of applications
 =========================================
 
-The main path for applivcations are: APPDIR/PKGID/VER.
+The main path for applications are: APPDIR/PKGID/VER.
 
 Where:
 
@@ -63,26 +61,26 @@ Where:
  - PKGID is a directory whose name is the package identifier
  - VER is the version of the package MAJOR.MINOR
 
-This organisation has the advantage to allow several versions to leave together.
-This is needed for some good reasons (rolling back) and also for less good reasons (user habits).
+The advantage of such an organization is to allow several versions to live together.
+This is required for multiple reasons (ie: roll back) and to comply with developers habits.
 
 Identity of installed files
 ---------------------------
 
-All the files are installed as the user "userapp" and group "userapp".
+All the files are installed as user "userapp" and group "userapp".
 All files have rw(x) for user and r-(x) for group and others.
 
-This allows any user to read the files.
+This allows any user to read files.
 
 
-Labelling the directories of applications
+labeling the directories of applications
 -----------------------------------------
 
 
-Organisation of data
+organization of data
 ====================
 
-The data of a user are in its directory and are labelled using the labels of the application
+The data of a user are contain within its directory and are labeled using the application labels
 
 Setting Smack rules for the application
 =======================================
@@ -113,10 +111,6 @@ What user can run an application?
 
 Not all user are able to run all applications.
 How to manage that?
-
-
-
-
 
 
 [meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"

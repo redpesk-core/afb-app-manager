@@ -8,7 +8,7 @@
 <h1>The afm-system-daemon</h1>
 
 <pre><code>version: 1
-Date:    29 mai 2016
+Date:    30 mai 2016
 Author:  José Bollo
 </code></pre>
 
@@ -36,30 +36,27 @@ Author:  José Bollo
 <a name="Foreword"></a>
 <h2>Foreword</h2>
 
-<p>This document describes what we intend to do. It may happen that our
-current implementation and the content of this document differ.</p>
-
-<p>In case of differences, it is assumed that this document is right
-and the implementation is wrong.</p>
+<p>This document describes application framework system daemon fundamentals.
+FCF (Fully Conform to Specification) implementation is still under development.
+It may happen that current implementation somehow diverges with specifications.</p>
 
 <a name="Introduction"></a>
 <h2>Introduction</h2>
 
 <p>The daemon <strong>afm-system-daemon</strong> is in charge of installing
-applications on the system. Its main tasks are:</p>
+applications on AGL system. Its main tasks are:</p>
 
 <ul>
-<li><p>installs the applications and setup the security framework
-to include it</p></li>
-<li><p>uninstall the applications</p></li>
+<li><p>installs applications and setup security framework
+for newly installed application.</p></li>
+<li><p>uninstall applications</p></li>
 </ul>
 
 
-<p>The <strong>afm-system-daemon</strong> takes its orders from the system
+<p>The <strong>afm-system-daemon</strong> takes its orders from system
 instance of D-Bus.</p>
 
-<p>The figure below summarizes the situation of the
-<strong>afm-system-daemon</strong> in the system.</p>
+<p>The figure below summarizes the situation of <strong>afm-system-daemon</strong> in the system.</p>
 
 <pre><code>+------------------------------------------------------------+
 |                          User                              |
@@ -142,7 +139,7 @@ members <strong><em>install</em></strong> and <strong><em>uninstall</em></strong
 typed protocol is not used except for transmitting only one string
 in both directions.</p>
 
-<p>The client and the service are using JSON serialisation to
+<p>The client and the service are using JSON serialization to
 exchange data.</p>
 
 <p>The D-Bus interface is defined by:</p>
@@ -157,10 +154,10 @@ exchange data.</p>
 <p>The signature of any member of the interface is <strong><em>string -> string</em></strong>
 for <strong><em>JSON -> JSON</em></strong>.</p>
 
-<p>This is the normal case. In case of error, the current implmentation
+<p>This is the normal case. In case of error, the current implementation
 returns a dbus error that is a string.</p>
 
-<p>Here is an example that use <em>dbus-send</em> to query data on
+<p>Here is an example using <em>dbus-send</em> to query data on
 installed applications.</p>
 
 <pre><code>dbus-send --session --print-reply \
@@ -177,24 +174,23 @@ org.AGL.afm.system.install 'string:"/tmp/appli.wgt"'
 <a name="Method.org.AGL.afm.system.install"></a>
 <h4>Method org.AGL.afm.system.install</h4>
 
-<p><strong>Description</strong>: Install an application from its widget file.</p>
+<p><strong>Description</strong>: Install an application from a widget file.</p>
 
-<p>If an application of the same <em>id</em> and <em>version</em> exists, it is not
-reinstalled except if <em>force=true</em>.</p>
+<p>When an application with the same <em>id</em> and <em>version</em> already exists. Outside of
+using <em>force=true</em> the application is not reinstalled.</p>
 
-<p>Applications are installed in the subdirectories of the common directory
-of applications.
+<p>Applications are installed the subdirectories of applications common directory.
 If <em>root</em> is specified, the application is installed under the
 sub-directories of the <em>root</em> defined.</p>
 
-<p>Note that this methods is a simple accessor to the method
-<strong><em>org.AGL.afm.system.install</em></strong> of <strong><em>afm-system-daemon</em></strong>.</p>
+<p>Note that this methods is a simple accessor method of
+<strong><em>org.AGL.afm.system.install</em></strong> from <strong><em>afm-system-daemon</em></strong>.</p>
 
 <p>After the installation and before returning to the sender,
-<strong><em>afm-system-daemon</em></strong> sends the signal <strong><em>org.AGL.afm.system.changed</em></strong>.</p>
+<strong><em>afm-system-daemon</em></strong> sends a signal <strong><em>org.AGL.afm.system.changed</em></strong>.</p>
 
-<p><strong>Input</strong>: The <em>path</em> of the widget file to install and, optionaly,
-a flag to <em>force</em> reinstallation, and, optionaly, a <em>root</em> directory.</p>
+<p><strong>Input</strong>: The <em>path</em> of the widget file to install and, optionally,
+a flag to <em>force</em> reinstallation, and, optionally, a <em>root</em> directory.</p>
 
 <p>Either just a string being the absolute path of the widget file:</p>
 
@@ -225,14 +221,13 @@ the id of the added application.</p>
 
 <p><strong>Description</strong>: Uninstall an application from its id.</p>
 
-<p>Note that this methods is a simple accessor to the method
-<strong><em>org.AGL.afm.system.uninstall</em></strong> of <strong><em>afm-system-daemon</em></strong>.</p>
+<p>Note that this methods is a simple method accessor of
+<strong><em>org.AGL.afm.system.uninstall</em></strong> from <strong><em>afm-system-daemon</em></strong>.</p>
 
 <p>After the uninstallation and before returning to the sender,
-<strong><em>afm-system-daemon</em></strong> sends the signal <strong><em>org.AGL.afm.system.changed</em></strong>.</p>
+<strong><em>afm-system-daemon</em></strong> sends a signal <strong><em>org.AGL.afm.system.changed</em></strong>.</p>
 
-<p><strong>Input</strong>: the <em>id</em> of the application and, otpionaly, the path to
-<em>root</em> of the application.</p>
+<p><strong>Input</strong>: the <em>id</em> of the application and optionally the application <em>root</em> path.</p>
 
 <p>Either a string:</p>
 

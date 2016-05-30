@@ -8,7 +8,7 @@
 <h1>The afm-user-daemon</h1>
 
 <pre><code>version: 1
-Date:    29 mai 2016
+Date:    30 mai 2016
 Author:  José Bollo
 </code></pre>
 
@@ -20,13 +20,13 @@ Author:  José Bollo
   <li><a href="#Tasks.of..strong.afm-user-daemon..strong.">Tasks of <strong>afm-user-daemon</strong></a>
   <ul>
    <li><a href="#Maintaining.list.of.applications">Maintaining list of applications</a></li>
-   <li><a href="#Launching.applications">Launching applications</a></li>
+   <li><a href="#Launching.application">Launching application</a></li>
    <li><a href="#Managing.instances.of.running.applications">Managing instances of running applications</a></li>
    <li><a href="#Installing.and.uninstalling.applications">Installing and uninstalling applications</a></li>
   </ul>
   </li>
   <li><a href="#Starting..strong.afm-user-daemon..strong.">Starting <strong>afm-user-daemon</strong></a></li>
-  <li><a href="#Configuration.of.the.launcher">Configuration of the launcher</a>
+  <li><a href="#Launcher.Configuration.">Launcher Configuration </a>
   <ul>
    <li><a href="#mode.local">mode local</a></li>
    <li><a href="#mode.remote">mode remote</a></li>
@@ -60,28 +60,26 @@ Author:  José Bollo
 <a name="Foreword"></a>
 <h2>Foreword</h2>
 
-<p>This document describes what we intend to do. It may happen that our
-current implementation and the content of this document differ.</p>
-
-<p>In case of differences, it is assumed that this document is right
-and the implementation is wrong.</p>
+<p>This document describes application framework user daemon fundamentals.
+FCF (Fully Conform to Specification) implementation is still under development.
+It may happen that current implementation somehow diverges with specifications.</p>
 
 <a name="Introduction"></a>
 <h2>Introduction</h2>
 
 <p>The daemon <strong>afm-user-daemon</strong> is in charge of handling
-applications for one user. Its main tasks are:</p>
+applications on behalf of a user. Its main tasks are:</p>
 
 <ul>
-<li><p>enumerate the applications that the user can run
-and keep the list avalable on demand</p></li>
-<li><p>start applications for the user, set their running
-environment, set their security context</p></li>
-<li><p>list the current runner applications</p></li>
+<li><p>enumerate applications that end user can run
+and keep this list available on demand</p></li>
+<li><p>start applications on behalf of end user, set user running
+environment, set user security context</p></li>
+<li><p>list current runnable or running applications</p></li>
 <li><p>stop (aka pause), continue (aka resume), terminate
-the running instance of application</p></li>
-<li><p>transfer requests for installation or uninstallation
-of applications to the dedicated system daemon
+a running instance of a given application</p></li>
+<li><p>transfer requests for installation/uninstallation
+of applications to the corresponding system daemon
 <strong>afm-system-daemon</strong></p></li>
 </ul>
 
@@ -89,8 +87,7 @@ of applications to the dedicated system daemon
 <p>The <strong>afm-user-daemon</strong> takes its orders from the session
 instance of D-Bus.</p>
 
-<p>The figure below summarizes the situation of the
-<strong>afm-user-daemon</strong> in the system.</p>
+<p>The figure below summarizes the situation of <strong>afm-user-daemon</strong> in the system.</p>
 
 <pre><code>+------------------------------------------------------------+
 |                          User                              |
@@ -128,38 +125,40 @@ instance of D-Bus.</p>
 <h3>Maintaining list of applications</h3>
 
 <p>At start <strong>afm-user-daemon</strong> scans the directories containing
-the applications and load in memory the list applications
-availables to the current user.</p>
+applications and load in memory a list of avaliable applications
+accessible by current user.</p>
 
-<p>When <strong>afm-system-daemon</strong> installs or removes an application,
-it sends the signal <em>org.AGL.afm.system.changed</em> on success.
-If it receives that signal, <strong>afm-user-daemon</strong> rebuild its
-list of applications.</p>
+<p>When <strong>afm-system-daemon</strong> installs or removes an application.
+On success it sends the signal <em>org.AGL.afm.system.changed</em>.
+When receiving such a signal, <strong>afm-user-daemon</strong> rebuilds its
+applications list.</p>
 
-<p><strong>afm-user-daemon</strong> provides the data that it collected about
-application to its clients that either want to get that list
-or to get information about one application.</p>
+<p><strong>afm-user-daemon</strong> provides the data it collects about
+applications to its clients. Clients may either request the full list
+of avaliable applications or a more specific information about a
+given application.</p>
 
-<a name="Launching.applications"></a>
-<h3>Launching applications</h3>
+<a name="Launching.application"></a>
+<h3>Launching application</h3>
 
-<p><strong>afm-user-daemon</strong> launchs the applications. This means
-that its builds a secure environment for the application
-and then start it inside that secured environment.</p>
+<p><strong>afm-user-daemon</strong> launches application. Its builds a secure
+environment for the application before starting it within a
+secured environment.</p>
 
-<p>Applications of different kind can be launched.</p>
+<p>Different kind of applications can be launched.</p>
 
 <p>This is set using a configuration file that describes
-how to launch an application of a given kind for a given
+how to launch an application of a given kind within a given
 mode.</p>
 
 <p>There is two launching modes: local or remote.</p>
 
 <p>Launching an application locally means that
-the application and its binder are launcher together.</p>
+the application and its binder are launched together.</p>
 
-<p>Launching application remotely means that only the
-binder is launched for the application.</p>
+<p>Launching application remotely translates in only launching
+the application binder. The UI by itself has to be activated
+remotely by the requested (ie: HTML5 homescreen in a browser)</p>
 
 <p>Once launched, running instances of application receive
 a runid that identify them.</p>
@@ -170,15 +169,15 @@ a runid that identify them.</p>
 <p><strong>afm-user-daemon</strong> manages the list of applications
 that it launched.</p>
 
-<p>With the good permissions, a client can get the list
-of the running instances and details about a specific
-running instance. It can also terminate, stop or
-continue a given application.</p>
+<p>When owning the right permissions, a client can get the list
+of running instances and details about a specific
+running instance. It can also terminates, stops or
+continues a given application.</p>
 
 <a name="Installing.and.uninstalling.applications"></a>
 <h3>Installing and uninstalling applications</h3>
 
-<p>If the client has the good permission,
+<p>If the client own the right permissions,
 <strong>afm-user-daemon</strong> delegates that task
 to <strong>afm-system-daemon</strong>.</p>
 
@@ -200,16 +199,15 @@ located at /usr/lib/systemd/user/afm-user-daemon.service.</p>
  Can be repeated.
 
 -r
---root directory
+--root directory 
 
- Includes the root application directory to
- the database base of applications.
+ Includes root application directory or directories when
+ passing multiple rootdir to
+ applications database.
 
- Note that the default root directory for
- applications is always added. It is defined
- to be /usr/share/afm/applications (may change).
-
- Can be repeated.
+ Note that default root directory for
+ applications is always added. In current version
+ /usr/share/afm/applications is used as default.
 
 -m
 --mode (local|remote)
@@ -238,34 +236,34 @@ located at /usr/lib/systemd/user/afm-user-daemon.service.</p>
  Prints a short help.
 </code></pre>
 
-<a name="Configuration.of.the.launcher"></a>
-<h2>Configuration of the launcher</h2>
+<a name="Launcher.Configuration."></a>
+<h2>Launcher Configuration </h2>
 
 <p>It contains rules for launching applications.
-When <strong>afm-user-daemon</strong> need to launch an application,
-it looks to the mode of launch, local or remote, and the
-type of the application as given by the file <strong><em>config.xml</em></strong>
-of the widget.</p>
+When <strong>afm-user-daemon</strong> has to launch an application,
+it looks for launch mode (local or remote), as well as
+for the type of application describe in <strong><em>config.xml</em></strong>
+widget configuration file.</p>
 
-<p>This couple mode and type allows to select the rule.</p>
+<p>This tuple mode+type allows to select the adequate rule.</p>
 
-<p>The configuration file is <strong>/etc/afm/afm-launch.conf</strong>.</p>
+<p>Configuration file is <strong>/etc/afm/afm-launch.conf</strong>.</p>
 
 <p>It contains sections and rules. It can also contain comments
-and empty lines to improve the readability.</p>
+and empty lines to improve readability.</p>
 
 <p>The separators are space and tabulation, any other character
-is meaning something.</p>
+should have a meaning.</p>
 
 <p>The format is line oriented.
 The new line character separate the lines.</p>
 
-<p>Lines having only separators are blank lines and are skipped.
-Line having the character # (sharp) as first not separator character
-are comment lines and are ignored.</p>
+<p>Lines having only separators are blank lines and ignored.
+Line having character #(sharp) at first position are comment
+lines and ignored.</p>
 
-<p>Lines starting with a not separator character are differents
-of lines starting with a separator character.</p>
+<p>Lines not starting with a separator are different
+from lines starting with a separator character.</p>
 
 <p>The grammar of the configuration file is defined below:</p>
 
@@ -295,8 +293,8 @@ NCHAR: CMT | CHAR
 </code></pre>
 
 <p>Here is a sample of configuration file for defining how
-to launch an application declared of types <em>application/x-executable</em>,
-<em>text/x-shellscript</em> and <em>text/html</em> in mode local:</p>
+to launch an application of types <em>application/x-executable</em>,
+<em>text/x-shellscript</em> and <em>text/html</em> in local mode:</p>
 
 <pre><code>mode local
 
@@ -323,9 +321,9 @@ text/html
 <a name="mode.local"></a>
 <h3>mode local</h3>
 
-<p>Within this mode, the launchers have either one or two vectors
-describing them. All of these vectors are treated as programs
-and are executed with the system call &lsquo;execve&rsquo;.</p>
+<p>Within this mode, the launchers have either one or two description vectors.
+All of those vectors are treated as programs
+and are executed with &lsquo;execve&rsquo; system call.</p>
 
 <p>The first vector is the leader vector and it defines the process
 group. The second vector (if any) is attached to the group
@@ -337,19 +335,17 @@ defined by this first vector.</p>
 <p>Within this mode, the launchers have either one or two vectors
 describing them.</p>
 
-<p>The first vector is treated as a program and is executed with
-the system call &lsquo;execve&rsquo;.</p>
+<p>The first vector is process as a program and is executed with
+system call &lsquo;execve&rsquo;.</p>
 
 <p>The second vector (if any) defines a text that is returned
-to the caller. This mechanism can be used to return the uri
-to connect to for executing the application remotely.</p>
+to the caller. This mechanism can be used to return a uri
+for remote UI to connect on the newly launched application.</p>
 
-<p>The daemon <strong><em>afm-user-daemon</em></strong> allocates a port for the
-running the application remotely.
-The current implmentation of the port allocation is just
-incremental.
-A more reliable (cacheable and same-originable) allocation
-is to be defined.</p>
+<p>The daemon <strong><em>afm-user-daemon</em></strong> allocates a port for each
+new remote application.
+The current implementation port allocation is incremental.
+A smarter (cacheable and discoverable) allocation should be defined.</p>
 
 <a name="L.substitutions"></a>
 <h3>%substitutions</h3>
@@ -368,7 +364,7 @@ to sequences.</p>
 <p>This simply emits the percent sign %</p></li>
 <li><p><strong><em>%a</em></strong>: appid</p>
 
-<p>This is the application Id of the launched application.</p>
+<p>Holds application Id of launched application.</p>
 
 <p>Defined by the attribute <strong>id</strong> of the element <strong><widget></strong>
 of <strong>config.xml</strong>.</p></li>
@@ -376,11 +372,10 @@ of <strong>config.xml</strong>.</p></li>
 
 <p>The file within the widget directory that is the entry point.</p>
 
-<p>For a HTML application, it is the relative path to the main
+<p>For HTML applications, it represents the relative path to main
 page (aka index.html).</p>
 
-<p>Defined by the attribute <strong>src</strong> of the element <strong><content></strong>
-of <strong>config.xml</strong>.</p></li>
+<p>Defined by attribute <strong>src</strong> of the element <strong><content></strong> within <strong>config.xml</strong>.</p></li>
 <li><p><strong><em>%D</em></strong>: datadir</p>
 
 <p>Path of the directory where the application runs (cwd)
@@ -413,24 +408,23 @@ of <strong>config.xml</strong>.</p></li>
 element <strong><name></strong> of <strong>config.xml</strong>.</p></li>
 <li><p><strong><em>%p</em></strong>: plugins</p>
 
-<p>Unhandled until now.</p>
-
-<p>Will be the colon separated list of plugins and plugins directory.</p></li>
+<p>In the future should represent the list of plugins and plugins directory separated by &lsquo;,&rsquo;.
+Warning: not supported in current version.</p></li>
 <li><p><strong><em>%P</em></strong>: port</p>
 
 <p>A port to use. It is currently a kind of random port. The precise
 model is to be defined later.</p></li>
 <li><p><strong><em>%R</em></strong>: readyfd</p>
 
-<p>Number of the file descriptor to use for signalling
-readyness of the launched process.</p></li>
+<p>Number of file descriptor to use for signaling
+readiness of launched process.</p></li>
 <li><p><strong><em>%r</em></strong>: rootdir</p>
 
-<p>Path of the directory containing the widget and its data.</p></li>
+<p>Path of directory containing the widget and its data.</p></li>
 <li><p><strong><em>%S</em></strong>: secret</p>
 
-<p>An hexadecimal number that can be used to pair the client
-with its server binder.</p></li>
+<p>An hexadecimal number that can be used to initialize pairing of client
+and application binder.</p></li>
 <li><p><strong><em>%W</em></strong>: width</p>
 
 <p>Requested width for the widget.</p>
@@ -447,27 +441,25 @@ of <strong>config.xml</strong>.</p></li>
 <h3>Overview of the dbus interface</h3>
 
 <p><strong><em>afm-user-daemon</em></strong> takes its orders from the session instance
-of D-Bus. The use of D-Bus is great because it allows to implement
+of D-Bus. D-Bus is nice to use in this context because it allows
 discovery and signaling.</p>
 
-<p>The dbus of the session is by default adressed by the environment
+<p>The dbus session is by default addressed by environment
 variable <strong><em>DBUS_SESSION_BUS_ADDRESS</em></strong>. Using <strong>systemd</strong>
-the variable <em>DBUS_SESSION_BUS_ADDRESS</em> is automatically set for
+variable <em>DBUS_SESSION_BUS_ADDRESS</em> is automatically set for
 user sessions.</p>
 
-<p>The <strong>afm-user-daemon</strong> is listening with the destination name
-<strong><em>org.AGL.afm.user</em></strong> at the object of path <strong><em>/org/AGL/afm/user</em></strong>
-on the interface <strong><em>org.AGL.afm.user</em></strong> for the below detailed
-members <strong><em>runnables</em></strong>, <strong><em>detail</em></strong>, <strong><em>start</em></strong>, <strong><em>terminate</em></strong>,
+<p>The <strong>afm-user-daemon</strong> is listening on destination name
+<strong><em>org.AGL.afm.user</em></strong> at object path <strong><em>/org/AGL/afm/user</em></strong>
+on interface <strong><em>org.AGL.afm.user</em></strong> for following members:
+ <strong><em>runnables</em></strong>, <strong><em>detail</em></strong>, <strong><em>start</em></strong>, <strong><em>terminate</em></strong>,
 <strong><em>stop</em></strong>, <strong><em>continue</em></strong>, <strong><em>runners</em></strong>, <strong><em>state</em></strong>,
 <strong><em>install</em></strong> and <strong><em>uninstall</em></strong>.</p>
 
 <p>D-Bus is mainly used for signaling and discovery. Its optimized
-typed protocol is not used except for transmitting only one string
-in both directions.</p>
+typed protocol is not used except for transmission of standalone strings.</p>
 
-<p>The client and the service are using JSON serialisation to
-exchange data.</p>
+<p>Clients and Services are using JSON serialisation to exchange data.</p>
 
 <p>The D-Bus interface is defined by:</p>
 
@@ -481,10 +473,10 @@ exchange data.</p>
 <p>The signature of any member of the interface is <strong><em>string -> string</em></strong>
 for <strong><em>JSON -> JSON</em></strong>.</p>
 
-<p>This is the normal case. In case of error, the current implmentation
-returns a dbus error that is a string.</p>
+<p>This is the normal case. In case of error, the current implementation
+returns a dbus error as a string.</p>
 
-<p>Here is an example that use <em>dbus-send</em> to query data on
+<p>Here an example using <em>dbus-send</em> to query data on
 installed applications.</p>
 
 <pre><code>dbus-send --session --print-reply \
@@ -501,8 +493,7 @@ orders to <strong>afm-user-daemon</strong>. This small scripts allows to
 send command to <strong><em>afm-user-daemon</em></strong> either interactively
 at shell prompt or scriptically.</p>
 
-<p>The syntax is simple: it accept a command and if the command
-requires it, the argument to the command.</p>
+<p>The syntax is simple: it accept a command and when requires attached arguments.</p>
 
 <p>Here is the summary of <strong><em>afm-util</em></strong>:</p>
 
@@ -615,12 +606,12 @@ an application as described above for the method
 <p><strong>Description</strong>: Install an application from its widget file.</p>
 
 <p>If an application of the same <em>id</em> and <em>version</em> exists, it is not
-reinstalled except if <em>force=true</em>.</p>
+reinstalled except when <em>force=true</em>.</p>
 
 <p>Applications are installed in the subdirectories of the common directory
-of applications.
-If <em>root</em> is specified, the application is installed under the
-sub-directories of the <em>root</em> defined.</p>
+reserved for applications.
+If <em>root</em> is specified, the application is installed under
+sub-directories of defined <em>root</em>.</p>
 
 <p>Note that this methods is a simple accessor to the method
 <strong><em>org.AGL.afm.system.install</em></strong> of <strong><em>afm-system-daemon</em></strong>.</p>
@@ -628,10 +619,10 @@ sub-directories of the <em>root</em> defined.</p>
 <p>After the installation and before returning to the sender,
 <strong><em>afm-user-daemon</em></strong> sends the signal <strong><em>org.AGL.afm.user.changed</em></strong>.</p>
 
-<p><strong>Input</strong>: The <em>path</em> of the widget file to install and, optionaly,
-a flag to <em>force</em> reinstallation, and, optionaly, a <em>root</em> directory.</p>
+<p><strong>Input</strong>: The <em>path</em> of widget file to be installed. Optionally,
+a flag to <em>force</em> reinstallation and/or a <em>root</em> directory.</p>
 
-<p>Either just a string being the absolute path of the widget file:</p>
+<p>Simple form a simple string containing the absolute widget path:</p>
 
 <pre><code>"/a/path/driving/to/the/widget"
 </code></pre>
@@ -645,10 +636,9 @@ a flag to <em>force</em> reinstallation, and, optionaly, a <em>root</em> directo
 }
 </code></pre>
 
-<p>&ldquo;wgt&rdquo; and &ldquo;root&rdquo; must be absolute paths.</p>
+<p>&ldquo;wgt&rdquo; and &ldquo;root&rdquo; MUST be absolute paths.</p>
 
-<p><strong>output</strong>: An object with the field &ldquo;added&rdquo; being the string for
-the id of the added application.</p>
+<p><strong>output</strong>: An object containing field &ldquo;added&rdquo; to use as application ID.</p>
 
 <pre><code>{"added":"appli@x.y"}
 </code></pre>
@@ -660,14 +650,14 @@ the id of the added application.</p>
 
 <p><strong>Description</strong>: Uninstall an application from its id.</p>
 
-<p>Note that this methods is a simple accessor to the method
-<strong><em>org.AGL.afm.system.uninstall</em></strong> of <strong><em>afm-system-daemon</em></strong>.</p>
+<p>Note that this methods is a simple accessor to
+<strong><em>org.AGL.afm.system.uninstall</em></strong> method from <strong><em>afm-system-daemon</em></strong>.</p>
 
 <p>After the uninstallation and before returning to the sender,
 <strong><em>afm-user-daemon</em></strong> sends the signal <strong><em>org.AGL.afm.user.changed</em></strong>.</p>
 
-<p><strong>Input</strong>: the <em>id</em> of the application and, otpionaly, the path to
-<em>root</em> of the application.</p>
+<p><strong>Input</strong>: the <em>id</em> of the application and, optionally, the path to
+application <em>root</em>.</p>
 
 <p>Either a string:</p>
 
@@ -691,7 +681,7 @@ the id of the added application.</p>
 
 <p><strong>Description</strong>:</p>
 
-<p><strong>Input</strong>: the <em>id</em> of the application and, optionaly, the
+<p><strong>Input</strong>: the <em>id</em> of the application and, optionally, the
 start <em>mode</em> as below.</p>
 
 <p>Either just a string:</p>
@@ -699,25 +689,24 @@ start <em>mode</em> as below.</p>
 <pre><code>"appli@x.y"
 </code></pre>
 
-<p>Or an object having the field &ldquo;id&rdquo; of type string and
-optionaly a field mode:</p>
+<p>Or an object containing field &ldquo;id&rdquo; of type string and
+optionally a field mode:</p>
 
 <pre><code>{"id":"appli@x.y","mode":"local"}
 </code></pre>
 
-<p>The field &ldquo;mode&rdquo; as a string value being either &ldquo;local&rdquo; or &ldquo;remote&rdquo;.</p>
+<p>The field &ldquo;mode&rdquo; is a string equal to either &ldquo;local&rdquo; or &ldquo;remote&rdquo;.</p>
 
-<p><strong>output</strong>: The <em>runid</em> of the application launched.
-The runid is an integer.</p>
+<p><strong>output</strong>: The <em>runid</em> of the application launched. <em>runid</em> is an integer.</p>
 
 <hr />
 
 <a name="Method.org.AGL.afm.user.terminate"></a>
 <h4>Method org.AGL.afm.user.terminate</h4>
 
-<p><strong>Description</strong>: Terminates the application of <em>runid</em>.</p>
+<p><strong>Description</strong>: Terminates the application attached to <em>runid</em>.</p>
 
-<p><strong>Input</strong>: The <em>runid</em> (an integer) of the running instance to terminate.</p>
+<p><strong>Input</strong>: The <em>runid</em> (an integer) of running instance to terminate.</p>
 
 <p><strong>output</strong>: the value &lsquo;true&rsquo;.</p>
 
@@ -726,9 +715,9 @@ The runid is an integer.</p>
 <a name="Method.org.AGL.afm.user.stop"></a>
 <h4>Method org.AGL.afm.user.stop</h4>
 
-<p><strong>Description</strong>: Stops the application of <em>runid</em> until terminate or continue.</p>
+<p><strong>Description</strong>: Stops the application attached to <em>runid</em> until terminate or continue.</p>
 
-<p><strong>Input</strong>: The <em>runid</em> (an integer) of the running instance to stop.</p>
+<p><strong>Input</strong>: The <em>runid</em> (integer) of the running instance to stop.</p>
 
 <p><strong>output</strong>: the value &lsquo;true&rsquo;.</p>
 
@@ -737,9 +726,9 @@ The runid is an integer.</p>
 <a name="Method.org.AGL.afm.user.continue"></a>
 <h4>Method org.AGL.afm.user.continue</h4>
 
-<p><strong>Description</strong>: Continues the application of <em>runid</em> previously stopped.</p>
+<p><strong>Description</strong>: Continues the application attached to <em>runid</em> previously stopped.</p>
 
-<p><strong>Input</strong>: The <em>runid</em> (an integer) of the running instance to continue.</p>
+<p><strong>Input</strong>: The <em>runid</em> (integer) of the running instance to continue.</p>
 
 <p><strong>output</strong>: the value &lsquo;true&rsquo;.</p>
 
@@ -750,12 +739,11 @@ The runid is an integer.</p>
 
 <p><strong>Description</strong>: Get informations about a running instance of <em>runid</em>.</p>
 
-<p><strong>Input</strong>: The <em>runid</em> (an integer) of the running instance inspected.</p>
+<p><strong>Input</strong>: The <em>runid</em> (integer) of the running instance inspected.</p>
 
-<p><strong>output</strong>: An object describing the state of the instance. It contains:
-the runid (an integer), the id of the running application (a string),
-the state of the application (a string being either &ldquo;starting&rdquo;, &ldquo;running&rdquo;
-or &ldquo;stopped&rdquo;).</p>
+<p><strong>output</strong>: An object describing instance state. It contains:
+the runid (integer), the id of the running application (string),
+the state of the application (string either: &ldquo;starting&rdquo;, &ldquo;running&rdquo;, &ldquo;stopped&rdquo;).</p>
 
 <p>Example of returned state:</p>
 
@@ -771,7 +759,7 @@ or &ldquo;stopped&rdquo;).</p>
 <a name="Method.org.AGL.afm.user.runners"></a>
 <h4>Method org.AGL.afm.user.runners</h4>
 
-<p><strong>Description</strong>: Get the list of the currently running instances.</p>
+<p><strong>Description</strong>: Get the list of currently running instances.</p>
 
 <p><strong>Input</strong>: anything.</p>
 
