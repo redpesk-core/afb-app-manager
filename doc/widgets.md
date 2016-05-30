@@ -14,7 +14,7 @@ The widgets
 The widgets are described by the technical recommendations
 [widgets] and [widgets-digsig].
 
-### signature of the 
+### signature 
 
 The application framework 
 
@@ -22,21 +22,21 @@ This is the original part of our work here
 
 ### directory where are stored applications
 
-Applications can be installed in few places: on the system itself or on an extension device.
-For my phone, for example, it is the sd card.
+Applications can be installed in different places: the system itself, extension device.
+On a phone application are typically installed on the sd card.
 
 This translates to:
 
- - /usr/applications: for system wide applications
- - /opt/applications: for removable applications
+ - /usr/applications: system wide applications
+ - /opt/applications: removable applications
 
-In the remaining of the document, these places are writen "APPDIR".
+From here those paths are referenced as: "APPDIR".
 
 
-Organisation of directory of applications
+Organization of directory of applications
 =========================================
 
-The main path for applivcations are: APPDIR/PKGID/VER.
+The main path for applications is: APPDIR/PKGID/VER.
 
 Where:
 
@@ -44,29 +44,26 @@ Where:
  - PKGID is a directory whose name is the package identifier
  - VER is the version of the package MAJOR.MINOR
 
-This organisation has the advantage to allow several versions to leave together.
+This organization has the advantage to allow several versions to leave together.
 This is needed for some good reasons (rolling back) and also for less good reasons (user habits).
 
 Identity of installed files
 ---------------------------
 
-All the files are installed as the user "userapp" and group "userapp".
+All files are installed as user "userapp" and group "userapp".
 All files have rw(x) for user and r-(x) for group and others.
 
-This allows any user to read the files.
+This allows every user to read every file.
 
 
-Labelling the directories of applications
+labeling the directories of applications
 -----------------------------------------
 
 
-Organisation of data
+organization of data
 ====================
 
 The data of a user are in its directory and are labelled using the labels of the application
-
-
-
 
 [meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"
 [widgets]:          http://www.w3.org/TR/widgets                                    "Packaged Web Apps"
