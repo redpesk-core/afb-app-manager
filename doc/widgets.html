@@ -8,7 +8,7 @@
 <h1>The widgets</h1>
 
 <pre><code>version: 1
-Date:    29 mai 2016
+Date:    30 mai 2016
 Author:  José Bollo
 </code></pre>
 
@@ -17,20 +17,20 @@ Author:  José Bollo
  <ul>
   <li><a href="#The.widgets">The widgets</a>
   <ul>
-   <li><a href="#signature.of.the">signature of the</a></li>
+   <li><a href="#signature">signature</a></li>
    <li><a href="#directory.where.are.stored.applications">directory where are stored applications</a>
 </li>
   </ul>
   </li>
  </ul>
  </li>
- <li><a href="#Organisation.of.directory.of.applications">Organisation of directory of applications</a>
+ <li><a href="#Organization.of.directory.of.applications">Organization of directory of applications</a>
  <ul>
   <li><a href="#Identity.of.installed.files">Identity of installed files</a></li>
-  <li><a href="#Labelling.the.directories.of.applications">Labelling the directories of applications</a></li>
+  <li><a href="#labeling.the.directories.of.applications">labeling the directories of applications</a></li>
  </ul>
  </li>
- <li><a href="#Organisation.of.data">Organisation of data</a></li>
+ <li><a href="#organization.of.data">organization of data</a></li>
 </ul></p>
 
 <a name="The.widgets"></a>
@@ -39,8 +39,8 @@ Author:  José Bollo
 <p>The widgets are described by the technical recommendations
 <a href="http://www.w3.org/TR/widgets" title="Packaged Web Apps">widgets</a> and <a href="http://www.w3.org/TR/widgets-digsig" title="XML Digital Signatures for Widgets">widgets-digsig</a>.</p>
 
-<a name="signature.of.the"></a>
-<h3>signature of the</h3>
+<a name="signature"></a>
+<h3>signature</h3>
 
 <p>The application framework</p>
 
@@ -49,23 +49,23 @@ Author:  José Bollo
 <a name="directory.where.are.stored.applications"></a>
 <h3>directory where are stored applications</h3>
 
-<p>Applications can be installed in few places: on the system itself or on an extension device.
-For my phone, for example, it is the sd card.</p>
+<p>Applications can be installed in different places: the system itself, extension device.
+On a phone application are typically installed on the sd card.</p>
 
 <p>This translates to:</p>
 
 <ul>
-<li>/usr/applications: for system wide applications</li>
-<li>/opt/applications: for removable applications</li>
+<li>/usr/applications: system wide applications</li>
+<li>/opt/applications: removable applications</li>
 </ul>
 
 
-<p>In the remaining of the document, these places are writen &ldquo;APPDIR&rdquo;.</p>
+<p>From here those paths are referenced as: &ldquo;APPDIR&rdquo;.</p>
 
-<a name="Organisation.of.directory.of.applications"></a>
-<h1>Organisation of directory of applications</h1>
+<a name="Organization.of.directory.of.applications"></a>
+<h1>Organization of directory of applications</h1>
 
-<p>The main path for applivcations are: APPDIR/PKGID/VER.</p>
+<p>The main path for applications is: APPDIR/PKGID/VER.</p>
 
 <p>Where:</p>
 
@@ -76,22 +76,22 @@ For my phone, for example, it is the sd card.</p>
 </ul>
 
 
-<p>This organisation has the advantage to allow several versions to leave together.
+<p>This organization has the advantage to allow several versions to leave together.
 This is needed for some good reasons (rolling back) and also for less good reasons (user habits).</p>
 
 <a name="Identity.of.installed.files"></a>
 <h2>Identity of installed files</h2>
 
-<p>All the files are installed as the user &ldquo;userapp&rdquo; and group &ldquo;userapp&rdquo;.
+<p>All files are installed as user &ldquo;userapp&rdquo; and group &ldquo;userapp&rdquo;.
 All files have rw(x) for user and r-(x) for group and others.</p>
 
-<p>This allows any user to read the files.</p>
+<p>This allows every user to read every file.</p>
 
-<a name="Labelling.the.directories.of.applications"></a>
-<h2>Labelling the directories of applications</h2>
+<a name="labeling.the.directories.of.applications"></a>
+<h2>labeling the directories of applications</h2>
 
-<a name="Organisation.of.data"></a>
-<h1>Organisation of data</h1>
+<a name="organization.of.data"></a>
+<h1>organization of data</h1>
 
 <p>The data of a user are in its directory and are labelled using the labels of the application</p>
 </body>
