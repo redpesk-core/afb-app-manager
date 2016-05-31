@@ -28,6 +28,12 @@ macro(setc name value)
 	endif(NOT DEFINED ${name})
 endmacro(setc)
 
+SET(PROJECT_NAME "AFM Main")
+SET(PROJECT_PRETTY_NAME "Application Framework Main")
+SET(PROJECT_DESCRIPTION "Secured Application framework")
+SET(PROJECT_VERSION "1.0")
+SET(PROJECT_URL "https://github.com/iotbzh/afm-main")
+
 setc(USE_LIBZIP 1)
 setc(USE_SIMULATION 1)
 
