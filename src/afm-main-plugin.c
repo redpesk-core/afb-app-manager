@@ -45,20 +45,30 @@ static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
 static const char _uri_[]       = "uri";
 
-static const struct AFB_interface *afb_interface;
+static const struct AFB_interface *binder;
 
 static struct jbus *jbus;
 
+/*
+ * Structure for asynchronous call handling
+ */
 struct memo
 {
-	struct afb_req request;
-	const char *method;
+	struct afb_req request;	/* the recorded request */
+	const char *method;	/* the called method */
 };
 
-static struct memo *make_memo(struct afb_req request, const char *method)
+/*
+ * Creates the memo for the 'request' and the 'method'.
+ * Returns the memo in case of success.
+ * In case of error, send a failure answer and returns NULL.
+ */
+static struct memo *memo_create(struct afb_req request, const char *method)
 {
 	struct memo *memo = malloc(sizeof *memo);
-	if (memo != NULL) {
+	if (memo == NULL)
+		afb_req_fail(request, "failed", "out of memory");
+	else {
 		memo->request = request;
 		memo->method = method;
 		afb_req_addref(request);
@@ -66,18 +76,48 @@ static struct memo *make_memo(struct afb_req request, const char *method)
 	return memo;
 }
 
-static void application_list_changed(const char *data, void *closure)
+/*
+ * Sends the asynchronous failed reply to the request recorded by 'memo'
+ * Then fress the resources.
+ */
+static void memo_fail(struct memo *memo, const char *info)
 {
-	afb_daemon_broadcast_event(afb_interface->daemon, "application-list-changed", NULL);
+	afb_req_fail(memo->request, "failed", info);
+	afb_req_unref(memo->request);
+	free(memo);
 }
 
+/*
+ * Sends the asynchronous success reply to the request recorded by 'memo'
+ * Then fress the resources.
+ */
+static void memo_success(struct memo *memo, struct json_object *obj, const char *info)
+{
+	afb_req_success(memo->request, obj, info);
+	afb_req_unref(memo->request);
+	free(memo);
+}
+
+/*
+ * Broadcast the event "application-list-changed".
+ * This event is sent was the event "changed" is received from dbus.
+ */
+static void application_list_changed(const char *data, void *closure)
+{
+	afb_daemon_broadcast_event(binder->daemon, "application-list-changed", NULL);
+}
+
+/*
+ * Builds if possible the json object having one field of name 'tag'
+ * whose value is 'obj' like here: { tag: obj } and returns it.
+ * In case of error or when 'tag'==NULL or 'obj'==NULL, 'obj' is returned.
+ * The reference count of 'obj' is not incremented.
+ */
 static struct json_object *embed(const char *tag, struct json_object *obj)
 {
 	struct json_object *result;
 
-	if (obj == NULL)
-		result = NULL;
-	else if (!tag)
+	if (obj == NULL || tag == NULL)
 		result = obj;
 	else {
 		result = json_object_new_object();
@@ -93,92 +133,99 @@ static struct json_object *embed(const char *tag, struct json_object *obj)
 	return result;
 }
 
+/*
+ * Callback for replies made by 'embed_call_void'.
+ */
 static void embed_call_void_callback(int status, struct json_object *obj, struct memo *memo)
 {
-	if (afb_interface->verbosity)
-		fprintf(stderr, "(afm-main-plugin) %s(true) -> %s\n", memo->method,
+	DEBUG(binder, "(afm-main-plugin) %s(true) -> %s\n", memo->method,
 			obj ? json_object_to_json_string(obj) : "NULL");
+
 	if (obj == NULL) {
-		afb_req_fail(memo->request, "failed", "framework daemon failure");
+		memo_fail(memo, "framework daemon failure");
 	} else {
-		obj = json_object_get(obj);
-		obj = embed(memo->method, obj);
-		if (obj == NULL) {
-			afb_req_fail(memo->request, "failed", "framework daemon failure");
-		} else {
-			afb_req_success(memo->request, obj, NULL);
-		}
+		memo_success(memo, embed(memo->method, json_object_get(obj)), NULL);
 	}
-	afb_req_unref(memo->request);
-	free(memo);
 }
 
+/*
+ * Calls with DBus the 'method' of the user daemon without arguments.
+ */
 static void embed_call_void(struct afb_req request, const char *method)
 {
-	struct memo *memo = make_memo(request, method);
+	struct memo *memo;
+
+	/* store the request */
+	memo = memo_create(request, method);
 	if (memo == NULL)
-		afb_req_fail(request, "failed", "out of memory");
-	else if (jbus_call_sj(jbus, method, "true", (void*)embed_call_void_callback, memo) < 0) {
-		afb_req_fail(request, "failed", "dbus failure");
-		free(memo);
-	}
+		return;
+
+	if (jbus_call_sj(jbus, method, "true", (void*)embed_call_void_callback, memo) < 0)
+		memo_fail(memo, "dbus failure");
 }
 
-static void call_appid_callback(int status, struct json_object *obj, struct memo *memo)
+/*
+ * Callback for replies made by 'call_appid' and 'call_runid'.
+ */
+static void call_xxxid_callback(int status, struct json_object *obj, struct memo *memo)
 {
-	if (afb_interface->verbosity)
-		fprintf(stderr, "(afm-main-plugin) %s -> %s\n", memo->method, 
+	DEBUG(binder, "(afm-main-plugin) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
+
 	if (obj == NULL) {
-		afb_req_fail(memo->request, "failed", "framework daemon failure");
+		memo_fail(memo, "framework daemon failure");
 	} else {
-		obj = json_object_get(obj);
-		afb_req_success(memo->request, obj, NULL);
+		memo_success(memo, json_object_get(obj), NULL);
 	}
-	afb_req_unref(memo->request);
-	free(memo);
 }
 
+/*
+ * Calls with DBus the 'method' of the user daemon with the argument "id".
+ */
 static void call_appid(struct afb_req request, const char *method)
 {
 	struct memo *memo;
 	char *sid;
-	const char *id = afb_req_value(request, _id_);
+	const char *id;
+
+	id = afb_req_value(request, _id_);
 	if (id == NULL) {
 		afb_req_fail(request, "bad-request", "missing 'id'");
 		return;
 	}
-	memo = make_memo(request, method);
-	if (asprintf(&sid, "\"%s\"", id) <= 0 || memo == NULL) {
-		afb_req_fail(request, "server-error", "out of memory");
-		free(memo);
+
+	memo = memo_create(request, method);
+	if (memo == NULL)
+		return;
+
+	if (asprintf(&sid, "\"%s\"", id) <= 0) {
+		memo_fail(memo, "out of memory");
 		return;
 	}
-	if (jbus_call_sj(jbus, method, sid, (void*)call_appid_callback, memo) < 0) {
-		afb_req_fail(request, "failed", "dbus failure");
-		free(memo);
-	}
+
+	if (jbus_call_sj(jbus, method, sid, (void*)call_xxxid_callback, memo) < 0)
+		memo_fail(memo, "dbus failure");
+
 	free(sid);
 }
 
 static void call_runid(struct afb_req request, const char *method)
 {
-	struct json_object *obj;
-	const char *id = afb_req_value(request, _runid_);
+	struct memo *memo;
+	const char *id;
+
+	id = afb_req_value(request, _runid_);
 	if (id == NULL) {
 		afb_req_fail(request, "bad-request", "missing 'runid'");
 		return;
 	}
-	obj = jbus_call_sj_sync(jbus, method, id);
-	if (afb_interface->verbosity)
-		fprintf(stderr, "(afm-main-plugin) %s(%s) -> %s\n", method, id,
-				obj ? json_object_to_json_string(obj) : "NULL");
-	if (obj == NULL) {
-		afb_req_fail(request, "failed", "framework daemon failure");
+
+	memo = memo_create(request, method);
+	if (memo == NULL)
 		return;
-	}
-	obj = json_object_get(obj);
-	afb_req_success(request, obj, NULL);
+
+	if (jbus_call_sj(jbus, method, id, (void*)call_xxxid_callback, memo) < 0)
+		memo_fail(memo, "dbus failure");
 }
 
 /************************** entries ******************************/
@@ -193,9 +240,24 @@ static void detail(struct afb_req request)
 	call_appid(request, _detail_);
 }
 
+static void start_callback(int status, struct json_object *obj, struct memo *memo)
+{
+	DEBUG(binder, "(afm-main-plugin) %s -> %s\n", memo->method, 
+			obj ? json_object_to_json_string(obj) : "NULL");
+
+	if (obj == NULL) {
+		memo_fail(memo, "framework daemon failure");
+	} else {
+		obj = json_object_get(obj);
+		if (json_object_get_type(obj) == json_type_int)
+			obj = embed(_runid_, obj);
+		memo_success(memo, obj, NULL);
+	}
+}
+
 static void start(struct afb_req request)
 {
-	struct json_object *obj;
+	struct memo *memo;
 	const char *id, *mode;
 	char *query;
 	int rc;
@@ -206,37 +268,29 @@ static void start(struct afb_req request)
 		afb_req_fail(request, "bad-request", "missing 'id'");
 		return;
 	}
+
 	/* get the mode */
 	mode = afb_req_value(request, _mode_);
 	if (mode == NULL || !strcmp(mode, _auto_)) {
-		mode = afb_interface->mode == AFB_MODE_REMOTE ? _remote_ : _local_;
+		mode = binder->mode == AFB_MODE_REMOTE ? _remote_ : _local_;
 	}
+
+	/* prepares asynchronous request */
+	memo = memo_create(request, _start_);
+	if (memo == NULL)
+		return;
 
 	/* create the query */
 	rc = asprintf(&query, "{\"id\":\"%s\",\"mode\":\"%s\"}", id, mode);
 	if (rc < 0) {
-		afb_req_fail(request, "server-error", "out of memory");
+		memo_fail(memo, "out of memory");
 		return;
 	}
 
-	/* calls the service */
-	obj = jbus_call_sj_sync(jbus, _start_, query);
-	if (afb_interface->verbosity)
-		fprintf(stderr, "(afm-main-plugin) start(%s) -> %s\n", query,
-			obj ? json_object_to_json_string(obj) : "NULL");
+	/* calls the service asynchronously */
+	if (jbus_call_sj(jbus, _start_, query, (void*)start_callback, memo) < 0)
+		memo_fail(memo, "dbus failure");
 	free(query);
-
-	/* check status */
-	obj = json_object_get(obj);
-	if (obj == NULL) {
-		afb_req_fail(request, "failed", "framework daemon failure");
-		return;
-	}
-
-	/* embed if needed */
-	if (json_object_get_type(obj) == json_type_int)
-		obj = embed(_runid_, obj);
-	afb_req_success(request, obj, NULL);
 }
 
 static void terminate(struct afb_req request)
@@ -264,9 +318,23 @@ static void state(struct afb_req request)
 	call_runid(request, _state_);
 }
 
+static void install_callback(int status, struct json_object *obj, struct memo *memo)
+{
+	struct json_object *added;
+
+	if (obj == NULL) {
+		memo_fail(memo, "framework daemon failure");
+	} else {
+		if (json_object_object_get_ex(obj, _added_, &added))
+			obj = added;
+		obj = json_object_get(obj);
+		obj = embed(_id_, obj);
+		memo_success(memo, obj, NULL);
+	}
+}
 static void install(struct afb_req request)
 {
-	struct json_object *obj, *added;
+	struct memo *memo;
 	char *query;
 	const char *filename;
 	struct afb_arg arg;
@@ -279,30 +347,21 @@ static void install(struct afb_req request)
 		return;
 	}
 
+	/* prepares asynchronous request */
+	memo = memo_create(request, _install_);
+	if (memo == NULL)
+		return;
+
 	/* makes the query */
 	if (0 >= asprintf(&query, "\"%s\"", filename)) {
 		afb_req_fail(request, "server-error", "out of memory");
 		return;
 	}
 
-	obj = jbus_call_sj_sync(jbus, _install_, query);
-	if (afb_interface->verbosity)
-		fprintf(stderr, "(afm-main-plugin) install(%s) -> %s\n", query,
-			obj ? json_object_to_json_string(obj) : "NULL");
+	/* calls the service asynchronously */
+	if (jbus_call_sj(jbus, _install_, query, (void*)install_callback, memo) < 0)
+		memo_fail(memo, "dbus failure");
 	free(query);
-
-	/* check status */
-	if (obj == NULL) {
-		afb_req_fail(request, "failed", "framework daemon failure");
-		return;
-	}
-
-	/* embed if needed */
-	if (json_object_object_get_ex(obj, _added_, &added))
-		obj = added;
-	obj = json_object_get(obj);
-	obj = embed(_id_, obj);
-	afb_req_success(request, obj, NULL);
 }
 
 static void uninstall(struct afb_req request)
@@ -340,8 +399,8 @@ const struct AFB_plugin *pluginAfbV1Register(const struct AFB_interface *itf)
 	struct sd_bus *sbus;
 
 	/* records the interface */
-	assert (afb_interface == NULL);
-	afb_interface = itf;
+	assert (binder == NULL);
+	binder = itf;
 
 	/* creates the jbus for accessing afm-user-daemon */
 	sbus = afb_daemon_get_user_bus(itf->daemon);
