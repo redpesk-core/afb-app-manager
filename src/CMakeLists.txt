@@ -139,28 +139,28 @@ target_link_libraries(afm-system-daemon wgtpkg afm secwrp wgt utils)
 install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ###########################################################################
-# the plugin for afb
+# the binding for afb
 
 pkg_check_modules(afb afb-daemon)
 if(afb_FOUND)
-	message(STATUS "Creation afm-main-plugin for AFB-DAEMON")
+	message(STATUS "Creation afm-main-binding for AFB-DAEMON")
 	###############################################################
-	#pkg_get_variable(afb_plugin_install_dir afb-daemon plugin_install_dir)
+	#pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
 	execute_process(
-		COMMAND pkg-config --variable plugin_install_dir afb-daemon
-		OUTPUT_VARIABLE afb_plugin_install_dir OUTPUT_STRIP_TRAILING_WHITESPACE
+		COMMAND pkg-config --variable binding_install_dir afb-daemon
+		OUTPUT_VARIABLE afb_binding_install_dir OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
 	###############################################################
-	add_library(afm-main-plugin MODULE afm-main-plugin.c)
-	target_compile_options(afm-main-plugin PRIVATE ${afb_CFLAGS})
-	target_include_directories(afm-main-plugin PRIVATE ${afb_INCLUDE_DIRS})
-	target_link_libraries(afm-main-plugin utils ${afb_LIBRARIES})
-	set_target_properties(afm-main-plugin PROPERTIES
+	add_library(afm-main-binding MODULE afm-main-binding.c)
+	target_compile_options(afm-main-binding PRIVATE ${afb_CFLAGS})
+	target_include_directories(afm-main-binding PRIVATE ${afb_INCLUDE_DIRS})
+	target_link_libraries(afm-main-binding utils ${afb_LIBRARIES})
+	set_target_properties(afm-main-binding PROPERTIES
 		PREFIX ""
-		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-plugin.export-map"
+		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-binding.export-map"
 	)
-	install(TARGETS afm-main-plugin LIBRARY DESTINATION ${afb_plugin_install_dir})
+	install(TARGETS afm-main-binding LIBRARY DESTINATION ${afb_binding_install_dir})
 else()
-	message(STATUS "Not creating the plugin for AFB-DAEMON")
+	message(STATUS "Not creating the binding for AFB-DAEMON")
 endif()
 

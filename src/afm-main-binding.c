@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <json-c/json.h>
 
-#include <afb/afb-plugin.h>
+#include <afb/afb-binding.h>
 
 #include "utils-jbus.h"
 
@@ -45,7 +45,7 @@ static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
 static const char _uri_[]       = "uri";
 
-static const struct AFB_interface *binder;
+static const struct afb_binding_interface *binder;
 
 static struct jbus *jbus;
 
@@ -138,7 +138,7 @@ static struct json_object *embed(const char *tag, struct json_object *obj)
  */
 static void embed_call_void_callback(int status, struct json_object *obj, struct memo *memo)
 {
-	DEBUG(binder, "(afm-main-plugin) %s(true) -> %s\n", memo->method,
+	DEBUG(binder, "(afm-main-binding) %s(true) -> %s\n", memo->method,
 			obj ? json_object_to_json_string(obj) : "NULL");
 
 	if (obj == NULL) {
@@ -169,7 +169,7 @@ static void embed_call_void(struct afb_req request, const char *method)
  */
 static void call_xxxid_callback(int status, struct json_object *obj, struct memo *memo)
 {
-	DEBUG(binder, "(afm-main-plugin) %s -> %s\n", memo->method, 
+	DEBUG(binder, "(afm-main-binding) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
 
 	if (obj == NULL) {
@@ -242,7 +242,7 @@ static void detail(struct afb_req request)
 
 static void start_callback(int status, struct json_object *obj, struct memo *memo)
 {
-	DEBUG(binder, "(afm-main-plugin) %s -> %s\n", memo->method, 
+	DEBUG(binder, "(afm-main-binding) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
 
 	if (obj == NULL) {
@@ -369,7 +369,7 @@ static void uninstall(struct afb_req request)
 	call_appid(request, _uninstall_);
 }
 
-static const struct AFB_verb_desc_v1 verbs[] =
+static const struct afb_verb_desc_v1 verbs[] =
 {
 	{_runnables_, AFB_SESSION_CHECK, runnables,  "Get list of runnable applications"},
 	{_detail_   , AFB_SESSION_CHECK, detail, "Get the details for one application"},
@@ -384,8 +384,8 @@ static const struct AFB_verb_desc_v1 verbs[] =
 	{ NULL, 0, NULL, NULL }
 };
 
-static const struct AFB_plugin plug_desc = {
-	.type = AFB_PLUGIN_VERSION_1,
+static const struct afb_binding plug_desc = {
+	.type = AFB_BINDING_VERSION_1,
 	.v1 = {
 		.info = "Application Framework Master Service",
 		.prefix = "afm-main",
@@ -393,7 +393,7 @@ static const struct AFB_plugin plug_desc = {
 	}
 };
 
-const struct AFB_plugin *pluginAfbV1Register(const struct AFB_interface *itf)
+const struct afb_binding *afbBindingV1Register(const struct afb_binding_interface *itf)
 {
 	int rc;
 	struct sd_bus *sbus;
