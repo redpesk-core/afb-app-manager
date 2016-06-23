@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">
+code{white-space: pre;}
+@page { margin-left: 0.79in; margin-right: 0.79in }
+@page:first { margin-top: 0.79in; margin-bottom: 0.79in }
+p { margin-bottom: 0.1in; line-height: 120%; text-align: justify; page-break-before: auto }
+p.western { font-family: "Verdana", sans-serif; font-size: 11pt }
+p.cjk { font-size: 10pt }
+h1 { margin-top: 0.17in; margin-bottom: 0.32in; border-top: none; border-bottom: 1.50pt solid #330066; border-left: none; border-right: none; padding-top: 0in; padding-bottom: 0.02in; padding-left: 0in; padding-right: 0in; color: #330066; page-break-before: auto }
+h1.western { font-family: "Verdana", sans-serif; font-size: 18pt }
+h1.cjk { font-family: "Droid Sans Fallback"; font-size: 18pt }
+h1.ctl { font-family: "FreeSans"; font-size: 18pt }
+h2 { margin-top: 0.14in; margin-bottom: 0.16in; color: #330066; page-break-before: auto ; text-decoration: underline }
+h2.western { font-family: "Verdana", sans-serif; font-size: 16pt }
+h2.cjk { font-family: "Droid Sans Fallback"; font-size: 16pt }
+h2.ctl { font-family: "FreeSans"; font-size: 16pt }
+h3 { color: #330066; page-break-before: auto }
+h3.western { font-family: "Verdana", sans-serif }
+h3.cjk { font-family: "Droid Sans Fallback" }
+h3.ctl { font-family: "FreeSans" }
+h5 { color: #330066; page-break-before: auto }
+h5.western { font-family: "Verdana", sans-serif; font-size: 11pt }
+h5.cjk { font-family: "Droid Sans Fallback"; font-size: 11pt }
+h5.ctl { font-family: "FreeSans"; font-size: 11pt }
+h4 { color: #330066; page-break-before: auto }
+h4.western { font-family: "Verdana", sans-serif; font-size: 13pt; font-style: italic }
+h4.cjk { font-family: "Droid Sans Fallback"; font-size: 13pt; font-style: italic }
+h4.ctl { font-family: "FreeSans"; font-size: 13pt; font-style: italic }
+h1.titre-hors-toc-western { font-family: "Verdana", sans-serif; font-size: 18pt }
+h1.titre-hors-toc-cjk { font-family: "Droid Sans Fallback"; font-size: 18pt }
+h1.titre-hors-toc-ctl { font-family: "FreeSans"; font-size: 18pt }
+td p { margin-bottom: 0in; page-break-before: auto }
+td p.western { font-family: "Verdana", sans-serif; font-size: 11pt }
+td p.cjk { font-size: 10pt }
+th p { margin-bottom: 0in; page-break-before: auto }
+th p.western { font-family: "Verdana", sans-serif; font-size: 11pt }
+th p.cjk { font-size: 10pt }
+p.sdfootnote-western { margin-left: 0.24in; text-indent: -0.24in; margin-bottom: 0in; font-family: "Verdana", sans-serif; font-size: 10pt; line-height: 100%; text-align: left }
+p.sdfootnote-cjk { margin-left: 0.24in; text-indent: -0.24in; margin-bottom: 0in; font-size: 10pt; line-height: 100%; text-align: left }
+p.sdfootnote-ctl { margin-left: 0.24in; text-indent: -0.24in; margin-bottom: 0in; font-size: 10pt; line-height: 100%; text-align: left }
+pre { border-top: 1px dotted #000000; border-bottom: 1px dotted #000000; border-left: 1px dotted #000000; border-right: 1px dotted #000000; padding: 0.04in; page-break-before: auto ; background-color: #eee}
+pre.western { font-family: "Courier New", monospace }
+pre.cjk { font-family: "Droid Sans Fallback", monospace }
+a:link { color: #330066; background: transparent }
+a.cjk:link { font-size: 10pt; so-language: zxx }
+a.ctl:link { so-language: zxx }
+code.cjk { font-family: "Droid Sans Fallback", monospace }
+a.sdfootnoteanc { font-size: 57% }
+  </style>
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+</head>
+<body>
+<h1 id="agl-application-framework-a-quick-tutorial">AGL Application Framework: A Quick Tutorial</h1>
+<h2 id="introduction">Introduction</h2>
+<p>This document proposes a quick tutorial to demonstrate the major functionnalities of the AGL Application Framework. For more complete information, please refer to the inline documentation available in the main git repository: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder</p>
+<p>For more information on AGL, please visit: https://www.automotivelinux.org/</p>
+<hr />
+<h2 id="sample-applications">Sample applications</h2>
+<p>4 sample applications (.wgt files) are prebuilt and available at the following address: https://github.com/iotbzh/afm-widget-examples</p>
+<p>You can get them by cloning this git repository on your desktop (will be useful later in this tutorial):</p>
+<pre><code>$ git clone https://github.com/iotbzh/afm-widget-examples</code></pre>
+<h2 id="using-the-cli-tool">Using the CLI tool</h2>
+<h3 id="setup-environment">Setup Environment</h3>
+<p>Connect your AGL target board to the network and copy some sample widgets on it through SSH (set BOARDIP with your board IP address) :</p>
+<pre><code>$ cd afm-widget-examples
+$ BOARDIP=1.2.3.4
+$ scp *.wgt root@$BOARDIP:~/</code></pre>
+<p>Connect through SSH on the target board and check for Application Framework daemons:</p>
+<pre><code>$ ssh root@$BOARDIP
+root@porter:~# ps -ef|grep bin/afm
+afm        409     1  0 13:00 ?        00:00:00 /usr/bin/afm-system-daemon
+root       505   499  0 13:01 ?        00:00:00 /usr/bin/afm-user-daemon
+root       596   550  0 13:22 pts/0    00:00:00 grep afm</code></pre>
+<p>We can see that there are two daemons running: * <strong>afm-system-daemon</strong> runs with a system user 'afm' and is responsible for installing/uninstalling packages * <strong>afm-user-daemon</strong> runs as a user daemon (currently as root because it's the only real user on the target board) and is responsible for the whole lifecycle of the applications running inside the user session.</p>
+<p>The application framework has a tool running on the Command Line Interface (CLI). Using the <strong>afm-util</strong> command, you can install, uninstall, list, run, stop ... applications.</p>
+<p>To begin, run '<strong>afm-util help</strong>' to get a quick help on commands:</p>
+<pre><code>root@porter:~# afm-util help
+usage: afm-util command [arg]
+
+The commands are:
+
+  list
+  runnables      list the runnable widgets installed
+
+  add wgt
+  install wgt    install the wgt file
+
+  remove id
+  uninstall id   remove the installed widget of id
+
+  info id
+  detail id      print detail about the installed widget of id
+
+  ps
+  runners        list the running instance
+
+  run id
+  start id       start an instance of the widget of id
+
+  kill rid
+  terminate rid       terminate the running instance rid
+
+  stop rid
+  pause rid      stop the running instance rid
+
+  resume rid
+  continue rid   continue the previously rid
+
+  status rid
+  state rid     get status of the running instance rid</code></pre>
+<h3 id="install-an-application">Install an application</h3>
+<p>You can then install your first application:</p>
+<pre><code>root@porter:~# afm-util install /home/root/annex.wgt 
+{ &quot;added&quot;: &quot;webapps-annex@0.0&quot; }</code></pre>
+<p>Let's install a second application:</p>
+<pre><code>root@porter:~# afm-util install /home/root/memory-match.wgt 
+{ &quot;added&quot;: &quot;webapps-memory-match@1.1&quot; }</code></pre>
+<p>Note that usually, <strong>afm-util</strong> will return a <strong>JSON result</strong>, which is the common format for messages returned by the Application Framework daemons.</p>
+<h3 id="list-installed-applications">List installed applications</h3>
+<p>You can then list all installed applications:</p>
+<pre><code>root@porter:~# afm-util list
+[ { &quot;id&quot;: &quot;webapps-annex@0.0&quot;, &quot;version&quot;: &quot;0.0.10&quot;, &quot;width&quot;: 0, &quot;height&quot;: 0, &quot;name&quot;: &quot;Annex&quot;, &quot;description&quot;: &quot;Reversi\/Othello&quot;, &quot;shortname&quot;: &quot;&quot;, &quot;author&quot;: &quot;Todd Brandt &lt;todd.e.brandt@intel.com&gt;&quot; },
+ { &quot;id&quot;: &quot;webapps-memory-match@1.1&quot;, &quot;version&quot;: &quot;1.1.7&quot;, &quot;width&quot;: 0, &quot;height&quot;: 0, &quot;name&quot;: &quot;MemoryMatch&quot;, &quot;description&quot;: &quot;Memory match&quot;, &quot;shortname&quot;: &quot;&quot;, &quot;author&quot;: &quot;Todd Brandt &lt;todd.e.brandt@intel.com&gt;&quot; } ]</code></pre>
+<p>Here, we can see the two previously installed applications.</p>
+<h3 id="get-information-about-an-application">Get information about an application</h3>
+<p>Let's get some details about the first application:</p>
+<pre><code>root@porter:~# afm-util info webapps-annex@0.0
+{ &quot;id&quot;: &quot;webapps-annex@0.0&quot;, &quot;version&quot;: &quot;0.0.10&quot;, &quot;width&quot;: 0, &quot;height&quot;: 0, &quot;name&quot;: &quot;Annex&quot;, &quot;description&quot;: &quot;Reversi\/Othello&quot;, &quot;shortname&quot;: &quot;&quot;, &quot;author&quot;: &quot;Todd Brandt &lt;todd.e.brandt@intel.com&gt;&quot; }</code></pre>
+<p>Note that AGL applications are mostly handled by afm-util through their IDs. In our example, the application ID is 'webapps-annex@0.0'.</p>
+<h3 id="start-application">Start application</h3>
+<p>Let's start the first application Annex:</p>
+<pre><code>root@porter:~# afm-util start webapps-annex@0.0
+1</code></pre>
+<p>As the application is a HTML5 game, you should then get a webview running with QML on the board display.</p>
+<h3 id="security-context">Security Context</h3>
+<p>The application has been started in the user session, with a dedicated security context, enforced by SMACK. To illustrate this, we can take a look at the running processes and their respective SMACK labels:</p>
+<pre><code>root@porter:~# ps -efZ |grep webapps-annex | grep -v grep
+User::App::webapps-annex        root       716   491  0 13:19 ?        00:00:00 /usr/bin/afb-daemon --mode=local --readyfd=8 --alias=/icons /usr/share/afm/icons --port=12348 --rootdir=/usr/share/afm/applications/webapps-annex/0.0 --token=7D6D2F16 --sessiondir=/home/root/app-data/webapps-annex/.afb-daemon
+User::App::webapps-annex        root       717   491  0 13:19 ?        00:00:00 /usr/bin/qt5/qmlscene http://localhost:12348/index.html?token=7D6D2F16 /usr/bin/web-runtime-webkit.qml</code></pre>
+<p>In the previous result, we see that the application is composed of two processes: * the application binder (afb-daemon) * the application UI (qmlscene ...)</p>
+<p>While most system processes run with the label 'System', we see that the application runs with a specific SMACK label 'User::App::webapps-annex': this label is used to force the application to follow a Mandatory Access Control (MAC) scheme. This means that those processes run in their own security context, isolated from the rest of the system (and other applications). Global security rules can then be applied to restrict access to all other user or system resources.</p>
+<h3 id="check-running-applications">Check running applications</h3>
+<p>To check for running applications, just run:</p>
+<pre><code>root@porter:~# afm-util ps
+[ { &quot;runid&quot;: 1, &quot;state&quot;: &quot;running&quot;, &quot;id&quot;: &quot;webapps-annex@0.0&quot; } ]</code></pre>
+<p>The 'runid' is the application instance ID and is used as an argument for the subcommands controlling the application runtime state (kill/stop/resume/status)</p>
+<h3 id="stop-application">Stop application</h3>
+<p>To stop the application that was just started (the one with RUNID 1), just run the stop command:</p>
+<pre><code>root@porter:~# afm-util terminate 1
+true</code></pre>
+<p>The application is now stopped, as confirmed by a list of running apps:</p>
+<pre><code>root@porter:~# afm-util ps
+[ ]</code></pre>
+<h3 id="uninstall-application">Uninstall application</h3>
+<p>To uninstall an application, simply use its ID:</p>
+<pre><code>root@porter:~# afm-util uninstall webapps-annex@0.0
+true</code></pre>
+<p>Then list the installed apps to confirm the removal:</p>
+<pre><code>root@porter:~# afm-util list
+[ { &quot;id&quot;: &quot;webapps-memory-match@1.1&quot;, &quot;version&quot;: &quot;1.1.7&quot;, &quot;width&quot;: 0, &quot;height&quot;: 0, &quot;name&quot;: &quot;MemoryMatch&quot;, &quot;description&quot;: &quot;Memory match&quot;, &quot;shortname&quot;: &quot;&quot;, &quot;author&quot;: &quot;Todd Brandt &lt;todd.e.brandt@intel.com&gt;&quot; } ]</code></pre>
+<h2 id="afm-client-a-sample-html5-homescreen">afm-client: a sample HTML5 'Homescreen'</h2>
+<p><strong>afm-client</strong> is a HTML5 UI that allows to install/uninstall applications as well as starting/stopping them as already demonstrated with afm-util.</p>
+<p>The HTML5 UI is accessible remotely through this URL: http://[board_ip]:1234/opa?token=132456789</p>
+<h3 id="installing-an-application">Installing an application</h3>
+<p>By clicking on the '<strong>Upload</strong>' button on the right, you can send an application package (WGT file) and install it. Select for example the file '<strong>rabbit.wgt</strong>' that was cloned initially from the git repository afm-widget-examples.</p>
+<p>Then a popup requester ask for a confirmation: 'Upload Application rabbit.wgt ?'. Click on the '<strong>Install</strong>' button.</p>
+<p>You should then see some changes in the toolbar: a new icon appeared, representing the freshly installed application.</p>
+<h3 id="running-an-application">Running an application</h3>
+<p>In the toolbar, click on the button representing the Rabbit application. You'll get a popup asking to: * start the application * or get some info about it * or uninstall it</p>
+<p>Click on the 'start' item: the application starts and should be visible as a webview on the target board display. Note that at this point, we could also run the application remotely, that is in the same browser as the Homescreen app. By default, the application framework is configured to run applications 'locally' on the board display.</p>
+<h3 id="stopping-an-application">Stopping an application</h3>
+<p>In the Homescreen application, click again on the Rabbit application button, then select 'stop': the application then stops.</p>
+<h3 id="uninstalling-an-application">Uninstalling an application</h3>
+<p>From the same popup menu, you can select 'uninstall' to remove the application from the system. As a consequence, the application icon should disappear from the toolbar.</p>
+<h2 id="afb-client-a-template-for-angular-applications">afb-client: a template for Angular Applications</h2>
+<p>Another package '<strong>afb-client</strong>' is also available for testing. This is a sample HTML5 application demonstrating various basic capabilities of the Binder daemon. It can be used by developers as a template to start writing real AGL Applications.</p>
+<p>This application is not available as WGT file yet and it should be started manually without any specific security context:</p>
+<pre><code>root@porter:~# /usr/bin/afb-daemon --mode=remote --port=1235 --token=&#39;&#39; --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons</code></pre>
+<p>Then you can access it from a browser: http://[board_ip]:1235/opa/?token=132456789</p>
+<p>afb-client is a simple application to demonstrate the built-in capabilities of the binder daemon (handling sessions and security tokens, testing POSTs uploads...) and was used during the application framework development to validate the proposed features.</p>
+</body>
+</html>
