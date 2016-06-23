@@ -136,13 +136,13 @@ static struct json_object *embed(const char *tag, struct json_object *obj)
 /*
  * Callback for replies made by 'embed_call_void'.
  */
-static void embed_call_void_callback(int status, struct json_object *obj, struct memo *memo)
+static void embed_call_void_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
 	DEBUG(binder, "(afm-main-binding) %s(true) -> %s\n", memo->method,
 			obj ? json_object_to_json_string(obj) : "NULL");
 
-	if (obj == NULL) {
-		memo_fail(memo, "framework daemon failure");
+	if (iserror) {
+		memo_fail(memo, obj ? json_object_get_string(obj) : "framework daemon failure");
 	} else {
 		memo_success(memo, embed(memo->method, json_object_get(obj)), NULL);
 	}
@@ -167,13 +167,13 @@ static void embed_call_void(struct afb_req request, const char *method)
 /*
  * Callback for replies made by 'call_appid' and 'call_runid'.
  */
-static void call_xxxid_callback(int status, struct json_object *obj, struct memo *memo)
+static void call_xxxid_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
 	DEBUG(binder, "(afm-main-binding) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
 
-	if (obj == NULL) {
-		memo_fail(memo, "framework daemon failure");
+	if (iserror) {
+		memo_fail(memo, obj ? json_object_get_string(obj) : "framework daemon failure");
 	} else {
 		memo_success(memo, json_object_get(obj), NULL);
 	}
@@ -240,13 +240,13 @@ static void detail(struct afb_req request)
 	call_appid(request, _detail_);
 }
 
-static void start_callback(int status, struct json_object *obj, struct memo *memo)
+static void start_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
 	DEBUG(binder, "(afm-main-binding) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
 
-	if (obj == NULL) {
-		memo_fail(memo, "framework daemon failure");
+	if (iserror) {
+		memo_fail(memo, obj ? json_object_get_string(obj) : "framework daemon failure");
 	} else {
 		obj = json_object_get(obj);
 		if (json_object_get_type(obj) == json_type_int)
@@ -318,12 +318,12 @@ static void state(struct afb_req request)
 	call_runid(request, _state_);
 }
 
-static void install_callback(int status, struct json_object *obj, struct memo *memo)
+static void install_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
 	struct json_object *added;
 
-	if (obj == NULL) {
-		memo_fail(memo, "framework daemon failure");
+	if (iserror) {
+		memo_fail(memo, obj ? json_object_get_string(obj) : "framework daemon failure");
 	} else {
 		if (json_object_object_get_ex(obj, _added_, &added))
 			obj = added;
