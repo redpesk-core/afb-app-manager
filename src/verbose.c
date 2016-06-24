@@ -1,5 +1,5 @@
 /*
- Copyright 2016 IoT.bzh
+ Copyright (C) 2016 "IoT.bzh"
 
  author: José Bollo <jose.bollo@iot.bzh>
 
@@ -16,14 +16,43 @@
  limitations under the License.
 */
 
-#include "verbose.h"
-
-#if !defined(VERBOSE_WITH_SYSLOG)
-
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "verbose.h"
+
 int verbosity = 1;
+
+#define LEVEL(x) ((x) < 0 ? 0 : (x) > 7 ? 7 : (x))
+
+#if defined(VERBOSE_WITH_SYSLOG)
+
+#include <syslog.h>
+
+void vverbose(int level, const char *file, int line, const char *fmt, va_list args)
+{
+	char *p;
+
+	if (file == NULL || vasprintf(&p, fmt, args) < 0)
+		vsyslog(level, fmt, args);
+	else {
+		syslog(LEVEL(level), "%s [%s:%d]", p, file, line);
+		free(p);
+	}
+}
+
+void verbose_set_name(const char *name, int authority)
+{
+	openlog(name, LOG_PERROR, authority ? LOG_AUTH : LOG_USER);
+}
+
+#else
+
+#include <unistd.h>
+
+static const char *appname;
+
+static int appauthority;
 
 static const char *prefixes[] = {
 	"<0> EMERGENCY",
@@ -36,32 +65,32 @@ static const char *prefixes[] = {
 	"<7> DEBUG"
 };
 
+void vverbose(int level, const char *file, int line, const char *fmt, va_list args)
+{
+	int tty = isatty(fileno(stderr));
+
+	fprintf(stderr, "%s: ", prefixes[LEVEL(level)] + (tty ? 4 : 0));
+	vfprintf(stderr, fmt, args);
+	if (file != NULL && (!tty || verbosity >5))
+		fprintf(stderr, " [%s:%d]\n", file, line);
+	else
+		fprintf(stderr, "\n");
+}
+
+void verbose_set_name(const char *name, int authority)
+{
+	appname = name;
+	appauthority = authority;
+}
+
+#endif
+
 void verbose(int level, const char *file, int line, const char *fmt, ...)
 {
 	va_list ap;
 
-	fprintf(stderr, "%s: ", prefixes[level < 0 ? 0 : level > 7 ? 7 : level]);
 	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
+	vverbose(level, file, line, fmt, ap);
 	va_end(ap);
-	fprintf(stderr, " [%s:%d]\n", file, line);
 }
-
-#endif
-
-#if defined(VERBOSE_WITH_SYSLOG) && !defined(NDEBUG)
-
-int verbosity = 1;
-
-#endif
-
-#if defined(VERBOSE_WITH_SYSLOG) && defined(NDEBUG)
-
-void verbose_error(const char *file, int line)
-{
-	syslog(LOG_ERR, "error file %s line %d", file, line);
-}
-
-#endif
-
 
