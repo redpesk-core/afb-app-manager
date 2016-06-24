@@ -42,7 +42,7 @@ static void show(const char *wgtfile);
 static void usage()
 {
 	printf(
-		"usage: %s [-f] [-q] [-v] wgtfile...\n"
+		"usage: %s [-q] [-v] wgtfile...\n"
 		"\n"
 		"   -q            quiet\n"
 		"   -v            verbose\n"
