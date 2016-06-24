@@ -487,6 +487,7 @@ static int mkport()
 /*
 %% %
 %a appid			desc->appid
+%b bindings			desc->bindings
 %c content			desc->content
 %D datadir			params->datadir
 %H height			desc->height
@@ -494,7 +495,6 @@ static int mkport()
 %I icondir			FWK_ICON_DIR
 %m mime-type			desc->type
 %n name				desc->name
-%p plugins			desc->plugins
 %P port				params->port
 %r rootdir			desc->path
 %R readyfd                      params->readyfd
@@ -571,6 +571,9 @@ static union arguments instantiate_arguments(
 					c = *p++;
 					switch (c) {
 					case 'a': v = desc->appid; break;
+					case 'b':
+						v = "" /*TODO:desc->bindings*/;
+						break;
 					case 'c': v = desc->content; break;
 					case 'D': v = params->datadir; break;
 					case 'H':
@@ -588,9 +591,6 @@ static union arguments instantiate_arguments(
 							sprintf(port, "%d",
 								params->port);
 						v = port;
-						break;
-					case 'p':
-						v = "" /*TODO:desc->plugins*/;
 						break;
 					case 'R':
 						if(!data)

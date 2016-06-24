@@ -39,9 +39,9 @@
  *    path: STRING, the path of the root directory for the application
  *    content: STRING, the relative path to the entryu point of the application
  *    type: STRING, the mime type describing the type 'content'
- *    plugins: ARRAY, array of plugins
+ *    bindings: ARRAY, array of bindings
  *      [
- *        STRING, path to the plugin
+ *        STRING, path to the binding
  *      ]
  *    public: OBJECT, public content describing the application widget
  *      {  
@@ -139,7 +139,7 @@ static int addwgt(struct afm_apps *apps, const char *path,
 	if (!pub)
 		goto error;
 
-	plugs = j_add_new_array(priv, "plugins");
+	plugs = j_add_new_array(priv, "bindings");
 	if (!plugs)
 		goto error;
 
@@ -157,10 +157,10 @@ static int addwgt(struct afm_apps *apps, const char *path,
 	|| !j_add_string(pub, "author", desc->author))
 		goto error;
 
-	/* extract plugins from features */
+	/* extract bindings from features */
 	feat = desc->features;
 	while (feat) {
-		static const char prefix[] = FWK_PREFIX_PLUGIN;
+		static const char prefix[] = FWK_PREFIX_BINDING;
 		if (!memcmp(feat->name, prefix, sizeof prefix - 1)) {
 			str = json_object_new_string (
 					feat->name + sizeof prefix - 1);

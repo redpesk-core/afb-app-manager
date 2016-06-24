@@ -26,7 +26,7 @@ struct afm_launch_desc {
 	const char *type;          /* type to launch */
 	const char *name;          /* name of the application */
 	const char *home;          /* home directory of the applications */
-	const char **plugins;      /* plugins for the application */
+	const char **bindings;     /* bindings for the application */
 	int width;                 /* requested width */
 	int height;                /* requested height */
 	enum afm_launch_mode mode; /* launch mode */

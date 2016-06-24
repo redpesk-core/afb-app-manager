@@ -388,11 +388,11 @@ static int fill_launch_desc(struct json_object *appli,
 		return -1;
 	}
 
-	/* plugins */
+	/* bindings */
 	{
 		/* TODO */
 		static const char *null = NULL;
-		desc->plugins = &null;
+		desc->bindings = &null;
 	}
 
 	/* finaly */
