@@ -1,47 +1,52 @@
 #!/bin/bash
 
-# the HTML template
-main='<html>
-<head>
-  <link rel="stylesheet" type="text/css" href="doc.css">
-  <meta charset="UTF-8">
-</head>
-<body>
-GENERATED-MARKDOWN-HERE
-</body>
-</html>'
-
-# substitute the pattern $1 by the content of the file $2
-subst() {
-  awk -v pat="$1" -v rep="$(sed 's:\\:\\\\:g' $2)" '{gsub(pat,rep);gsub(pat,"\\&");print}'
+title() {
+	sed '/^[ \t]*$/d' "$1" |
+	sed '/^===/Q' |
+	sed '/^---/Q' |
+	sed 's/^# //;T;Q' |
+	sed 's/^## //;T;Q' |
+	sed '/^---/Q'
 }
 
-# update the date field of file $1
-updadate() {
-  local x=$1
-  local t=$(git log -n 1 --format=%ct $x)
-  [[ -n "$t" ]] || t=$(stat -c %Y $x)
-  local d=$(LANG= date -d @$t +"%d %B %Y")
-  sed -i "s/^\(    Date: *\).*/\1$d/" $x
+authors() {
+	git log --numstat --format='A %aN' -- "$1" |
+	awk '$1=="A"{sub(/^A /,"");a=$0; s[a]+=0; next}NF==3{s[a]+=($1+0)}END{for(a in s)print s[a]" : "a}' |
+	sort -nr |
+	sed 's/[^:]* : //' |
+	sed '1!s/^/; /' |
+	tr -d '\n'
 }
+
+dateof() {
+	local file="$1"
+	local t=$(git log -n 1 --format=%ct "$file")
+	[[ -n "$t" ]] || t=$(stat -c %Y "$file")
+	LANG= date -d @$t +"%d %B %Y"
+}
+
+meta() {
+	local file="$1"
+	local t=$(title "$file")
+	local a=$(authors "$file")
+	local d=$(dateof "$file")
+	echo "% $t"
+	echo "% $a"
+	echo "% $d"
+	cat "$file"
+}
+
 
 # make the html file for $1
 mkhtml() {
   local x=$1
   local h=${x%%.md}.html
-  expand -i $x | sed 's:^        :    :' > $h.pre
-  markdown -f toc,autolink $h.pre > $h.toc.no
-  markdown -Tf toc,autolink $h.pre > $h.toc.yes
-  head --bytes=-$(stat -c %s $h.toc.no) $h.toc.yes > $h.toc
-  echo "$main" |
-  subst GENERATED-MARKDOWN-HERE $h.toc.no |
-  subst TABLE-OF-CONTENT-HERE $h.toc > $h
-  rm $h.*
+  meta "$x" |
+  pandoc --css doc.css -f markdown -t html5 --toc > "$h"
 }
 
 # apply
 for x in *.md; do
-  updadate $x
   mkhtml $x
 done
 

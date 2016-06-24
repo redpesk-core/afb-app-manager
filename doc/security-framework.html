@@ -1,28 +1,37 @@
+<!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" type="text/css" href="doc.css">
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="José Bollo">
+  <title>The security framework</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="doc.css">
 </head>
 <body>
-<a name="The.security.framework"></a>
-<h1>The security framework</h1>
-
+<header>
+<h1 class="title">The security framework</h1>
+<h2 class="author">José Bollo</h2>
+<h3 class="date">29 mai 2016</h3>
+</header>
+<nav id="TOC">
+<ul>
+<li><a href="#the-security-framework">The security framework</a></li>
+<li><a href="#setting-smack-rules-for-the-application">Setting Smack rules for the application</a></li>
+<li><a href="#what-user-can-run-an-application">What user can run an application?</a></li>
+</ul>
+</nav>
+<h1 id="the-security-framework">The security framework</h1>
 <pre><code>version: 1
 Date:    29 mai 2016
-Author:  José Bollo
-</code></pre>
-
-<p><ul>
- <li><a href="#The.security.framework">The security framework</a></li>
- <li><a href="#Setting.Smack.rules.for.the.application">Setting Smack rules for the application</a></li>
- <li><a href="#What.user.can.run.an.application.">What user can run an application?</a></li>
-</ul></p>
-
-<a name="Setting.Smack.rules.for.the.application"></a>
-<h1>Setting Smack rules for the application</h1>
-
+Author:  José Bollo</code></pre>
+<p>TABLE-OF-CONTENT-HERE</p>
+<h1 id="setting-smack-rules-for-the-application">Setting Smack rules for the application</h1>
 <p>For Tizen, the following rules are set by the security manager for each application.</p>
-
 <pre><code>System ~APP~             rwx
 System ~PKG~             rwxat
 System ~PKG~::RO         rwxat
@@ -38,15 +47,9 @@ User   ~PKG~::RO         rwxat
 ~APP~  User::Home        rxl
 ~APP~  User::App::Shared rwxat
 ~APP~  ~PKG~             rwxat
-~APP~  ~PKG~::RO         rxl
-</code></pre>
-
-<p>Here, ~PKG~ is the identifier of the package and ~APP~ is the identifier of the application.</p>
-
-<a name="What.user.can.run.an.application."></a>
-<h1>What user can run an application?</h1>
-
-<p>Not all user are able to run all applications.
-How to manage that?</p>
+~APP~  ~PKG~::RO         rxl</code></pre>
+<p>Here, <sub>PKG</sub> is the identifier of the package and <sub>APP</sub> is the identifier of the application.</p>
+<h1 id="what-user-can-run-an-application">What user can run an application?</h1>
+<p>Not all user are able to run all applications. How to manage that?</p>
 </body>
 </html>
