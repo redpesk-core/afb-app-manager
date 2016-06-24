@@ -1,13 +1,5 @@
 .*.swp
 build/
 
-framework.html
-
-ca-certificates/
-certs/
-root/
 tests-w3c/
-tests/
-tizen-certificates/
-wrt-widgets
 
