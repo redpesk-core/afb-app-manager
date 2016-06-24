@@ -1,6 +1,6 @@
+
 AGL Application Framework: A Quick Tutorial
 ===========================================
-[TOC]
 
 Introduction
 ------------

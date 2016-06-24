@@ -2,15 +2,10 @@
 The security framework
 ======================
 
-    version: 1
-    Date:    29 mai 2016
-    Author:  José Bollo
-
-
-TABLE-OF-CONTENT-HERE
+NOT STARTED !!!!!!
 
 Setting Smack rules for the application
-=======================================
+---------------------------------------
 
 For Tizen, the following rules are set by the security manager for each application.
 
@@ -34,7 +29,7 @@ For Tizen, the following rules are set by the security manager for each applicat
 Here, ~PKG~ is the identifier of the package and ~APP~ is the identifier of the application.
 
 What user can run an application?
-=================================
+---------------------------------------
 
 Not all user are able to run all applications.
 How to manage that?

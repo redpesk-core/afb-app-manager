@@ -2,12 +2,6 @@
 AGL framework, overview of the proposal of IoT.bzh
 ==================================================
 
-    version: 1
-    Date:    29 mai 2016
-    Author:  José Bollo
-
-TABLE-OF-CONTENT-HERE
-
 Foreword
 --------
 
@@ -118,7 +112,7 @@ APPLICATION installs an other application and then launch it.
     |  :  +-----------v-----------+   :      +---------+---------------+    |
     |  :  |   binder afb-daemon   |   :      |                         |    |
     |  :  +-----------------------+   :      |      afm-user-daemon    |    |
-    |  :  |    afm-main-plugin    |   :      |                         |    |
+    |  :  |    afm-main-binding   |   :      |                         |    |
     |  :  +-----+--------------+--+   :      +------^-------+------+---+    |
     |  :........|..............|......:             |       |      :        |
     |           |(2)           |(8)                 |(10)   |      :        |
@@ -151,7 +145,7 @@ Let follow the sequence of calls:
 
 1. APPLICATION calls its **binder** to install the OTHER application.
 
-2. The plugin **afm-main-plugin** of the **binder** calls, through
+2. The binding **afm-main-binding** of the **binder** calls, through
    **D-Bus** system, the system daemon to install the OTHER application.
 
 3. The system **D-Bus** checks wether APPLICATION has the permission
@@ -170,7 +164,7 @@ Let follow the sequence of calls:
 
 7. APPLICATION call its binder to start the nearly installed OTHER application.
 
-8. The plugin **afm-main-plugin** of the **binder** calls, through
+8. The binding **afm-main-binding** of the **binder** calls, through
    **D-Bus** session, the user daemon to launch the OTHER application.
 
 9. The session **D-Bus** checks wether APPLICATION has the permission
@@ -209,7 +203,7 @@ the components are:
 * ***afb-binder***: in charge of serving resources and features through an
   HTTP interface.
 
-* ***afm-main-plugin***: This plugin allows applications to use the API
+* ***afm-main-binding***: This binding allows applications to use the API
   of the AGL framework.
 
 

@@ -18,7 +18,7 @@
 <h1 class="title">The afm-user-daemon</h1>
 <h2 class="author">José Bollo</h2>
 <h2 class="author">Fulup Ar Foll</h2>
-<h3 class="date">30 mai 2016</h3>
+<h3 class="date">24 juin 2016</h3>
 </header>
 <nav id="TOC">
 <ul>
@@ -46,10 +46,6 @@
 </ul>
 </nav>
 <h1 id="the-afm-user-daemon">The afm-user-daemon</h1>
-<pre><code>version: 1
-Date:    30 mai 2016
-Author:  José Bollo</code></pre>
-<p>TABLE-OF-CONTENT-HERE</p>
 <h2 id="foreword">Foreword</h2>
 <p>This document describes application framework user daemon fundamentals. FCF (Fully Conform to Specification) implementation is still under development. It may happen that current implementation somehow diverges with specifications.</p>
 <h2 id="introduction">Introduction</h2>
@@ -227,6 +223,10 @@ text/html
 <p>Holds application Id of launched application.</p>
 <p>Defined by the attribute <strong>id</strong> of the element <strong><widget></strong> of <strong>config.xml</strong>.</p>
 <ul>
+<li><strong><em>%b</em></strong>: bindings</li>
+</ul>
+<p>In the future should represent the list of bindings and bindings directory separated by ','. Warning: not supported in current version.</p>
+<ul>
 <li><strong><em>%c</em></strong>: content</li>
 </ul>
 <p>The file within the widget directory that is the entry point.</p>
@@ -260,10 +260,6 @@ text/html
 <li><strong><em>%n</em></strong>: name</li>
 </ul>
 <p>Name of the application as defined by the content of the element <strong><name></strong> of <strong>config.xml</strong>.</p>
-<ul>
-<li><strong><em>%p</em></strong>: plugins</li>
-</ul>
-<p>In the future should represent the list of plugins and plugins directory separated by ','. Warning: not supported in current version.</p>
 <ul>
 <li><strong><em>%P</em></strong>: port</li>
 </ul>

@@ -1,11 +1,6 @@
 The widgets
 ===========
 
-    version: 1
-    Date:    30 mai 2016
-    Author:  José Bollo
-
-
 The widgets
 -----------
 

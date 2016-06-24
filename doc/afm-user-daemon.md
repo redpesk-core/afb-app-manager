@@ -2,12 +2,6 @@
 The afm-user-daemon
 ===================
 
-    version: 1
-    Date:    30 mai 2016
-    Author:  José Bollo
-
-TABLE-OF-CONTENT-HERE
-
 Foreword
 --------
 
@@ -311,6 +305,11 @@ Here is the list of *%substitutions*:
    Defined by the attribute **id** of the element **<widget>**
    of **config.xml**.
 
+ - ***%b***: bindings
+
+   In the future should represent the list of bindings and bindings directory separated by ','.
+   Warning: not supported in current version.
+
  - ***%c***: content
 
    The file within the widget directory that is the entry point.
@@ -355,11 +354,6 @@ Here is the list of *%substitutions*:
 
    Name of the application as defined by the content of the
    element **<name>** of **config.xml**.
-
- - ***%p***: plugins
-
-   In the future should represent the list of plugins and plugins directory separated by ','.
-   Warning: not supported in current version.
 
  - ***%P***: port
 

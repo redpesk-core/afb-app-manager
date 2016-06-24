@@ -2,13 +2,6 @@
 The afm-system-daemon
 =====================
 
-    version: 1
-    Date:    30 mai 2016
-    Author:  José Bollo
-
-TABLE-OF-CONTENT-HERE
-
-
 Foreword
 --------
 

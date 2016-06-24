@@ -16,7 +16,7 @@
 <header>
 <h1 class="title">AGL framework, overview of the proposal of IoT.bzh</h1>
 <h2 class="author">José Bollo</h2>
-<h3 class="date">29 mai 2016</h3>
+<h3 class="date">24 juin 2016</h3>
 </header>
 <nav id="TOC">
 <ul>
@@ -31,10 +31,6 @@
 </ul>
 </nav>
 <h1 id="agl-framework-overview-of-the-proposal-of-iot.bzh">AGL framework, overview of the proposal of IoT.bzh</h1>
-<pre><code>version: 1
-Date:    29 mai 2016
-Author:  José Bollo</code></pre>
-<p>TABLE-OF-CONTENT-HERE</p>
 <h2 id="foreword">Foreword</h2>
 <p>This document describes what we intend to do. It may happen that our current implementation and the content of this document differ.</p>
 <p>In case of differences, it is assumed that this document is right and the implementation is wrong.</p>
@@ -91,7 +87,7 @@ Tizen OBS ----------+---------------------------&gt;
 |  :  +-----------v-----------+   :      +---------+---------------+    |
 |  :  |   binder afb-daemon   |   :      |                         |    |
 |  :  +-----------------------+   :      |      afm-user-daemon    |    |
-|  :  |    afm-main-plugin    |   :      |                         |    |
+|  :  |    afm-main-binding   |   :      |                         |    |
 |  :  +-----+--------------+--+   :      +------^-------+------+---+    |
 |  :........|..............|......:             |       |      :        |
 |           |(2)           |(8)                 |(10)   |      :        |
@@ -122,7 +118,7 @@ Tizen OBS ----------+---------------------------&gt;
 <p>Let follow the sequence of calls:</p>
 <ol type="1">
 <li><p>APPLICATION calls its <strong>binder</strong> to install the OTHER application.</p></li>
-<li><p>The plugin <strong>afm-main-plugin</strong> of the <strong>binder</strong> calls, through <strong>D-Bus</strong> system, the system daemon to install the OTHER application.</p></li>
+<li><p>The binding <strong>afm-main-binding</strong> of the <strong>binder</strong> calls, through <strong>D-Bus</strong> system, the system daemon to install the OTHER application.</p></li>
 <li><p>The system <strong>D-Bus</strong> checks wether APPLICATION has the permission or not to install applications by calling <strong>CYNARA</strong>.</p></li>
 <li><p>The system <strong>D-Bus</strong> transmits the request to <strong>afm-system-daemon</strong>.</p></li>
 </ol>
@@ -131,7 +127,7 @@ Tizen OBS ----------+---------------------------&gt;
 <li><p><strong>afm-system-daemon</strong> calls <strong>SECURITY-MANAGER</strong> for fullfilling security context of the installed application.</p></li>
 <li><p><strong>SECURITY-MANAGER</strong> calls <strong>CYNARA</strong> to install initial permissions for the application.</p></li>
 <li><p>APPLICATION call its binder to start the nearly installed OTHER application.</p></li>
-<li><p>The plugin <strong>afm-main-plugin</strong> of the <strong>binder</strong> calls, through <strong>D-Bus</strong> session, the user daemon to launch the OTHER application.</p></li>
+<li><p>The binding <strong>afm-main-binding</strong> of the <strong>binder</strong> calls, through <strong>D-Bus</strong> session, the user daemon to launch the OTHER application.</p></li>
 <li><p>The session <strong>D-Bus</strong> checks wether APPLICATION has the permission or not to start an application by calling <strong>CYNARA</strong>.</p></li>
 <li><p>The session <strong>D-Bus</strong> transmits the request to <strong>afm-user-daemon</strong>.</p></li>
 <li><p><strong>afm-user-daemon</strong> checks wether APPLICATION has the permission or not to start the OTHER application <strong>CYNARA</strong>.</p></li>
@@ -146,7 +142,7 @@ Tizen OBS ----------+---------------------------&gt;
 <li><p><strong><em>afm-system-daemon</em></strong>: in charge of installing and uninstalling applications.</p></li>
 <li><p><strong><em>afm-user-daemon</em></strong>: in charge of listing applications, querying application details, starting, terminating, stopping, resuming applications and their instances for a given user context.</p></li>
 <li><p><strong><em>afb-binder</em></strong>: in charge of serving resources and features through an HTTP interface.</p></li>
-<li><p><strong><em>afm-main-plugin</em></strong>: This plugin allows applications to use the API of the AGL framework.</p></li>
+<li><p><strong><em>afm-main-binding</em></strong>: This binding allows applications to use the API of the AGL framework.</p></li>
 </ul>
 <h2 id="links-between-the-security-framework-and-the-application-framework">Links between the &quot;Security framework&quot; and the &quot;Application framework&quot;</h2>
 <p>The security framework refers to the security model used to ensure security and to the tools that are provided for implementing that model.</p>
