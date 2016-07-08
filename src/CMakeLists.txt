@@ -41,7 +41,7 @@ set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
 
 include(FindPkgConfig)
 
-pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c libsystemd)
+pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl)
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
@@ -84,8 +84,6 @@ add_library(wgtpkg STATIC
 
 add_library(utils STATIC
 	utils-dir.c
-	utils-jbus.c
-	utils-json.c
 	verbose.c
 	)
 
@@ -97,13 +95,6 @@ add_library(wgt STATIC
 
 add_library(secwrp STATIC
 	secmgr-wrap.c
-	)
-
-add_library(afm STATIC
-	afm-db.c
-	afm-launch.c
-	afm-launch-mode.c
-	afm-run.c
 	)
 
 ###########################################################################
@@ -126,41 +117,62 @@ target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
 install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ###########################################################################
-# the daemons
+# the targeted
 
-MESSAGE(STATUS "Creating daemons")
+pkg_check_modules(EXTRA2 json-c libsystemd)
+if(EXTRA2_FOUND)
+	add_compile_options(${EXTRA2_CFLAGS})
+	include_directories(${EXTRA2_INCLUDE_DIRS})
+	link_libraries(${EXTRA2_LIBRARIES})
 
-add_executable(afm-user-daemon afm-user-daemon.c)
-target_link_libraries(afm-user-daemon afm secwrp wgt utils )
-install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_library(utils2 STATIC
+		utils-jbus.c
+		utils-json.c
+		)
 
-add_executable(afm-system-daemon afm-system-daemon.c)
-target_link_libraries(afm-system-daemon wgtpkg afm secwrp wgt utils)
-install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_library(afm STATIC
+		afm-db.c
+		afm-launch.c
+		afm-launch-mode.c
+		afm-run.c
+		)
 
-###########################################################################
-# the binding for afb
+	###########################################################################
+	# the daemons
+	MESSAGE(STATUS "Creating daemons")
 
-pkg_check_modules(afb afb-daemon)
-if(afb_FOUND)
-	message(STATUS "Creation afm-main-binding for AFB-DAEMON")
-	###############################################################
-	#pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
-	execute_process(
-		COMMAND pkg-config --variable binding_install_dir afb-daemon
-		OUTPUT_VARIABLE afb_binding_install_dir OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-	###############################################################
-	add_library(afm-main-binding MODULE afm-main-binding.c)
-	target_compile_options(afm-main-binding PRIVATE ${afb_CFLAGS})
-	target_include_directories(afm-main-binding PRIVATE ${afb_INCLUDE_DIRS})
-	target_link_libraries(afm-main-binding utils ${afb_LIBRARIES})
-	set_target_properties(afm-main-binding PROPERTIES
-		PREFIX ""
-		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-binding.export-map"
-	)
-	install(TARGETS afm-main-binding LIBRARY DESTINATION ${afb_binding_install_dir})
-else()
-	message(STATUS "Not creating the binding for AFB-DAEMON")
-endif()
+	add_executable(afm-user-daemon afm-user-daemon.c)
+	target_link_libraries(afm-user-daemon afm secwrp wgt utils utils2)
+	install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+	add_executable(afm-system-daemon afm-system-daemon.c)
+	target_link_libraries(afm-system-daemon wgtpkg afm secwrp wgt utils utils2)
+	install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+	###########################################################################
+	# the binding for afb
+
+	pkg_check_modules(afb afb-daemon)
+	if(afb_FOUND)
+		message(STATUS "Creation afm-main-binding for AFB-DAEMON")
+		###############################################################
+		#pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
+		execute_process(
+			COMMAND pkg-config --variable binding_install_dir afb-daemon
+			OUTPUT_VARIABLE afb_binding_install_dir OUTPUT_STRIP_TRAILING_WHITESPACE
+		)
+		###############################################################
+		add_library(afm-main-binding MODULE afm-main-binding.c)
+		target_compile_options(afm-main-binding PRIVATE ${afb_CFLAGS})
+		target_include_directories(afm-main-binding PRIVATE ${afb_INCLUDE_DIRS})
+		target_link_libraries(afm-main-binding utils utils2 ${afb_LIBRARIES})
+		set_target_properties(afm-main-binding PROPERTIES
+			PREFIX ""
+			LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-binding.export-map"
+		)
+		install(TARGETS afm-main-binding LIBRARY DESTINATION ${afb_binding_install_dir})
+	else()
+		message(STATUS "Not creating the binding for AFB-DAEMON")
+	endif()
+
+endif(EXTRA2_FOUND)

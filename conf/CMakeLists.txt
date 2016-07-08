@@ -18,14 +18,16 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-setc(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d)
-setc(SYSCONFDIR_DBUS_USER   ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/session.d)
-setc(UNITDIR_SYSTEM         ${CMAKE_INSTALL_LIBDIR}/systemd/system)
-setc(UNITDIR_USER           ${CMAKE_INSTALL_LIBDIR}/systemd/user)
+if(NOT USE_SDK)
+	setc(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d)
+	setc(SYSCONFDIR_DBUS_USER   ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/session.d)
+	setc(UNITDIR_SYSTEM         ${CMAKE_INSTALL_LIBDIR}/systemd/system)
+	setc(UNITDIR_USER           ${CMAKE_INSTALL_LIBDIR}/systemd/user)
 
-install(FILES afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
-install(FILES afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
-install(FILES afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
-install(FILES afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
-install(FILES afm-launch.conf           DESTINATION ${afm_confdir})
+	install(FILES afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
+	install(FILES afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
+	install(FILES afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
+	install(FILES afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
+	install(FILES afm-launch.conf           DESTINATION ${afm_confdir})
+endif()
 

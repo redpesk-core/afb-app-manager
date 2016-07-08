@@ -35,6 +35,7 @@ SET(PROJECT_VERSION "1.0")
 
 setc(USE_LIBZIP 1)
 setc(USE_SIMULATION 1)
+setc(USE_SDK 0)
 
 setc(afm_name                "afm")
 setc(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}")
