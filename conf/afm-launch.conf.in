@@ -24,6 +24,9 @@ text/html
 application/x-executable
 	%r/%c
 
+application/vnd.agl.service
+	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/%c --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r/htdocs --token=%S --sessiondir=%D/.afb-daemon
+
 text/vnd.qt.qml
 	/usr/bin/qt5/qmlscene -fullscreen -I %r -I %r/imports %r/%c
 
