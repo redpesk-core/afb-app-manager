@@ -18,7 +18,6 @@
 mode local
 #-----------------
 
-# keep for compatibility purposes
 text/html
 	/usr/bin/afb-daemon --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
 	/usr/bin/web-runtime http://localhost:%P/%c?token=%S
@@ -36,6 +35,7 @@ application/vnd.agl.native
 	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/lib --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r/htdocs --token=%S --sessiondir=%D/.afb-daemon
 	%r/%c %P %S
 
+text/vnd.qt.qml
 application/vnd.agl.qml
 	/usr/bin/qt5/qmlscene -fullscreen -I %r -I %r/imports %r/%c
 
