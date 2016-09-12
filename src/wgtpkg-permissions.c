@@ -94,7 +94,7 @@ void crop_permissions(unsigned level)
 }
 
 /* add permissions granted for installation */
-void grant_permission_list(const char *list)
+int grant_permission_list(const char *list)
 {
 	struct permission *p;
 	char *iter, c;
@@ -109,14 +109,15 @@ void grant_permission_list(const char *list)
 		iter[n] = 0;
 		p = add_permission(iter);
 		if (!p) {
-			ERROR("Can't allocate permission");
-			exit(1);
+			errno = ENOMEM;
+			return -1;
 		}
 		p->granted = 1;
 		iter += n;
 		*iter =c;
 		iter += strspn(iter, separators);
 	}
+	return 0;
 }
 
 /* checks if the permission 'name' is recorded */

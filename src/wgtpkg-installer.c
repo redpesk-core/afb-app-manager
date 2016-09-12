@@ -66,7 +66,7 @@ static struct option options[] = {
 /* install the widgets of the list */
 int main(int ac, char **av)
 {
-	int i;
+	int i, rc;
 	struct wgt_info *ifo;
 
 	LOGAUTH(appname);
@@ -93,7 +93,11 @@ int main(int ac, char **av)
 			verbosity++;
 			break;
 		case 'p':
-			grant_permission_list(optarg);
+			rc = grant_permission_list(optarg);
+			if (rc < 0) {
+				ERROR("Can't set granted permission list");
+				exit(1);
+			}
 			break;
 		case ':':
 			ERROR("missing argument value");
