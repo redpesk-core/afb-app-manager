@@ -18,6 +18,7 @@
 
 extern int is_standard_permission(const char *name);
 extern void reset_permissions();
+extern void reset_requested_permissions();
 extern void crop_permissions(unsigned level);
 extern int grant_permission_list(const char *list);
 extern int permission_exists(const char *name);

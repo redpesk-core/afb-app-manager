@@ -81,7 +81,15 @@ void reset_permissions()
 {
 	unsigned int i;
 	for (i = 0 ; i < nrpermissions ; i++)
-		permissions[i].granted = 0;
+		permissions[i].granted = permissions[i].requested = 0;
+}
+
+/* remove any requested permission */
+void reset_requested_permissions()
+{
+	unsigned int i;
+	for (i = 0 ; i < nrpermissions ; i++)
+		permissions[i].requested = 0;
 }
 
 /* remove any granting */

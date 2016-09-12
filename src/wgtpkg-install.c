@@ -253,6 +253,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (!ifo)
 		goto error2;
 
+	reset_requested_permissions();
 	desc = wgt_info_desc(ifo);
 	if (check_widget(desc))
 		goto error3;
