@@ -190,8 +190,9 @@ Each required permission must be explicited using a <param> entry.
 
 The value is either:
 
-- required: the permission is really needed.
-- optional: the permission isn't mandatory
+- required: the permission is mandatorily needed except if the feature
+isn't required (required="false") and in that case it is optional.
+- optional: the permission is optional
 
 ### feature name="urn:AGL:defined-permissions"
 

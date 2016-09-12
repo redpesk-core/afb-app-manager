@@ -38,6 +38,10 @@
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
 
+static const char permission_required[] = "required";
+static const char permission_optional[] = "optional";
+static const char feature_required_permissions[] = FWK_PREFIX "required-permissions";
+
 static int check_defined(const void *data, const char *name)
 {
 	if (data)
@@ -89,20 +93,34 @@ static int check_temporary_constraints(const struct wgt_desc *desc)
 	return 0;
 }
 
-static int check_permissions(const char *name, int required)
+static int set_required_permissions(struct wgt_desc_param *params, int required)
 {
-	if (permission_exists(name)) {
-		if (request_permission(name)) {
-			DEBUG("granted permission: %s", name);
-		} else if (required) {
-			ERROR("ungranted permission required: %s", name);
+	int optional;
+
+	while (params) {
+		/* check the value */
+		if (!strcmp(params->value, permission_required))
+			optional = !required;
+		else if (!strcmp(params->value, permission_optional))
+			optional = 1;
+		else {
+			ERROR("unexpected parameter value: %s found for %s", params->value, params->name);
 			errno = EPERM;
-			return 0;
-		} else {
-			INFO("ungranted permission optional: %s", name);
+			return -1;
 		}
+		/* set the permission */
+		if (request_permission(params->name)) {
+			DEBUG("granted permission: %s", params->name);
+		} else if (optional) {
+			INFO("optional permission ungranted: %s", params->name);
+		} else {
+			ERROR("ungranted permission required: %s", params->name);
+			errno = EPERM;
+			return -1;
+		}
+		params = params->next;
 	}
-	return 1;
+	return 0;
 }
 
 static int check_widget(const struct wgt_desc *desc)
@@ -112,9 +130,9 @@ static int check_widget(const struct wgt_desc *desc)
 
 	result = check_temporary_constraints(desc);
 	feature = desc->features;
-	while(feature) {
-		if (!check_permissions(feature->name, feature->required))
-			result = -1;
+	while(result >= 0 && feature) {
+		if (!strcmp(feature->name, feature_required_permissions))
+			result = set_required_permissions(feature->params, feature->required);
 		feature = feature->next;
 	}
 	return result;
