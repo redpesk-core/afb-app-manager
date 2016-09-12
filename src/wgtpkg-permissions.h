@@ -16,7 +16,6 @@
  limitations under the License.
 */
 
-extern int is_standard_permission(const char *name);
 extern void reset_permissions();
 extern void reset_requested_permissions();
 extern void crop_permissions(unsigned level);

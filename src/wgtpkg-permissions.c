@@ -32,17 +32,9 @@ struct permission {
 	unsigned level: 3;
 };
 
-static const char prefix_of_permissions[] = FWK_PREFIX_PERMISSION;
-
 static unsigned int nrpermissions = 0;
 static struct permission *permissions = NULL;
 static unsigned int indexiter = 0;
-
-/* check is the name has the correct prefix for permissions */
-int is_standard_permission(const char *name)
-{
-	return 0 == memcmp(name, prefix_of_permissions, sizeof(prefix_of_permissions) - 1);
-}
 
 /* retrieves the permission of name */
 static struct permission *get_permission(const char *name)
