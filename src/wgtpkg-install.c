@@ -56,14 +56,19 @@ static int check_valid_string(const char *value, const char *name)
 		return -1;
 	pos = 0;
 	c = value[pos];
-	while(c) {
+	if (c == 0) {
+		ERROR("empty string forbidden in '%s' (temporary constraints)", name);
+		errno = EINVAL;
+		return -1;			
+	}
+	do {
 		if (!isalnum(c) && !strchr(".-_", c)) {
 			ERROR("forbidden char %c in '%s' -> '%s' (temporary constraints)", c, name, value);
 			errno = EINVAL;
 			return -1;			
 		}
 		c = value[++pos];
-	}
+	} while(c);
 	return 0;
 }
 

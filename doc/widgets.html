@@ -8,29 +8,47 @@
   <meta name="author" content="Fulup Ar Foll">
   <title>The widgets</title>
   <style type="text/css">code{white-space: pre;}</style>
-  <!--[if lt IE 9]>
-    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-  <![endif]-->
   <style type="text/css">
+div.sourceCode { overflow-x: auto; }
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
   margin: 0; padding: 0; vertical-align: baseline; border: none; }
 table.sourceCode { width: 100%; line-height: 100%; }
 td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
 td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; }
-code > span.dt { color: #902000; }
-code > span.dv { color: #40a070; }
-code > span.bn { color: #40a070; }
-code > span.fl { color: #40a070; }
-code > span.ch { color: #4070a0; }
-code > span.st { color: #4070a0; }
-code > span.co { color: #60a0b0; font-style: italic; }
-code > span.ot { color: #007020; }
-code > span.al { color: #ff0000; font-weight: bold; }
-code > span.fu { color: #06287e; }
-code > span.er { color: #ff0000; font-weight: bold; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
   </style>
   <link rel="stylesheet" href="doc.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
 </head>
 <body>
 <header>
@@ -68,7 +86,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <h3 id="the-configuration-file-config.xml">The configuration file config.xml</h3>
 <p>This is one of the important file of the widget. It fully describes the widget.</p>
 <p>Here is the example of the config file for the QML application SmartHome.</p>
-<pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;?xml</span> version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;<span class="kw">?&gt;</span>
+<div class="sourceCode"><pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;?xml</span> version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;<span class="kw">?&gt;</span>
 <span class="kw">&lt;widget</span><span class="ot"> xmlns=</span><span class="st">&quot;http://www.w3.org/ns/widgets&quot;</span><span class="ot"> id=</span><span class="st">&quot;smarthome&quot;</span><span class="ot"> version=</span><span class="st">&quot;0.1&quot;</span><span class="kw">&gt;</span>
   <span class="kw">&lt;name&gt;</span>SmartHome<span class="kw">&lt;/name&gt;</span>
   <span class="kw">&lt;icon</span><span class="ot"> src=</span><span class="st">&quot;smarthome.png&quot;</span><span class="kw">/&gt;</span>
@@ -77,7 +95,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 automated house. The user interface is completely done with QML.<span class="kw">&lt;/description&gt;</span>
   <span class="kw">&lt;author&gt;</span>Qt team<span class="kw">&lt;/author&gt;</span>
   <span class="kw">&lt;license&gt;</span>GPL<span class="kw">&lt;/license&gt;</span>
-<span class="kw">&lt;/widget&gt;</span></code></pre>
+<span class="kw">&lt;/widget&gt;</span></code></pre></div>
 <p>The most important items are:</p>
 <ul>
 <li><p><strong>&lt;widget id=&quot;......&quot;&gt;</strong>: gives the id of the widget. It must be unique.</p></li>
@@ -97,22 +115,22 @@ automated house. The user interface is completely done with QML.<span class="kw"
 <p>For all these commands, a tiny help is available with options <strong>-h</strong> or <strong>--help</strong>.</p>
 <p>There is no tool for unpacking a widget. For doing such operation, you can use the command <strong>unzip</strong>.</p>
 <p>To list the files of a widget:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">unzip</span> -l WIDGET</code></pre>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">unzip</span> -l WIDGET</code></pre></div>
 <p>To extract a widget in some directory:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">unzip</span> WIDGET -d DIRECTORY</code></pre>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">unzip</span> WIDGET -d DIRECTORY</code></pre></div>
 <p><em>Note that DIRECTORY will be created if needed</em>.</p>
 <h3 id="signing-a-widget">Signing a widget</h3>
 <p>To sign a widget, you need a private key and its certificate.</p>
 <p>The tool <strong>wgtpkg-sign</strong> creates or replace a signature file in the directory of the widget BEFORE its packaging.</p>
 <p>There are two types of signature files: author and distributor.</p>
 <p>Example 1: add an author signature</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">wgtpkg-sign</span> -a -k me.key.pem -c me.cert.pem DIRECTORY</code></pre>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">wgtpkg-sign</span> -a -k me.key.pem -c me.cert.pem DIRECTORY</code></pre></div>
 <p>Example 2: add a distributor signature</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">wgtpkg-sign</span> -k authority.key.pem -c authority.cert.pem DIRECTORY</code></pre>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">wgtpkg-sign</span> -k authority.key.pem -c authority.cert.pem DIRECTORY</code></pre></div>
 <h3 id="packing-a-widget">Packing a widget</h3>
 <p>This operation can be done using the command <strong>zip</strong> but we provide the tool <strong>wgtpkg-pack</strong> that may add checking.</p>
 <p>Example:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">wgtpkg-pack</span> DIRECTORY -o file.wgt</code></pre>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">wgtpkg-pack</span> DIRECTORY -o file.wgt</code></pre></div>
 <h3 id="getting-data-about-a-widget-file">Getting data about a widget file</h3>
 <p>The command <strong>wgtpkg-info</strong> opens a widget file, reads its <strong>config.xml</strong> file and displays its content in a human readable way.</p>
 <h2 id="writing-a-widget">Writing a widget</h2>
