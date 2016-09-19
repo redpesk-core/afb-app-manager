@@ -153,7 +153,7 @@ The value is either:
 isn't required (required="false") and in that case it is optional.
 - optional: the binding is optional
 
-### feature name="urn:AGL:required-permissions"
+### feature name="urn:AGL:required-permission"
 
 List of the permissions required by the widget.
 
@@ -167,7 +167,7 @@ The value is either:
 isn't required (required="false") and in that case it is optional.
 - optional: the permission is optional
 
-### feature name="urn:AGL:provides-binding"
+### feature name="urn:AGL:provided-binding"
 
 Use this feature for each provided binding of the widget.
 The parameters are:
@@ -208,7 +208,7 @@ OPTIONAL
 
 The value is a space separated list of binding's names that the binding needs.
 
-### feature name="urn:AGL:defined-permissions"
+### feature name="urn:AGL:defined-permission"
 
 Each required permission must be explicited using a <param> entry.
 

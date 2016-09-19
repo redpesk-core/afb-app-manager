@@ -53,7 +53,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <header>
 <h1 class="title">Writing the configuration file &quot;config.xml&quot;</h1>
 <h2 class="author">José Bollo</h2>
-<h3 class="date">12 septembre 2016</h3>
+<h3 class="date">19 septembre 2016</h3>
 </header>
 <nav id="TOC">
 <ul>
@@ -68,9 +68,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><a href="#known-widget-types-and-content">Known widget types and content</a></li>
 <li><a href="#agl-features">AGL features</a><ul>
 <li><a href="#feature-nameurnaglrequired-binding">feature name=&quot;urn:AGL:required-binding&quot;</a></li>
-<li><a href="#feature-nameurnaglrequired-permissions">feature name=&quot;urn:AGL:required-permissions&quot;</a></li>
-<li><a href="#feature-nameurnaglprovides-binding">feature name=&quot;urn:AGL:provides-binding&quot;</a></li>
-<li><a href="#feature-nameurnagldefined-permissions">feature name=&quot;urn:AGL:defined-permissions&quot;</a></li>
+<li><a href="#feature-nameurnaglrequired-permission">feature name=&quot;urn:AGL:required-permission&quot;</a></li>
+<li><a href="#feature-nameurnaglprovided-binding">feature name=&quot;urn:AGL:provided-binding&quot;</a></li>
+<li><a href="#feature-nameurnagldefined-permission">feature name=&quot;urn:AGL:defined-permission&quot;</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -144,7 +144,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>required: the binding is mandatorily needed except if the feature isn't required (required=&quot;false&quot;) and in that case it is optional.</li>
 <li>optional: the binding is optional</li>
 </ul>
-<h3 id="feature-nameurnaglrequired-permissions">feature name=&quot;urn:AGL:required-permissions&quot;</h3>
+<h3 id="feature-nameurnaglrequired-permission">feature name=&quot;urn:AGL:required-permission&quot;</h3>
 <p>List of the permissions required by the widget.</p>
 <p>Each required permission must be explicited using a <param> entry.</p>
 <h4 id="param-namerequired-permission-name">param name=[required permission name]</h4>
@@ -153,7 +153,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>required: the permission is mandatorily needed except if the feature isn't required (required=&quot;false&quot;) and in that case it is optional.</li>
 <li>optional: the permission is optional</li>
 </ul>
-<h3 id="feature-nameurnaglprovides-binding">feature name=&quot;urn:AGL:provides-binding&quot;</h3>
+<h3 id="feature-nameurnaglprovided-binding">feature name=&quot;urn:AGL:provided-binding&quot;</h3>
 <p>Use this feature for each provided binding of the widget. The parameters are:</p>
 <h4 id="param-namename">param name=&quot;name&quot;</h4>
 <p>REQUIRED</p>
@@ -175,7 +175,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h4 id="param-nameneeded-binding">param name=&quot;needed-binding&quot;</h4>
 <p>OPTIONAL</p>
 <p>The value is a space separated list of binding's names that the binding needs.</p>
-<h3 id="feature-nameurnagldefined-permissions">feature name=&quot;urn:AGL:defined-permissions&quot;</h3>
+<h3 id="feature-nameurnagldefined-permission">feature name=&quot;urn:AGL:defined-permission&quot;</h3>
 <p>Each required permission must be explicited using a <param> entry.</p>
 <h4 id="param-namedefined-permission-name">param name=[defined permission name]</h4>
 <p>The value is the level of the defined permission. Standard levels are:</p>
