@@ -139,6 +139,34 @@ features.
 
 The features planned to be implemented are described below.
 
+### feature name="urn:AGL:required-binding"
+
+List of the bindings required by the widget.
+
+Each required binding must be explicited using a <param> entry.
+
+#### param name=[required binding name]
+
+The value is either:
+
+- required: the binding is mandatorily needed except if the feature
+isn't required (required="false") and in that case it is optional.
+- optional: the binding is optional
+
+### feature name="urn:AGL:required-permissions"
+
+List of the permissions required by the widget.
+
+Each required permission must be explicited using a <param> entry.
+
+#### param name=[required permission name]
+
+The value is either:
+
+- required: the permission is mandatorily needed except if the feature
+isn't required (required="false") and in that case it is optional.
+- optional: the permission is optional
+
 ### feature name="urn:AGL:provides-binding"
 
 Use this feature for each provided binding of the widget.
@@ -180,34 +208,22 @@ OPTIONAL
 
 The value is a space separated list of binding's names that the binding needs.
 
-### feature name="urn:AGL:required-permissions"
-
-List of the permissions required by the widget.
-
-Each required permission must be explicited using a <param> entry.
-
-#### param name=[required permission name]
-
-The value is either:
-
-- required: the permission is mandatorily needed except if the feature
-isn't required (required="false") and in that case it is optional.
-- optional: the permission is optional
-
 ### feature name="urn:AGL:defined-permissions"
 
 Each required permission must be explicited using a <param> entry.
 
 #### param name=[defined permission name]
 
-The value is the level of the defined permission:
+The value is the level of the defined permission.
+Standard levels are: 
 
-- system: 
-- platform:
+- system
+- platform
 - partner
-- public:
+- public
 
-
+This level defines the level of accreditation required to get the given
+permission. The accreditions are given by signatures of widgets.
 
 
 

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="José Bollo">
   <title>Writing the configuration file &quot;config.xml&quot;</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
@@ -51,7 +52,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 <header>
 <h1 class="title">Writing the configuration file &quot;config.xml&quot;</h1>
-<h3 class="date">02 septembre 2016</h3>
+<h2 class="author">José Bollo</h2>
+<h3 class="date">12 septembre 2016</h3>
 </header>
 <nav id="TOC">
 <ul>
@@ -65,9 +67,10 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ul></li>
 <li><a href="#known-widget-types-and-content">Known widget types and content</a></li>
 <li><a href="#agl-features">AGL features</a><ul>
+<li><a href="#feature-nameurnaglrequired-binding">feature name=&quot;urn:AGL:required-binding&quot;</a></li>
+<li><a href="#feature-nameurnaglrequired-permissions">feature name=&quot;urn:AGL:required-permissions&quot;</a></li>
 <li><a href="#feature-nameurnaglprovides-binding">feature name=&quot;urn:AGL:provides-binding&quot;</a></li>
-<li><a href="#feature-nameurnaglrequired-permission">feature name=&quot;urn:AGL:required-permission&quot;</a></li>
-<li><a href="#feature-nameurnagl-permission">feature name=&quot;urn:AGL:-permission&quot;</a></li>
+<li><a href="#feature-nameurnagldefined-permissions">feature name=&quot;urn:AGL:defined-permissions&quot;</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -132,18 +135,36 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>The AGL framework uses the feature tag for specifying security and binding requirement of the widget.</p>
 <p>The current version of AGL (up to 2.0.1, blowfish) has no fully implemented features.</p>
 <p>The features planned to be implemented are described below.</p>
+<h3 id="feature-nameurnaglrequired-binding">feature name=&quot;urn:AGL:required-binding&quot;</h3>
+<p>List of the bindings required by the widget.</p>
+<p>Each required binding must be explicited using a <param> entry.</p>
+<h4 id="param-namerequired-binding-name">param name=[required binding name]</h4>
+<p>The value is either:</p>
+<ul>
+<li>required: the binding is mandatorily needed except if the feature isn't required (required=&quot;false&quot;) and in that case it is optional.</li>
+<li>optional: the binding is optional</li>
+</ul>
+<h3 id="feature-nameurnaglrequired-permissions">feature name=&quot;urn:AGL:required-permissions&quot;</h3>
+<p>List of the permissions required by the widget.</p>
+<p>Each required permission must be explicited using a <param> entry.</p>
+<h4 id="param-namerequired-permission-name">param name=[required permission name]</h4>
+<p>The value is either:</p>
+<ul>
+<li>required: the permission is mandatorily needed except if the feature isn't required (required=&quot;false&quot;) and in that case it is optional.</li>
+<li>optional: the permission is optional</li>
+</ul>
 <h3 id="feature-nameurnaglprovides-binding">feature name=&quot;urn:AGL:provides-binding&quot;</h3>
 <p>Use this feature for each provided binding of the widget. The parameters are:</p>
-<h5 id="param-namename">param name=&quot;name&quot;</h5>
+<h4 id="param-namename">param name=&quot;name&quot;</h4>
 <p>REQUIRED</p>
 <p>The value is the string that must match the binding prefix. It must be unique.</p>
-<h5 id="param-namesrc">param name=&quot;src&quot;</h5>
+<h4 id="param-namesrc">param name=&quot;src&quot;</h4>
 <p>REQUIRED</p>
 <p>The value is the path of the shared library for the binding.</p>
-<h5 id="param-nametype">param name=&quot;type&quot;</h5>
+<h4 id="param-nametype">param name=&quot;type&quot;</h4>
 <p>REQUIRED</p>
 <p>Currently it must be <strong><em>application/vnd.agl.binding.v1</em></strong>.</p>
-<h5 id="param-namescope">param name=&quot;scope&quot;</h5>
+<h4 id="param-namescope">param name=&quot;scope&quot;</h4>
 <p>REQUIRED</p>
 <p>The value indicate the availability of the binidng:</p>
 <ul>
@@ -151,18 +172,19 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>public: available to allowed clients as a remote service (requires permission+)</li>
 <li>inline: available to allowed clients inside their binding (unsafe, requires permission+++)</li>
 </ul>
-<h5 id="param-nameneeded-binding">param name=&quot;needed-binding&quot;</h5>
+<h4 id="param-nameneeded-binding">param name=&quot;needed-binding&quot;</h4>
 <p>OPTIONAL</p>
 <p>The value is a space separated list of binding's names that the binding needs.</p>
-<h3 id="feature-nameurnaglrequired-permission">feature name=&quot;urn:AGL:required-permission&quot;</h3>
-<p>Several permission can be listed or none whether no permission is requested for the widget.</p>
+<h3 id="feature-nameurnagldefined-permissions">feature name=&quot;urn:AGL:defined-permissions&quot;</h3>
 <p>Each required permission must be explicited using a <param> entry.</p>
-<h5 id="param-namerequired-permission-name">param name=[required permission name]</h5>
-<p>The value is either:</p>
+<h4 id="param-namedefined-permission-name">param name=[defined permission name]</h4>
+<p>The value is the level of the defined permission. Standard levels are:</p>
 <ul>
-<li>required: the permission is really needed.</li>
-<li>optional: the permission isn't mandatory</li>
+<li>system</li>
+<li>platform</li>
+<li>partner</li>
+<li>public</li>
 </ul>
-<h3 id="feature-nameurnagl-permission">feature name=&quot;urn:AGL:-permission&quot;</h3>
+<p>This level defines the level of accreditation required to get the given permission. The accreditions are given by signatures of widgets.</p>
 </body>
 </html>
