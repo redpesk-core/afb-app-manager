@@ -22,43 +22,36 @@ cmake_minimum_required(VERSION 2.8)
 
 include(GNUInstallDirs)
 
-macro(setc name value)
-	if(NOT DEFINED ${name})
-		set(${name} ${value})
-	endif(NOT DEFINED ${name})
-endmacro(setc)
+set(PROJECT_NAME "AFM Main")
+set(PROJECT_PRETTY_NAME "Application Framework Main")
+set(PROJECT_DESCRIPTION "Secured Application framework")
+set(PROJECT_VERSION "1.0")
 
-SET(PROJECT_NAME "AFM Main")
-SET(PROJECT_PRETTY_NAME "Application Framework Main")
-SET(PROJECT_DESCRIPTION "Secured Application framework")
-SET(PROJECT_VERSION "1.0")
 
-setc(USE_LIBZIP 1)
-setc(USE_SIMULATION 1)
-setc(USE_SDK 0)
+set(USE_LIBZIP     ON  CACHE BOOL "should try to use libzip?")
+set(USE_SIMULATION ON  CACHE BOOL "if set simulates security manager")
+set(USE_SDK        OFF CACHE BOOL "if set, avoids installating system runtime files")
 
-setc(afm_name                "afm")
-setc(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}")
-setc(afm_datadir             "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}")
-setc(afm_appdir              "${afm_datadir}/applications")
-setc(afm_icondir             "${afm_datadir}/icons")
-setc(afm_prefix              "urn:AGL:")
-setc(afm_prefix_binding      "${afm_prefix}binding:")
-setc(afm_user_appdir         "app-data")
-setc(wgtpkg_trusted_cert_dir "${afm_confdir}/certs")
+set(afm_name                "afm" CACHE STRING "Name for application framework user")
+set(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}" CACHE STRING "Directory for configuration files")
+set(afm_datadir             "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}" CACHE STRING "Root directory for installions")
+set(afm_appdir              "${afm_datadir}/applications" CACHE STRING "Directory for installing applications")
+set(afm_icondir             "${afm_datadir}/icons" CACHE STRING "Directory for installing icons")
+set(afm_prefix              "urn:AGL:" CACHE STRING "Prefix for uniform resource name")
+set(afm_prefix_binding      "${afm_prefix}binding:" CACHE STRING "URN for bindings")
+set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for applications")
+set(wgtpkg_trusted_cert_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
 
-macro(defstr name value)
-	add_definitions(-D${name}="${value}")
-endmacro(defstr)
-
-defstr(FWK_CONFIG_DIR          "${afm_confdir}")
-defstr(FWK_PREFIX              "${afm_prefix}")
-defstr(FWK_PREFIX_BINDING      "${afm_prefix_binding}")
-defstr(FWK_ICON_DIR            "${afm_icondir}")
-defstr(FWK_APP_DIR             "${afm_appdir}")
-defstr(FWK_USER_APP_DIR        "${afm_user_appdir}")
-defstr(WGTPKG_TRUSTED_CERT_DIR "${wgtpkg_trusted_cert_dir}")
-defstr(FWK_LAUNCH_CONF         "${afm_confdir}/afm-launch.conf")
+add_definitions(
+	-DFWK_CONFIG_DIR="${afm_confdir}"
+	-DFWK_PREFIX="${afm_prefix}"
+	-DFWK_PREFIX_BINDING="${afm_prefix_binding}"
+	-DFWK_ICON_DIR="${afm_icondir}"
+	-DFWK_APP_DIR="${afm_appdir}"
+	-DFWK_USER_APP_DIR="${afm_user_appdir}"
+	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_cert_dir}"
+	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
+)
 
 add_subdirectory(src)
 add_subdirectory(conf)

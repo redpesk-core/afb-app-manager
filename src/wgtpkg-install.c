@@ -145,7 +145,7 @@ static int move_widget(const char *root, const struct wgt_desc *desc, int force)
 
 	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->ver);
 	if (rc >= (int)sizeof newdir) {
-		ERROR("path to long in move_widget");
+		ERROR("path too long in move_widget");
 		errno = EINVAL;
 		return -1;
 	}
@@ -162,14 +162,14 @@ static int install_icon(const struct wgt_desc *desc)
 	create_directory(FWK_ICON_DIR, 0755, 1);
 	rc = snprintf(link, sizeof link, "%s/%s", FWK_ICON_DIR, desc->idaver);
 	if (rc >= (int)sizeof link) {
-		ERROR("link to long in install_icon");
+		ERROR("link too long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
 
 	rc = snprintf(target, sizeof target, "%s/%s", workdir, desc->icons->src);
 	if (rc >= (int)sizeof target) {
-		ERROR("target to long in install_icon");
+		ERROR("target too long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
@@ -284,7 +284,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 
 	if (install_security(desc))
 		goto error3;
-	
+
 	file_reset();
 	return ifo;
 

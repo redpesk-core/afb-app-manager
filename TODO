@@ -1,7 +1,7 @@
 List of things to do
 - Implement CRL and OCSP parts of x509
 - Implement permissions grant based on certificates
-- more documentation
+- improve documentation
 - manage upgrading packages
 - use key facilities of kernel
 - remove the link to the icon on failure or create it lately

@@ -47,7 +47,7 @@ include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
 
 pkg_check_modules(libzip libzip>=0.11)
-if(libzip_FOUND)
+if(libzip_FOUND AND USE_LIBZIP)
 	add_compile_options(${libzip_CFLAGS})
 	include_directories(${libzip_INCLUDE_DIRS})
 	link_libraries(${libzip_LIBRARIES})
