@@ -1,5 +1,5 @@
 /*
- Copyright 2016 IoT.bzh
+ Copyright 2016, 2017 IoT.bzh
 
  author: José Bollo <jose.bollo@iot.bzh>
 
@@ -16,6 +16,7 @@
  limitations under the License.
 */
 
+/* defined by/for config.xml */
 const char string_author[] = "author";
 const char string_content[] = "content";
 const char string_defaultlocale[] = "defaultlocale";
@@ -29,7 +30,6 @@ const char string_icon[] = "icon";
 const char string_id[] = "id";
 const char string_license[] = "license";
 const char string_name[] = "name";
-const char string_optional[] = "optional";
 const char string_param[] = "param";
 const char string_preference[] = "preference";
 const char string_readonly[] = "readonly";
@@ -44,7 +44,27 @@ const char string_widget[] = "widget";
 const char string_width[] = "width";
 const char string_config_dot_xml[] = "config.xml";
 
-const char feature_required_binding[] = FWK_PREFIX "required-binding";
-const char feature_required_permission[] = FWK_PREFIX "required-permission";
+/* other strings */
+const char string_AGL_prefix[] = FWK_PREFIX;
+const char string_AGL_permission_prefix[] = FWK_PREFIX "permission:";
+const char string_AGL_widget_prefix[] = FWK_PREFIX "widget:";
+const char string_defined_permission[] = "defined-permission";
+const char string_dict[] = "dict";
+const char string_idaver[] = "idaver";
+const char string_index[] = "index";
+const char string_level[] = "level";
+const char string_list[] = "list";
+const char string_main[] = "main";
+const char string_optional[] = "optional";
+const char string_provided_application[] = "provided-application";
+const char string_provided_binding[] = "provided-binding";
+const char string_required_binding[] = "required-binding";
+const char string_required_permission[] = "required-permission";
+const char string_targets[] = "targets";
+const char string_sharp_target[] = "#target";
+
+
+const char feature_required_binding[] = FWK_PREFIX "widget:required-binding";
+const char feature_required_permission[] = FWK_PREFIX "widget:required-permission";
 
 

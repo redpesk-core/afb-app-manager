@@ -1,5 +1,5 @@
 ###########################################################################
-# Copyright 2015 IoT.bzh
+# Copyright 2015, 2016, 2017 IoT.bzh
 #
 # author: José Bollo <jose.bollo@iot.bzh>
 #
@@ -30,6 +30,7 @@ if(NOT USE_SDK)
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-launch.conf	    DESTINATION ${afm_confdir})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-launch.conf           DESTINATION ${afm_confdir})
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
 endif()
 

@@ -1,5 +1,5 @@
 /*
- Copyright 2016 IoT.bzh
+ Copyright 2016, 2017 IoT.bzh
 
  author: José Bollo <jose.bollo@iot.bzh>
 
@@ -16,6 +16,7 @@
  limitations under the License.
 */
 
+/* defined by/for config.xml */
 extern const char string_author[];
 extern const char string_content[];
 extern const char string_defaultlocale[];
@@ -29,7 +30,6 @@ extern const char string_icon[];
 extern const char string_id[];
 extern const char string_license[];
 extern const char string_name[];
-extern const char string_optional[];
 extern const char string_param[];
 extern const char string_preference[];
 extern const char string_readonly[];
@@ -44,6 +44,22 @@ extern const char string_widget[];
 extern const char string_width[];
 extern const char string_config_dot_xml[];
 
+/* other strings */
+extern const char string_AGL_widget_prefix[];
+extern const char string_defined_permission[];
+extern const char string_dict[];
+extern const char string_idaver[];
+extern const char string_index[];
+extern const char string_level[];
+extern const char string_list[];
+extern const char string_main[];
+extern const char string_optional[];
+extern const char string_provided_application[];
+extern const char string_provided_binding[];
+extern const char string_required_binding[];
+extern const char string_required_permission[];
+extern const char string_sharp_target[];
+extern const char string_targets[];
 
 extern const char feature_required_binding[];
 extern const char feature_required_permission[];

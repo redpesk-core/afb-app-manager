@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" id="bzh.iot.geoloc" version="0.0.1-alpha">
+  <name>Sample Service</name>
+  <icon src="service.png"/>
+  <content src="index.html" type="text/html"/>
+  <description>
+	This is the Smarthome QML demo application.
+	It shows some user interfaces for controlling an automated house.
+	The user interface is completely done with QML.
+  </description>
+  <author>Qt team</author>
+  <license>GPL</license>
+  <feature name="urn:AGL:widget:required-binding">
+    <param name="#target" value="main" />
+    <param name="gps" value="ws" />
+    <param name="phone" value="dbus" />
+    <param name="identity" value="link" />
+    <param name="log:https://oic@agl.iot.bzh/cloud/log" value="cloud" />
+  </feature>
+  <feature name="urn:AGL:widget:required-permission">
+    <param name="#target" value="main" />
+    <param name="urn:AGL:permission::platform:no-oom" value="required" />
+    <param name="urn:AGL:permission::partner:real-time" value="required" />
+    <param name="urn:AGL:permission::public:applications:read" value="required" />
+    <param name="urn:AGL:permission::public:display" value="required" />
+  </feature>
+  <feature name="urn:AGL:widget:provided-binding">
+    <param name="#target" value="geoloc" />
+    <param name="description" value="binding of name geoloc" />
+    <param name="content.src" value="libs/binding-geoloc.so" />
+    <param name="content.type" value="application/vnd.agl.service" />
+  </feature>
+  <feature name="urn:AGL:widget:required-binding">
+    <param name="#target" value="geoloc" />
+    <param name="identity" value="auto" />
+  </feature>
+  <feature name="urn:AGL:widget:required-permission">
+    <param name="#target" value="geoloc" />
+    <param name="urn:AGL:permission:real-time" value="required" />
+    <param name="urn:AGL:permission:syscall:*" value="required" />
+  </feature>
+  <feature name="urn:AGL:widget:defined-permission">
+    <param name="urn:AGL:permission:geoloc:public:settings" value="public" />
+  </feature>
+</widget>
+

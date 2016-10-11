@@ -8,4 +8,6 @@ pages:
       - 'The application framework': 'application-framework.md'
       - 'The security framework': 'security-framework.md'
   - 'The afm daemons' : 'afm-daemons.md'
-  - 'Widgets of the framework' : 'widgets.md'
+  - 'Widgets of the framework' :
+      - 'Overview of widgets': 'widgets.md'
+      - 'The configuration file': 'config.xml.md'

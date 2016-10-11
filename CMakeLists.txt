@@ -21,6 +21,7 @@ project(afm-main C)
 cmake_minimum_required(VERSION 2.8)
 
 include(GNUInstallDirs)
+include(CTest)
 
 set(PROJECT_NAME "AFM Main")
 set(PROJECT_PRETTY_NAME "Application Framework Main")
@@ -59,6 +60,7 @@ add_definitions(
 	-DFWK_USER_APP_DIR="${afm_user_appdir}"
 	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_cert_dir}"
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
+	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
 	-DFWK_USER_APP_DIR_LABEL="${afm_user_appdir_label}"
 )
 
