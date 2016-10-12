@@ -9,8 +9,6 @@ ExecStart=/usr/bin/afm-system-daemon
 Restart=on-failure
 RestartSec=5
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_MAC_OVERRIDE
-SecureBits=keep-caps
-Capabilities=cap_dac_override,cap_mac_override=i
 
 [Install]
 WantedBy=multi-user.target
