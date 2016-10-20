@@ -20,7 +20,11 @@
 #include <errno.h>
 #include <assert.h>
 
+#if SIMULATE_SECURITY_MANAGER
+#include "simulation/security-manager.h"
+#else
 #include <security-manager.h>
+#endif
 
 #include "verbose.h"
 #include "secmgr-wrap.h"

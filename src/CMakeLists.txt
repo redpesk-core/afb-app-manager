@@ -58,14 +58,25 @@ endif()
 
 ###########################################################################
 
-if(USE_SIMULATION)
-	include_directories(simulation)
-else(USE_SIMULATION)
+if(SIMULATE_SECMGR)
+	add_definitions(-DSIMULATE_SECURITY_MANAGER=1)
+else(SIMULATE_SECMGR)
 	pkg_check_modules(SECMGR REQUIRED security-manager)
 	add_compile_options(${SECMGR_CFLAGS})
 	include_directories(${SECMGR_INCLUDE_DIRS})
 	link_libraries(${SECMGR_LIBRARIES})
-endif(USE_SIMULATION)
+	add_definitions(-DSIMULATE_SECURITY_MANAGER=0)
+endif(SIMULATE_SECMGR)
+
+if(SIMULATE_SMACK)
+	add_definitions(-DSIMULATE_LIBSMACK=1)
+else(SIMULATE_SMACK)
+	pkg_check_modules(SMACK REQUIRED libsmack)
+	add_compile_options(${SMACK_CFLAGS})
+	include_directories(${SMACK_INCLUDE_DIRS})
+	link_libraries(${SMACK_LIBRARIES})
+	add_definitions(-DSIMULATE_LIBSMACK=0)
+endif(SIMULATE_SMACK)
 
 ###########################################################################
 
