@@ -16,6 +16,8 @@
  limitations under the License.
 */
 
+#define _GNU_SOURCE
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
@@ -26,6 +28,13 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+
+#include <linux/xattr.h>
+#if SIMULATE_LIBSMACK
+#include "simulation/smack.h"
+#else
+#include <sys/smack.h>
+#endif
 
 #include <json-c/json.h>
 
@@ -95,6 +104,7 @@ static int runnerid = 0;
  * home directory of the user.
  */
 static const char fwk_user_app_dir[] = FWK_USER_APP_DIR;
+static const char fwk_user_app_label[] = FWK_USER_APP_DIR_LABEL;
 
 /*
  * Path of the root directory for applications of the
@@ -613,7 +623,6 @@ struct json_object *afm_run_state(int runid)
 int afm_run_init()
 {
 	char buf[2048];
-	char dir[PATH_MAX];
 	int rc;
 	uid_t me;
 	struct passwd passwd, *pw;
@@ -632,25 +641,34 @@ int afm_run_init()
 		ERROR("getpwuid_r failed for uid=%d: %m",(int)me);
 		return -1;
 	}
-	rc = snprintf(dir, sizeof dir, "%s/%s", passwd.pw_dir,
-							fwk_user_app_dir);
-	if (rc >= (int)sizeof dir) {
-		ERROR("buffer overflow in user_app_dir for uid=%d",(int)me);
-		return -1;
-	}
-	rc = create_directory(dir, 0755, 1);
-	if (rc && errno != EEXIST) {
-		ERROR("creation of directory %s failed in user_app_dir: %m",
-									dir);
-		return -1;
-	}
-	homeappdir = strdup(dir);
-	if (homeappdir == NULL) {
+	rc = asprintf(&homeappdir, "%s/%s", passwd.pw_dir, fwk_user_app_dir);
+	if (rc < 0) {
 		errno = ENOMEM;
-		ERROR("out of memory in user_app_dir for %s : %m", dir);
+		ERROR("allocating homeappdir for uid=%d failed", (int)me);
 		return -1;
 	}
-
+	rc = create_directory(homeappdir, 0755, 1);
+	if (rc && errno != EEXIST) {
+		ERROR("creation of directory %s failed: %m", homeappdir);
+		free(homeappdir);
+		return -1;
+	}
+	rc = smack_remove_label_for_path(homeappdir,
+						XATTR_NAME_SMACKTRANSMUTE, 0);
+	if (rc < 0 && errno != ENODATA) {
+		ERROR("can't remove smack transmutation of directory %s: %m",
+								homeappdir);
+		free(homeappdir);
+		return -1;
+	}
+	rc = smack_set_label_for_path(homeappdir, XATTR_NAME_SMACK, 0,
+							fwk_user_app_label);
+	if (rc < 0) {
+		ERROR("can't set smack label %s to directory %s: %m",
+					fwk_user_app_label, homeappdir);
+		free(homeappdir);
+		return -1;
+	}
 	/* install signal handlers */
 	siga.sa_flags = SA_SIGINFO | SA_NOCLDWAIT;
 	sigemptyset(&siga.sa_mask);

@@ -42,6 +42,7 @@ set(afm_icondir             "${afm_datadir}/icons" CACHE STRING "Directory for i
 set(afm_prefix              "urn:AGL:" CACHE STRING "Prefix for uniform resource name")
 set(afm_prefix_binding      "${afm_prefix}binding:" CACHE STRING "URN for bindings")
 set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for applications")
+set(afm_user_appdir_label   "User::App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
 set(wgtpkg_trusted_cert_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
 
 if(USE_SIMULATION)
@@ -58,6 +59,7 @@ add_definitions(
 	-DFWK_USER_APP_DIR="${afm_user_appdir}"
 	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_cert_dir}"
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
+	-DFWK_USER_APP_DIR_LABEL="${afm_user_appdir_label}"
 )
 
 add_subdirectory(src)
