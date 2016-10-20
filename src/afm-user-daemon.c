@@ -49,6 +49,8 @@ static const char usagestr[] =
 	"   -r rootdir   adds a root directory of applications\n"
 	"   -m mode      set default launch mode (local or remote)\n"
 	"   -d           run as a daemon\n"
+	"   -u addr      address of user D-Bus to use\n"
+	"   -s addr      address of system D-Bus to use\n"
 	"   -q           quiet\n"
 	"   -v           verbose\n"
 	"\n";
@@ -61,6 +63,8 @@ static struct option options_l[] = {
 	{ "root",        required_argument, NULL, 'r' },
 	{ "application", required_argument, NULL, 'a' },
 	{ "mode",        required_argument, NULL, 'm' },
+	{ "user-dbus",   required_argument, NULL, 'u' },
+	{ "system-dbus", required_argument, NULL, 's' },
 	{ "daemon",      no_argument,       NULL, 'd' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -380,6 +384,45 @@ static int daemonize()
 }
 
 /*
+ * Opens a sd-bus connection and returns it in 'ret'.
+ * The sd-bus connexion is intended to be for user if 'isuser'
+ * is not null. The adress is the default address when 'address'
+ * is NULL or, otherwise, the given address.
+ * It might be necessary to pass the address as an argument because
+ * library systemd uses secure_getenv to retrieves the default
+ * addresses and secure_getenv might return NULL in some cases.
+ */
+static int open_bus(sd_bus **ret, int isuser, const char *address)
+{
+	sd_bus *b;
+	int rc;
+
+	if (address == NULL)
+		return (isuser ? sd_bus_open_user : sd_bus_open_system)(ret);
+
+	rc = sd_bus_new(&b);
+	if (rc < 0)
+		return rc;
+
+	rc = sd_bus_set_address(b, address);
+	if (rc < 0)
+		goto fail;
+
+	sd_bus_set_bus_client(b, 1);
+
+	rc = sd_bus_start(b);
+	if (rc < 0)
+		goto fail;
+
+	*ret = b;
+	return 0;
+
+fail:
+	sd_bus_unref(b);
+	return rc;
+}
+
+/*
  * ENTRY POINT OF AFM-USER-DAEMON
  */
 int main(int ac, char **av)
@@ -388,11 +431,13 @@ int main(int ac, char **av)
 	enum afm_launch_mode mode;
 	struct sd_event *evloop;
 	struct sd_bus *sysbus, *usrbus;
-
+	const char *sys_bus_addr, *usr_bus_addr;
 
 	LOGAUTH(appname);
 
 	/* first interpretation of arguments */
+	sys_bus_addr = NULL;
+	usr_bus_addr = NULL;
 	while ((i = getopt_long(ac, av, options_s, options_l, NULL)) >= 0) {
 		switch (i) {
 		case 'h':
@@ -419,6 +464,12 @@ int main(int ac, char **av)
 				return 1;
 			}
 			set_default_launch_mode(mode);
+			break;
+		case 'u':
+			usr_bus_addr = optarg;
+			break;
+		case 's':
+			sys_bus_addr = optarg;
 			break;
 		case ':':
 			ERROR("missing argument value");
@@ -486,7 +537,7 @@ int main(int ac, char **av)
 		ERROR("can't create event loop");
 		return 1;
 	}
-	rc = sd_bus_open_system(&sysbus);
+	rc = open_bus(&sysbus, 0, sys_bus_addr);
 	if (rc < 0) {
 		ERROR("can't create system bus");
 		return 1;
@@ -496,7 +547,7 @@ int main(int ac, char **av)
 		ERROR("can't attach system bus to event loop");
 		return 1;
 	}
-	rc = sd_bus_open_user(&usrbus);
+	rc = open_bus(&usrbus, 1, usr_bus_addr);
 	if (rc < 0) {
 		ERROR("can't create user bus");
 		return 1;
@@ -558,4 +609,18 @@ int main(int ac, char **av)
 		sd_event_run(evloop, (uint64_t)-1);
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

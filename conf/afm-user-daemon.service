@@ -4,8 +4,7 @@ Description=Application Framework Master, User side
 [Service]
 Type=dbus                                
 BusName=org.AGL.afm.user          
-ExecStart=/usr/bin/afm-user-daemon       
-CapabilityBoundingSet=CAP_MAC_OVERRIDE CAP_MAC_ADMIN CAP_SETGID
+ExecStart=/usr/bin/afm-user-daemon --user-dbus=unix:path=%t/bus
 Environment=LD_PRELOAD=/usr/lib/libEGL.so
 Restart=on-failure
 RestartSec=5
