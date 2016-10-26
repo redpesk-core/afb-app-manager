@@ -1,0 +1,13 @@
+site_name: AGL Application Framework
+theme: readthedocs
+docs_dir: docs
+pages:
+  - 'Overview' : 'index.md'
+  - 'Quick tutorial' : 'quick-tutorial.md'
+  - 'The system daemon' : 'afm-system-daemon.md'
+  - 'The user daemon' : 'afm-user-daemon.md'
+  - 'Widgets of the framework' : 'widgets.md'
+  - 'Writing widget''s configuration' : 'writing-config.xml.md'
+  - 'The security framework' : 'security-framework.md'
+  - 'The application framework' : 'application-framework.md'
+   
