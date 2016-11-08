@@ -246,7 +246,7 @@ static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void 
 					&& j_add_string(resp, "uri", uri))
 		jbus_reply_j(smsg, resp);
 	else {
-		afm_run_stop(runid);
+		afm_run_terminate(runid);
 		jbus_reply_error_s(smsg, error_system);
 	}
 	json_object_put(resp);
@@ -254,15 +254,36 @@ static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void 
 }
 
 /*
+ * On query "pause" from 'smsg' with parameters of 'obj'.
+ */
+static void on_pause(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
+{
+	int runid, status;
+	if (onrunid(smsg, obj, "pause", &runid)) {
+		status = afm_run_pause(runid);
+		reply_status(smsg, status, error_not_found);
+	}
+}
+
+/*
+ * On query "resume" from 'smsg' with parameters of 'obj'.
+ */
+static void on_resume(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
+{
+	int runid, status;
+	if (onrunid(smsg, obj, "resume", &runid)) {
+		status = afm_run_resume(runid);
+		reply_status(smsg, status, error_not_found);
+	}
+}
+
+/*
  * On query "stop" from 'smsg' with parameters of 'obj'.
  */
 static void on_stop(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
-	int runid, status;
-	if (onrunid(smsg, obj, "stop", &runid)) {
-		status = afm_run_stop(runid);
-		reply_status(smsg, status, error_not_found);
-	}
+	NOTICE("call to obsolete 'stop'");
+	on_pause(smsg, obj, unused);
 }
 
 /*
@@ -270,11 +291,8 @@ static void on_stop(struct sd_bus_message *smsg, struct json_object *obj, void *
  */
 static void on_continue(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
 {
-	int runid, status;
-	if (onrunid(smsg, obj, "continue", &runid)) {
-		status = afm_run_continue(runid);
-		reply_status(smsg, status, error_not_found);
-	}
+	NOTICE("call to obsolete 'continue'");
+	on_resume(smsg, obj, unused);
 }
 
 /*
@@ -583,17 +601,20 @@ int main(int ac, char **av)
 	 || jbus_add_service_j(user_bus, "detail",    on_detail, NULL)
 	 || jbus_add_service_j(user_bus, "start",     on_start, NULL)
 	 || jbus_add_service_j(user_bus, "terminate", on_terminate, NULL)
+	 || jbus_add_service_j(user_bus, "pause",     on_pause, NULL)
+	 || jbus_add_service_j(user_bus, "resume",    on_resume, NULL)
 	 || jbus_add_service_j(user_bus, "stop",      on_stop, NULL)
 	 || jbus_add_service_j(user_bus, "continue",  on_continue, NULL)
 	 || jbus_add_service_j(user_bus, "runners",   on_runners, NULL)
 	 || jbus_add_service_j(user_bus, "state",     on_state, NULL)
 #if defined(EXPLICIT_CALL)
 	 || jbus_add_service_s(user_bus, "install",   on_install, NULL)
-	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall, NULL)) {
+	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall, NULL)
 #else
 	 || jbus_add_service_s(user_bus, "install",   (void (*)(struct sd_bus_message *, const char *, void *))propagate, "install")
-	 || jbus_add_service_s(user_bus, "uninstall", (void (*)(struct sd_bus_message *, const char *, void *))propagate, "uninstall")) {
+	 || jbus_add_service_s(user_bus, "uninstall", (void (*)(struct sd_bus_message *, const char *, void *))propagate, "uninstall")
 #endif
+	 ) {
 		ERROR("adding services failed");
 		return 1;
 	}

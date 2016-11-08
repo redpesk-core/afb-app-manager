@@ -77,7 +77,7 @@ the dependencies and with minor architectural improvements for AGL.
 
 These components are **afm-system-daemon** and **afm-user-daemon**.
 They provides infrastructure for installing, uninstalling,
-launching, terminating, stopping and resuming applications in
+launching, terminating, pausing and resuming applications in
 a multi user secure environment.
 
 A third component exists in the framework, the binder **afb-daemon**.
@@ -197,7 +197,7 @@ the components are:
 * ***afm-system-daemon***: in charge of installing and uninstalling applications.
 
 * ***afm-user-daemon***: in charge of listing applications, querying application details,
-  starting, terminating, stopping, resuming applications and their instances
+  starting, terminating, pausing, resuming applications and their instances
   for a given user context.
 
 * ***afb-binder***: in charge of serving resources and features through an
@@ -219,7 +219,7 @@ to ensure security and privacy. It also includes features of reporting
 using audit features and by managing logs and alerts.
 
 The application framework manages the applications:
-installing, uninstalling, starting, stopping, listing ...
+installing, uninstalling, starting, pausing, listing ...
 
 The application framework uses the security model/framework
 to ensure the security and the privacy of the applications that

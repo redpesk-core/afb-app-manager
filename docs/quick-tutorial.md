@@ -47,7 +47,7 @@ We can see that there are two daemons running:
 * **afm-system-daemon** runs with a system user 'afm' and is responsible for installing/uninstalling packages
 * **afm-user-daemon** runs as a user daemon (currently as root because it's the only real user on the target board) and is responsible for the whole lifecycle of the applications running inside the user session.
 
-The application framework has a tool running on the Command Line Interface (CLI). Using the **afm-util** command, you can install, uninstall, list, run, stop ... applications. 
+The application framework has a tool running on the Command Line Interface (CLI). Using the **afm-util** command, you can install, uninstall, list, run, pause ... applications. 
 
 To begin, run '**afm-util help**' to get a quick help on commands:
 
@@ -75,16 +75,16 @@ To begin, run '**afm-util help**' to get a quick help on commands:
       start id       start an instance of the widget of id
     
       kill rid
-      terminate rid       terminate the running instance rid
+      terminate rid  terminate the running instance rid
     
       stop rid
-      pause rid      stop the running instance rid
+      pause rid      pause the running instance rid
     
       resume rid
-      continue rid   continue the previously rid
+      continue rid   resume the previously rid
     
       status rid
-      state rid     get status of the running instance rid
+      state rid      get status of the running instance rid
 
 ### Install an application
 
@@ -144,15 +144,15 @@ To check for running applications, just run:
     root@porter:~# afm-util ps
     [ { "runid": 1, "state": "running", "id": "webapps-annex@0.0" } ]
 
-The 'runid' is the application instance ID and is used as an argument for the subcommands controlling the application runtime state (kill/stop/resume/status)
+The 'runid' is the application instance ID and is used as an argument for the subcommands controlling the application runtime state (kill/pause/resume/status)
 
-### Stop application
-To stop the application that was just started (the one with RUNID 1), just run the stop command:
+### Pause application
+To pause the application that was just started (the one with RUNID 1), just run the pause command:
 
     root@porter:~# afm-util terminate 1
     true
     
-The application is now stopped, as confirmed by a list of running apps:
+The application is now paused, as confirmed by a list of running apps:
 
     root@porter:~# afm-util ps
     [ ]
@@ -172,7 +172,7 @@ Then list the installed apps to confirm the removal:
 afm-client: a sample HTML5 'Homescreen'
 ---------------------------------------
 
-**afm-client** is a HTML5 UI that allows to install/uninstall applications as well as starting/stopping them as already demonstrated with afm-util.
+**afm-client** is a HTML5 UI that allows to install/uninstall applications as well as starting/pausing them as already demonstrated with afm-util.
 
 The HTML5 UI is accessible remotely through this URL: 
 http://[board_ip]:1234/opa?token=132456789
@@ -193,9 +193,9 @@ In the toolbar, click on the button representing the Rabbit application. You'll 
 
 Click on the 'start' item: the application starts and should be visible as a webview on the target board display. Note that at this point, we could also run the application remotely, that is in the same browser as the Homescreen app. By default, the application framework is configured to run applications 'locally' on the board display.
 
-### Stopping an application
+### Pausing an application
 
-In the Homescreen application, click again on the Rabbit application button, then select 'stop': the application then stops.
+In the Homescreen application, click again on the Rabbit application button, then select 'pause': the application then pauses.
 
 ### Uninstalling an application
 

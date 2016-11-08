@@ -24,8 +24,7 @@ applications on behalf of a user. Its main tasks are:
 
  - list current runnable or running applications
 
- - stop (aka pause), continue (aka resume), terminate
-   a running instance of a given application
+ - pause, resume, terminate a running instance of a given application
 
  - transfer requests for installation/uninstallation
    of applications to the corresponding system daemon
@@ -115,8 +114,8 @@ that it launched.
 
 When owning the right permissions, a client can get the list
 of running instances and details about a specific
-running instance. It can also terminates, stops or
-continues a given application.
+running instance. It can also terminate, pause or
+resume a given application.
 
 ### Installing and uninstalling applications ###
 
@@ -400,7 +399,7 @@ The **afm-user-daemon** is listening on destination name
 ***org.AGL.afm.user*** at object path ***/org/AGL/afm/user***
 on interface ***org.AGL.afm.user*** for following members:
  ***runnables***, ***detail***, ***start***, ***terminate***,
-***stop***, ***continue***, ***runners***, ***state***,
+***pause***, ***resume***, ***runners***, ***state***,
 ***install*** and ***uninstall***.
 
 D-Bus is mainly used for signaling and discovery. Its optimized
@@ -469,13 +468,13 @@ Here is the summary of ***afm-util***:
 
    terminate the running instance rid
 
- - **afm-util stop       rid **:
+ - **afm-util pause       rid **:
 
-   stop the running instance rid
+   pause the running instance rid
 
- - **afm-util continue   rid **:
+ - **afm-util resume   rid **:
 
-   continue the previously rid
+   resume the previously paused rid
 
  - **afm-util state      rid **:
 
@@ -647,19 +646,37 @@ The field "mode" is a string equal to either "local" or "remote".
 
 #### Method org.AGL.afm.user.stop
 
-**Description**: Stops the application attached to *runid* until terminate or continue.
+Obsolete since 8th November 2016 (2016/11/08).
+Kept for compatibility.
 
-**Input**: The *runid* (integer) of the running instance to stop.
-
-**output**: the value 'true'.
+Use **org.AGL.afm.user.pause** instead.
 
 ---
 
 #### Method org.AGL.afm.user.continue
 
-**Description**: Continues the application attached to *runid* previously stopped.
+Obsolete since 8th November 2016 (2016/11/08).
+Kept for compatibility.
 
-**Input**: The *runid* (integer) of the running instance to continue.
+Use **org.AGL.afm.user.resume** instead.
+
+---
+
+#### Method org.AGL.afm.user.pause
+
+**Description**: Pauses the application attached to *runid* until terminate or resume.
+
+**Input**: The *runid* (integer) of the running instance to pause.
+
+**output**: the value 'true'.
+
+---
+
+#### Method org.AGL.afm.user.resume
+
+**Description**: Resumes the application attached to *runid* previously paused.
+
+**Input**: The *runid* (integer) of the running instance to resume.
 
 **output**: the value 'true'.
 
@@ -674,7 +691,7 @@ The field "mode" is a string equal to either "local" or "remote".
 **output**: An object describing instance state. It contains:
 the runid (integer), the pids of the processes as an array starting
 with the group leader, the id of the running application (string),
-the state of the application (string either: "starting", "running", "stopped").
+the state of the application (string either: "starting", "running", "paused").
 
 Example of returned state:
 

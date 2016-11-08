@@ -59,12 +59,12 @@ case "$1" in
 
   stop|pause)
     i=$2
-    send stop "$i"
+    send pause "$i"
     ;;
 
   resume|continue)
     i=$2
-    send continue "$i"
+    send resume "$i"
     ;;
 
   state|status)
@@ -97,16 +97,16 @@ The commands are:
   start id       start an instance of the widget of id
 
   kill rid
-  terminate rid       terminate the running instance rid
+  terminate rid  terminate the running instance rid
 
   stop rid
-  pause rid      stop the running instance rid
+  pause rid      pause the running instance rid
 
   resume rid
-  continue rid   continue the previously rid
+  continue rid   continue the previously paused rid
 
   status rid
-  state rid     get status of the running instance rid
+  state rid      get status of the running instance rid
 
 EOC
     ;;

@@ -34,7 +34,9 @@ static const char _id_[]        = "id";
 static const char _install_[]   = "install";
 static const char _local_[]     = "local";
 static const char _mode_[]      = "mode";
+static const char _pause_[]     = "pause";
 static const char _remote_[]    = "remote";
+static const char _resume_[]    = "resume";
 static const char _runid_[]     = "runid";
 static const char _runnables_[] = "runnables";
 static const char _runners_[]   = "runners";
@@ -298,14 +300,14 @@ static void terminate(struct afb_req request)
 	call_runid(request, _terminate_);
 }
 
-static void stop(struct afb_req request)
+static void pause(struct afb_req request)
 {
-	call_runid(request, _stop_);
+	call_runid(request, _pause_);
 }
 
-static void continue_(struct afb_req request)
+static void resume(struct afb_req request)
 {
-	call_runid(request, _continue_);
+	call_runid(request, _resume_);
 }
 
 static void runners(struct afb_req request)
@@ -375,8 +377,10 @@ static const struct afb_verb_desc_v1 verbs[] =
 	{_detail_   , AFB_SESSION_CHECK, detail, "Get the details for one application"},
 	{_start_    , AFB_SESSION_CHECK, start, "Start an application"},
 	{_terminate_, AFB_SESSION_CHECK, terminate, "Terminate a running application"},
-	{_stop_     , AFB_SESSION_CHECK, stop, "Stop (pause) a running application"},
-	{_continue_ , AFB_SESSION_CHECK, continue_, "Continue (resume) a stopped application"},
+	{_pause_    , AFB_SESSION_CHECK, pause, "Pause a running application"},
+	{_resume_   , AFB_SESSION_CHECK, resume, "Resume a paused application"},
+	{_stop_     , AFB_SESSION_CHECK, pause, "Obsolete since 2016/11/08, use 'pause' instead"},
+	{_continue_ , AFB_SESSION_CHECK, resume, "Obsolete since 2016/11/08, use 'resume' instead"},
 	{_runners_  , AFB_SESSION_CHECK, runners,  "Get the list of running applications"},
 	{_state_    , AFB_SESSION_CHECK, state, "Get the state of a running application"},
 	{_install_  , AFB_SESSION_CHECK, install,  "Install an application using a widget file"},

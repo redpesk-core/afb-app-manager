@@ -51,7 +51,7 @@
 enum appstate {
 	as_starting,    /* start in progress */
 	as_running,     /* started and running */
-	as_stopped,     /* stopped */
+	as_paused,      /* paused */
 	as_terminating, /* termination in progress */
 	as_terminated   /* terminated */
 };
@@ -279,11 +279,11 @@ static void started(int runid)
 {
 }
 
-static void stopped(int runid)
+static void paused(int runid)
 {
 }
 
-static void continued(int runid)
+static void resumed(int runid)
 {
 }
 
@@ -302,7 +302,7 @@ static void removed(int runid)
  * for 'runid' and put the runner's state to 'tostate'
  * in case of success.
  *
- * Only processes in the state 'as_running' or 'as_stopped'
+ * Only processes in the state 'as_running' or 'as_paused'
  * can be signalled.
  *
  * Returns 0 in case of success or -1 in case of error.
@@ -315,7 +315,7 @@ static int killrunner(int runid, int sig, enum appstate tostate)
 		errno = ENOENT;
 		rc = -1;
 	}
-	else if (runner->state != as_running && runner->state != as_stopped) {
+	else if (runner->state != as_running && runner->state != as_paused) {
 		errno = EINVAL;
 		rc = -1;
 	}
@@ -354,13 +354,13 @@ static void on_sigchld(int signum, siginfo_t *info, void *uctxt)
 		pgid_remove(runner);
 		runner->next_by_pgid = terminated_runners;
 		terminated_runners = runner;
-		/* ensures that all the group stops */
+		/* ensures that all the group terminates */
 		killpg(runner->pids[0], SIGKILL);
 		break;
 
 	case CLD_STOPPED:
 		/* update the state */
-		runner->state = as_stopped;
+		runner->state = as_paused;
 		break;
 
 	case CLD_CONTINUED:
@@ -437,7 +437,7 @@ static json_object *mkstate(struct apprun *runner)
 	switch(runner->state) {
 	case as_starting:
 	case as_running:
-	case as_stopped:
+	case as_paused:
 		pids = j_add_new_array(result, "pids");
 		if (!pids)
 			goto error2;
@@ -456,8 +456,8 @@ static json_object *mkstate(struct apprun *runner)
 	case as_running:
 		state = "running";
 		break;
-	case as_stopped:
-		state = "stopped";
+	case as_paused:
+		state = "paused";
 		break;
 	default:
 		state = "terminated";
@@ -558,9 +558,9 @@ int afm_run_terminate(int runid)
  *
  * Returns 0 in case of success or -1 in case of error
  */
-int afm_run_stop(int runid)
+int afm_run_pause(int runid)
 {
-	return killrunner(runid, SIGSTOP, as_stopped);
+	return killrunner(runid, SIGSTOP, as_paused);
 }
 
 /*
@@ -568,7 +568,7 @@ int afm_run_stop(int runid)
  *
  * Returns 0 in case of success or -1 in case of error
  */
-int afm_run_continue(int runid)
+int afm_run_resume(int runid)
 {
 	return killrunner(runid, SIGCONT, as_running);
 }
