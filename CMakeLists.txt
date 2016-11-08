@@ -24,7 +24,7 @@ include(GNUInstallDirs)
 
 set(PROJECT_NAME "AFM Main")
 set(PROJECT_PRETTY_NAME "Application Framework Main")
-set(PROJECT_DESCRIPTION "Secured Application framework")
+set(PROJECT_DESCRIPTION "Secured Application framework for Automotive Grade Linux")
 set(PROJECT_VERSION "1.0")
 
 set(USE_LIBZIP     ON  CACHE BOOL "should try to use libzip?")
@@ -66,5 +66,15 @@ add_subdirectory(src)
 add_subdirectory(conf)
 add_subdirectory(scripts)
 add_subdirectory(certs)
+
+############################################################
+# installs the pkgconfig files
+
+CONFIGURE_FILE(afm-main.pc.in afm-main.pc @ONLY)
+INSTALL(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/afm-main.pc
+    DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    )
 
 
