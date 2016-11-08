@@ -672,13 +672,15 @@ The field "mode" is a string equal to either "local" or "remote".
 **Input**: The *runid* (integer) of the running instance inspected.
 
 **output**: An object describing instance state. It contains:
-the runid (integer), the id of the running application (string),
+the runid (integer), the pids of the processes as an array starting
+with the group leader, the id of the running application (string),
 the state of the application (string either: "starting", "running", "stopped").
 
 Example of returned state:
 
     {
       "runid": 2,
+      "pids": [ 435, 436 ],
       "state": "running",
       "id": "appli@x.y"
     }

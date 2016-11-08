@@ -421,7 +421,7 @@ static int fill_launch_desc(struct json_object *appli,
 static json_object *mkstate(struct apprun *runner)
 {
 	const char *state;
-	struct json_object *result, *obj;
+	struct json_object *result, *obj, *pids;
 	int rc;
 
 	/* the structure */
@@ -432,6 +432,23 @@ static json_object *mkstate(struct apprun *runner)
 	/* the runid */
 	if (!j_add_integer(result, "runid", runner->runid))
 		goto error2;
+
+	/* the pids */
+	switch(runner->state) {
+	case as_starting:
+	case as_running:
+	case as_stopped:
+		pids = j_add_new_array(result, "pids");
+		if (!pids)
+			goto error2;
+		if (!j_add_integer(pids, NULL, runner->pids[0]))
+			goto error2;
+		if (runner->pids[1] && !j_add_integer(pids, NULL, runner->pids[1]))
+			goto error2;
+		break;
+	default:
+		break;
+	}
 
 	/* the state */
 	switch(runner->state) {
