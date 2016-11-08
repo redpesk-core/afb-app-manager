@@ -95,7 +95,10 @@ int j_integer_at(struct json_object *obj, const char *key, int defval)
 
 int j_add(struct json_object *obj, const char *key, struct json_object *val)
 {
-	json_object_object_add(obj, key, val);
+	if (key)
+		json_object_object_add(obj, key, val);
+	else
+		json_object_array_add(obj, val);
 	return 1;
 }
 

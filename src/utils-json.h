@@ -56,6 +56,7 @@ extern int j_integer_at(struct json_object *obj, const char *key, int defval);
 
 /*
  * Adds a keyed value (of type) and returns true if done or false in case of error
+ * when key==NULL object is an array and values are appended
  */
 extern int j_add(struct json_object *obj, const char *key, struct json_object *val);
 extern int j_add_string(struct json_object *obj, const char *key, const char *val);
