@@ -34,6 +34,7 @@ static const char _id_[]        = "id";
 static const char _install_[]   = "install";
 static const char _local_[]     = "local";
 static const char _mode_[]      = "mode";
+static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
 static const char _remote_[]    = "remote";
 static const char _resume_[]    = "resume";
@@ -294,6 +295,11 @@ static void start(struct afb_req request)
 	free(query);
 }
 
+static void once(struct afb_req request)
+{
+	call_appid(request, _once_);
+}
+
 static void terminate(struct afb_req request)
 {
 	call_runid(request, _terminate_);
@@ -375,6 +381,7 @@ static const struct afb_verb_desc_v1 verbs[] =
 	{_runnables_, AFB_SESSION_CHECK, runnables,  "Get list of runnable applications"},
 	{_detail_   , AFB_SESSION_CHECK, detail, "Get the details for one application"},
 	{_start_    , AFB_SESSION_CHECK, start, "Start an application"},
+	{_once_     , AFB_SESSION_CHECK, once, "Start once an application"},
 	{_terminate_, AFB_SESSION_CHECK, terminate, "Terminate a running application"},
 	{_pause_    , AFB_SESSION_CHECK, pause, "Pause a running application"},
 	{_resume_   , AFB_SESSION_CHECK, resume, "Resume a paused application"},

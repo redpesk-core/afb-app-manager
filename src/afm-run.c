@@ -248,6 +248,25 @@ static struct apprun *getrunner(int runid)
 }
 
 /*
+ * Get first runner of 'appli' (NULL if not found)
+ */
+static struct apprun *getrunner_appli(json_object *appli)
+{
+	int i;
+	struct apprun *result;
+
+	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
+		result = runners_by_pgid[i];
+		while (result != NULL) {
+			if (result->appli == appli)
+				return result;
+			result = result->next_by_pgid;
+		}
+	}
+	return NULL;
+}
+
+/*
  * Free an existing 'runner'
  */
 static void freerunner(struct apprun *runner)
@@ -590,6 +609,23 @@ int afm_run_start(struct json_object *appli, enum afm_launch_mode mode,
 	/* unblock children signal now */
 	sigprocmask(SIG_SETMASK, &saved, NULL);
 	return rc;
+}
+
+/*
+ * Returns the runid of a previously started application 'appli'
+ * or if none is running, starts the application described by 'appli'
+ * in local mode.
+ *
+ * A reference to 'appli' is kept during the live of the
+ * runner. This is made using json_object_get. Thus be aware
+ * that further modifications to 'appli' might create errors.
+ *
+ * Returns the runid in case of success or -1 in case of error
+ */
+int afm_run_once(struct json_object *appli)
+{
+	struct apprun *runner = getrunner_appli(appli);
+	return runner && is_alive(runner) ? runner->runid : afm_run_start(appli, mode_local, NULL);
 }
 
 /*

@@ -398,7 +398,7 @@ user sessions.
 The **afm-user-daemon** is listening on destination name
 ***org.AGL.afm.user*** at object path ***/org/AGL/afm/user***
 on interface ***org.AGL.afm.user*** for following members:
- ***runnables***, ***detail***, ***start***, ***terminate***,
+ ***runnables***, ***detail***, ***start***, ***once***, ***terminate***,
 ***pause***, ***resume***, ***runners***, ***state***,
 ***install*** and ***uninstall***.
 
@@ -463,6 +463,10 @@ Here is the summary of ***afm-util***:
  - **afm-util start      id  **:
 
    start an instance of the widget of id
+
+ - **afm-util once      id  **:
+
+   run once an instance of the widget of id
 
  - **afm-util terminate  rid **:
 
@@ -631,6 +635,26 @@ optionally a field mode:
 The field "mode" is a string equal to either "local" or "remote".
 
 **output**: The *runid* of the application launched. *runid* is an integer.
+
+---
+
+#### Method org.AGL.afm.user.once
+
+**Description**:
+
+**Input**: the *id* of the application
+
+Either just a string:
+
+    "appli@x.y"
+
+Or an object containing field "id" of type string.
+
+    {"id":"appli@x.y"}
+
+**output**: The *state* of the application retrieved or launched.
+See *org.AGL.afm.user.state* to get a description of the returned
+object.
 
 ---
 

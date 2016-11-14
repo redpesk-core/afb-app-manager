@@ -185,7 +185,6 @@ static void on_detail(struct sd_bus_message *smsg, struct json_object *obj, void
 	json_object_put(resp);
 }
 
-
 /*
  * On query "start" from 'smsg' with parameters of 'obj'.
  */
@@ -251,6 +250,42 @@ static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void 
 	}
 	json_object_put(resp);
 	free(uri);
+}
+
+/*
+ * On query "once" from 'smsg' with parameters of 'obj'.
+ */
+static void on_once(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
+{
+	const char *appid;
+	struct json_object *appli, *resp;
+	int runid;
+
+	/* get the parameters */
+	if (!j_read_string(obj, &appid) && !j_read_string_at(obj, "id", &appid)) {
+		jbus_reply_error_s(smsg, error_bad_request);
+		return;
+	}
+
+	/* get the application */
+	INFO("method once called for %s", appid);
+	appli = afm_db_get_application(afdb, appid);
+	if (appli == NULL) {
+		jbus_reply_error_s(smsg, error_not_found);
+		return;
+	}
+
+	/* launch the application */
+	runid = afm_run_once(appli);
+	if (runid <= 0) {
+		jbus_reply_error_s(smsg, error_cant_start);
+		return;
+	}
+
+	/* returns the state */
+	resp = afm_run_state(runid);
+	reply(smsg, resp, error_not_found);
+	json_object_put(resp);
 }
 
 /*
@@ -600,6 +635,7 @@ int main(int ac, char **av)
 	if (jbus_add_service_j(user_bus, "runnables", on_runnables, NULL)
 	 || jbus_add_service_j(user_bus, "detail",    on_detail, NULL)
 	 || jbus_add_service_j(user_bus, "start",     on_start, NULL)
+	 || jbus_add_service_j(user_bus, "once",      on_once, NULL)
 	 || jbus_add_service_j(user_bus, "terminate", on_terminate, NULL)
 	 || jbus_add_service_j(user_bus, "pause",     on_pause, NULL)
 	 || jbus_add_service_j(user_bus, "resume",    on_resume, NULL)

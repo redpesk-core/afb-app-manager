@@ -17,6 +17,7 @@
 */
 
 extern int afm_run_start(struct json_object *appli, enum afm_launch_mode mode, char **uri);
+extern int afm_run_once(struct json_object *appli);
 extern int afm_run_terminate(int runid);
 extern int afm_run_pause(int runid);
 extern int afm_run_resume(int runid);

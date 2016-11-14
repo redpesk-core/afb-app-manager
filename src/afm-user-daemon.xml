@@ -13,6 +13,10 @@
       <arg name="in" type="s" direction="in"/>
       <arg name="out" type="s" direction="out"/>
     </method>
+    <method name="once">
+      <arg name="in" type="s" direction="in"/>
+      <arg name="out" type="s" direction="out"/>
+    </method>
     <method name="terminate">
       <arg name="in" type="s" direction="in"/>
       <arg name="out" type="s" direction="out"/>

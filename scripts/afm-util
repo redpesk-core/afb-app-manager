@@ -52,6 +52,11 @@ case "$1" in
     send start "\"$i\""
     ;;
 
+  once)
+    i=$2
+    send once "\"$i\""
+    ;;
+
   terminate|kill)
     i=$2
     send terminate "$i"
@@ -95,6 +100,8 @@ The commands are:
 
   run id
   start id       start an instance of the widget of id
+
+  once id        run once an instance of the widget of id
 
   kill rid
   terminate rid  terminate the running instance rid
