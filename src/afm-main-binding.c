@@ -45,7 +45,6 @@ static const char _state_[]     = "state";
 static const char _stop_[]      = "stop";
 static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
-static const char _uri_[]       = "uri";
 
 static const struct afb_binding_interface *binder;
 
