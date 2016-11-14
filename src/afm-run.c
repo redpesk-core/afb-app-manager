@@ -180,6 +180,61 @@ static void pgid_remove(struct apprun *runner)
 /****************** manages runners (by runid) **********************/
 
 /*
+ * Is a 'runner' alive?
+ */
+static inline int is_alive(struct apprun *runner)
+{
+	switch(runner->state) {
+	case as_terminating:
+	case as_terminated:
+		return 0;
+	default:
+		return 1;
+	}
+}
+
+/*
+ * Is a 'runner' dead?
+ */
+static inline int is_dead(struct apprun *runner)
+{
+	switch(runner->state) {
+	case as_terminating:
+	case as_terminated:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+/*
+ * Is a 'runner' running?
+ */
+static inline int is_running(struct apprun *runner)
+{
+	switch(runner->state) {
+	case as_starting:
+	case as_running:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+/*
+ * Is a 'runner' paused?
+ */
+static inline int is_paused(struct apprun *runner)
+{
+	switch(runner->state) {
+	case as_paused:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+/*
  * Get a runner by its 'runid'  (NULL if not found)
  */
 static struct apprun *getrunner(int runid)
@@ -315,7 +370,7 @@ static int killrunner(int runid, int sig, enum appstate tostate)
 		errno = ENOENT;
 		rc = -1;
 	}
-	else if (runner->state != as_running && runner->state != as_paused) {
+	else if (is_dead(runner)) {
 		errno = EINVAL;
 		rc = -1;
 	}
@@ -434,10 +489,7 @@ static json_object *mkstate(struct apprun *runner)
 		goto error2;
 
 	/* the pids */
-	switch(runner->state) {
-	case as_starting:
-	case as_running:
-	case as_paused:
+	if (is_alive(runner)) {
 		pids = j_add_new_array(result, "pids");
 		if (!pids)
 			goto error2;
@@ -445,9 +497,6 @@ static json_object *mkstate(struct apprun *runner)
 			goto error2;
 		if (runner->pids[1] && !j_add_integer(pids, NULL, runner->pids[1]))
 			goto error2;
-		break;
-	default:
-		break;
 	}
 
 	/* the state */
@@ -593,8 +642,7 @@ struct json_object *afm_run_list()
 	for (i = 0 ; i < ROOT_RUNNERS_COUNT ; i++) {
 		runner = runners_by_runid[i];
 		while (runner) {
-			if (runner->state != as_terminating
-					&& runner->state != as_terminated) {
+			if (is_alive(runner)) {
 				/* adds the living runner */
 				obj = mkstate(runner);
 				if (obj == NULL)
@@ -624,8 +672,7 @@ error:
 struct json_object *afm_run_state(int runid)
 {
 	struct apprun *runner = getrunner(runid);
-	if (runner == NULL || runner->state == as_terminating
-				|| runner->state == as_terminated) {
+	if (runner == NULL || is_dead(runner)) {
 		errno = ENOENT;
 		return NULL;
 	}
