@@ -496,12 +496,12 @@ error:
  * runner. This is made using json_object_get. Thus be aware
  * that further modifications to 'appli' might create errors.
  *
- * Returns 0 in case of success or -1 in case of error
+ * Returns the runid in case of success or -1 in case of error
  */
 int afm_run_start(struct json_object *appli, enum afm_launch_mode mode,
 							char **uri)
 {
-	static struct apprun *runner;
+	struct apprun *runner;
 	struct afm_launch_desc desc;
 	int rc;
 	sigset_t saved, blocked;
