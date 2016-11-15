@@ -117,7 +117,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 	struct zip_stat zstat;
 	char buffer[32768];
 	ssize_t sizr, sizw;
-	size_t esize;
+	zip_uint64_t esize;
 
 	/* open the zip file */
 	zip = zip_open(zipfile, ZIP_CHECKCONS, &err);
@@ -199,7 +199,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			/* extract */
 			uz64 = zstat.size;
 			while (uz64) {
-				sizr = zip_fread(zfile, buffer, sizeof buffer);
+				sizr = (ssize_t)zip_fread(zfile, buffer, sizeof buffer);
 				if (sizr < 0) {
 					ERROR("error while reading %s in %s", zstat.name, zipfile);
 					goto errorzf;
