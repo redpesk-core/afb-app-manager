@@ -5,6 +5,7 @@ Description=Application Framework Master, User side
 Type=dbus                                
 BusName=org.AGL.afm.user          
 ExecStart=/usr/bin/afm-user-daemon --user-dbus=unix:path=%t/bus
+Environment=AFM_APP_INSTALL_DIR=%%r
 Environment=LD_PRELOAD=/usr/lib/libEGL.so
 Restart=on-failure
 RestartSec=5
