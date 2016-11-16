@@ -109,6 +109,7 @@ static const char readystr[] = "READY=1";
  */
 static const int ready_timeout = 1500;
 
+#if defined(DUMP_LAUNCHERS)
 /*
  * dump all the known launchers to the 'file'
  */
@@ -132,6 +133,7 @@ static void dump_launchers(FILE *file)
 		fprintf(file, "\n");
 	}
 }
+#endif
 
 /*
  * update 'cread' to point the the next token
@@ -942,7 +944,10 @@ int afm_launch_initialize()
 
 	/* reads the configuration file */
 	rc = read_configuration_file(FWK_LAUNCH_CONF);
-	/* dump_launchers(stderr); */
+#if defined(DUMP_LAUNCHERS)
+	if (!rc)
+		dump_launchers(stderr);
+#endif
 	
 	return rc;
 }
