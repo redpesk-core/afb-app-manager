@@ -669,7 +669,7 @@ static pid_t launch(
 )
 {
 	int rc;
-	char **args;
+	char **args, **env;
 	pid_t pid;
 	int rpipe[2];
 	struct pollfd pfd;
@@ -684,9 +684,13 @@ static pid_t launch(
 	/* instanciate the arguments */
 	params->readyfd = rpipe[1];
 	args = instantiate_arguments(exec->args, desc, params, 1).vector;
-	if (args == NULL) {
+	env = instantiate_arguments((const char * const*)environ,
+						desc, params, 1).vector;
+	if (args == NULL || env == NULL) {
 		close(rpipe[0]);
 		close(rpipe[1]);
+		free(args);
+		free(env);
 		ERROR("out of memory in master");
 		errno = ENOMEM;
 		return -1;
@@ -701,6 +705,7 @@ static pid_t launch(
 		close(rpipe[0]);
 		close(rpipe[1]);
 		free(args);
+		free(env);
 		ERROR("master fork failed: %m");
 		return -1;
 	}
@@ -710,6 +715,7 @@ static pid_t launch(
 
 		close(rpipe[1]);
 		free(args);
+		free(env);
 		pfd.fd = rpipe[0];
 		pfd.events = POLLIN;
 
@@ -759,7 +765,7 @@ static pid_t launch(
 	}
 
 	/* executes the process */
-	rc = execve(args[0], args, environ);
+	rc = execve(args[0], args, env);
 	ERROR("failed to exec master %s: %m", args[0]);
 	_exit(1);
 	return -1;
@@ -934,8 +940,10 @@ int afm_launch_initialize()
 	else
 		groupid = (gid_t)-1;
 
+	/* reads the configuration file */
 	rc = read_configuration_file(FWK_LAUNCH_CONF);
 	/* dump_launchers(stderr); */
+	
 	return rc;
 }
 
