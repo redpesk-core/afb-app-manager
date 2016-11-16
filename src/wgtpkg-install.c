@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "verbose.h"
 #include "wgt.h"
@@ -41,6 +42,7 @@
 static const char permission_required[] = "required";
 static const char permission_optional[] = "optional";
 static const char feature_required_permissions[] = FWK_PREFIX "required-permissions";
+static const char exec_type_string[] = "application/x-executable";
 
 static int check_defined(const void *data, const char *name)
 {
@@ -181,6 +183,12 @@ static int install_icon(const struct wgt_desc *desc)
 	return rc;
 }
 
+static int install_exec_flag(const struct wgt_desc *desc)
+{
+	return desc->content_type != NULL && !strcmp(desc->content_type, exec_type_string)
+		? fchmodat(workdirfd, desc->content_src, 0755, 0) : 0;
+}
+
 static int install_security(const struct wgt_desc *desc)
 {
 	char path[PATH_MAX], *head;
@@ -280,6 +288,9 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 		goto error3;
 
 	if (install_icon(desc))
+		goto error3;
+
+	if (install_exec_flag(desc))
 		goto error3;
 
 	if (install_security(desc))
