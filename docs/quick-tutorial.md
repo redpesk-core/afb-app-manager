@@ -29,6 +29,7 @@ Using the CLI tool
 
 ### Setup Environment
 Connect your AGL target board to the network and copy some sample widgets on it through SSH (set BOARDIP with your board IP address) :
+
 ```
 $ cd afm-widget-examples
 $ BOARDIP=1.2.3.4
