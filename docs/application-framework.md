@@ -38,14 +38,13 @@ future to include new feature (ie: incremental delivery).
 Comparison to other frameworks
 ------------------------------
 
-### Tizen framework
+ - Tizen framework
 
-### xdg-app
+ - xdg-app
 
-### ostro
+ - ostro
 
-organization of directory of applications
-=========================================
+### Organization of directory of applications ###
 
 The main path for applications are: APPDIR/PKGID/VER.
 
@@ -58,8 +57,7 @@ Where:
 The advantage of such an organization is to allow several versions to live together.
 This is required for multiple reasons (ie: roll back) and to comply with developers habits.
 
-Identity of installed files
----------------------------
+#### Identity of installed files ####
 
 All the files are installed as user "userapp" and group "userapp".
 All files have rw(x) for user and r-(x) for group and others.
@@ -67,17 +65,14 @@ All files have rw(x) for user and r-(x) for group and others.
 This allows any user to read files.
 
 
-labeling the directories of applications
------------------------------------------
+#### Labeling the directories of applications ####
 
 
-organization of data
-====================
+### Organization of data ###
 
 The data of a user are contain within its directory and are labeled using the application labels
 
-Setting Smack rules for the application
-=======================================
+### Setting Smack rules for the application ###
 
 For Tizen, the following rules are set by the security manager for each application.
 
@@ -100,12 +95,10 @@ For Tizen, the following rules are set by the security manager for each applicat
 
 Here, ~PKG~ is the identifier of the package and ~APP~ is the identifier of the application.
 
-What user can run an application?
-=================================
+### What user can run an application? ###
 
 Not all user are able to run all applications.
 How to manage that?
-
 
 [meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"
 [widgets]:          http://www.w3.org/TR/widgets                                    "Packaged Web Apps"

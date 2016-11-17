@@ -5,18 +5,20 @@ AGL Application Framework: A Quick Tutorial
 Introduction
 ------------
 This document proposes a quick tutorial to demonstrate the major functionnalities of the AGL Application Framework. For more complete information, please refer to the inline documentation available in the main git repository: 
-https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main
-https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder
+
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main] 
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]
+
 
 For more information on AGL, please visit:
-https://www.automotivelinux.org/
+[https://www.automotivelinux.org/]
 
 ----------
 
 Sample applications
 -------------------
 4 sample applications (.wgt files) are prebuilt and available at the following address:
-https://github.com/iotbzh/afm-widget-examples
+[https://github.com/iotbzh/afm-widget-examples]
 
 You can get them by cloning this git repository on your desktop (will be useful later in this tutorial):
 
@@ -216,3 +218,8 @@ Then you can access it from a browser:
 http://[board_ip]:1235/opa/?token=132456789
 
 afb-client is a simple application to demonstrate the built-in capabilities of the binder daemon (handling sessions and security tokens, testing POSTs uploads...) and was used during the application framework development to validate the proposed features.
+
+[https://github.com/iotbzh/afm-widget-examples]: https://github.com/iotbzh/afm-widget-examples (afm-widget-examples)
+[https://www.automotivelinux.org/]: https://www.automotivelinux.org/ (AGL)
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder (app-framework-binder)
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main (app-framework-main)

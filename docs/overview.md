@@ -1,6 +1,5 @@
-
-AGL framework, overview of the proposal of IoT.bzh
-==================================================
+AGL framework, IoT.bzh proposal overview
+========================================
 
 Foreword
 --------
@@ -30,7 +29,7 @@ Here is a minimal list of what was needed:
  - platform/core/appfw/pkgmgr-info
  - platform/core/appfw/slp-pkgmgr
 
-But this list is complete because many dependencies are hidden.
+But this list isn't complete because many dependencies are hidden.
 Those hidden dependencies are including some common libraries but also many
 tizen specific sub-components (iniparser, bundle, dlog, libtzplatform-config,
 db-util, vconf-buxton, ...).
@@ -56,15 +55,7 @@ The 3 layers are providing components for:
 
 The figure below shows the history of these layers.
 
-
-                      2014         2015
-    Tizen OBS ----------+--------------------------->
-                         \
-                          \
-         Tizen Yocto       +---------+-------------->
-                                      \
-                                       \
-           meta-intel-iot-security      +----------->
+![Security_model_history][Security_model_history]
 
 We took the decision to use these security layers that provides the
 basis of the Tizen security, the security framework.
@@ -96,50 +87,7 @@ The figure below shows the major components of the framework
 and their interactions going through the following scenario:
 APPLICATION installs an other application and then launch it.
 
-    +-----------------------------------------------------------------------+
-    |                                 User                                  |
-    |  ................................                                     |
-    |  :   Smack isolation context    :                                     |
-    |  :                              :      ...........................    |
-    |  :  +-----------------------+   :      : Smack isolation context :    |
-    |  :  |                       |   :      :                         :    |
-    |  :  |      APPLICATION      |   :      :     OTHER application   :    |
-    |  :  |                       |   :      :.........................:    |
-    |  :  +-----------+-----------+   :                ^                    |
-    |  :              |               :                |                    |
-    |  :              |(1),(7)        :                |(13)                |
-    |  :              |               :                |                    |
-    |  :  +-----------v-----------+   :      +---------+---------------+    |
-    |  :  |   binder afb-daemon   |   :      |                         |    |
-    |  :  +-----------------------+   :      |      afm-user-daemon    |    |
-    |  :  |    afm-main-binding   |   :      |                         |    |
-    |  :  +-----+--------------+--+   :      +------^-------+------+---+    |
-    |  :........|..............|......:             |       |      :        |
-    |           |(2)           |(8)                 |(10)   |      :        |
-    |           |              |                    |       |      :        |
-    |           |         +----v--------------------+---+   |      :        |
-    |           |         |        D-Bus   session      |   |(11)  :(12)    |
-    |           |         +-------------------------+---+   |      :        |
-    |           |                                   |       |      :        |
-    |           |                                   |(9)    |      :        |
-    |           |                                   |       |      :        |
-    :===========|===================================|=======|======:========:
-    |           |                                   |       |      :        |
-    |           |                               +---v-------v--+   :        |
-    |    +------v-------------+     (3)         |              |   :        |
-    |    |  D-Bus   system    +----------------->    CYNARA    |   :        |
-    |    +------+-------------+                 |              |   :        |
-    |           |                               +------^-------+   :        |
-    |           |(4)                                   |           :        |
-    |           |                                      |(6)        v        |
-    |    +------v--------------+             +---------+---------------+    |
-    |    |                     |    (5)      |                         |    |
-    |    |  afm-system-daemon  +------------->     SECURITY-MANAGER    |    |
-    |    |                     |             |                         |    |
-    |    +---------------------+             +-------------------------+    |
-    |                                                                       |
-    |                              System                                   |
-    +-----------------------------------------------------------------------+
+![AppFW-APP_install_sequences][AppFW-APP_install_sequences]
 
 Let follow the sequence of calls:
 
@@ -267,11 +215,11 @@ application framework of Tizen as is but used an adaptation of it.
 The basis is kept identical: the applications are distributed
 in a digitally signed container that must match the specifications
 of widgets (web applications). This is described by the technical
-recomendations [widgets] and [widgets-digsig] of the W3 consortium.
+recommendations [widgets] and [widgets-digsig] of the W3 consortium.
 
 This model allows the distribution of HTML, QML and binary applications.
 
-The management of signatures of the widget packages 
+The management of signatures of the widget packages.
 This basis is not meant as being rigid and it can be extended in the
 futur to include for example incremental delivery.
 
@@ -293,4 +241,5 @@ futur to include for example incremental delivery.
 [tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
 [tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"
 
-
+[AppFW-APP_install_sequences]: pictures/AppFW-APP_install_sequences.svg (AppFW: APP installation sequences order)
+[Security_model_history]: pictures/Security_model_history.svg (Security model history)
