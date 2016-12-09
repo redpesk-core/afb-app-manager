@@ -241,5 +241,5 @@ futur to include for example incremental delivery.
 [tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
 [tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"
 
-[AppFW-APP_install_sequences]: pictures/AppFW-APP_install_sequences.svg (AppFW: APP installation sequences order)
-[Security_model_history]: pictures/Security_model_history.svg (Security model history)
+[AppFW-APP_install_sequences]: pictures/AppFW-APP_install_sequences.svg
+[Security_model_history]: pictures/Security_model_history.svg

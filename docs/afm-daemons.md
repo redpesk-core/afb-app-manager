@@ -822,4 +822,4 @@ Here is how to list applications using ***afm-util***:
     afm-util runnables
 
 
-[afm-daemons]: pictures/afm-daemons.svg "afm daemons location in the system"
+[afm-daemons]: pictures/afm-daemons.svg
