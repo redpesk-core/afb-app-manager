@@ -219,7 +219,7 @@ http://[board_ip]:1235/opa/?token=132456789
 
 afb-client is a simple application to demonstrate the built-in capabilities of the binder daemon (handling sessions and security tokens, testing POSTs uploads...) and was used during the application framework development to validate the proposed features.
 
-[https://github.com/iotbzh/afm-widget-examples]: https://github.com/iotbzh/afm-widget-examples (afm-widget-examples)
-[https://www.automotivelinux.org/]: https://www.automotivelinux.org/ (AGL)
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder (app-framework-binder)
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main (app-framework-main)
+[https://github.com/iotbzh/afm-widget-examples]: https://github.com/iotbzh/afm-widget-examples
+[https://www.automotivelinux.org/]: https://www.automotivelinux.org/
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main
