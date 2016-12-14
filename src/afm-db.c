@@ -482,10 +482,31 @@ struct json_object *afm_db_application_list(struct afm_db *afdb)
  */
 struct json_object *afm_db_get_application(struct afm_db *afdb, const char *id)
 {
+	int i;
 	struct json_object *result;
-	if (!afm_db_ensure_applications(afdb) && json_object_object_get_ex(
-				afdb->applications.direct, id, &result))
+
+	if (afm_db_ensure_applications(afdb))
+		return NULL;
+
+	/* search case sensitively */
+	if (json_object_object_get_ex( afdb->applications.direct, id, &result))
 		return json_object_get(result);
+
+	/* fallback to a case insensitive search */
+	i = json_object_array_length(afdb->applications.pubarr);
+	while (i) {
+		result = json_object_array_get_idx(afdb->applications.pubarr, --i);
+		if (result
+		  && json_object_object_get_ex(result, "id", &result)
+		  && !strcasecmp(id, json_object_get_string(result))) {
+			if (json_object_object_get_ex( afdb->applications.direct, 
+			                               json_object_get_string(result),
+			                               &result))
+				return json_object_get(result);
+			else
+				return NULL;
+		}
+	}
 	return NULL;
 }
 
