@@ -856,7 +856,7 @@ static struct desc_launcher *search_launcher(const char *type,
 	for (dl = launchers ; dl ; dl = dl->next)
 		if (dl->mode == mode)
 			for (tl = dl->types ; tl != NULL ; tl = tl->next)
-				if (!strcmp(tl->type, type))
+				if (!strcasecmp(tl->type, type))
 					return dl;
 	return NULL;
 }

@@ -42,7 +42,10 @@
 static const char permission_required[] = "required";
 static const char permission_optional[] = "optional";
 static const char feature_required_permissions[] = FWK_PREFIX "required-permissions";
-static const char exec_type_string[] = "application/x-executable";
+static const char* exec_type_strings[] = {
+	"application/x-executable",
+	"application/vnd.agl.native"
+};
 
 static int check_defined(const void *data, const char *name)
 {
@@ -185,8 +188,16 @@ static int install_icon(const struct wgt_desc *desc)
 
 static int install_exec_flag(const struct wgt_desc *desc)
 {
-	return desc->content_type != NULL && !strcmp(desc->content_type, exec_type_string)
-		? fchmodat(workdirfd, desc->content_src, 0755, 0) : 0;
+	int i;
+
+	if (desc->content_type) {
+		i = sizeof exec_type_strings / sizeof *exec_type_strings;
+		while (i) {
+			if (!strcasecmp(desc->content_type, exec_type_strings[--i]))
+				return fchmodat(workdirfd, desc->content_src, 0755, 0);
+		}
+	}
+	return 0;
 }
 
 static int install_security(const struct wgt_desc *desc)
