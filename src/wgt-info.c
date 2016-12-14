@@ -20,6 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include <libxml/tree.h>
 
@@ -117,6 +118,16 @@ static char *mkidaver(char *id, char *ver)
 	return NULL;
 }
 
+static void make_lowercase(char *s)
+{
+	if (s) {
+		while(*s) {
+			*s = (char)tolower(*s);
+			s++;
+		}
+	}
+}
+
 static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, int want_preferences)
 {
 	xmlNodePtr node, pnode;
@@ -132,8 +143,10 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 		return -1;
 	}
 	desc->id = xmlGetProp(node, wgt_config_string_id);
+	make_lowercase(desc->id);
 	desc->version = xmlGetProp(node, wgt_config_string_version);
 	desc->ver = mkver(desc->version);
+	make_lowercase(desc->ver);
 	desc->idaver = mkidaver(desc->id, desc->ver);
 	desc->width = getpropnum(node, wgt_config_string_width, 0);
 	desc->height = getpropnum(node, wgt_config_string_height, 0);
