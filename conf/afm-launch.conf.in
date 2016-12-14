@@ -29,10 +29,10 @@ application/vnd.agl.url
 	/usr/bin/web-runtime %c
 
 application/vnd.agl.service
-	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/%c --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --roothttp=htdocs --token=%S --sessiondir=%D/.afb-daemon
+	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/%c --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
 
 application/vnd.agl.native
-	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/lib --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --roothttp=htdocs --token=%S --sessiondir=%D/.afb-daemon
+	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/lib --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
 	%r/%c %P %S
 
 text/vnd.qt.qml
@@ -40,7 +40,7 @@ application/vnd.agl.qml
 	/usr/bin/qt5/qmlscene -fullscreen -I %r -I %r/imports %r/%c
 
 application/vnd.agl.qml.hybrid
-	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/lib --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --roothttp=htdocs --token=%S --sessiondir=%D/.afb-daemon
+	/usr/bin/afb-daemon --ldpaths=@CMAKE_INSTALL_FULL_LIBDIR@/afb:%r/lib --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
 	/usr/bin/qt5/qmlscene %P %S -fullscreen -I %r -I %r/imports %r/%c
 
 application/vnd.agl.html.hybrid
