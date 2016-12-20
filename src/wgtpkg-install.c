@@ -41,7 +41,7 @@
 
 static const char permission_required[] = "required";
 static const char permission_optional[] = "optional";
-static const char feature_required_permissions[] = FWK_PREFIX "required-permissions";
+static const char feature_required_permissions[] = FWK_PREFIX "required-permission";
 static const char* exec_type_strings[] = {
 	"application/x-executable",
 	"application/vnd.agl.native"
@@ -252,6 +252,7 @@ static int install_security(const struct wgt_desc *desc)
 	perm = first_usable_permission();
 	while(perm) {
 		rc = secmgr_permit(perm);
+		INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
 		if (rc)
 			goto error2;
 		perm = next_usable_permission();

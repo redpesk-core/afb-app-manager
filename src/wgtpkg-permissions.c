@@ -129,13 +129,25 @@ int permission_exists(const char *name)
 /* request the permission, returns 1 if granted or 0 otherwise */
 int request_permission(const char *name)
 {
+#define HACK_ALLOWING_REQUESTED_PERMISSIONS 1
+
 	struct permission *p = get_permission(name);
+
+#if defined(HACK_ALLOWING_REQUESTED_PERMISSIONS) && HACK_ALLOWING_REQUESTED_PERMISSIONS
+	if (!p)
+		p = add_permission(name);
+#endif
 	if (p) {
+#if defined(HACK_ALLOWING_REQUESTED_PERMISSIONS) && HACK_ALLOWING_REQUESTED_PERMISSIONS
+		p->granted = 1;
+#endif
 		p->requested = 1;
 		if (p->granted)
 			return 1;
 	}
 	return 0;
+
+#undef HACK_ALLOWING_REQUESTED_PERMISSIONS
 }
 
 /* iteration over granted and requested permissions */
