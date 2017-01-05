@@ -231,7 +231,7 @@ static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
 	DIR *dir;
 	int rc;
 	char *beg;
-	struct dirent entry, *e;
+	struct dirent *e;
 	size_t len;
 
 	/* opens the directory */
@@ -244,24 +244,28 @@ static int enumentries(struct enumdata *data, int (*callto)(struct enumdata *))
 	*beg++ = '/';
 
 	/* enumerate entries */
-	rc = readdir_r(dir, &entry, &e);
-	while (!rc && e) {
-		if (entry.d_name[0] != '.' || (entry.d_name[1]
-			&& (entry.d_name[1] != '.' || entry.d_name[2]))) {
+	for(;;) {
+		errno = 0;
+		e = readdir(dir);
+		if (!e) {
+			rc = !errno - 1;
+			break;
+		}
+		if (e->d_name[0] != '.' || (e->d_name[1]
+			&& (e->d_name[1] != '.' || e->d_name[2]))) {
 			/* prepare callto */
-			len = strlen(entry.d_name);
+			len = strlen(e->d_name);
 			if (beg + len >= data->path + sizeof data->path) {
 				errno = ENAMETOOLONG;
 				return -1;
 			}
-			data->length = (int)(stpcpy(beg, entry.d_name)
+			data->length = (int)(stpcpy(beg, e->d_name)
 								- data->path);
 			/* call the function */
 			rc = callto(data);
 			if (rc)
 				break;
 		}	
-		rc = readdir_r(dir, &entry, &e);
 	}
 	closedir(dir);
 	return rc;

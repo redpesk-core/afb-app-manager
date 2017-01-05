@@ -33,10 +33,6 @@ static int clean_dirfd(int dirfd)
 	int rc;
 	DIR *dir;
 	struct dirent *ent;
-	struct {
-		struct dirent entry;
-		char spare[PATH_MAX];
-	} entry;
 
 	dir = fdopendir(dirfd);
 	if (dir == NULL) {
@@ -45,10 +41,13 @@ static int clean_dirfd(int dirfd)
 	}
 	for (;;) {
 		rc = -1;
-		if (readdir_r(dir, &entry.entry, &ent) != 0)
-			goto error;
-		if (ent == NULL)
+		errno = 0;
+		ent = readdir(dir);
+		if (ent == NULL) {
+			if (errno)
+				goto error;
 			break;
+		}
 		if (ent->d_name[0] == '.' && (ent->d_name[1] == 0
 				|| (ent->d_name[1] == '.' && ent->d_name[2] == 0)))
 			continue;
