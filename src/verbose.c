@@ -43,14 +43,17 @@ void vverbose(int level, const char *file, int line, const char *fmt, va_list ar
 
 void verbose_set_name(const char *name, int authority)
 {
+	closelog();
 	openlog(name, LOG_PERROR, authority ? LOG_AUTH : LOG_USER);
 }
 
 #else
 
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-static const char *appname;
+static char *appname;
 
 static int appauthority;
 
@@ -79,7 +82,8 @@ void vverbose(int level, const char *file, int line, const char *fmt, va_list ar
 
 void verbose_set_name(const char *name, int authority)
 {
-	appname = name;
+	free(appname);
+	appname = name ? strdup(name) : NULL;
 	appauthority = authority;
 }
 

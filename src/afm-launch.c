@@ -731,6 +731,9 @@ static pid_t launch(
 
 	close(rpipe[0]);
 
+	/* set name by appid */
+	verbose_set_name(desc->appid, 0);
+
 	/* avoid set-gid effect */
 	setresgid(groupid, groupid, groupid);
 
