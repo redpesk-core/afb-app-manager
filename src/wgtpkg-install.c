@@ -30,6 +30,7 @@
 #include "verbose.h"
 #include "wgt.h"
 #include "wgt-info.h"
+#include "wgt-strings.h"
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-zip.h"
@@ -39,9 +40,6 @@
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
 
-static const char permission_required[] = "required";
-static const char permission_optional[] = "optional";
-static const char feature_required_permissions[] = FWK_PREFIX "required-permission";
 static const char* exec_type_strings[] = {
 	"application/x-executable",
 	"application/vnd.agl.native"
@@ -104,9 +102,9 @@ static int set_required_permissions(struct wgt_desc_param *params, int required)
 
 	while (params) {
 		/* check the value */
-		if (!strcmp(params->value, permission_required))
+		if (!strcmp(params->value, string_required))
 			optional = !required;
-		else if (!strcmp(params->value, permission_optional))
+		else if (!strcmp(params->value, string_optional))
 			optional = 1;
 		else {
 			ERROR("unexpected parameter value: %s found for %s", params->value, params->name);
@@ -136,7 +134,7 @@ static int check_widget(const struct wgt_desc *desc)
 	result = check_temporary_constraints(desc);
 	feature = desc->features;
 	while(result >= 0 && feature) {
-		if (!strcmp(feature->name, feature_required_permissions))
+		if (!strcmp(feature->name, feature_required_permission))
 			result = set_required_permissions(feature->params, feature->required);
 		feature = feature->next;
 	}

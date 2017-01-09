@@ -27,6 +27,7 @@
 #include "verbose.h"
 #include "wgt.h"
 #include "wgt-config.h"
+#include "wgt-strings.h"
 #include "wgt-info.h"
 
 struct wgt_info {
@@ -142,42 +143,42 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 		errno = EINVAL;
 		return -1;
 	}
-	desc->id = xmlGetProp(node, wgt_config_string_id);
+	desc->id = xmlGetProp(node, string_id);
 	make_lowercase(desc->id);
-	desc->version = xmlGetProp(node, wgt_config_string_version);
+	desc->version = xmlGetProp(node, string_version);
 	desc->ver = mkver(desc->version);
 	make_lowercase(desc->ver);
 	desc->idaver = mkidaver(desc->id, desc->ver);
-	desc->width = getpropnum(node, wgt_config_string_width, 0);
-	desc->height = getpropnum(node, wgt_config_string_height, 0);
-	desc->viewmodes = xmlGetProp(node, wgt_config_string_viewmodes);
-	desc->defaultlocale = xmlGetProp(node, wgt_config_string_defaultlocale);
+	desc->width = getpropnum(node, string_width, 0);
+	desc->height = getpropnum(node, string_height, 0);
+	desc->viewmodes = xmlGetProp(node, string_viewmodes);
+	desc->defaultlocale = xmlGetProp(node, string_defaultlocale);
 
 	node = wgt_config_name();
 	desc->name = optcontent(node);
-	desc->name_short = optprop(node, wgt_config_string_short);
+	desc->name_short = optprop(node, string_short);
 
 	node = wgt_config_description();
 	desc->description = optcontent(node);
 
 	node = wgt_config_author();
 	desc->author = optcontent(node);
-	desc->author_href = optprop(node, wgt_config_string_href);
-	desc->author_email = optprop(node, wgt_config_string_email);
+	desc->author_href = optprop(node, string_href);
+	desc->author_email = optprop(node, string_email);
 
 	node = wgt_config_license();
 	desc->license = optcontent(node);
-	desc->license_href = optprop(node, wgt_config_string_href);
+	desc->license_href = optprop(node, string_href);
 	
 	node = wgt_config_content();
-	desc->content_src = optprop(node, wgt_config_string_src);
+	desc->content_src = optprop(node, string_src);
 	if (node && desc->content_src == NULL) {
 		WARNING("content without src");
 		errno = EINVAL;
 		return -1;
 	}
-	desc->content_type = optprop(node, wgt_config_string_type);
-	desc->content_encoding = optprop(node, wgt_config_string_encoding);
+	desc->content_type = optprop(node, string_type);
+	desc->content_encoding = optprop(node, string_encoding);
 
 	if (want_icons) {
 		icontail = &desc->icons;
@@ -188,9 +189,9 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				errno = ENOMEM;
 				return -1;
 			}
-			icon->src = xmlGetProp(node, wgt_config_string_src);
-			icon->width = getpropnum(node, wgt_config_string_width, 0);
-			icon->height = getpropnum(node, wgt_config_string_height, 0);
+			icon->src = xmlGetProp(node, string_src);
+			icon->width = getpropnum(node, string_width, 0);
+			icon->height = getpropnum(node, string_height, 0);
 
 			icon->next = NULL;
 			*icontail = icon;
@@ -214,8 +215,8 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				errno = ENOMEM;
 				return -1;
 			}
-			feature->name = xmlGetProp(node, wgt_config_string_name);
-			feature->required = getpropbool(node, wgt_config_string_required, 1);
+			feature->name = xmlGetProp(node, string_name);
+			feature->required = getpropbool(node, string_required, 1);
 			feature->params = NULL;
 
 			feature->next = NULL;
@@ -235,8 +236,8 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 					errno = ENOMEM;
 					return -1;
 				}
-				param->name = xmlGetProp(pnode, wgt_config_string_name);
-				param->value = xmlGetProp(pnode, wgt_config_string_value);
+				param->name = xmlGetProp(pnode, string_name);
+				param->value = xmlGetProp(pnode, string_value);
 
 				param->next = NULL;
 				*paramtail = param;
@@ -265,9 +266,9 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				errno = ENOMEM;
 				return -1;
 			}
-			preference->name = xmlGetProp(node, wgt_config_string_name);
-			preference->value = xmlGetProp(node, wgt_config_string_value);
-			preference->readonly = getpropbool(node, wgt_config_string_readonly, 0);
+			preference->name = xmlGetProp(node, string_name);
+			preference->value = xmlGetProp(node, string_value);
+			preference->readonly = getpropbool(node, string_readonly, 0);
 
 			*preferencetail = preference;
 			preference->next = NULL;

@@ -17,33 +17,6 @@
 */
 
 
-extern const char wgt_config_string_author[];
-extern const char wgt_config_string_content[];
-extern const char wgt_config_string_defaultlocale[];
-extern const char wgt_config_string_description[];
-extern const char wgt_config_string_email[];
-extern const char wgt_config_string_encoding[];
-extern const char wgt_config_string_feature[];
-extern const char wgt_config_string_height[];
-extern const char wgt_config_string_href[];
-extern const char wgt_config_string_icon[];
-extern const char wgt_config_string_id[];
-extern const char wgt_config_string_license[];
-extern const char wgt_config_string_name[];
-extern const char wgt_config_string_param[];
-extern const char wgt_config_string_preference[];
-extern const char wgt_config_string_readonly[];
-extern const char wgt_config_string_required[];
-extern const char wgt_config_string_short[];
-extern const char wgt_config_string_src[];
-extern const char wgt_config_string_type[];
-extern const char wgt_config_string_value[];
-extern const char wgt_config_string_version[];
-extern const char wgt_config_string_viewmodes[];
-extern const char wgt_config_string_widget[];
-extern const char wgt_config_string_width[];
-extern const char wgt_config_string_xml_file[];
-
 struct wgt;
 extern int wgt_config_open(struct wgt *wgt);
 extern void wgt_config_close();

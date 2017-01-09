@@ -101,6 +101,7 @@ add_library(utils STATIC
 add_library(wgt STATIC
 	wgt-config.c
 	wgt-info.c
+	wgt-strings.c
 	wgt.c
 	)
 
