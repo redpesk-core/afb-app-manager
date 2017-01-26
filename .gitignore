@@ -2,4 +2,5 @@
 build/
 
 tests-w3c/
+prepare-build.sh
 
