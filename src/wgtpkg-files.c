@@ -50,7 +50,7 @@ static unsigned int what_signature(const char *name)
 		return UINT_MAX;
 
 	len = sizeof(distributor_file_prefix)-1;
-	if (memcmp(name, distributor_file_prefix, len))
+	if (strncmp(name, distributor_file_prefix, len))
 		return 0;
 	if (name[len] <= '0' || name[len] > '9')
 		return 0;
