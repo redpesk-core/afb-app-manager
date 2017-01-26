@@ -41,7 +41,7 @@ set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
 
 include(FindPkgConfig)
 
-pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl)
+pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c)
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
@@ -95,6 +95,8 @@ add_library(wgtpkg STATIC
 
 add_library(utils STATIC
 	utils-dir.c
+	utils-file.c
+	utils-json.c
 	verbose.c
 	)
 
@@ -131,7 +133,7 @@ install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION
 ###########################################################################
 # the targeted
 
-pkg_check_modules(EXTRA2 json-c libsystemd)
+pkg_check_modules(EXTRA2 libsystemd)
 if(EXTRA2_FOUND)
 	add_compile_options(${EXTRA2_CFLAGS})
 	include_directories(${EXTRA2_INCLUDE_DIRS})
@@ -139,7 +141,6 @@ if(EXTRA2_FOUND)
 
 	add_library(utils2 STATIC
 		utils-jbus.c
-		utils-json.c
 		)
 
 	add_library(afm STATIC
