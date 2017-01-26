@@ -81,13 +81,16 @@ static int check_valid_string(const char *value, const char *name)
 
 static int check_temporary_constraints(const struct wgt_desc *desc)
 {
-	int result = check_valid_string(desc->id, "id");
+	int result;
+
+	result  = check_valid_string(desc->id, "id");
 	result |= check_valid_string(desc->version, "version");
 	result |= check_valid_string(desc->ver, "ver");
 	result |= check_defined(desc->icons, "icon");
 	result |= check_defined(desc->content_src, "content");
 	if (result)
 		return result;
+
 	if (desc->icons->next) {
 		ERROR("widget has more than one icon defined (temporary constraints)");
 		errno = EINVAL;
@@ -141,19 +144,24 @@ static int check_widget(const struct wgt_desc *desc)
 	return result;
 }
 
-static int move_widget(const char *root, const struct wgt_desc *desc, int force)
+static int get_target_directory(char target[PATH_MAX], const char *root, const struct wgt_desc *desc)
 {
-	char newdir[PATH_MAX];
 	int rc;
 
-	rc = snprintf(newdir, sizeof newdir, "%s/%s/%s", root, desc->id, desc->ver);
-	if (rc >= (int)sizeof newdir) {
-		ERROR("path too long in move_widget");
+	rc = snprintf(target, PATH_MAX, "%s/%s/%s", root, desc->id, desc->ver);
+	if (rc < PATH_MAX)
+		rc = 0;
+	else {
+		ERROR("path too long");
 		errno = EINVAL;
-		return -1;
+		rc = -1;
 	}
+	return rc;
+}
 
-	return move_workdir(newdir, 1, force);
+static int move_widget_to(const char *destdir, int force)
+{
+	return move_workdir(destdir, 1, force);
 }
 
 static int install_icon(const struct wgt_desc *desc)
@@ -269,6 +277,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 {
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
+	char installdir[PATH_MAX];
 
 	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
 
@@ -294,7 +303,10 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (check_widget(desc))
 		goto error3;
 
-	if (move_widget(root, desc, force))
+	if (get_target_directory(installdir, root, desc))
+		goto error3;
+
+	if (move_widget_to(installdir, force))
 		goto error3;
 
 	if (install_icon(desc))
