@@ -14,17 +14,17 @@ framework to keep updated a database of installed permissions.
 
 The permission names are [URN][URN] of the form:
 
-  urn:AGL:permission:<binding>:<level>:<hierarchical-name>
+  urn:AGL:permission:<api>:<level>:<hierarchical-name>
 
 where "AGL" is the NID (the namespace identifier) dedicated to
 AGL (note: a RFC should be produced to standardize this name space).
 
 The permission names are made of NSS (the namespace specific string)
 starting with "permission:" and followed by colon separated
-fields. The 2 first fields are <binding> and <level> and the remaining
+fields. The 2 first fields are <api> and <level> and the remaining
 fields are gouped to form the <hierarchical-name>.
 
-	<binding> ::= [ <pname> ]
+	<api> ::= [ <pname> ]
 	
 	<pname> ::= 1*<pchars>
 	
@@ -32,12 +32,12 @@ fields are gouped to form the <hierarchical-name>.
 	
 	<extra> ::= "-" | "." | "_" | "@"
 
-The field <binding> can be made of any valid character for NSS except
-the characters colon and star (:*). This field designate the binding
-providing the permission. It is use to deduce binding requirements
-from permission requirements. The field <binding> can be the empty
+The field <api> can be made of any valid character for NSS except
+the characters colon and star (:*). This field designate the api
+providing the permission. This scheme is used to deduce binding requirements
+from permission requirements. The field <api> can be the empty
 string when the permission is defined by the AGL system itself.
-The field <binding> if starting with the character "@" represents
+The field <api> if starting with the character "@" represents
 a transversal permission not bound to any binding.
 
 	<level> ::= 1*<lower>
