@@ -10,7 +10,7 @@
   </description>
   <author>Qt team</author>
   <license>GPL</license>
-  <feature name="urn:AGL:widget:required-binding">
+  <feature name="urn:AGL:widget:required-api">
     <param name="#target" value="main" />
     <param name="gps" value="ws" />
     <param name="phone" value="dbus" />
@@ -24,13 +24,13 @@
     <param name="urn:AGL:permission::public:applications:read" value="required" />
     <param name="urn:AGL:permission::public:display" value="required" />
   </feature>
-  <feature name="urn:AGL:widget:provided-binding">
+  <feature name="urn:AGL:widget:provided-api">
     <param name="#target" value="geoloc" />
     <param name="description" value="binding of name geoloc" />
     <param name="content.src" value="libs/binding-geoloc.so" />
     <param name="content.type" value="application/vnd.agl.service" />
   </feature>
-  <feature name="urn:AGL:widget:required-binding">
+  <feature name="urn:AGL:widget:required-api">
     <param name="#target" value="geoloc" />
     <param name="identity" value="auto" />
   </feature>

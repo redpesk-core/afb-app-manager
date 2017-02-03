@@ -57,14 +57,14 @@ const char string_list[] = "list";
 const char string_main[] = "main";
 const char string_optional[] = "optional";
 const char string_provided_application[] = "provided-application";
-const char string_provided_binding[] = "provided-binding";
-const char string_required_binding[] = "required-binding";
+const char string_provided_api[] = "provided-api";
+const char string_required_api[] = "required-api";
 const char string_required_permission[] = "required-permission";
 const char string_targets[] = "targets";
 const char string_sharp_target[] = "#target";
 
 
-const char feature_required_binding[] = FWK_PREFIX "widget:required-binding";
+const char feature_required_api[] = FWK_PREFIX "widget:required-api";
 const char feature_required_permission[] = FWK_PREFIX "widget:required-permission";
 
 

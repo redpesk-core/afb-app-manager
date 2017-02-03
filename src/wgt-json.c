@@ -314,11 +314,11 @@ static int add_provided(struct json_object *targets, const struct wgt_desc_featu
 	return add_targeted_params(targets, feat, actions);
 }
 
-static int add_required_binding(struct json_object *targets, const struct wgt_desc_feature *feat)
+static int add_required_api(struct json_object *targets, const struct wgt_desc_feature *feat)
 {
 	static struct paramaction actions[] = {
 		{ .name = string_sharp_target, .action = NULL, .closure = NULL },
-		{ .name = NULL, .action = add_param_array, .closure = (void*)string_required_binding }
+		{ .name = NULL, .action = add_param_array, .closure = (void*)string_required_api }
 	};
 	return add_targeted_params(targets, feat, actions);
 }
@@ -370,7 +370,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 					rc = -EINVAL;
 			}
 			featname += prefixlen;
-			if (!strcmp(featname, string_provided_binding)
+			if (!strcmp(featname, string_provided_api)
 			||  !strcmp(featname, string_provided_application)) {
 				rc2 = make_target(targets, feat);
 				if (rc2 < 0 && !rc)
@@ -390,13 +390,13 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 					rc = rc2;
 			}
 			else if (!strcmp(featname, string_provided_application)
-				|| !strcmp(featname, string_provided_binding)) {
+				|| !strcmp(featname, string_provided_api)) {
 				rc2 = add_provided(targets, feat);
 				if (rc2 < 0 && !rc)
 					rc = rc2;
 			}
-			else if (!strcmp(featname, string_required_binding)) {
-				rc2 = add_required_binding(targets, feat);
+			else if (!strcmp(featname, string_required_api)) {
+				rc2 = add_required_api(targets, feat);
 				if (rc2 < 0 && !rc)
 					rc = rc2;
 			}

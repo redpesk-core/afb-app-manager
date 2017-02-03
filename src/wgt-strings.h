@@ -55,12 +55,12 @@ extern const char string_list[];
 extern const char string_main[];
 extern const char string_optional[];
 extern const char string_provided_application[];
-extern const char string_provided_binding[];
-extern const char string_required_binding[];
+extern const char string_provided_api[];
+extern const char string_required_api[];
 extern const char string_required_permission[];
 extern const char string_sharp_target[];
 extern const char string_targets[];
 
-extern const char feature_required_binding[];
+extern const char feature_required_api[];
 extern const char feature_required_permission[];
 

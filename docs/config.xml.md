@@ -101,15 +101,15 @@ features.
 
 The features planned to be implemented are described below.
 
-### feature name="urn:AGL:widget:required-binding"
+### feature name="urn:AGL:widget:required-api"
 
-List of the bindings required by the widget.
+List of the api required by the widget.
 
-Each required binding must be explicited using a <param> entry.
+Each required api must be explicited using a <param> entry.
 
 Example:
 ```xml
-<feature name="urn:AGL:widget:required-binding">
+<feature name="urn:AGL:widget:required-api">
   <param name="urn:AGL:permission:A" value="required" />
   <param name="urn:AGL:permission:B" value="optional" />
 </feature>
@@ -117,7 +117,7 @@ Example:
 
 This will be *virtually* translated for mustaches to the JSON
 ```json
-"required-binding": {
+"required-api": {
   "param": [
       { "name": "urn:AGL:permission:A", "value": "required", "required": true },
       { "name": "urn:AGL:permission:A", "value": "optional", "optional": true }
@@ -138,7 +138,7 @@ The value is either:
 isn't required (required="false") and in that case it is optional.
 - optional: the binding is optional
 
-#### param name=[required binding name]
+#### param name=[required api name]
 
 The value is either:
 
@@ -160,9 +160,9 @@ The value is either:
 isn't required (required="false") and in that case it is optional.
 - optional: the permission is optional
 
-### feature name="urn:AGL:widget:provided-binding"
+### feature name="urn:AGL:widget:provided-api"
 
-Use this feature for each provided binding of the widget.
+Use this feature for each provided api of the widget.
 The parameters are:
 
 #### param name="subid"
