@@ -1,4 +1,5 @@
 .*.swp
+.vscode
 build/
 
 tests-w3c/
