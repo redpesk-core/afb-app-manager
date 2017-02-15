@@ -4,9 +4,9 @@ AGL Application Framework: A Quick Tutorial
 
 Introduction
 ------------
-This document proposes a quick tutorial to demonstrate the major functionnalities of the AGL Application Framework. For more complete information, please refer to the inline documentation available in the main git repository: 
+This document proposes a quick tutorial to demonstrate the major functionalities of the AGL Application Framework. For more complete information, please refer to the inline documentation available in the main git repository:
 
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main] 
+[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main]
 [https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]
 
 
@@ -50,42 +50,42 @@ We can see that there are two daemons running:
 * **afm-system-daemon** runs with a system user 'afm' and is responsible for installing/uninstalling packages
 * **afm-user-daemon** runs as a user daemon (currently as root because it's the only real user on the target board) and is responsible for the whole lifecycle of the applications running inside the user session.
 
-The application framework has a tool running on the Command Line Interface (CLI). Using the **afm-util** command, you can install, uninstall, list, run, pause ... applications. 
+The application framework has a tool running on the Command Line Interface (CLI). Using the **afm-util** command, you can install, uninstall, list, run, pause ... applications.
 
 To begin, run '**afm-util help**' to get a quick help on commands:
 
     root@porter:~# afm-util help
     usage: afm-util command [arg]
-    
+
     The commands are:
-    
+
       list
       runnables      list the runnable widgets installed
-    
+
       add wgt
       install wgt    install the wgt file
-    
+
       remove id
       uninstall id   remove the installed widget of id
-    
+
       info id
       detail id      print detail about the installed widget of id
-    
+
       ps
       runners        list the running instance
-    
+
       run id
       start id       start an instance of the widget of id
-    
+
       kill rid
       terminate rid  terminate the running instance rid
-    
+
       stop rid
       pause rid      pause the running instance rid
-    
+
       resume rid
       continue rid   resume the previously rid
-    
+
       status rid
       state rid      get status of the running instance rid
 
@@ -93,12 +93,12 @@ To begin, run '**afm-util help**' to get a quick help on commands:
 
 You can then install your first application:
 
-    root@porter:~# afm-util install /home/root/annex.wgt 
+    root@porter:~# afm-util install /home/root/annex.wgt
     { "added": "webapps-annex@0.0" }
 
 Let's install a second application:
 
-    root@porter:~# afm-util install /home/root/memory-match.wgt 
+    root@porter:~# afm-util install /home/root/memory-match.wgt
     { "added": "webapps-memory-match@1.1" }
 
 Note that usually, **afm-util** will return a **JSON result**, which is the common format for messages returned by the Application Framework daemons.
@@ -154,7 +154,7 @@ To pause the application that was just started (the one with RUNID 1), just run 
 
     root@porter:~# afm-util terminate 1
     true
-    
+
 The application is now paused, as confirmed by a list of running apps:
 
     root@porter:~# afm-util ps
@@ -177,7 +177,7 @@ afm-client: a sample HTML5 'Homescreen'
 
 **afm-client** is a HTML5 UI that allows to install/uninstall applications as well as starting/pausing them as already demonstrated with afm-util.
 
-The HTML5 UI is accessible remotely through this URL: 
+The HTML5 UI is accessible remotely through this URL:
 http://[board_ip]:1234/opa?token=132456789
 
 ### Installing an application

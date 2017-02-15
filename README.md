@@ -24,7 +24,7 @@ This package requires the following libraries or modules:
 - ***dbus-1***
 - ***security-manager***
 
-This package also requires either ***libzip*** (version >= 0.11) 
+This package also requires either ***libzip*** (version >= 0.11)
 or the binaries ***zip*** and ***unzip***. By default, it will
 use ***libzip***.
 
@@ -33,9 +33,9 @@ use ***libzip***.
 The main scheme for compiling the project is:
 
 > cmake .
-> 
+>
 > make
-> 
+>
 > sudo make install
 
 By default, the installation is made in ***/usr***.
@@ -44,7 +44,7 @@ CMAKE_INSTALL_PREFIX as in the below example:
 
 > cmake -DCMAKE_INSTALL_PREFIX=/some/where .
 
-You could check the documentation of the standard CMake module 
+You could check the documentation of the standard CMake module
 [GNUInstallDirs](https://cmake.org/cmake/help/v3.4/module/GNUInstallDirs.html).
 
 To forbid the use of ***libzip*** and replace it with the
@@ -72,7 +72,7 @@ The installed programs are:
   It runs on the user session bus.
 
 - ***wgtpkg-info***: command line tool to display
-  informations about a widget file.
+  information about a widget file.
 
 - ***wgtpkg-installer***: command line tool to
   install a widget file.
@@ -88,7 +88,7 @@ The installed programs are:
 ### Actors
 
 The framework defined by afm-main is defining several actors:
-the platform designer, the application developper, the distributor,
+the platform designer, the application developer, the distributor,
 the user, the hacker.
 
 The platform designer defines the AGL system and its security.
@@ -101,12 +101,12 @@ The hacker is a user that also develops application for
 tuning its system.
 
 The distributor is the mediator between the developer and the
-user. It provides 
+user. It provides
 
 The user is either the driver or a passenger of the car.
 
 The application, libraries, services are available on the
-platform. Somme of it are in direct interaction with users.
+platform. Some of them are in direct interaction with users.
 Some others, like services, are used indirectly.
 
 
@@ -115,24 +115,24 @@ Some others, like services, are used indirectly.
 #### Writing applications
 
 The application will receive an identifier.
-That identifier must be must have the following feature:
+That identifier must have the following feature:
 
-- it must be unic to identify the application and its revisions
+- it must be unique to identify the application and its revisions
 - it should be short enough to be used with efficiency by
   security components of the system
 - it can not be stolen by malicious applications that
-  would like to usurpate the application identity
+  would like to spoof the application identity
 - it can be sold to other company
 
 The framework provide a facility to create an asymetric
 key that will serve all the above purposes (it currently
-doen't).
+doesn't).
 
-Using its favorite environment, the developper
-produce applications for the target.
+Using its favorite environment, the developer
+produces applications for the target.
 
 Depending on its constraints either economic,
-technical or human, the developer choose the language
+technical or human, the developer chooses the language
 and the environment for developing the applications.
 
 This step needs to test and to debug the application on
@@ -146,22 +146,22 @@ The framework will provide facilities for debugging
 
 #### Packaging applications
 
-Currently the frame work expect widgets packaged as
+Currently the framework expects widgets packaged as
 specified by [Packaged Web Apps](http://www.w3.org/TR/widgets).
 
-When the application is ready, the developper
+When the application is ready, the developer
 creates a package for it. The creation of the package
 is made of few steps:
 
-- isolate the strict necessarily files and structure it 
+- isolate the strict necessarily files and structure it
   to be children of only one root directory
-- sign the application with the developper key
+- sign the application with the developer key
 - sign the application with its application key
 - pack the application using zip
 
 The framework will provide facilities to package applications.
 
-Parts of the job can be made with tools provided by afm-main:
+Parts of the job can be done with tools provided by afm-main:
 
 - ***wgtpkg-sign*** is used to add signatures at root of the package
 - ***wgtpkg-pack*** is used to create the package file (with wgt extension).
@@ -180,14 +180,14 @@ applications. For example, a critical application nested
 in the system should have high level permissions allowing
 it to do things that should normally not be done (changing
 system configuration for example).
-To allow such an application, the distributor must sign
+To allow such application, the distributor must sign
 it using its secret private key that will unlock the
 requested level of permissions.
 
-Currently, the frammework allows to make these steps by hand
-the programs ***unzip***, ***wgtpkg-sign*** and ***wgtpkg-pack***.
+Currently, the framework allows to make these steps manually
+using ***unzip***, ***wgtpkg-sign*** and ***wgtpkg-pack*** utilities.
 
-The applications of the store will then be available
+Applications of the store will then be available
 for browsing and searching over HTTP/Internet.
 
 #### Installing applications
@@ -196,7 +196,7 @@ The framework will provide an API for downloading and
 installing an application from stores (it currently doesn't).
 
 The current version of afm allows to install widgets
-from local files (either preinstalled or downloaded).
+from local files (either pre-installed or downloaded).
 
 To install a widget, you can use either the program
 ***wgtpkg-installer*** while being the framework user.
@@ -229,7 +229,7 @@ TO BE CONTINUED
 
 ## Extension to the packaging specifications
 
-The widgets are specified in that W3C recommandation: 
+The widgets are specified in that W3C recommendation:
 [Packaged Web Apps](http://www.w3.org/TR/widgets).
 This model was initially designed for HTML applications.
 But it is well suited for other kind of applications.
@@ -244,7 +244,7 @@ nor suited for managing privileges:
 However, it may become of actuallity in some future.
 
 The main idea is to use the file ***config.xml*** as a switch
-for several contants.
+for several constants.
 The current specifications for ***config.xml*** are allowing
 to describe either HTML5, QML and native applications.
 Using *feature*, it is also possible to define uses of

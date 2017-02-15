@@ -7,10 +7,10 @@ Permission's names
 
 The proposal here is to specify a naming scheme for permissions
 that allows the system to be as stateless as possible. The current
-current specification includes in the naming of permissions either
+specification includes in the naming of permissions either
 the name of the bound binding when existing and the level of the
 permission itself. Doing this, there is no real need for the
-framework to keep updated a database of installed permissions.
+framework to keep installed permissions in a database.
 
 The permission names are [URN][URN] of the form:
 
@@ -22,23 +22,23 @@ AGL (note: a RFC should be produced to standardize this name space).
 The permission names are made of NSS (the namespace specific string)
 starting with "permission:" and followed by colon separated
 fields. The 2 first fields are <api> and <level> and the remaining
-fields are gouped to form the <hierarchical-name>.
+fields are grouped to form the <hierarchical-name>.
 
 	<api> ::= [ <pname> ]
-	
+
 	<pname> ::= 1*<pchars>
-	
+
 	<pchars> ::= <upper> | <lower> | <number> | <extra>
-	
+
 	<extra> ::= "-" | "." | "_" | "@"
 
 The field <api> can be made of any valid character for NSS except
-the characters colon and star (:*). This field designate the api
+the characters colon and star (:*). This field designates the api
 providing the permission. This scheme is used to deduce binding requirements
 from permission requirements. The field <api> can be the empty
 string when the permission is defined by the AGL system itself.
 The field <api> if starting with the character "@" represents
-a transversal permission not bound to any binding.
+a transversal/cross permission not bound to any binding.
 
 	<level> ::= 1*<lower>
 

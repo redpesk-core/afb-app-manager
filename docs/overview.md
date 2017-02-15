@@ -43,7 +43,7 @@ of Tizen showed that their dependencies to Tizen are light (and since some
 of our work, there is no more dependency to tizen).
 Those components are **cynara**, **security-manager**, **D-Bus aware of cynara**.
 
-Luckyly, these core security components of Tizen are provided
+Luckily, these core security components of Tizen are provided
 by [meta-intel-iot-security][meta-intel], a set of yocto layers.
 These layers were created by Intel to isolate Tizen specific security
 components from the initial port of Tizen to Yocto.
@@ -57,12 +57,12 @@ The figure below shows the history of these layers.
 
 ![Security_model_history][Security_model_history]
 
-We took the decision to use these security layers that provides the
+We took the decision to use these security layers that provide the
 basis of the Tizen security, the security framework.
 
 For the components of the application framework, built top of
 the security framework, instead of pulling the huge set of packages
-from Tizen, we decided to refit it by developping a tiny set of
+from Tizen, we decided to refit it by developing a tiny set of
 components that would implement the same behaviour but without all
 the dependencies and with minor architectural improvements for AGL.
 
@@ -104,7 +104,7 @@ Let follow the sequence of calls:
    **afm-system-daemon** checks the application to install, its
    signatures and rights and install it.
 
-5. **afm-system-daemon** calls **SECURITY-MANAGER** for fullfilling
+5. **afm-system-daemon** calls **SECURITY-MANAGER** for fulfilling
    security context of the installed application.
 
 6. **SECURITY-MANAGER** calls **CYNARA** to install initial permissions
@@ -124,7 +124,7 @@ Let follow the sequence of calls:
     or not to start the OTHER application **CYNARA**.
 
 12. **afm-user-daemon** uses **SECURITY-MANAGER** features to set
-    the seciruty context for the OTHER application.
+    the security context for the OTHER application.
 
 13. **afm-user-daemon** launches the OTHER application.
 
@@ -161,7 +161,7 @@ Links between the "Security framework" and the "Application framework"
 The security framework refers to the security model used to ensure
 security and to the tools that are provided for implementing that model.
 
-The security model refers to how DAC (Discretionnary Access Control),
+The security model refers to how DAC (Discretionary Access Control),
 MAC (Mandatory Access Control) and Capabilities are used by the system
 to ensure security and privacy. It also includes features of reporting
 using audit features and by managing logs and alerts.
@@ -173,7 +173,7 @@ The application framework uses the security model/framework
 to ensure the security and the privacy of the applications that
 it manages.
 
-The application framework must be compliant with the underlyiong
+The application framework must be compliant with the underlying
 security model/framework. But it should hide it to the applications.
 
 
@@ -188,15 +188,16 @@ the [meta-intel].
 It includes: **Security-Manager**, **Cynara**
 and **D-Bus** compliant to Cynara.
 
-Two patches are applied to the security-manager. These patches are removing
-dependencies to packages specific of Tizen but that are not needed by AGL.
+Two patches are applied to the security-manager. The goal of these patches
+is to remove specific dependencies with Tizen packages that are not needed
+by AGL.
 None of these patches adds or removes any behaviour.
 
-**Theoritically, the security framework/model is an implementation details
+**In theory, the security framework/model is an implementation details
 that should not impact the layers above the application framework**.
 
 The security framework of Tizen provides "nice lad" a valuable component to
-scan log files and analyse auditing. This component is still in developement.
+scan log files and analyse auditing. This component is still in development.
 
 
 The application framework
@@ -221,7 +222,7 @@ This model allows the distribution of HTML, QML and binary applications.
 
 The management of signatures of the widget packages.
 This basis is not meant as being rigid and it can be extended in the
-futur to include for example incremental delivery.
+future to include for example incremental delivery.
 
 
 
