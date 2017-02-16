@@ -19,7 +19,7 @@ mode local
 #-----------------
 
 text/html
-	/usr/bin/afb-daemon --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
+	/usr/bin/afb-daemon --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --roothttp=. --token=%S --sessiondir=%D/.afb-daemon
 	/usr/bin/web-runtime http://localhost:%P/%c?token=%S
 
 application/x-executable
@@ -52,6 +52,6 @@ mode remote
 #-----------------
 
 text/html
-	/usr/bin/afb-daemon --mode=remote --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
+	/usr/bin/afb-daemon --mode=remote --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --roothttp=. --token=%S --sessiondir=%D/.afb-daemon
 	http://%%h:%P/%c?token=%S
 
