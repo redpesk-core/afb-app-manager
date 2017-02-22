@@ -25,6 +25,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "verbose.h"
 #include "wgtpkg-workdir.h"
@@ -258,6 +260,7 @@ static int fill_files_rec(char name[PATH_MAX], unsigned offset)
 	unsigned len;
 	DIR *dir;
 	struct dirent *ent;
+	struct stat st;
 
 	fd = openat(workdirfd, offset ? name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
@@ -286,6 +289,13 @@ static int fill_files_rec(char name[PATH_MAX], unsigned offset)
 			return -1;
 		} else {
 			memcpy(name + offset, ent->d_name, 1+len);
+			if (ent->d_type == DT_UNKNOWN) {
+				fstatat(fd, ent->d_name, &st, 0);
+				if (S_ISREG(st.st_mode))
+					ent->d_type = DT_REG;
+				else if (S_ISDIR(st.st_mode))
+					ent->d_type = DT_DIR;
+			}
 			switch (ent->d_type) {
 			case DT_DIR:
 				if (file_add_directory(name) == NULL) {
