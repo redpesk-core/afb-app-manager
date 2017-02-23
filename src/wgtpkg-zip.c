@@ -243,6 +243,7 @@ static int zwr(struct zws *zws, size_t offset)
 	zip_int64_t z64;
 	struct zip_source *zsrc;
 	FILE *fp;
+	struct stat st;
 
 	fd = openat(workdirfd, offset ? zws->name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
@@ -274,6 +275,13 @@ static int zwr(struct zws *zws, size_t offset)
 			if (!is_valid_filename(ent->d_name)) {
 				ERROR("invalid name %s", zws->name);
 				goto error;
+			}
+			if (ent->d_type == DT_UNKNOWN) {
+				fstatat(fd, ent->d_name, &st, 0);
+				if (S_ISREG(st.st_mode))
+					ent->d_type = DT_REG;
+				else if (S_ISDIR(st.st_mode))
+					ent->d_type = DT_DIR;
 			}
 			switch (ent->d_type) {
 			case DT_DIR:
