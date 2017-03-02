@@ -279,6 +279,15 @@ static struct mustach_itf itf = {
 	.leave = leave
 };
 
+/*
+ * Apply the object 'root' to the mustache 'template'.
+ * In case of success, the function returns 0, the pointer
+ * 'result' receives the allocated instanciation and
+ * the pointer 'size' its size. Note that the real size
+ * is one byte more to effectively store the terminating
+ * null.
+ * In case of error, it returns a negative error code.
+ */
 int apply_mustach(const char *template, struct json_object *root, char **result, size_t *size)
 {
 	struct expl e;
