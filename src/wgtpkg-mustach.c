@@ -45,47 +45,67 @@ struct expl {
  * If the sign = is not here, returns NULL.
  * Replace any \= of the key by its unescaped version =.
  */
-static char *keyval(char *head)
+static char *keyval(char *read, int isptr)
 {
-	char *w, c;
+	char *write, c;
 
-	c = *(w = head);
+	c = *(write = read);
 	while (c && c != '=') {
-		if (c == '\\') {
-			switch (head[1]) {
-			case '\\': *w++ = c;
-			case '=': c = *++head;
-			default: break;
+		if (isptr) {
+			if (c == '~' && read[1] == '=') {
+				c = *++read;
+			}
+		} else {
+			if (c == '\\') {
+				switch (read[1]) {
+				case '\\': *write++ = c;
+				case '=': c = *++read;
+				default: break;
+				}
 			}
 		}
-		*w++ = c;
-		c = *++head;
+		*write++ = c;
+		c = *++read;
 	}
-	*w = 0;
-	return c == '=' ? ++head : NULL;
+	*write = 0;
+	return c == '=' ? ++read : NULL;
 }
 
 /*
  * Returns the unescaped version of the first component
  * and update 'name' to point the next components if any.
  */
-static char *first(char **name)
+static char *first(char **name, int isptr)
 {
-	char *r, *i, *w, c;
+	char *r, *read, *write, c;
 
-	c = *(i = *name);
+	c = *(read = *name);
 	if (!c)
 		r = NULL;
 	else {
-		r = w = i;
-		while (c && c != '.') {
-			if (c == '\\' && (i[1] == '.' || i[1] == '\\'))
-				c = *++i;
-			*w++ = c;
-			c = *++i;
+		r = write = read;
+		if (isptr) {
+			while (c && c != '/') {
+				if (c == '~') {
+					switch(read[1]) {
+					case '1': c = '/';
+					case '0': read++;
+					default: break;
+					}
+				}
+				*write++ = c;
+				c = *++read;
+			}
+		} else {
+			while (c && c != '.') {
+				if (c == '\\' && (read[1] == '.' || read[1] == '\\'))
+					c = *++read;
+				*write++ = c;
+				c = *++read;
+			}
 		}
-		*w = 0;
-		*name = i + !!c;
+		*write = 0;
+		*name = read + !!c;
 	}
 	return r;
 }
@@ -119,19 +139,23 @@ static char *globalize(char *key)
  */
 static struct json_object *find(struct expl *e, const char *name)
 {
-	int i;
+	int i, isptr;
 	struct json_object *o, *r;
 	char *n, *c, *v;
 
 	/* get a local key */
 	n = strdupa(name);
 
+	/* is it a JSON pointer? */
+	isptr = n[0] == '/';
+	n += isptr;
+
 	/* extract its value */
-	v = keyval(n);
+	v = keyval(n, isptr);
 
 	/* search the first component for each valid globalisation */
 	i = e->depth;
-	c = first(&n);
+	c = first(&n, isptr);
 	while (c) {
 		if (i < 0) {
 			/* next globalisation */
@@ -141,7 +165,7 @@ static struct json_object *find(struct expl *e, const char *name)
 		else if (json_object_object_get_ex(e->stack[i].obj, c, &o)) {
 
 			/* found the root, search the subcomponents */
-			c = first(&n);
+			c = first(&n, isptr);
 			while(c) {
 				while (!json_object_object_get_ex(o, c, &r)) {
 					c = globalize(c);
@@ -149,7 +173,7 @@ static struct json_object *find(struct expl *e, const char *name)
 						return NULL;
 				}
 				o = r;
-				c = first(&n);
+				c = first(&n, isptr);
 			}
 
 			/* check the value if requested */
