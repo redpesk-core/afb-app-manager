@@ -25,14 +25,68 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-
+ 
 #include "verbose.h"
 #include "utils-file.h"
 
 #include "wgtpkg-mustach.h"
 #include "wgtpkg-unit.h"
 
+#if 0
+#include <ctype.h>
+#else
+#define isblank(c) ((c)==' '||(c)=='\t')
+#endif
+
+/* the template for all units */
 static char *template;
+
+/*
+ * Search for the 'pattern' in 'text'.
+ * Returns 1 if 'text' matches the 'pattern' or else returns 0.
+ * When returning 1 and 'after' isn't NULL, the pointer to the
+ * first character after the pettern in 'text' is stored in 'after'.
+ * The characters '\n' and ' ' have a special mening in the search:
+ *  * '\n': matches any space or tabs (including none) followed 
+ *          either by '\n' or '\0' (end of the string)
+ *  * ' ': matches any space or tabs but at least one.
+ */
+static int matches(const char *pattern, char *text, char **after)
+{
+	char p, t;
+
+	t = *text;
+	p = *pattern;
+	while(p) {
+		switch(p) {
+		case '\n':
+			while (isblank(t))
+				t = *++text;
+			if (t) {
+				if (t != p)
+					return 0;
+				t = *++text;
+			}
+			break;
+		case ' ':
+			if (!isblank(t))
+				return 0;
+			do {
+				t = *++text;
+			} while(isblank(t));
+			break;
+		default:
+			if (t != p)
+				return 0;
+			t = *++text;
+			break;
+		}
+		p = *++pattern;
+	}
+	if (after)
+		*after = text;
+	return 1;
+}
 
 /*
  * Pack a null terminated 'text' by removing empty lines,
@@ -42,20 +96,30 @@ static char *template;
  * "nl" exactly (without quotes ") are replaced with
  * an empty line.
  *
- * Returns the pointer to the ending null.
+ * Returns the size after packing (offset of the ending null).
  */
-static char *pack(char *text, char purge)
+static size_t pack(char *text, char purge)
 {
-	char *read, *write, *begin, *start, c, emit, cont, nextcont;
+	char *read;    /* read iterator */
+	char *write;   /* write iterator */
+	char *begin;   /* begin the copied text of the line */
+	char *start;   /* first character of the line that isn't blanck */
+	char c;        /* currently scanned character (pointed by read) */
+	char emit;     /* flag telling whether line is to be copied */
+	char cont;     /* flag telling whether the line continues the previous one */
+	char nextcont; /* flag telling whether the line will continues the next one */
 
 	cont = 0;
-	c = *(begin = write = read = text);
+	c = *(write = read = text);
+
+	/* iteration over lines */
 	while (c) {
+		/* computes emit, nextcont, emit and start for the current line */
 		emit = nextcont = 0;
 		start = NULL;
 		begin = read;
 		while (c && c != '\n') {
-			if (c != ' ' && c != '\t') {
+			if (!isblank(c)) {
 				if (c == '\\' && read[1] == '\n')
 					nextcont = 1;
 				else {
@@ -68,13 +132,18 @@ static char *pack(char *text, char purge)
 		}
 		if (c)
 			c = *++read;
+		/* emit the line if not empty */
 		if (emit) {
+			/* removes the blanks on the left of not continuing lines */
 			if (!cont && start)
 				begin = start;
+			/* check if purge applies */
 			if (purge && *begin == purge) {
+				/* yes, insert new line if requested */
 				if (!strncmp(begin+1, "nl\n",3))
 					*write++ = '\n';
 			} else {
+				/* copies the line */
 				while (begin != read)
 					*write++ = *begin++;
 			}
@@ -82,7 +151,7 @@ static char *pack(char *text, char purge)
 		cont = nextcont;
 	}
 	*write = 0;
-	return write;
+	return (size_t)(write - text);
 }
 
 /*
@@ -104,54 +173,45 @@ static inline char *nextline(char *text)
  */
 static char *offset(char *text, const char *pattern, char **args)
 {
-	size_t len;
-
-	if (text) {
-		len = strlen(pattern);
-		do {
-			if (strncmp(text, pattern, len))
-				text = nextline(text);
-			else {
-				if (args)
-					*args = &text[len];
-				break;
-			}
-		} while (text);
-	}
+	while (text && !matches(pattern, text, args))
+		text = nextline(text);
 	return text;
 }
 
 /*
  * process one unit
  */
-
 static int process_one_unit(char *spec, struct unitdesc *desc)
 {
-	char *nsoc, *nsrv;
+	char *nsoc, *nsrv, *name;
 	int isuser, issystem, issock, isserv;
+	size_t len;
 
-	/* found the configuration directive of the unit */
+	/* finds the configuration directive of the unit */
 	isuser = !!offset(spec, "%systemd-unit user\n", NULL);
 	issystem = !!offset(spec, "%systemd-unit system\n", NULL);
 	issock  = !!offset(spec, "%systemd-unit socket ", &nsoc);
 	isserv  = !!offset(spec, "%systemd-unit service ", &nsrv);
 
-	if (isuser ^ issystem) {
+	/* check the unit scope */
+	if ((isuser + issystem) == 1) {
 		desc->scope = isuser ? unitscope_user : unitscope_system;
 	} else {
 		desc->scope = unitscope_unknown;
 	}
 
-	if (issock ^ isserv) {
+	/* check the unit type */
+	if ((issock + isserv) == 1) {
 		if (issock) {
 			desc->type = unittype_socket;
-			desc->name = nsoc;
+			name = nsoc;
 		} else {
 			desc->type = unittype_service;
-			desc->name = nsrv;
+			name = nsrv;
 		}
-		desc->name_length = (size_t)(strchrnul(desc->name, '\n') - desc->name);
-		desc->name = strndup(desc->name, desc->name_length);
+		len = (size_t)(strchrnul(name, '\n') - name);
+		desc->name = strndup(name, len);
+		desc->name_length = desc->name ? len : 0;
 	} else {
 		desc->type = unittype_unknown;
 		desc->name = NULL;
@@ -159,52 +219,69 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 	}
 
 	desc->content = spec;
-	desc->content_length = (size_t)(pack(spec, '%') - spec);
+	desc->content_length = pack(spec, '%');
 
 	return 0;
 }
 
 /*
+ * Processes all the units of the 'corpus'.
+ * Each unit of the corpus is separated and packed and its
+ * charactistics are stored in a descriptor.
+ * At the end if no error was found, calls the function 'process'
+ * with its given 'closure' and the array descripbing the units.
+ * Return 0 in case of success or a negative value in case of error.
  */
-static int process_all_units(char *spec, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure)
+static int process_all_units(char *corpus, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure)
 {
 	int rc, rc2;
 	unsigned n;
-	char *beg, *end, *after;
+	char *beg, *end;
 	struct unitdesc *descs, *d;
 
 	descs = NULL;
 	n = 0;
-	rc = 0;
-	beg = offset(spec, "%begin systemd-unit\n", NULL);
-	while(beg) {
-		beg = nextline(beg);
-		end = offset(beg, "%end systemd-unit\n", &after);
+	rc = rc2 = 0;
+
+	/* while there is a unit in the corpus */
+	while(offset(corpus, "%begin systemd-unit\n", &beg)) {
+
+		/* get the end of the unit */
+		end = offset(beg, "%end systemd-unit\n", &corpus);
 		if (!end) {
 			/* unterminated unit !! */
 			ERROR("unterminated unit description!! %s", beg);
-			break;
-		}
-		*end = 0;
+			corpus = beg;
+			rc2 = -EINVAL;
+		} else {
+			/* separate the unit from the corpus */
+			*end = 0;
 
-		d = realloc(descs, (n + 1) * sizeof *descs);
-		if (d == NULL)
-			rc2 = -ENOMEM;
-		else {
-			memset(&d[n], 0, sizeof *d);
-			descs = d;
-			rc2 = process_one_unit(beg, &descs[n]);
+			/* allocates a descriptor for the unit */
+			d = realloc(descs, (n + 1) * sizeof *descs);
+			if (d == NULL)
+				rc2 = -ENOMEM;
+			else {
+				/* creates the unit description */
+				memset(&d[n], 0, sizeof *d);
+				descs = d;
+				rc2 = process_one_unit(beg, &descs[n]);
+				if (rc2 >= 0)
+					n++;
+			}
 		}
-
-		if (rc2 >= 0)
-			n++;
-		else if (rc == 0)
-			rc = rc2;
-		beg = offset(after, "%begin systemd-unit\n", NULL);
+		/* records the error if there is an error */
+		if (rc2 < 0) {
+			rc = rc ? : rc2;
+			rc2 = 0;
+		}
 	}
 
+	/* call the function that processes the units */
 	if (rc == 0 && process)
 		rc = process(closure, descs, n);
+
+	/* cleanup and frees */
 	while(n)
 		free((char *)(descs[--n].name));
 	free(descs);
@@ -212,15 +289,29 @@ static int process_all_units(char *spec, int (*process)(void *closure, const str
 	return rc;
 }
 
+/*
+ * Clear the unit generator
+ */
+void unit_generator_off()
+{
+	free(template);
+	template = NULL;
+}
+
+/*
+ * Initialises the unit generator with 'filename'.
+ * Returns 0 in case of success or a negative number in case of error.
+ */
 int unit_generator_on(const char *filename)
 {
 	size_t size;
 	char *tmp;
 	int rc;
 
+	unit_generator_off();
 	rc = getfile(filename ? : FWK_UNIT_CONF, &template, NULL);
 	if (!rc) {
-		size = (size_t)(pack(template, ';') - template);
+		size = pack(template, ';');
 		tmp = realloc(template, 1 + size);
 		if (tmp)
 			template = tmp;
@@ -228,12 +319,15 @@ int unit_generator_on(const char *filename)
 	return rc;
 }
 
-void unit_generator_off()
-{
-	free(template);
-	template = NULL;
-}
-
+/*
+ * Applies the object 'jdesc' to the current unit generator.
+ * The current unit generator will be set to the default one if not unit
+ * was previously set using the function 'unit_generator_on'.
+ * The callback function 'process' is then called with the
+ * unit descriptors array and the expected closure.
+ * Return what returned process in case of success or a negative
+ * error code.
+ */
 int unit_generator_process(struct json_object *jdesc, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure)
 {
 	int rc;
@@ -244,9 +338,8 @@ int unit_generator_process(struct json_object *jdesc, int (*process)(void *closu
 	if (!rc) {
 		instance = NULL;
 		rc = apply_mustach(template, jdesc, &instance, &size);
-		if (!rc) {
+		if (!rc)
 			rc = process_all_units(instance, process, closure);
-		}
 		free(instance);
 	}
 	return rc;
