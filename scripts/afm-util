@@ -52,6 +52,11 @@ case "$1" in
     send start "\"$i\""
     ;;
 
+  run-remote|start-remote)
+    i=$2
+    send start '{"id":"'"$i"'","mode":"remote"}'
+    ;;
+
   once)
     i=$2
     send once "\"$i\""
