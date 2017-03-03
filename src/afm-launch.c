@@ -771,6 +771,7 @@ static pid_t launch(
 
 	/* executes the process */
 	rc = execve(args[0], args, env);
+	access(args[0], X_OK);
 	ERROR("failed to exec master %s: %m", args[0]);
 	_exit(1);
 	return -1;
