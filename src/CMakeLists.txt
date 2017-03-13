@@ -16,7 +16,7 @@
 # limitations under the License.
 ###########################################################################
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4.3)
 
 ###########################################################################
 
@@ -173,11 +173,7 @@ if(SYSTEMD_FOUND)
 	if(AFB_FOUND)
 		message(STATUS "Creation afm-main-binding for AFB-DAEMON")
 		###############################################################
-		#pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
-		execute_process(
-			COMMAND pkg-config --variable binding_install_dir afb-daemon
-			OUTPUT_VARIABLE afb_binding_install_dir OUTPUT_STRIP_TRAILING_WHITESPACE
-		)
+		pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
 		###############################################################
 		add_library(afm-main-binding MODULE afm-main-binding.c)
 		target_compile_options(afm-main-binding PRIVATE ${AFB_CFLAGS})
