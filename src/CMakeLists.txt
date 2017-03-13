@@ -137,11 +137,11 @@ install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION
 ###########################################################################
 # the targeted
 
-pkg_check_modules(EXTRA2 libsystemd)
-if(EXTRA2_FOUND)
-	add_compile_options(${EXTRA2_CFLAGS})
-	include_directories(${EXTRA2_INCLUDE_DIRS})
-	link_libraries(${EXTRA2_LIBRARIES})
+pkg_check_modules(SYSTEMD libsystemd>=222)
+if(SYSTEMD_FOUND)
+	add_compile_options(${SYSTEMD_CFLAGS})
+	include_directories(${SYSTEMD_INCLUDE_DIRS})
+	link_libraries(${SYSTEMD_LIBRARIES})
 
 	add_library(utils2 STATIC
 		utils-jbus.c
@@ -169,8 +169,8 @@ if(EXTRA2_FOUND)
 	###########################################################################
 	# the binding for afb
 
-	pkg_check_modules(afb afb-daemon)
-	if(afb_FOUND)
+	pkg_check_modules(AFB afb-daemon)
+	if(AFB_FOUND)
 		message(STATUS "Creation afm-main-binding for AFB-DAEMON")
 		###############################################################
 		#pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
@@ -180,9 +180,9 @@ if(EXTRA2_FOUND)
 		)
 		###############################################################
 		add_library(afm-main-binding MODULE afm-main-binding.c)
-		target_compile_options(afm-main-binding PRIVATE ${afb_CFLAGS})
-		target_include_directories(afm-main-binding PRIVATE ${afb_INCLUDE_DIRS})
-		target_link_libraries(afm-main-binding utils utils2 ${afb_LIBRARIES})
+		target_compile_options(afm-main-binding PRIVATE ${AFB_CFLAGS})
+		target_include_directories(afm-main-binding PRIVATE ${AFB_INCLUDE_DIRS})
+		target_link_libraries(afm-main-binding utils utils2 ${AFB_LIBRARIES})
 		set_target_properties(afm-main-binding PROPERTIES
 			PREFIX ""
 			LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-main-binding.export-map"
@@ -192,7 +192,7 @@ if(EXTRA2_FOUND)
 		message(STATUS "Not creating the binding for AFB-DAEMON")
 	endif()
 
-endif(EXTRA2_FOUND)
+endif(SYSTEMD_FOUND)
 
 ###########################################################################
 # the tests
