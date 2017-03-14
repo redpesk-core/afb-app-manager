@@ -25,12 +25,22 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
+
+#include <json-c/json.h>
  
 #include "verbose.h"
 #include "utils-file.h"
 
 #include "wgtpkg-mustach.h"
+#include "utils-json.h"
+#include "wgt-json.h"
+
 #include "wgtpkg-unit.h"
+
+#if !defined(SYSTEMD_UNITS_ROOT)
+# define SYSTEMD_UNITS_ROOT "/usr/local/lib/systemd"
+#endif
 
 #if 0
 #include <ctype.h>
@@ -299,7 +309,7 @@ void unit_generator_off()
 }
 
 /*
- * Initialises the unit generator with 'filename'.
+ * Initialises the unit generator with the content of the file of path 'filename'.
  * Returns 0 in case of success or a negative number in case of error.
  */
 int unit_generator_on(const char *filename)
@@ -343,5 +353,119 @@ int unit_generator_process(struct json_object *jdesc, int (*process)(void *closu
 		free(instance);
 	}
 	return rc;
+}
+
+/**************** SPECIALIZED PART *****************************/
+
+
+static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
+{
+	int rc;
+
+	if (desc->scope == unitscope_unknown || desc->type == unittype_unknown || desc->name == NULL) {
+		if (desc->scope == unitscope_unknown)
+			ERROR("unit of unknown scope");
+		if (desc->type == unittype_unknown)
+			ERROR("unit of unknown type");
+		if (desc->name == NULL)
+			ERROR("unit of unknown name");
+		errno = EINVAL;
+		rc = -1;
+	}
+	else {
+		rc = snprintf(path, pathlen, "%s/%s/%s.%s", 
+				SYSTEMD_UNITS_ROOT,
+				desc->scope == unitscope_system ? "system" : "user",
+				desc->name,
+				desc->type == unittype_socket ? "socket" : "service");
+
+		if (rc >= 0 && (size_t)rc >= pathlen) {
+			ERROR("can't set the unit name");
+			errno = EINVAL;
+			rc = -1;
+		}
+	}
+	return rc;
+}
+
+static int do_install_units(void *closure, const struct unitdesc descs[], unsigned count)
+{
+	int rc;
+	unsigned i;
+	char path[PATH_MAX + 1];
+
+	for (i = 0 ; i < count ; i++) {
+		rc = get_unit_path(path, sizeof path, &descs[i]);
+		if (rc >= 0) {
+			rc = putfile(path, descs[i].content, descs[i].content_length);
+		}
+	}
+	return 0;
+}
+
+static int do_uninstall_units(void *closure, const struct unitdesc descs[], unsigned count)
+{
+	int rc;
+	unsigned i;
+	char path[PATH_MAX];
+
+	for (i = 0 ; i < count ; i++) {
+		rc = get_unit_path(path, sizeof path, &descs[i]);
+		if (rc >= 0) {
+			rc = unlink(path);
+		}
+	}
+	return 0;
+}
+
+static int add_metadata(struct json_object *jdesc, const char *installdir, const char *icondir, int port)
+{
+	char portstr[30];
+
+	sprintf(portstr, "%d", port);
+	return 	j_add_many_strings_m(jdesc,
+		"#metadata.install-dir", installdir,
+		"#metadata.app-data-dir", "%h/app-data",
+		"#metadata.icons-dir", icondir,
+		"#metadata.http-port", portstr,
+		NULL) ? 0 : -1;
+}
+
+static int do_install_uninstall(
+		struct wgt_info *ifo,
+		const char *installdir,
+		const char *icondir,
+		int port,
+		int (*doer)(void *, const struct unitdesc[], unsigned)
+)
+{
+	int rc;
+	struct json_object *jdesc;
+
+	jdesc = wgt_info_to_json(ifo);
+	if (!jdesc)
+		rc = -1;
+	else {
+		rc = add_metadata(jdesc, installdir, icondir, port);
+		if (rc)
+			ERROR("can't set the metadata. %m");
+		else {
+			rc = unit_generator_process(jdesc, doer, NULL);
+			if (rc)
+				ERROR("can't install units, error %d", rc);
+		}
+		json_object_put(jdesc);
+	}
+	return rc;
+}
+
+int unit_install(struct wgt_info *ifo, const char *installdir, const char *icondir, int port)
+{
+	return do_install_uninstall(ifo, installdir, icondir, port, do_install_units);
+}
+
+int unit_uninstall(struct wgt_info *ifo)
+{
+	return do_install_uninstall(ifo, "", "", 0, do_uninstall_units);
 }
 

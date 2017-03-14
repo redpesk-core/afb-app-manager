@@ -18,6 +18,7 @@
 
 
 struct json_object;
+struct wgt_info;
 
 enum unitscope {
 	unitscope_unknown = 0,
@@ -43,3 +44,6 @@ struct unitdesc {
 extern int unit_generator_on(const char *filename);
 extern void unit_generator_off();
 extern int unit_generator_process(struct json_object *jdesc, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure);
+extern int unit_install(struct wgt_info *ifo, const char *installdir, const char *icondir, int port);
+extern int unit_uninstall(struct wgt_info *ifo);
+
