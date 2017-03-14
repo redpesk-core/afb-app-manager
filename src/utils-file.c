@@ -110,7 +110,6 @@ int putfile_at(int dfd, const char *file, const void *content, size_t size)
 		if (size == (size_t)(ssize_t)-1)
 			size = strlen(content);
 		f = rc;
-		if (rc < 0)
 		i = 0;
 		rc = 0;
 		while (!rc && i < size) {
