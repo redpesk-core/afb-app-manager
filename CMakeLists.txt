@@ -44,6 +44,7 @@ set(afm_prefix              "urn:AGL:" CACHE STRING "Prefix for uniform resource
 set(afm_prefix_binding      "${afm_prefix}binding:" CACHE STRING "URN for bindings")
 set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for applications")
 set(afm_user_appdir_label   "User::App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
+set(systemd_units_root      "${CMAKE_INSTALL_FULL_LIBDIR}/systemd" CACHE STRING "Place where unit files are to be set")
 set(wgtpkg_trusted_cert_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
 
 if(USE_SIMULATION)
@@ -62,6 +63,7 @@ add_definitions(
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
 	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
 	-DFWK_USER_APP_DIR_LABEL="${afm_user_appdir_label}"
+	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
 )
 
 add_subdirectory(src)

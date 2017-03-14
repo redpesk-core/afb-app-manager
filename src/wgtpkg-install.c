@@ -39,6 +39,7 @@
 #include "wgtpkg-install.h"
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
+#include "wgtpkg-unit.h"
 
 static const char* exec_type_strings[] = {
 	"application/x-executable",
@@ -104,25 +105,30 @@ static int set_required_permissions(struct wgt_desc_param *params, int required)
 	int optional;
 
 	while (params) {
-		/* check the value */
-		if (!strcmp(params->value, string_required))
-			optional = !required;
-		else if (!strcmp(params->value, string_optional))
-			optional = 1;
-		else {
-			ERROR("unexpected parameter value: %s found for %s", params->value, params->name);
-			errno = EPERM;
-			return -1;
-		}
-		/* set the permission */
-		if (request_permission(params->name)) {
-			DEBUG("granted permission: %s", params->name);
-		} else if (optional) {
-			INFO("optional permission ungranted: %s", params->name);
+		/* check if target */
+		if (!strcmp(params->name, string_sharp_target)) {
+			/* do nothing when #target */
 		} else {
-			ERROR("ungranted permission required: %s", params->name);
-			errno = EPERM;
-			return -1;
+			/* check the value */
+			if (!strcmp(params->value, string_required))
+				optional = !required;
+			else if (!strcmp(params->value, string_optional))
+				optional = 1;
+			else {
+				ERROR("unexpected parameter value: %s found for %s", params->value, params->name);
+				errno = EPERM;
+				return -1;
+			}
+			/* set the permission */
+			if (request_permission(params->name)) {
+				DEBUG("granted permission: %s", params->name);
+			} else if (optional) {
+				INFO("optional permission ungranted: %s", params->name);
+			} else {
+				ERROR("ungranted permission required: %s", params->name);
+				errno = EPERM;
+				return -1;
+			}
 		}
 		params = params->next;
 	}
@@ -322,14 +328,20 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (install_icon(desc))
 		goto error3;
 
-	if (install_exec_flag(desc))
-		goto error3;
-
 	if (install_security(desc))
-		goto error3;
+		goto error4;
+
+	if (install_exec_flag(desc))
+		goto error4;
+
+	if (unit_install(ifo, installdir, FWK_ICON_DIR, 1234/*TODO*/))
+		goto error4;
 
 	file_reset();
 	return ifo;
+
+error4:
+	/* todo: cleanup */
 
 error3:
 	wgt_info_unref(ifo);
