@@ -39,6 +39,8 @@ struct unitdesc {
 	size_t name_length;
 	const char *content;
 	size_t content_length;
+	const char *wanted_by;
+	size_t wanted_by_length;
 };
 
 extern int unit_generator_on(const char *filename);

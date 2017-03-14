@@ -193,8 +193,8 @@ static char *offset(char *text, const char *pattern, char **args)
  */
 static int process_one_unit(char *spec, struct unitdesc *desc)
 {
-	char *nsoc, *nsrv, *name;
-	int isuser, issystem, issock, isserv;
+	char *nsoc, *nsrv, *name, *wanted;
+	int isuser, issystem, issock, isserv, iswanted;
 	size_t len;
 
 	/* finds the configuration directive of the unit */
@@ -202,6 +202,7 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 	issystem = !!offset(spec, "%systemd-unit system\n", NULL);
 	issock  = !!offset(spec, "%systemd-unit socket ", &nsoc);
 	isserv  = !!offset(spec, "%systemd-unit service ", &nsrv);
+	iswanted = !!offset(spec, "%systemd-unit wanted-by ", &wanted);
 
 	/* check the unit scope */
 	if ((isuser + issystem) == 1) {
@@ -226,6 +227,15 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 		desc->type = unittype_unknown;
 		desc->name = NULL;
 		desc->name_length = 0;
+	}
+
+	if (iswanted) {
+		len = (size_t)(strchrnul(wanted, '\n') - wanted);
+		desc->wanted_by = strndup(wanted, len);
+		desc->wanted_by_length = len;
+	} else {
+		desc->wanted_by = NULL;
+		desc->wanted_by_length = 0;
 	}
 
 	desc->content = spec;
@@ -292,8 +302,10 @@ static int process_all_units(char *corpus, int (*process)(void *closure, const s
 		rc = process(closure, descs, n);
 
 	/* cleanup and frees */
-	while(n)
+	while(n) {
 		free((char *)(descs[--n].name));
+		free((char *)(descs[n].wanted_by));
+	}
 	free(descs);
 
 	return rc;
@@ -357,62 +369,129 @@ int unit_generator_process(struct json_object *jdesc, int (*process)(void *closu
 
 /**************** SPECIALIZED PART *****************************/
 
-
-static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
+static int check_unit_desc(const struct unitdesc *desc, int tells)
 {
-	int rc;
+	if (desc->scope != unitscope_unknown && desc->type != unittype_unknown && desc->name != NULL)
+		return 0;
 
-	if (desc->scope == unitscope_unknown || desc->type == unittype_unknown || desc->name == NULL) {
+	if (tells) {
 		if (desc->scope == unitscope_unknown)
 			ERROR("unit of unknown scope");
 		if (desc->type == unittype_unknown)
 			ERROR("unit of unknown type");
 		if (desc->name == NULL)
 			ERROR("unit of unknown name");
+	}
+	errno = EINVAL;
+	return -1;
+}
+
+static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
+{
+	int rc;
+
+	rc = snprintf(path, pathlen, "%s/%s/%s.%s", 
+			SYSTEMD_UNITS_ROOT,
+			desc->scope == unitscope_system ? "system" : "user",
+			desc->name,
+			desc->type == unittype_socket ? "socket" : "service");
+
+	if (rc >= 0 && (size_t)rc >= pathlen) {
+		ERROR("can't set the unit path");
 		errno = EINVAL;
 		rc = -1;
 	}
-	else {
-		rc = snprintf(path, pathlen, "%s/%s/%s.%s", 
-				SYSTEMD_UNITS_ROOT,
-				desc->scope == unitscope_system ? "system" : "user",
-				desc->name,
-				desc->type == unittype_socket ? "socket" : "service");
+	return rc;
+}
 
-		if (rc >= 0 && (size_t)rc >= pathlen) {
-			ERROR("can't set the unit name");
-			errno = EINVAL;
-			rc = -1;
-		}
+static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *desc)
+{
+	int rc;
+
+	rc = snprintf(path, pathlen, "%s/%s/%s.wants/%s.%s", 
+			SYSTEMD_UNITS_ROOT,
+			desc->scope == unitscope_system ? "system" : "user",
+			desc->wanted_by,
+			desc->name,
+			desc->type == unittype_socket ? "socket" : "service");
+
+	if (rc >= 0 && (size_t)rc >= pathlen) {
+		ERROR("can't set the wants path");
+		errno = EINVAL;
+		rc = -1;
 	}
 	return rc;
+}
+
+static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *desc)
+{
+	int rc;
+
+	rc = snprintf(path, pathlen, "../%s.%s", 
+			desc->name,
+			desc->type == unittype_socket ? "socket" : "service");
+
+	if (rc >= 0 && (size_t)rc >= pathlen) {
+		ERROR("can't set the wants target");
+		errno = EINVAL;
+		rc = -1;
+	}
+	return rc;
+}
+
+static int do_uninstall_units(void *closure, const struct unitdesc descs[], unsigned count)
+{
+	int rc, rc2;
+	unsigned i;
+	char path[PATH_MAX];
+
+	for (i = 0 ; i < count ; i++) {
+		rc = check_unit_desc(&descs[i], 0);
+		if (rc == 0) {
+			rc = get_unit_path(path, sizeof path, &descs[i]);
+			if (rc >= 0) {
+				rc = unlink(path);
+			}
+			if (descs[i].wanted_by != NULL) {
+				rc2 = get_wants_path(path, sizeof path, &descs[i]);
+				if (rc2 >= 0)
+					rc2 = unlink(path);
+				rc = rc < 0 ? rc : rc2;
+			}
+		}
+	}
+	return 0;
 }
 
 static int do_install_units(void *closure, const struct unitdesc descs[], unsigned count)
 {
 	int rc;
 	unsigned i;
-	char path[PATH_MAX + 1];
+	char path[PATH_MAX + 1], target[PATH_MAX + 1];
 
-	for (i = 0 ; i < count ; i++) {
-		rc = get_unit_path(path, sizeof path, &descs[i]);
-		if (rc >= 0) {
-			rc = putfile(path, descs[i].content, descs[i].content_length);
+	i = 0;
+	while (i < count) {
+		rc = check_unit_desc(&descs[i], 1);
+		if (!rc) {
+			rc = get_unit_path(path, sizeof path, &descs[i]);
+			if (rc >= 0) {
+				rc = putfile(path, descs[i].content, descs[i].content_length);
+				if (descs[i].wanted_by != NULL) {
+					rc = get_wants_path(path, sizeof path, &descs[i]);
+					if (rc >= 0) {
+						rc = get_wants_target(target, sizeof target, &descs[i]);
+						if (rc >= 0) {
+							unlink(path); /* TODO? check? */
+							rc = symlink(target, path);
+						}
+					}
+				}
+				i++;
+			}
 		}
-	}
-	return 0;
-}
-
-static int do_uninstall_units(void *closure, const struct unitdesc descs[], unsigned count)
-{
-	int rc;
-	unsigned i;
-	char path[PATH_MAX];
-
-	for (i = 0 ; i < count ; i++) {
-		rc = get_unit_path(path, sizeof path, &descs[i]);
-		if (rc >= 0) {
-			rc = unlink(path);
+		if (rc < 0) {
+			do_uninstall_units(closure, descs, i);
+			return rc;
 		}
 	}
 	return 0;
