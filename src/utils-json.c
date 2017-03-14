@@ -275,7 +275,7 @@ int j_add_many_strings_m(struct json_object *obj, ...)
 {
 	const char *key, *val;
 	va_list ap;
-	int rc, rc2;
+	int rc;
 
 	rc = 1;
 	va_start(ap, obj);
