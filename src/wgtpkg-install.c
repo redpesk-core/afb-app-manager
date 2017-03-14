@@ -129,18 +129,28 @@ static int set_required_permissions(struct wgt_desc_param *params, int required)
 	return 0;
 }
 
-static int check_widget(const struct wgt_desc *desc)
+static int check_permissions(const struct wgt_desc *desc)
 {
 	int result;
 	const struct wgt_desc_feature *feature;
 
-	result = check_temporary_constraints(desc);
+	result = 0;
 	feature = desc->features;
 	while(result >= 0 && feature) {
 		if (!strcmp(feature->name, feature_required_permission))
 			result = set_required_permissions(feature->params, feature->required);
 		feature = feature->next;
 	}
+	return result;
+}
+
+static int check_widget(const struct wgt_desc *desc)
+{
+	int result;
+
+	result = check_temporary_constraints(desc);
+	if (result >= 0)
+		result = check_permissions(desc);
 	return result;
 }
 
