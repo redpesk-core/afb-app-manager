@@ -21,4 +21,5 @@
 extern int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
 extern int systemd_get_wants_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
 extern int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
+extern int systemd_daemon_reload(int isuser);
 

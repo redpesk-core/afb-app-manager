@@ -33,6 +33,35 @@
 # define SYSTEMD_UNITS_ROOT "/usr/local/lib/systemd"
 #endif
 
+static const char sdb_path[] = "/org/freedesktop/systemd1";
+static const char sdb_destination[] = "org.freedesktop.systemd1";
+static const char sdbi_manager[] = "org.freedesktop.systemd1.Manager";
+static const char sdbm_reload[] = "Reload";
+
+static struct sd_bus *sysbus;
+static struct sd_bus *usrbus;
+
+static int get_bus(int isuser, struct sd_bus **ret)
+{
+	int rc;
+	struct sd_bus *bus;
+
+	bus = isuser ? usrbus : sysbus;
+	if (bus) {
+		*ret = bus;
+		rc = 0;
+	} else if (isuser) {
+		rc = sd_bus_open_user(ret);
+		if (!rc)
+			usrbus = *ret;
+	} else {
+		rc = sd_bus_open_system(ret);
+		if (!rc)
+			sysbus = *ret;
+	}
+	return rc;
+}
+
 int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.%s", 
@@ -71,6 +100,18 @@ int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const
 	if (rc >= 0 && (size_t)rc >= pathlen) {
 		errno = ENAMETOOLONG;
 		rc = -1;
+	}
+	return rc;
+}
+
+int systemd_daemon_reload(int isuser)
+{
+	int rc;
+	struct sd_bus *bus;
+
+	rc = get_bus(isuser, &bus);
+	if (!rc) {
+		rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_reload, NULL, NULL, NULL);
 	}
 	return rc;
 }

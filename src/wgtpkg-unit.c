@@ -419,28 +419,63 @@ static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *d
 	return rc;
 }
 
+static int do_send_reload(const struct unitdesc descs[], unsigned count)
+{
+	unsigned i;
+	int reloadsys, reloadusr;
+
+	reloadsys = reloadusr = 0;
+	for (i = 0 ; i < count ; i++) {
+		if (descs[i].wanted_by != NULL) {
+			switch (descs[i].scope) {
+			case unitscope_user:
+				reloadusr = 1;
+				break;
+			case unitscope_system:
+				reloadsys = 1;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	if (reloadusr)
+		reloadusr = systemd_daemon_reload(1);
+	if (reloadsys)
+		reloadsys = systemd_daemon_reload(0);
+	return reloadsys ? : reloadusr ? : 0;
+}
+
 static int do_uninstall_units(void *closure, const struct unitdesc descs[], unsigned count)
 {
 	int rc, rc2;
 	unsigned i;
 	char path[PATH_MAX];
 
+	rc = 0;
 	for (i = 0 ; i < count ; i++) {
-		rc = check_unit_desc(&descs[i], 0);
-		if (rc == 0) {
-			rc = get_unit_path(path, sizeof path, &descs[i]);
-			if (rc >= 0) {
-				rc = unlink(path);
+		rc2 = check_unit_desc(&descs[i], 0);
+		if (rc2 == 0) {
+			rc2 = get_unit_path(path, sizeof path, &descs[i]);
+			if (rc2 >= 0) {
+				rc2 = unlink(path);
 			}
+			if (rc2 < 0 && rc == 0)
+				rc = rc2;
 			if (descs[i].wanted_by != NULL) {
 				rc2 = get_wants_path(path, sizeof path, &descs[i]);
 				if (rc2 >= 0)
 					rc2 = unlink(path);
-				rc = rc < 0 ? rc : rc2;
 			}
 		}
+		if (rc2 < 0 && rc == 0)
+			rc = rc2;
 	}
-	return 0;
+	rc2 = do_send_reload(descs, count);
+	if (rc2 < 0 && rc == 0)
+		rc = rc2;
+	return rc;
 }
 
 static int do_install_units(void *closure, const struct unitdesc descs[], unsigned count)
@@ -469,12 +504,16 @@ static int do_install_units(void *closure, const struct unitdesc descs[], unsign
 				i++;
 			}
 		}
-		if (rc < 0) {
-			do_uninstall_units(closure, descs, i);
-			return rc;
-		}
+		if (rc < 0)
+			goto error;
 	}
+	rc = do_send_reload(descs, count);
+	if (rc < 0)
+		goto error;
 	return 0;
+error:
+	do_uninstall_units(closure, descs, i);
+	return rc;
 }
 
 static int add_metadata(struct json_object *jdesc, const char *installdir, const char *icondir, int port)
