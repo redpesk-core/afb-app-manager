@@ -100,6 +100,7 @@ add_library(utils STATIC
 	utils-dir.c
 	utils-file.c
 	utils-json.c
+	utils-systemd.c
 	verbose.c
 	)
 

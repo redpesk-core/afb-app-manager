@@ -35,12 +35,9 @@
 #include "wgtpkg-mustach.h"
 #include "utils-json.h"
 #include "wgt-json.h"
+#include "utils-systemd.h"
 
 #include "wgtpkg-unit.h"
-
-#if !defined(SYSTEMD_UNITS_ROOT)
-# define SYSTEMD_UNITS_ROOT "/usr/local/lib/systemd"
-#endif
 
 #if 0
 #include <ctype.h>
@@ -388,54 +385,37 @@ static int check_unit_desc(const struct unitdesc *desc, int tells)
 
 static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc;
+	int rc = systemd_get_unit_path(
+			path, pathlen, desc->scope == unitscope_user,
+			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
-	rc = snprintf(path, pathlen, "%s/%s/%s.%s", 
-			SYSTEMD_UNITS_ROOT,
-			desc->scope == unitscope_system ? "system" : "user",
-			desc->name,
-			desc->type == unittype_socket ? "socket" : "service");
+	if (rc < 0)
+		ERROR("can't get the unit path for %s", desc->name);
 
-	if (rc >= 0 && (size_t)rc >= pathlen) {
-		ERROR("can't set the unit path");
-		errno = EINVAL;
-		rc = -1;
-	}
 	return rc;
 }
 
 static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc;
+	int rc = systemd_get_wants_path(
+			path, pathlen, desc->scope == unitscope_user, desc->wanted_by,
+			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
-	rc = snprintf(path, pathlen, "%s/%s/%s.wants/%s.%s", 
-			SYSTEMD_UNITS_ROOT,
-			desc->scope == unitscope_system ? "system" : "user",
-			desc->wanted_by,
-			desc->name,
-			desc->type == unittype_socket ? "socket" : "service");
+	if (rc < 0)
+		ERROR("can't get the wants path for %s and %s", desc->name, desc->wanted_by);
 
-	if (rc >= 0 && (size_t)rc >= pathlen) {
-		ERROR("can't set the wants path");
-		errno = EINVAL;
-		rc = -1;
-	}
 	return rc;
 }
 
 static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc;
+	int rc = systemd_get_wants_target(
+			path, pathlen,
+			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
-	rc = snprintf(path, pathlen, "../%s.%s", 
-			desc->name,
-			desc->type == unittype_socket ? "socket" : "service");
+	if (rc < 0)
+		ERROR("can't get the wants target for %s", desc->name);
 
-	if (rc >= 0 && (size_t)rc >= pathlen) {
-		ERROR("can't set the wants target");
-		errno = EINVAL;
-		rc = -1;
-	}
 	return rc;
 }
 
