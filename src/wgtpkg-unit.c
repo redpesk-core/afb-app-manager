@@ -116,12 +116,13 @@ static size_t pack(char *text, char purge)
 	char cont;     /* flag telling whether the line continues the previous one */
 	char nextcont; /* flag telling whether the line will continues the next one */
 
-	cont = 0;
+	nextcont = 0;
 	c = *(write = read = text);
 
 	/* iteration over lines */
 	while (c) {
 		/* computes emit, nextcont, emit and start for the current line */
+		cont = nextcont;
 		emit = nextcont = 0;
 		start = NULL;
 		begin = read;
@@ -140,7 +141,7 @@ static size_t pack(char *text, char purge)
 		if (c)
 			c = *++read;
 		/* emit the line if not empty */
-		if (emit) {
+		if (emit || (cont && !nextcont)) {
 			/* removes the blanks on the left of not continuing lines */
 			if (!cont && start)
 				begin = start;
@@ -155,7 +156,6 @@ static size_t pack(char *text, char purge)
 					*write++ = *begin++;
 			}
 		}
-		cont = nextcont;
 	}
 	*write = 0;
 	return (size_t)(write - text);
