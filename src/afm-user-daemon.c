@@ -30,7 +30,11 @@
 #include "utils-jbus.h"
 #include "utils-json.h"
 #include "afm.h"
-#include "afm-db.h"
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
+# include "afm-db.h"
+#else
+# include "afm-udb.h"
+#endif
 #include "afm-launch-mode.h"
 #include "afm-run.h"
 
@@ -43,11 +47,16 @@ static const char appname[] = "afm-user-daemon";
  * string for printing usage
  */
 static const char usagestr[] =
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	"usage: %s [-q] [-v] [-m mode] [-r rootdir]... [-a appdir]...\n"
 	"\n"
 	"   -a appdir    adds an application directory\n"
 	"   -r rootdir   adds a root directory of applications\n"
 	"   -m mode      set default launch mode (local or remote)\n"
+#else
+	"usage: %s [option(s)]\n"
+	"\n"
+#endif
 	"   -d           run as a daemon\n"
 	"   -u addr      address of user D-Bus to use\n"
 	"   -s addr      address of system D-Bus to use\n"
@@ -58,11 +67,16 @@ static const char usagestr[] =
 /*
  * Option definition for getopt_long
  */
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 static const char options_s[] = "hdqvr:a:m:";
 static struct option options_l[] = {
 	{ "root",        required_argument, NULL, 'r' },
 	{ "application", required_argument, NULL, 'a' },
 	{ "mode",        required_argument, NULL, 'm' },
+#else
+static const char options_s[] = "hdqv";
+static struct option options_l[] = {
+#endif
 	{ "user-dbus",   required_argument, NULL, 'u' },
 	{ "system-dbus", required_argument, NULL, 's' },
 	{ "daemon",      no_argument,       NULL, 'd' },
@@ -85,7 +99,11 @@ static struct jbus *jbuses[2];
 /*
  * Handle to the database of applications
  */
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 static struct afm_db *afdb;
+#else
+static struct afm_udb *afudb;
+#endif
 
 /*
  * Returned error strings
@@ -154,7 +172,11 @@ static void on_runnables(struct sd_bus_message *smsg, struct json_object *obj, v
 {
 	struct json_object *resp;
 	INFO("method runnables called");
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	resp = afm_db_application_list(afdb);
+#else
+	resp = afm_udb_applications_public(afudb);
+#endif
 	jbus_reply_j(smsg, resp);
 	json_object_put(resp);
 }
@@ -180,7 +202,11 @@ static void on_detail(struct sd_bus_message *smsg, struct json_object *obj, void
 
 	/* wants details for appid */
 	INFO("method detail called for %s", appid);
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	resp = afm_db_get_application_public(afdb, appid);
+#else
+	resp = afm_udb_get_application_public(afudb, appid);
+#endif
 	reply(smsg, resp, error_not_found);
 	json_object_put(resp);
 }
@@ -216,7 +242,11 @@ static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void 
 	/* get the application */
 	INFO("method start called for %s mode=%s", appid,
 						name_of_launch_mode(mode));
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	appli = afm_db_get_application(afdb, appid);
+#else
+	appli = afm_udb_get_application_private(afudb, appid);
+#endif
 	if (appli == NULL) {
 		jbus_reply_error_s(smsg, error_not_found);
 		return;
@@ -269,7 +299,11 @@ static void on_once(struct sd_bus_message *smsg, struct json_object *obj, void *
 
 	/* get the application */
 	INFO("method once called for %s", appid);
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	appli = afm_db_get_application(afdb, appid);
+#else
+	appli = afm_udb_get_application_private(afudb, appid);
+#endif
 	if (appli == NULL) {
 		jbus_reply_error_s(smsg, error_not_found);
 		return;
@@ -417,7 +451,11 @@ static void on_uninstall(struct sd_bus_message *smsg, const char *msg, void *unu
 static void on_signal_changed(struct json_object *obj, void *unused)
 {
 	/* update the database */
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	afm_db_update_applications(afdb);
+#else
+	afm_udb_update(afudb);
+#endif
 	/* re-propagate now */
 	jbus_send_signal_j(user_bus, "changed", obj);
 }
@@ -481,7 +519,9 @@ fail:
 int main(int ac, char **av)
 {
 	int i, daemon = 0, rc;
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	enum afm_launch_mode mode;
+#endif
 	struct sd_event *evloop;
 	struct sd_bus *sysbus, *usrbus;
 	const char *sys_bus_addr, *usr_bus_addr;
@@ -506,6 +546,7 @@ int main(int ac, char **av)
 		case 'd':
 			daemon = 1;
 			break;
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 		case 'r':
 			break;
 		case 'a':
@@ -518,6 +559,7 @@ int main(int ac, char **av)
 			}
 			set_default_launch_mode(mode);
 			break;
+#endif
 		case 'u':
 			usr_bus_addr = optarg;
 			break;
@@ -543,9 +585,10 @@ int main(int ac, char **av)
 	}
 
 	/* init framework */
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	afdb = afm_db_create();
 	if (!afdb) {
-		ERROR("afm_create failed");
+		ERROR("afm_db_create failed");
 		return 1;
 	}
 	if (afm_db_add_root(afdb, FWK_APP_DIR)) {
@@ -577,6 +620,13 @@ int main(int ac, char **av)
 		ERROR("afm_update_applications failed");
 		return 1;
 	}
+#else
+	afudb = afm_udb_create(0, 1, "afm-appli-");
+	if (!afudb) {
+		ERROR("afm_udb_create failed");
+		return 1;
+	}
+#endif
 
 	/* daemonize if requested */
 	if (daemon && daemonize()) {
