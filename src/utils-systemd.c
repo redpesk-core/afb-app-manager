@@ -27,8 +27,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <systemd/sd-bus.h>
-#include <systemd/sd-bus-protocol.h>
+#ifndef NO_LIBSYSTEMD
+# include <systemd/sd-bus.h>
+# include <systemd/sd-bus-protocol.h>
+#else
+  struct sd_bus;
+# define sd_bus_default_user(p)   ((*(p)=NULL),(-ENOTSUP))
+# define sd_bus_default_system(p) ((*(p)=NULL),(-ENOTSUP))
+# define sd_bus_call_method(...)  (-ENOTSUP)
+#endif
 
 #include "utils-systemd.h"
 
