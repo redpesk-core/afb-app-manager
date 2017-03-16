@@ -451,7 +451,7 @@ static int open_bus(sd_bus **ret, int isuser, const char *address)
 	int rc;
 
 	if (address == NULL)
-		return (isuser ? sd_bus_open_user : sd_bus_open_system)(ret);
+		return (isuser ? sd_bus_default_user : sd_bus_default_system)(ret);
 
 	rc = sd_bus_new(&b);
 	if (rc < 0)

@@ -51,11 +51,11 @@ static int get_bus(int isuser, struct sd_bus **ret)
 		*ret = bus;
 		rc = 0;
 	} else if (isuser) {
-		rc = sd_bus_open_user(ret);
+		rc = sd_bus_default_user(ret);
 		if (!rc)
 			usrbus = *ret;
 	} else {
-		rc = sd_bus_open_system(ret);
+		rc = sd_bus_default_system(ret);
 		if (!rc)
 			sysbus = *ret;
 	}
