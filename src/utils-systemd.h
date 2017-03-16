@@ -18,8 +18,12 @@
 
 #pragma once
 
+extern int systemd_get_units_dir(char *path, size_t pathlen, int isuser);
 extern int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
 extern int systemd_get_wants_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
 extern int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
 extern int systemd_daemon_reload(int isuser);
+
+extern int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
+extern int systemd_unit_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 
