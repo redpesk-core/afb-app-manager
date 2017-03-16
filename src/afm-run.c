@@ -468,6 +468,7 @@ static int fill_launch_desc(struct json_object *appli,
 	|| !j_read_string_at(pub, "name", &desc->name)
 	|| !j_read_integer_at(pub, "width", &desc->width)
 	|| !j_read_integer_at(pub, "height", &desc->height)) {
+		ERROR("bad internal description of the application to launch: %s", json_object_get_string(appli));
 		errno = EINVAL;
 		return -1;
 	}
