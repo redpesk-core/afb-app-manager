@@ -131,6 +131,7 @@ add_library(afm STATIC
 	afm-launch.c
 	afm-launch-mode.c
 	afm-run.c
+	afm-urun.c
 	)
 
 ###########################################################################

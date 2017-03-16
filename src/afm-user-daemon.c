@@ -30,13 +30,14 @@
 #include "utils-jbus.h"
 #include "utils-json.h"
 #include "afm.h"
+#include "afm-launch-mode.h"
 #ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 # include "afm-db.h"
+#include "afm-run.h"
 #else
 # include "afm-udb.h"
+#include "afm-urun.h"
 #endif
-#include "afm-launch-mode.h"
-#include "afm-run.h"
 
 /*
  * name of the application
@@ -254,7 +255,11 @@ static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void 
 
 	/* launch the application */
 	uri = NULL;
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	runid = afm_run_start(appli, mode, &uri);
+#else
+	runid = afm_urun_start(appli);
+#endif
 	if (runid <= 0) {
 		jbus_reply_error_s(smsg, error_cant_start);
 		free(uri);
@@ -275,7 +280,11 @@ static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void 
 					&& j_add_string(resp, "uri", uri))
 		jbus_reply_j(smsg, resp);
 	else {
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 		afm_run_terminate(runid);
+#else
+		afm_urun_terminate(runid);
+#endif
 		jbus_reply_error_s(smsg, error_system);
 	}
 	json_object_put(resp);
@@ -310,14 +319,22 @@ static void on_once(struct sd_bus_message *smsg, struct json_object *obj, void *
 	}
 
 	/* launch the application */
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	runid = afm_run_once(appli);
+#else
+	runid = afm_urun_once(appli);
+#endif
 	if (runid <= 0) {
 		jbus_reply_error_s(smsg, error_cant_start);
 		return;
 	}
 
 	/* returns the state */
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	resp = afm_run_state(runid);
+#else
+	resp = afm_urun_state(afudb, runid);
+#endif
 	reply(smsg, resp, error_not_found);
 	json_object_put(resp);
 }
@@ -329,7 +346,11 @@ static void on_pause(struct sd_bus_message *smsg, struct json_object *obj, void 
 {
 	int runid, status;
 	if (onrunid(smsg, obj, "pause", &runid)) {
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 		status = afm_run_pause(runid);
+#else
+		status = afm_urun_pause(runid);
+#endif
 		reply_status(smsg, status, error_not_found);
 	}
 }
@@ -341,7 +362,11 @@ static void on_resume(struct sd_bus_message *smsg, struct json_object *obj, void
 {
 	int runid, status;
 	if (onrunid(smsg, obj, "resume", &runid)) {
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 		status = afm_run_resume(runid);
+#else
+		status = afm_urun_resume(runid);
+#endif
 		reply_status(smsg, status, error_not_found);
 	}
 }
@@ -371,7 +396,11 @@ static void on_terminate(struct sd_bus_message *smsg, struct json_object *obj, v
 {
 	int runid, status;
 	if (onrunid(smsg, obj, "terminate", &runid)) {
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 		status = afm_run_terminate(runid);
+#else
+		status = afm_urun_terminate(runid);
+#endif
 		reply_status(smsg, status, error_not_found);
 	}
 }
@@ -383,7 +412,11 @@ static void on_runners(struct sd_bus_message *smsg, struct json_object *obj, voi
 {
 	struct json_object *resp;
 	INFO("method runners called");
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	resp = afm_run_list();
+#else
+	resp = afm_urun_list(afudb);
+#endif
 	jbus_reply_j(smsg, resp);
 	json_object_put(resp);
 }
@@ -396,7 +429,11 @@ static void on_state(struct sd_bus_message *smsg, struct json_object *obj, void 
 	int runid;
 	struct json_object *resp;
 	if (onrunid(smsg, obj, "state", &runid)) {
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 		resp = afm_run_state(runid);
+#else
+		resp = afm_urun_state(afudb, runid);
+#endif
 		reply(smsg, resp, error_not_found);
 		json_object_put(resp);
 	}
@@ -578,6 +615,7 @@ int main(int ac, char **av)
 	/* init random generator */
 	srandom((unsigned int)time(NULL));
 
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	/* init runners */
 	if (afm_run_init()) {
 		ERROR("afm_run_init failed");
@@ -585,7 +623,6 @@ int main(int ac, char **av)
 	}
 
 	/* init framework */
-#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	afdb = afm_db_create();
 	if (!afdb) {
 		ERROR("afm_db_create failed");
@@ -621,6 +658,7 @@ int main(int ac, char **av)
 		return 1;
 	}
 #else
+	/* init database */
 	afudb = afm_udb_create(0, 1, "afm-appli-");
 	if (!afudb) {
 		ERROR("afm_udb_create failed");
@@ -716,18 +754,4 @@ int main(int ac, char **av)
 		sd_event_run(evloop, (uint64_t)-1);
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

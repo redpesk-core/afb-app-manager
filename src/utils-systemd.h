@@ -18,11 +18,31 @@
 
 #pragma once
 
+extern const char SysD_State_Inactive[];
+extern const char SysD_State_Activating[];
+extern const char SysD_State_Active[];
+extern const char SysD_State_Deactivating[];
+extern const char SysD_State_Reloading[];
+extern const char SysD_State_Failed[];
+
 extern int systemd_get_units_dir(char *path, size_t pathlen, int isuser);
 extern int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
 extern int systemd_get_wants_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
 extern int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
 extern int systemd_daemon_reload(int isuser);
+
+extern char *systemd_unit_dpath_by_name(int isuser, const char *name, int load);
+extern char *systemd_unit_dpath_by_pid(int isuser, unsigned pid);
+
+extern int systemd_unit_start_dpath(int isuser, const char *dpath);
+extern int systemd_unit_stop_dpath(int isuser, const char *dpath);
+
+extern int systemd_unit_start_name(int isuser, const char *name);
+extern int systemd_unit_stop_name(int isuser, const char *name);
+extern int systemd_unit_stop_pid(int isuser, unsigned pid);
+
+extern int systemd_unit_pid_of_dpath(int isuser, const char *dpath);
+extern const char *systemd_unit_state_of_dpath(int isuser, const char *dpath);
 
 extern int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 extern int systemd_unit_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
