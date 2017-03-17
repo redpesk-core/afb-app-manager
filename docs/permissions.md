@@ -14,15 +14,15 @@ framework to keep installed permissions in a database.
 
 The permission names are [URN][URN] of the form:
 
-  urn:AGL:permission:<api>:<level>:<hierarchical-name>
+	urn:AGL:permission:<api>:<level>:<hierarchical-name>
 
 where "AGL" is the NID (the namespace identifier) dedicated to
 AGL (note: a RFC should be produced to standardize this name space).
 
 The permission names are made of NSS (the namespace specific string)
 starting with "permission:" and followed by colon separated
-fields. The 2 first fields are <api> and <level> and the remaining
-fields are grouped to form the <hierarchical-name>.
+fields. The 2 first fields are `<api>` and `<level>` and the remaining
+fields are grouped to form the `<hierarchical-name>`.
 
 	<api> ::= [ <pname> ]
 
@@ -32,29 +32,34 @@ fields are grouped to form the <hierarchical-name>.
 
 	<extra> ::= "-" | "." | "_" | "@"
 
-The field <api> can be made of any valid character for NSS except
+The field `<api>` can be made of any valid character for NSS except
 the characters colon and star (:*). This field designates the api
 providing the permission. This scheme is used to deduce binding requirements
-from permission requirements. The field <api> can be the empty
+from permission requirements. The field `<api>` can be the empty
 string when the permission is defined by the AGL system itself.
-The field <api> if starting with the character "@" represents
+The field `<api>` if starting with the character "@" represents
 a transversal/cross permission not bound to any binding.
 
 	<level> ::= 1*<lower>
 
-The field <level> is made only of letters in lower case.
-The field <level> can only take some predefined values:
-"system", "platform", "partner", "tiers", "owner", "public".
+The field `<level>` is made only of letters in lower case.
+The field `<level>` can only take some predefined values:
+
+ - system
+ - platform
+ - partner
+ - tiers
+ - owner
+ - public
+
+The field `<hierarchical-name>` is made of `<pname>` separated
+by colons.
 
 	<hierarchical-name> ::= <pname> 0*(":" <pname>)
 
-The field <hierarchical-name> is made <pname> separated by
-colons. The names at left are hierarchically grouping the
+The names at left are hierarchically grouping the
 names at right. This hierarchical behaviour is intended to
 be used to request permissions using hierarchical grouping.
-
-Permission's level
-------------------
 
 
 [URN]: https://tools.ietf.org/rfc/rfc2141.txt "RFC 2141: URN Syntax"

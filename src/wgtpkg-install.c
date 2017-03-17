@@ -25,6 +25,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include <sys/stat.h>
 
 #include "verbose.h"
@@ -40,11 +42,67 @@
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
 #include "wgtpkg-unit.h"
+#include "utils-systemd.h"
+#include "utils-file.h"
 
 static const char* exec_type_strings[] = {
 	"application/x-executable",
 	"application/vnd.agl.native"
 };
+
+static const char key_http_port[] = "X-AFM--http-port";
+
+static int get_port_cb(void *closure, const char *name, const char *path, int isuser)
+{
+	char *iter;
+	char *content;
+	size_t length;
+	int rc, p;
+
+	/* reads the file */
+	rc = getfile(path, &content, &length);
+	if (rc < 0)
+		return rc;
+
+	/* process the file */
+	iter = strstr(content, key_http_port);
+	while (iter) {
+		iter += sizeof key_http_port - 1;
+		while(*iter && *iter != '=' && *iter != '\n')
+			iter++;
+		if (*iter == '=') {
+			while(*++iter == ' ');
+			p = atoi(iter);
+			if (p >= 0 && p < 32768)
+				((uint32_t*)closure)[p >> 5] |= (uint32_t)1 << (p & 31);
+		}
+		iter = strstr(iter, key_http_port);
+	}
+	free(content);
+	return 0;
+}
+
+static int get_port()
+{
+	int rc;
+	uint32_t ports[1024]; /* 1024 * 32 = 32768 */
+
+	memset(ports, 0, sizeof ports);
+	rc = systemd_unit_list(0, get_port_cb, &ports);
+	if (rc >= 0) {
+		rc = systemd_unit_list(1, get_port_cb, ports);
+		if (rc >= 0) {
+			for (rc = 1024 ; rc < 32768 && !~ports[rc >> 5] ; rc += 32);
+			if (rc == 32768) {
+				errno = EADDRNOTAVAIL;
+				rc = -1;
+			} else {
+				while (1 & (ports[rc >> 5] >> (rc & 31))) rc++;
+			}
+		}
+	}
+	return rc;
+}
 
 static int check_defined(const void *data, const char *name)
 {
@@ -294,6 +352,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 	char installdir[PATH_MAX];
+	int port;
 
 	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
 
@@ -334,7 +393,11 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (install_exec_flag(desc))
 		goto error4;
 
-	if (unit_install(ifo, installdir, FWK_ICON_DIR, 1234/*TODO*/))
+	port = get_port();
+	if (port < 0)
+		goto error4;
+
+	if (unit_install(ifo, installdir, FWK_ICON_DIR, port))
 		goto error4;
 
 	file_reset();
