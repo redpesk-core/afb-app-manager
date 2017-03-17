@@ -80,12 +80,6 @@ To begin, run '**afm-util help**' to get a quick help on commands:
       kill rid
       terminate rid  terminate the running instance rid
 
-      stop rid
-      pause rid      pause the running instance rid
-
-      resume rid
-      continue rid   resume the previously rid
-
       status rid
       state rid      get status of the running instance rid
 
@@ -149,18 +143,6 @@ To check for running applications, just run:
 
 The 'runid' is the application instance ID and is used as an argument for the subcommands controlling the application runtime state (kill/pause/resume/status)
 
-### Pause application
-To pause the application that was just started (the one with RUNID 1), just run the pause command:
-
-    root@porter:~# afm-util terminate 1
-    true
-
-The application is now paused, as confirmed by a list of running apps:
-
-    root@porter:~# afm-util ps
-    [ ]
-
-
 ### Uninstall application
 To uninstall an application, simply use its ID:
 
@@ -196,10 +178,6 @@ In the toolbar, click on the button representing the Rabbit application. You'll 
 
 Click on the 'start' item: the application starts and should be visible as a webview on the target board display. Note that at this point, we could also run the application remotely, that is in the same browser as the Homescreen app. By default, the application framework is configured to run applications 'locally' on the board display.
 
-### Pausing an application
-
-In the Homescreen application, click again on the Rabbit application button, then select 'pause': the application then pauses.
-
 ### Uninstalling an application
 
 From the same popup menu, you can select 'uninstall' to remove the application from the system. As a consequence, the application icon should disappear from the toolbar.
@@ -212,7 +190,7 @@ This is a sample HTML5 application demonstrating various basic capabilities of t
 
 This application is not available as WGT file yet and it should be started manually without any specific security context:
 
-    root@porter:~# /usr/bin/afb-daemon --mode=remote --port=1235 --token='' --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons
+    root@porter:~# /usr/bin/afb-daemon --port=1235 --token='' --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons
 
 Then you can access it from a browser:
 http://[board_ip]:1235/opa/?token=132456789

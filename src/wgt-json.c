@@ -35,26 +35,6 @@
 #include "wgt-strings.h"
 #include "verbose.h"
 
-/*
-{
-  permissions: {
-	dict: {
-		ID: { name: ID, level: LEVEL, index: INDEX },
-		...
-	},
-	list: [
-		{ name: ID, level: LEVEL, index: 0 },
-		...
-	}
-  },
-  targets: [
-		{ name: ID, level: LEVEL, index: 0 },
-		...
-	]
-  }
-}
-*/
-
 struct paramaction
 {
 	const char *name;
@@ -258,12 +238,13 @@ static int add_param_simple(struct json_object *obj, const struct wgt_desc_param
 
 static int add_param_array(struct json_object *obj, const struct wgt_desc_param *param, void *closure)
 {
+	const char *array_name = closure;
 	struct json_object *array, *value;
 
-	if (!closure)
+	if (!array_name)
 		array = obj;
-	else if (!json_object_object_get_ex(obj, closure, &array)) {
-		array = j_add_new_array(obj, closure);
+	else if (!json_object_object_get_ex(obj, array_name, &array)) {
+		array = j_add_new_array(obj, array_name);
 		if (!array)
 			return -ENOMEM;
 	}
@@ -305,11 +286,20 @@ static int add_targeted_params(struct json_object *targets, const struct wgt_des
 	return rc < 0 ? rc : apply_params(obj, feat->params, actions);
 }
 
-static int add_provided(struct json_object *targets, const struct wgt_desc_feature *feat)
+static int add_provided_unit(struct json_object *targets, const struct wgt_desc_feature *feat)
 {
 	static struct paramaction actions[] = {
 		{ .name = string_sharp_target, .action = NULL, .closure = NULL },
 		{ .name = NULL, .action = add_param_simple, .closure = NULL }
+	};
+	return add_targeted_params(targets, feat, actions);
+}
+
+static int add_provided_api(struct json_object *targets, const struct wgt_desc_feature *feat)
+{
+	static struct paramaction actions[] = {
+		{ .name = string_sharp_target, .action = NULL, .closure = NULL },
+		{ .name = NULL, .action = add_param_array, .closure = (void*)string_provided_api }
 	};
 	return add_targeted_params(targets, feat, actions);
 }
@@ -322,7 +312,6 @@ static int add_required_api(struct json_object *targets, const struct wgt_desc_f
 	};
 	return add_targeted_params(targets, feat, actions);
 }
-
 
 static int add_required_permission(struct json_object *targets, const struct wgt_desc_feature *feat)
 {
@@ -370,8 +359,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 					rc = -EINVAL;
 			}
 			featname += prefixlen;
-			if (!strcmp(featname, string_provided_api)
-			||  !strcmp(featname, string_provided_application)) {
+			if (!strcmp(featname, string_provided_unit)) {
 				rc2 = make_target(targets, feat);
 				if (rc2 < 0 && !rc)
 					rc = rc2;
@@ -386,25 +374,24 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 			featname += prefixlen;
 			if (!strcmp(featname, string_defined_permission)) {
 				rc2 = add_defined_permission(permissions, feat);
-				if (rc2 < 0 && !rc)
-					rc = rc2;
 			}
-			else if (!strcmp(featname, string_provided_application)
-				|| !strcmp(featname, string_provided_api)) {
-				rc2 = add_provided(targets, feat);
-				if (rc2 < 0 && !rc)
-					rc = rc2;
+			else if (!strcmp(featname, string_provided_unit)) {
+				rc2 = add_provided_unit(targets, feat);
+			}
+			else if (!strcmp(featname, string_provided_api)) {
+				rc2 = add_provided_api(targets, feat);
 			}
 			else if (!strcmp(featname, string_required_api)) {
 				rc2 = add_required_api(targets, feat);
-				if (rc2 < 0 && !rc)
-					rc = rc2;
 			}
 			else if (!strcmp(featname, string_required_permission)) {
 				rc2 = add_required_permission(targets, feat);
-				if (rc2 < 0 && !rc)
-					rc = rc2;
+			} else {
+				/* gently ignore other features */
+				rc2 = 0;
 			}
+			if (rc2 < 0 && !rc)
+				rc = rc2;
 		}
 	}
 

@@ -87,20 +87,6 @@ $ wgtpkg-pack DIRECTORY -o file.wgt
 Writing a widget
 ----------------
 
-### What kind of application?
-
-The file **/etc/afm/afm-launch.conf** explain how to launch applications.
-(It is the current state that use afm-user-daemon. In a future, it may be
-replace by systemd features.)
-
-Currently the applications that can be run are:
-
-- binary applications: their type is ***application/x-executable***
-
-- HTML5 applications: their type is ***text/html***
-
-- QML applications: their type is ***text/vnd.qt.qml***
-
 ### The steps for writing a widget
 
 1. make your application

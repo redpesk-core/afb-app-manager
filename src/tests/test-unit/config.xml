@@ -23,21 +23,30 @@
     <param name="urn:AGL:permission::partner:real-time" value="required" />
     <param name="urn:AGL:permission::public:applications:read" value="required" />
     <param name="urn:AGL:permission::public:display" value="required" />
+    <param name="urn:AGL:permission::system:run-by-default" value="required" />
+  </feature>
+  <feature name="urn:AGL:widget:provided-unit">
+    <param name="#target" value="geoloc" />
+    <param name="description" value="binding of name geoloc" />
+    <param name="content.src" value="index.html" />
+    <param name="content.type" value="application/vnd.agl.service" />
   </feature>
   <feature name="urn:AGL:widget:provided-api">
     <param name="#target" value="geoloc" />
-    <param name="description" value="binding of name geoloc" />
-    <param name="content.src" value="libs/binding-geoloc.so" />
-    <param name="content.type" value="application/vnd.agl.service" />
+    <param name="geoloc" value="auto" />
+    <param name="moonloc" value="auto" />
   </feature>
   <feature name="urn:AGL:widget:required-api">
     <param name="#target" value="geoloc" />
     <param name="identity" value="auto" />
+    <param name="lib/binding-geoloc.so" value="local" />
+    <param name="lib/binding-moonloc.so" value="local" />
   </feature>
   <feature name="urn:AGL:widget:required-permission">
     <param name="#target" value="geoloc" />
     <param name="urn:AGL:permission:real-time" value="required" />
     <param name="urn:AGL:permission:syscall:*" value="required" />
+    <param name="urn:AGL:permission::system:run-by-default" value="required" />
   </feature>
   <feature name="urn:AGL:widget:defined-permission">
     <param name="urn:AGL:permission:geoloc:public:settings" value="public" />

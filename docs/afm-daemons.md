@@ -308,6 +308,8 @@ optionally a field mode:
 
 The field "mode" is a string equal to either "local" or "remote".
 
+[Currently the mode is not available in the systemd version]
+
 **output**: The *runid* of the application launched. *runid* is an integer.
 
 ---
@@ -362,6 +364,8 @@ Use **org.AGL.afm.user.resume** instead.
 
 #### Method org.AGL.afm.user.pause
 
+[Currently not available in the systemd version]
+
 **Description**: Pauses the application attached to *runid* until terminate or resume.
 
 **Input**: The *runid* (integer) of the running instance to pause.
@@ -371,6 +375,8 @@ Use **org.AGL.afm.user.resume** instead.
 ---
 
 #### Method org.AGL.afm.user.resume
+
+[Currently not available in the systemd version]
 
 **Description**: Resumes the application attached to *runid* previously paused.
 
@@ -458,6 +464,8 @@ The options for launching **afm-user-daemon** are:
     -a
     --application directory
    
+         [Currently not available in the systemd version]
+
          Includes the given application directory to
          the database base of applications.
    
@@ -466,6 +474,8 @@ The options for launching **afm-user-daemon** are:
     -r
     --root directory
    
+         [Currently not available in the systemd version]
+
          Includes root application directory or directories when
          passing multiple rootdir to
          applications database.
@@ -477,6 +487,8 @@ The options for launching **afm-user-daemon** are:
     -m
     --mode (local|remote)
    
+         [Currently not available in the systemd version]
+
          Set the default launch mode.
          The default value is 'local'
    
@@ -521,27 +533,13 @@ given application.
 
 ### Launching application
 
-**afm-user-daemon** launches application. Its builds a secure
-environment for the application before starting it within a
-secured environment.
-
-Different kind of applications can be launched.
-
-This is set using a configuration file that describes
-how to launch an application of a given kind within a given
-mode.
-
-There is two launching modes: local or remote.
-
-Launching an application locally means that
-the application and its binder are launched together.
-
-Launching application remotely translates in only launching
-the application binder. The UI by itself has to be activated
-remotely by the requested (ie: HTML5 homescreen in a browser)
+**afm-user-daemon** launches application by using systemd.
+Systemd builds a secure environment for the application
+before starting it.
 
 Once launched, running instances of application receive
-a runid that identify them.
+a runid that identify them. To make interface with systemd
+evident, the pid is the runid.
 
 ### Managing instances of running applications
 
@@ -550,215 +548,13 @@ that it launched.
 
 When owning the right permissions, a client can get the list
 of running instances and details about a specific
-running instance. It can also terminate, pause or
-resume a given application.
+running instance. It can also terminate a given application.
 
 ### Installing and uninstalling applications
 
 If the client own the right permissions,
 **afm-user-daemon** delegates that task
 to **afm-system-daemon**.
-
-Launcher Configuration
-----------------------
-
-It contains rules for launching applications.
-When **afm-user-daemon** has to launch an application,
-it looks for launch mode (local or remote), as well as
-for the type of application describe in ***config.xml***
-widget configuration file.
-
-This tuple mode+type allows to select the adequate rule.
-
-Configuration file is **/etc/afm/afm-launch.conf**.
-
-It contains sections and rules. It can also contain comments
-and empty lines to improve readability.
-
-The separators are space and tabulation, any other character
-should have a meaning.
-
-The format is line oriented.
-The new line character separate the lines.
-
-Lines having only separators are blank lines and ignored.
-Line having character #(sharp) at first position are comment
-lines and ignored.
-
-Lines not starting with a separator are different
-from lines starting with a separator character.
-
-The grammar of the configuration file is defined below:
-
-    CONF: *COMMENT *SECTION
-   
-    SECTION: MODE *RULE
-   
-    RULE: +TYPE VECTOR ?VECTOR
-   
-    MODE: 'mode' +SEP ('local' | 'remote') *SEP EOL
-   
-    TYPE: DATA *SEP EOL
-   
-    VECTOR: +SEP DATA *(+SEP NDATA) *SEP EOL
-   
-    DATA: CHAR *NCHAR
-    NDATA: +NCHAR
-
-    EOL: NL *COMMENT
-    COMMENT: *SEP CMT *(SEP | NCHAR) NL
-
-    NL: '\x0a'
-    SEP: '\x20' | '\x09'
-    CMT: '#'
-    CHAR: '\x00'..'\x08' | '\x0b'..'\x1f' | '\x21' | '\x22' | '\x24'..'\xff'
-    NCHAR: CMT | CHAR
-   
-Here is a sample of configuration file for defining how
-to launch an application of types *application/x-executable*,
-*text/x-shellscript* and *text/html* in local mode:
-
-    mode local
-   
-    application/x-executable
-    text/x-shellscript
-        %r/%c
-   
-    text/html
-        /usr/bin/afb-daemon --mode=local --readyfd=%R --alias=/icons:%I --port=%P --rootdir=%r --token=%S --sessiondir=%D/.afb-daemon
-        /usr/bin/web-runtime http://localhost:%P/%c?token=%S
-
-This shows that:
-
- - within a section, several rules can be defined
- - within a rule, several types can be defined
- - within a rule, one or two vectors can be defined
- - vectors are using %substitution
- - launched binaries must be defined with their full path
-
-### mode local
-
-Within this mode, the launchers have either one or two description vectors.
-All of those vectors are treated as programs
-and are executed with 'execve' system call.
-
-The first vector is the leader vector and it defines the process
-group. The second vector (if any) is attached to the group
-defined by this first vector.
-
-### mode remote
-
-Within this mode, the launchers have either one or two vectors
-describing them.
-
-The first vector is process as a program and is executed with
-system call 'execve'.
-
-The second vector (if any) defines a text that is returned
-to the caller. This mechanism can be used to return a uri
-for remote UI to connect on the newly launched application.
-
-The daemon ***afm-user-daemon*** allocates a port for each
-new remote application.
-The current implementation port allocation is incremental.
-A smarter (cacheable and discoverable) allocation should be defined.
-
-### %substitutions
-
-Vectors can include sequences of 2 characters that have a special
-meaning. These sequences are named *%substitution* because their
-first character is the percent sign (%) and because each occurrence
-of the sequence is replaced, at launch time, by the value associated
-to sequences.
-
-Here is the list of *%substitutions*:
-
- - ***%%***: %.
-
-   This simply emits the percent sign %
-
- - ***%a***: appid
-
-   Holds application Id of launched application.
-
-   Defined by the attribute **id** of the element **<widget>**
-   of **config.xml**.
-
- - ***%b***: bindings
-
-   In the future should represent the list of bindings and bindings directory separated by ','.
-   Warning: not supported in current version.
-
- - ***%c***: content
-
-   The file within the widget directory that is the entry point.
-
-   For HTML applications, it represents the relative path to main
-   page (aka index.html).
-
-   Defined by attribute **src** of the element **<content>** within **config.xml**.
-
- - ***%D***: datadir
-
-   Path of the directory where the application runs (cwd)
-   and stores its data.
-
-   It is equal to %h/%a.
-
- - ***%H***: height
-
-   Requested height for the widget.
-
-   Defined by the attribute **height** of the element **<widget>**
-   of **config.xml**.
-
- - ***%h***: homedir
-
-   Path of the home directory for all applications.
-
-   It is generally equal to $HOME/app-data
-
- - ***%I***: icondir
-
-   Path of the directory were the icons of the applications can be found.
-
- - ***%m***: mime-type
-
-   Mime type of the launched application.
-
-   Defined by the attribute **type** of the element **<content>**
-   of **config.xml**.
-
- - ***%n***: name
-
-   Name of the application as defined by the content of the
-   element **<name>** of **config.xml**.
-
- - ***%P***: port
-
-   A port to use. It is currently a kind of random port. The precise
-   model is to be defined later.
-
- - ***%R***: readyfd
-
-   Number of file descriptor to use for signaling
-   readiness of launched process.
-
- - ***%r***: rootdir
-
-   Path of directory containing the widget and its data.
-
- - ***%S***: secret
-
-   An hexadecimal number that can be used to initialize pairing of client
-   and application binder.
-
- - ***%W***: width
-
-   Requested width for the widget.
-
-   Defined by the attribute **width** of the element **<widget>**
-   of **config.xml**.
 
 Using ***afm-util***
 --------------------
@@ -803,14 +599,6 @@ Here is the summary of ***afm-util***:
  - **afm-util terminate  rid **:
 
    terminate the running instance rid
-
- - **afm-util pause       rid **:
-
-   pause the running instance rid
-
- - **afm-util resume   rid **:
-
-   resume the previously paused rid
 
  - **afm-util state      rid **:
 
