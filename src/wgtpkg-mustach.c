@@ -28,7 +28,9 @@
 
 #define MAX_DEPTH 256
 
-
+/*
+ * exploration state when instanciating mustache
+ */
 struct expl {
 	struct json_object *root;
 	int depth;
@@ -111,6 +113,31 @@ static char *first(char **name, int isptr)
 }
 
 /*
+ * Returns the unescaped version of the first value
+ * and update 'val' to point the next value if any.
+ */
+static char *value(char **val)
+{
+	char *r, *read, *write, c;
+
+	c = *(read = *val);
+	if (!c)
+		r = NULL;
+	else {
+		r = write = read;
+		while (c && c != '|') {
+			if (c == '\\' && (read[1] == '|' || read[1] == '\\'))
+				c = *++read;
+			*write++ = c;
+			c = *++read;
+		}
+		*write = 0;
+		*val = read + !!c;
+	}
+	return r;
+}
+
+/*
  * Replace the last occurence of ':' followed by
  * any character not being '*' by ':*', the
  * globalisation of the key.
@@ -179,7 +206,11 @@ static struct json_object *find(struct expl *e, const char *name)
 			/* check the value if requested */
 			if (v) {
 				i = v[0] == '!';
-				if (i == !strcmp(&v[i], json_object_get_string(o)))
+				v += i;
+				do {
+					c = value(&v);
+				} while (c && strcmp(c, json_object_get_string(o)));
+				if (i != !c)
 					o = NULL;
 			}
 			return o;

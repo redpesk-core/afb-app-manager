@@ -371,12 +371,17 @@ Known types for the type of content are:
    HTML application,
    content.src designates the home page of the application
 
-- ***application/x-executable***:
-   Native application,
-   content.src designates the relative path of the binary
+- ***application/vnd.agl.native***
+   AGL compatible native,
+   content.src designates the relative path of the binary.
 
 - ***application/vnd.agl.service***:
    AGL service, content.src is not used.
+
+- ***application/x-executable***:
+   Native application,
+   content.src designates the relative path of the binary.
+   For such application, only security setup is made.
 
 Adding more types is easy, it just need to edit the configuration
 file ***afm-unit.conf***.
@@ -388,7 +393,6 @@ leveraging systemd. The transition to systemd let these types
 out at the moment.
 
 - ***application/vnd.agl.url***
-- ***application/vnd.agl.native***
 - ***text/vnd.qt.qml***, ***application/vnd.agl.qml***
 - ***application/vnd.agl.qml.hybrid***
 - ***application/vnd.agl.html.hybrid***
