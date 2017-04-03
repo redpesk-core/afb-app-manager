@@ -93,7 +93,7 @@ static const char *wait_state_stable(int isuser, const char *dpath)
 	for (;;) {
 		state = systemd_unit_state_of_dpath(isuser, dpath);
 		if (state == NULL || state == SysD_State_Active
-		 || state == SysD_State_Failed || state == SysD_State_Inactive)
+		 || state == SysD_State_Failed)
 			return state;
 		/* TODO: sleep */
 	}
