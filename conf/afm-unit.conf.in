@@ -114,6 +114,7 @@ After=afm-api-ws-{{name}}
 %nl
 
 [Service]
+EnvironmentFile=-@afm_confdir@/unit.env.d/*
 SmackProcessLabel=User::App::{{id}}
 SuccessExitStatus=0 SIGKILL
 

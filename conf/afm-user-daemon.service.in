@@ -6,7 +6,7 @@ Type=dbus
 BusName=org.AGL.afm.user          
 ExecStart=/usr/bin/afm-user-daemon --user-dbus=unix:path=%t/bus
 Environment=AFM_APP_INSTALL_DIR=%%r
-Environment=LD_PRELOAD=/usr/lib/libEGL.so
+EnvironmentFile=-@afm_confdir@/unit.env.d/*
 Restart=on-failure
 RestartSec=5
 

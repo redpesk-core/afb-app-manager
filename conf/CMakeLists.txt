@@ -19,6 +19,9 @@
 cmake_minimum_required(VERSION 2.8)
 
 configure_file(afm-launch.conf.in afm-launch.conf)
+configure_file(afm-unit.conf.in afm-unit.conf)
+configure_file(afm-system-daemon.service.in afm-system-daemon.service)
+configure_file(afm-user-daemon.service.in afm-user-daemon.service)
 
 if(NOT USE_SDK)
 	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
@@ -27,10 +30,11 @@ if(NOT USE_SDK)
 	set(UNITDIR_USER           ${CMAKE_INSTALL_LIBDIR}/systemd/user CACHE STRING "Path to systemd system unit files")
 
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
-	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
-	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-launch.conf           DESTINATION ${afm_confdir})
-	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
+	install(DIRECTORY DESTINATION ${afm_confdir}/unit.env.d)
 endif()
 
