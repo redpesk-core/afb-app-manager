@@ -36,7 +36,7 @@
 
 
 
-static int process1(const struct unitdesc *desc)
+static int processunit(const struct unitdesc *desc)
 {
 	int isuser = desc->scope == unitscope_user;
 	int issystem = desc->scope == unitscope_system;
@@ -52,18 +52,23 @@ printf("\n%s\n\n",content);
 	return 0;
 }
 
-static int process(void *closure, const struct unitdesc descs[], unsigned count)
+static int process(void *closure, const struct generatedesc *desc)
 {
-	while (count--)
-		process1(descs++);
+	int i;
+	for (i = 0 ; i < desc->nunits ; i++)
+		processunit(&desc->units[i]);
 	return 0;
 }
 
 int main(int ac, char **av)
 {
+	struct unitconf conf;
 	struct json_object *obj;
 	int rc;
 
+	conf.installdir = "INSTALL-DIR";
+	conf.icondir = "ICONS-DIR";
+	conf.port = 666;
 	rc = unit_generator_on(*++av);
 	if (rc < 0)
 		error("can't read template %s: %m",*av);
@@ -72,13 +77,8 @@ int main(int ac, char **av)
 		if (!obj)
 			error("can't read widget config at %s: %m",*av);
 
-		j_add_string_m(obj, "#metadata.install-dir", "INSTALL-DIR");
-		j_add_string_m(obj, "#metadata.app-data-dir", "%h/app-data");
-		j_add_string_m(obj, "#metadata.icons-dir", "ICONS-DIR");
-		j_add_string_m(obj, "#metadata.http-port", "HTTP-PORT");
-
 		puts(json_object_to_json_string_ext(obj, JSON_C_TO_STRING_PRETTY));
-		rc = unit_generator_process(obj, process, NULL);
+		rc = unit_generator_process(obj, &conf, process, NULL);
 		if (rc)
 			error("can't apply generate units, error %d",rc);
 		json_object_put(obj);

@@ -20,6 +20,7 @@
 struct json_object;
 struct wgt_info;
 
+
 enum unitscope {
 	unitscope_unknown = 0,
 	unitscope_system,
@@ -43,9 +44,21 @@ struct unitdesc {
 	size_t wanted_by_length;
 };
 
+struct unitconf {
+	const char *installdir;
+	const char *icondir;
+	int port;
+};
+
+struct generatedesc {
+	const struct unitconf *conf;
+	const struct unitdesc *units;
+	int nunits;
+};
+
 extern int unit_generator_on(const char *filename);
 extern void unit_generator_off();
-extern int unit_generator_process(struct json_object *jdesc, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure);
-extern int unit_install(struct wgt_info *ifo, const char *installdir, const char *icondir, int port);
-extern int unit_uninstall(struct wgt_info *ifo);
+extern int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure);
+extern int unit_install(struct wgt_info *ifo, const struct unitconf *conf);
+extern int unit_uninstall(struct wgt_info *ifo, const struct unitconf *conf);
 

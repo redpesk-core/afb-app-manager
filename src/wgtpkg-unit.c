@@ -249,14 +249,14 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
  * with its given 'closure' and the array descripbing the units.
  * Return 0 in case of success or a negative value in case of error.
  */
-static int process_all_units(char *corpus, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure)
+static int process_all_units(char *corpus, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure)
 {
-	int rc, rc2;
-	unsigned n;
+	int n, rc, rc2;
 	char *beg, *end;
-	struct unitdesc *descs, *d;
+	struct unitdesc *units, *u;
+	struct generatedesc gdesc;
 
-	descs = NULL;
+	units = NULL;
 	n = 0;
 	rc = rc2 = 0;
 
@@ -275,14 +275,15 @@ static int process_all_units(char *corpus, int (*process)(void *closure, const s
 			*end = 0;
 
 			/* allocates a descriptor for the unit */
-			d = realloc(descs, (n + 1) * sizeof *descs);
-			if (d == NULL)
+			u = realloc(units, ((unsigned)n + 1) * sizeof *units);
+			if (u == NULL)
 				rc2 = -ENOMEM;
 			else {
 				/* creates the unit description */
-				memset(&d[n], 0, sizeof *d);
-				descs = d;
-				rc2 = process_one_unit(beg, &descs[n]);
+				units = u;
+				u = &u[n];
+				memset(u, 0, sizeof *u);
+				rc2 = process_one_unit(beg, u);
 				if (rc2 >= 0)
 					n++;
 			}
@@ -295,15 +296,19 @@ static int process_all_units(char *corpus, int (*process)(void *closure, const s
 	}
 
 	/* call the function that processes the units */
-	if (rc == 0 && process)
-		rc = process(closure, descs, n);
+	if (rc == 0 && process) {
+		gdesc.conf = conf;
+		gdesc.units = units;
+		gdesc.nunits = n;
+		rc = process(closure, &gdesc);
+	}
 
 	/* cleanup and frees */
 	while(n) {
-		free((char *)(descs[--n].name));
-		free((char *)(descs[n].wanted_by));
+		free((char *)(units[--n].name));
+		free((char *)(units[n].wanted_by));
 	}
-	free(descs);
+	free(units);
 
 	return rc;
 }
@@ -338,8 +343,22 @@ int unit_generator_on(const char *filename)
 	return rc;
 }
 
+static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
+{
+	char portstr[30];
+
+	sprintf(portstr, "%d", conf->port);
+	return 	j_add_many_strings_m(jdesc,
+		"#metadata.install-dir", conf->installdir,
+		"#metadata.app-data-dir", "%h/app-data",
+		"#metadata.icons-dir", conf->icondir,
+		"#metadata.http-port", portstr,
+		NULL) ? 0 : -1;
+}
+
 /*
- * Applies the object 'jdesc' to the current unit generator.
+ * Applies the object 'jdesc' augmented of meta data coming
+ * from 'conf' to the current unit generator.
  * The current unit generator will be set to the default one if not unit
  * was previously set using the function 'unit_generator_on'.
  * The callback function 'process' is then called with the
@@ -347,19 +366,24 @@ int unit_generator_on(const char *filename)
  * Return what returned process in case of success or a negative
  * error code.
  */
-int unit_generator_process(struct json_object *jdesc, int (*process)(void *closure, const struct unitdesc descs[], unsigned count), void *closure)
+int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure)
 {
 	int rc;
 	size_t size;
 	char *instance;
 
-	rc = template ? 0 : unit_generator_on(NULL);
-	if (!rc) {
-		instance = NULL;
-		rc = apply_mustach(template, jdesc, &instance, &size);
-		if (!rc)
-			rc = process_all_units(instance, process, closure);
-		free(instance);
+	rc = add_metadata(jdesc, conf);
+	if (rc)
+		ERROR("can't set the metadata. %m");
+	else {
+		rc = template ? 0 : unit_generator_on(NULL);
+		if (!rc) {
+			instance = NULL;
+			rc = apply_mustach(template, jdesc, &instance, &size);
+			if (!rc)
+				rc = process_all_units(instance, conf, process, closure);
+			free(instance);
+		}
 	}
 	return rc;
 }
@@ -419,15 +443,17 @@ static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *d
 	return rc;
 }
 
-static int do_send_reload(const struct unitdesc descs[], unsigned count)
+static int do_send_reload(const struct generatedesc *desc)
 {
-	unsigned i;
+	int i;
 	int reloadsys, reloadusr;
+	const struct unitdesc *u;
 
 	reloadsys = reloadusr = 0;
-	for (i = 0 ; i < count ; i++) {
-		if (descs[i].wanted_by != NULL) {
-			switch (descs[i].scope) {
+	for (i = 0 ; i < desc->nunits ; i++) {
+		u = &desc->units[i];
+		if (u->wanted_by != NULL) {
+			switch (u->scope) {
 			case unitscope_user:
 				reloadusr = 1;
 				break;
@@ -447,24 +473,26 @@ static int do_send_reload(const struct unitdesc descs[], unsigned count)
 	return reloadsys ? : reloadusr ? : 0;
 }
 
-static int do_uninstall_units(void *closure, const struct unitdesc descs[], unsigned count)
+static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 {
 	int rc, rc2;
-	unsigned i;
+	int i;
 	char path[PATH_MAX];
+	const struct unitdesc *u;
 
 	rc = 0;
-	for (i = 0 ; i < count ; i++) {
-		rc2 = check_unit_desc(&descs[i], 0);
+	for (i = 0 ; i < desc->nunits ; i++) {
+		u = &desc->units[i];
+		rc2 = check_unit_desc(u, 0);
 		if (rc2 == 0) {
-			rc2 = get_unit_path(path, sizeof path, &descs[i]);
+			rc2 = get_unit_path(path, sizeof path, u);
 			if (rc2 >= 0) {
 				rc2 = unlink(path);
 			}
 			if (rc2 < 0 && rc == 0)
 				rc = rc2;
-			if (descs[i].wanted_by != NULL) {
-				rc2 = get_wants_path(path, sizeof path, &descs[i]);
+			if (u->wanted_by != NULL) {
+				rc2 = get_wants_path(path, sizeof path, u);
 				if (rc2 >= 0)
 					rc2 = unlink(path);
 			}
@@ -472,29 +500,31 @@ static int do_uninstall_units(void *closure, const struct unitdesc descs[], unsi
 		if (rc2 < 0 && rc == 0)
 			rc = rc2;
 	}
-	rc2 = do_send_reload(descs, count);
+	rc2 = do_send_reload(desc);
 	if (rc2 < 0 && rc == 0)
 		rc = rc2;
 	return rc;
 }
 
-static int do_install_units(void *closure, const struct unitdesc descs[], unsigned count)
+static int do_install_units(void *closure, const struct generatedesc *desc)
 {
 	int rc;
-	unsigned i;
+	int i;
 	char path[PATH_MAX + 1], target[PATH_MAX + 1];
+	const struct unitdesc *u;
 
 	i = 0;
-	while (i < count) {
-		rc = check_unit_desc(&descs[i], 1);
+	while (i < desc->nunits) {
+		u = &desc->units[i];
+		rc = check_unit_desc(u, 1);
 		if (!rc) {
-			rc = get_unit_path(path, sizeof path, &descs[i]);
+			rc = get_unit_path(path, sizeof path, u);
 			if (rc >= 0) {
-				rc = putfile(path, descs[i].content, descs[i].content_length);
-				if (descs[i].wanted_by != NULL) {
-					rc = get_wants_path(path, sizeof path, &descs[i]);
+				rc = putfile(path, u->content, u->content_length);
+				if (rc >= 0 && u->wanted_by != NULL) {
+					rc = get_wants_path(path, sizeof path, u);
 					if (rc >= 0) {
-						rc = get_wants_target(target, sizeof target, &descs[i]);
+						rc = get_wants_target(target, sizeof target, u);
 						if (rc >= 0) {
 							unlink(path); /* TODO? check? */
 							rc = symlink(target, path);
@@ -507,34 +537,21 @@ static int do_install_units(void *closure, const struct unitdesc descs[], unsign
 		if (rc < 0)
 			goto error;
 	}
-	rc = do_send_reload(descs, count);
+	rc = do_send_reload(desc);
 	if (rc < 0)
 		goto error;
 	return 0;
 error:
-	do_uninstall_units(closure, descs, i);
+	i = errno;
+	do_uninstall_units(closure, desc);
+	errno = i;
 	return rc;
-}
-
-static int add_metadata(struct json_object *jdesc, const char *installdir, const char *icondir, int port)
-{
-	char portstr[30];
-
-	sprintf(portstr, "%d", port);
-	return 	j_add_many_strings_m(jdesc,
-		"#metadata.install-dir", installdir,
-		"#metadata.app-data-dir", "%h/app-data",
-		"#metadata.icons-dir", icondir,
-		"#metadata.http-port", portstr,
-		NULL) ? 0 : -1;
 }
 
 static int do_install_uninstall(
 		struct wgt_info *ifo,
-		const char *installdir,
-		const char *icondir,
-		int port,
-		int (*doer)(void *, const struct unitdesc[], unsigned)
+		const struct unitconf *conf,
+		int (*doer)(void *, const struct generatedesc *)
 )
 {
 	int rc;
@@ -544,26 +561,19 @@ static int do_install_uninstall(
 	if (!jdesc)
 		rc = -1;
 	else {
-		rc = add_metadata(jdesc, installdir, icondir, port);
-		if (rc)
-			ERROR("can't set the metadata. %m");
-		else {
-			rc = unit_generator_process(jdesc, doer, NULL);
-			if (rc)
-				ERROR("can't install units, error %d", rc);
-		}
+		rc = unit_generator_process(jdesc, conf, doer, NULL);
 		json_object_put(jdesc);
 	}
 	return rc;
 }
 
-int unit_install(struct wgt_info *ifo, const char *installdir, const char *icondir, int port)
+int unit_install(struct wgt_info *ifo, const struct unitconf *conf)
 {
-	return do_install_uninstall(ifo, installdir, icondir, port, do_install_units);
+	return do_install_uninstall(ifo, conf, do_install_units);
 }
 
-int unit_uninstall(struct wgt_info *ifo)
+int unit_uninstall(struct wgt_info *ifo, const struct unitconf *conf)
 {
-	return do_install_uninstall(ifo, "", "", 0, do_uninstall_units);
+	return do_install_uninstall(ifo, conf, do_uninstall_units);
 }
 
