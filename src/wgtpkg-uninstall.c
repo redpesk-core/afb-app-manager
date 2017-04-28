@@ -24,10 +24,14 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "verbose.h"
 #include "utils-dir.h"
 #include "secmgr-wrap.h"
+#include "wgtpkg-unit.h"
+#include "wgt.h"
+#include "wgt-info.h"
 
 /* uninstall the widget of idaver */
 int uninstall_widget(const char *idaver, const char *root)
@@ -37,6 +41,8 @@ int uninstall_widget(const char *idaver, const char *root)
 	char path[PATH_MAX];
 	const char *at;
 	int rc, rc2;
+	struct unitconf uconf;
+	struct wgt_info *ifo;
 
 	NOTICE("-- UNINSTALLING widget of id %s from %s --", idaver, root);
 
@@ -58,10 +64,22 @@ int uninstall_widget(const char *idaver, const char *root)
 		return -1;
 	}
 
+	/* removes the units */
+	ifo = wgt_info_createat(AT_FDCWD, path, 1, 1, 1);
+	if (!ifo) {
+		ERROR("can't read widget config in directory '%s': %m", path);
+		return -1;
+	}
+	uconf.installdir = path;
+	uconf.icondir = FWK_ICON_DIR;
+	uconf.port = 0;
+	unit_uninstall(ifo, &uconf);
+	wgt_info_unref(ifo);
+
 	/* removes the directory of the application */
 	rc = remove_directory(path, 1);
 	if (rc < 0) {
-		ERROR("error while removing directory '%s': %m", path);
+		ERROR("while removing directory '%s': %m", path);
 		return -1;
 	}
 
