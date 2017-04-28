@@ -53,7 +53,7 @@ static char *template;
  * Returns 1 if 'text' matches the 'pattern' or else returns 0.
  * When returning 1 and 'after' isn't NULL, the pointer to the
  * first character after the pettern in 'text' is stored in 'after'.
- * The characters '\n' and ' ' have a special mening in the search:
+ * The characters '\n' and ' ' have a special meaning in the search:
  *  * '\n': matches any space or tabs (including none) followed 
  *          either by '\n' or '\0' (end of the string)
  *  * ' ': matches any space or tabs but at least one.
@@ -217,7 +217,7 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 			desc->type = unittype_service;
 			name = nsrv;
 		}
-		len = (size_t)(strchrnul(name, '\n') - name);
+		len = strcspn(name, " \t\n");
 		desc->name = strndup(name, len);
 		desc->name_length = desc->name ? len : 0;
 	} else {
@@ -227,7 +227,7 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 	}
 
 	if (iswanted) {
-		len = (size_t)(strchrnul(wanted, '\n') - wanted);
+		len = strcspn(wanted, " \t\n");
 		desc->wanted_by = strndup(wanted, len);
 		desc->wanted_by_length = len;
 	} else {
@@ -251,41 +251,72 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
  */
 static int process_all_units(char *corpus, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure)
 {
-	int n, rc, rc2;
-	char *beg, *end;
-	struct unitdesc *units, *u;
+	int rc, rc2;
+	char *beg, *end, *befbeg, *aftend;
+	struct unitdesc *u;
 	struct generatedesc gdesc;
 
-	units = NULL;
-	n = 0;
+	gdesc.conf = conf;
+	gdesc.units = NULL;
+	gdesc.nunits = 0;
 	rc = rc2 = 0;
 
 	/* while there is a unit in the corpus */
-	while(offset(corpus, "%begin systemd-unit\n", &beg)) {
-
-		/* get the end of the unit */
-		end = offset(beg, "%end systemd-unit\n", &corpus);
+	for(;;) {
+		befbeg = offset(corpus, "%begin ", &beg);
+		end = offset(corpus, "%end ", &aftend);
+		if (!befbeg) {
+			if (end) {
+				/* %end detected without %begin */
+				ERROR("unexpected %%end at end");
+				rc = rc ? :-EINVAL;
+			}
+			break;
+		}
 		if (!end) {
 			/* unterminated unit !! */
-			ERROR("unterminated unit description!! %s", beg);
+			ERROR("unterminated unit description!!");
 			corpus = beg;
 			rc2 = -EINVAL;
+		} else if (end < befbeg) {
+			/* sequence %end ... %begin detected !! */
+			ERROR("unexpected %%end before %%begin");
+			corpus = aftend;
+			rc2 = -EINVAL;
 		} else {
-			/* separate the unit from the corpus */
-			*end = 0;
-
-			/* allocates a descriptor for the unit */
-			u = realloc(units, ((unsigned)n + 1) * sizeof *units);
-			if (u == NULL)
-				rc2 = -ENOMEM;
-			else {
-				/* creates the unit description */
-				units = u;
-				u = &u[n];
-				memset(u, 0, sizeof *u);
-				rc2 = process_one_unit(beg, u);
-				if (rc2 >= 0)
-					n++;
+			befbeg =  offset(beg, "%begin ", NULL);
+			if (befbeg && befbeg < end) {
+				/* sequence %begin ... %begin ... %end detected !! */
+				ERROR("unexpected %%begin after %%begin");
+				corpus = beg;
+				rc2 = -EINVAL;
+			} else {
+				*end = 0;
+				corpus = aftend;
+				if (matches("systemd-unit\n", beg, &beg)) {
+					if (!matches("systemd-unit\n", aftend, &corpus)) {
+						/* end doesnt match */
+						ERROR("unmatched %%begin systemd-unit (matching end mismatch)");
+						rc2 = -EINVAL;
+					} else {
+						/* allocates a descriptor for the unit */
+						u = realloc((void*)gdesc.units, ((unsigned)gdesc.nunits + 1) * sizeof *gdesc.units);
+						if (u == NULL)
+							rc2 = -ENOMEM;
+						else {
+							/* creates the unit description */
+							gdesc.units = u;
+							u = &u[gdesc.nunits];
+							memset(u, 0, sizeof *u);
+							rc2 = process_one_unit(beg, u);
+							if (rc2 >= 0)
+								gdesc.nunits++;
+						}
+					}
+				} else {
+					ERROR("unexpected %%begin name");
+					rc2 = -EINVAL;
+				}
 			}
 		}
 		/* records the error if there is an error */
@@ -296,19 +327,15 @@ static int process_all_units(char *corpus, const struct unitconf *conf, int (*pr
 	}
 
 	/* call the function that processes the units */
-	if (rc == 0 && process) {
-		gdesc.conf = conf;
-		gdesc.units = units;
-		gdesc.nunits = n;
+	if (rc == 0 && process)
 		rc = process(closure, &gdesc);
-	}
 
 	/* cleanup and frees */
-	while(n) {
-		free((char *)(units[--n].name));
-		free((char *)(units[n].wanted_by));
+	while(gdesc.nunits) {
+		free((void*)(gdesc.units[--gdesc.nunits].name));
+		free((void*)(gdesc.units[gdesc.nunits].wanted_by));
 	}
-	free(units);
+	free((void*)gdesc.units);
 
 	return rc;
 }
