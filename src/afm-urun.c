@@ -36,6 +36,8 @@
 #include "afm-udb.h"
 #include "afm-urun.h"
 
+static const char key_unit_d_path[] = "-unit-dpath-";
+
 /**************** get appli basis *********************/
 
 static int get_basis(struct json_object *appli, int *isuser, const char **dpath, int load)
@@ -51,7 +53,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 	*isuser = strcmp(uscope, "system") != 0;
 
 	/* get dpath */
-	if (!j_read_string_at(appli, "-unit-dpath-", dpath)) {
+	if (!j_read_string_at(appli, key_unit_d_path, dpath)) {
 		if (!load) {
 			errno = ENOENT;
 			goto error;
@@ -65,12 +67,12 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 			ERROR("Can't load unit of name %s for %s: %m", uname, uscope);
 			goto error;
 		}
-		if (!j_add_string(appli, "-unit-dpath-", dp)) {
+		if (!j_add_string(appli, key_unit_d_path, dp)) {
 			free(dp);
 			goto nomem;
 		}
 		free(dp);
-		j_read_string_at(appli, "-unit-dpath-", dpath);
+		j_read_string_at(appli, key_unit_d_path, dpath);
 	}
 
 	return 0;
@@ -238,6 +240,8 @@ static int not_yet_implemented(const char *what)
 int afm_urun_terminate(int runid)
 {
 	int rc = systemd_unit_stop_pid(1 /* TODO: isuser? */, (unsigned)runid);
+	if (rc < 0)
+		rc = systemd_unit_stop_pid(0 /* TODO: isuser? */, (unsigned)runid);
 	return rc < 0 ? rc : 0;
 }
 
@@ -313,7 +317,7 @@ error:
  */
 struct json_object *afm_urun_state(struct afm_udb *db, int runid)
 {
-	int i, n, isuser, pid;
+	int i, n, isuser, pid, wasuser;
 	char *dpath;
 	const char *udpath;
 	const char *id;
@@ -325,7 +329,9 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid)
 	result = NULL;
 
 	/* get the dpath */
-	dpath = systemd_unit_dpath_by_pid(1 /* TODO: isuser? */, (unsigned)runid);
+	dpath = systemd_unit_dpath_by_pid(wasuser = 1, (unsigned)runid);
+	if (!dpath)
+		dpath = systemd_unit_dpath_by_pid(wasuser = 0, (unsigned)runid);
 	if (!dpath) {
 		errno = EINVAL;
 		WARNING("searched runid %d not found", runid);

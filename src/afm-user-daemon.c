@@ -530,7 +530,7 @@ int main(int ac, char **av)
 	srandom((unsigned int)time(NULL));
 
 	/* init database */
-	afudb = afm_udb_create(0, 1, "afm-appli-");
+	afudb = afm_udb_create(1, 1, "afm-appli-");
 	if (!afudb) {
 		ERROR("afm_udb_create failed");
 		return 1;

@@ -17,6 +17,7 @@
 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -224,6 +225,8 @@ static int addunit(
 {
 	struct json_object *priv, *pub, *id;
 	const char *strid;
+	char *un = NULL;
+	size_t len;
 
 	/* create the application structure */
 	priv = json_object_new_object();
@@ -234,12 +237,30 @@ static int addunit(
 	if (!pub)
 		goto error;
 
+	/* make the unit name */
+	len = strlen(unitname);
+	assert(len >= (sizeof service_extension - 1));
+	assert(!memcmp(&unitname[len - (sizeof service_extension - 1)], service_extension, sizeof service_extension));
+	if (unitname[len - sizeof service_extension] == '@') {
+		char buffer[40];
+		size_t l = (size_t)snprintf(buffer, sizeof buffer, "%d", (int)getuid());
+		un = malloc(len + l + 1);
+		if (!un)
+			goto error;
+		memcpy(&un[0], unitname, len - (sizeof service_extension - 1));
+		if (l)
+			memcpy(&un[len - (sizeof service_extension - 1)], buffer, l);
+		memcpy(&un[len - (sizeof service_extension - 1) + l], service_extension, sizeof service_extension);
+	}
+
 	/* adds the values */
 	if (add_fields_of_content(priv, pub, content, length)
 	 || add_field(priv, pub, key_unit_path, unitpath)
-	 || add_field(priv, pub, key_unit_name, unitname)
+	 || add_field(priv, pub, key_unit_name, un ? : unitname)
 	 || add_field(priv, pub, key_unit_scope, isuser ? scope_user : scope_system))
 		goto error;
+	free(un);
+	un = NULL;
 
 	/* get the id */
 	if (!json_object_object_get_ex(pub, key_id, &id)) {
@@ -258,6 +279,7 @@ static int addunit(
 	return 0;
 
 error:
+	free(un);
 	json_object_put(pub);
 	json_object_put(priv);
 	return -1;
