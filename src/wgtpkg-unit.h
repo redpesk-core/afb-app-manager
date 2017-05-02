@@ -52,6 +52,7 @@ struct unitconf {
 
 struct generatedesc {
 	const struct unitconf *conf;
+	struct json_object *desc;
 	const struct unitdesc *units;
 	int nunits;
 };

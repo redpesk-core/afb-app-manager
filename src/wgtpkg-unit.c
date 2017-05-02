@@ -249,7 +249,7 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
  * with its given 'closure' and the array descripbing the units.
  * Return 0 in case of success or a negative value in case of error.
  */
-static int process_all_units(char *corpus, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure)
+static int process_all_units(char *corpus, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure, struct json_object *jdesc)
 {
 	int rc, rc2;
 	char *beg, *end, *befbeg, *aftend;
@@ -257,6 +257,7 @@ static int process_all_units(char *corpus, const struct unitconf *conf, int (*pr
 	struct generatedesc gdesc;
 
 	gdesc.conf = conf;
+	gdesc.desc = jdesc;
 	gdesc.units = NULL;
 	gdesc.nunits = 0;
 	rc = rc2 = 0;
@@ -408,7 +409,7 @@ int unit_generator_process(struct json_object *jdesc, const struct unitconf *con
 			instance = NULL;
 			rc = apply_mustach(template, jdesc, &instance, &size);
 			if (!rc)
-				rc = process_all_units(instance, conf, process, closure);
+				rc = process_all_units(instance, conf, process, closure, jdesc);
 			free(instance);
 		}
 	}

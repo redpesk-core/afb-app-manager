@@ -46,7 +46,8 @@ static int processunit(const struct unitdesc *desc)
 	const char *content = desc->content;
 
 printf("\n##########################################################");
-printf("\n### usr=%d sys=%d soc=%d srv=%d    name  %s%s", isuser, issystem, issock, isserv, name?:"?", issock?".socket":isserv?".service":"");
+printf("\n### usr=%d sys=%d soc=%d srv=%d    name  %s%s", isuser, issystem, issock,
+			isserv, name?:"?", issock?".socket":isserv?".service":"");
 printf("\n##########################################################");
 printf("\n%s\n\n",content);
 	return 0;
@@ -55,6 +56,10 @@ printf("\n%s\n\n",content);
 static int process(void *closure, const struct generatedesc *desc)
 {
 	int i;
+printf("\n##########################################################");
+printf("\n###### J S O N D E S C    AFTER                    #######");
+printf("\n##########################################################");
+puts(json_object_to_json_string_ext(desc->desc, JSON_C_TO_STRING_PRETTY));
 	for (i = 0 ; i < desc->nunits ; i++)
 		processunit(&desc->units[i]);
 	return 0;
@@ -77,7 +82,10 @@ int main(int ac, char **av)
 		if (!obj)
 			error("can't read widget config at %s: %m",*av);
 
-		puts(json_object_to_json_string_ext(obj, JSON_C_TO_STRING_PRETTY));
+printf("\n##########################################################");
+printf("\n###### J S O N D E S C    BEFORE                   #######");
+printf("\n##########################################################");
+puts(json_object_to_json_string_ext(obj, JSON_C_TO_STRING_PRETTY));
 		rc = unit_generator_process(obj, &conf, process, NULL);
 		if (rc)
 			error("can't apply generate units, error %d",rc);
