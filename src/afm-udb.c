@@ -90,6 +90,41 @@ static void apps_put(struct afm_apps *apps)
 }
 
 /*
+ * Append the field 'data' to the field 'name' of the 'object'.
+ * When a second append is done to one field, it is automatically
+ * transformed to an array.
+ * Return 0 in case of success or -1 in case of error.
+ */
+static int append_field(
+		struct json_object *object,
+		const char *name,
+		struct json_object *data
+)
+{
+	struct json_object *item, *array;
+
+	if (!json_object_object_get_ex(object, name, &item))
+		json_object_object_add(object, name, data);
+	else {
+		if (json_object_is_type(item, json_type_array))
+			array = item;
+		else {
+			array = json_object_new_array();
+			if (!array)
+				goto error;
+			json_object_array_add(array, item);
+			json_object_object_add(object, name, array);
+		}
+		json_object_array_add(array, data);
+	}
+	return 0;
+ error:
+	json_object_put(data);
+	errno = ENOMEM;
+	return -1;
+}
+
+/*
  * Adds the field of 'name' and 'value' in 'priv' and also if possible in 'pub'
  * Returns 0 on success or -1 on error.
  */
@@ -121,10 +156,10 @@ static int add_field(
 
 	/* add the value */
 	if (name[0] == '-') {
-		json_object_object_add(priv, &name[1], v);
+		append_field(priv, &name[1], v);
 	} else {
-		json_object_object_add(priv, name, json_object_get(v));
-		json_object_object_add(pub, name, v);
+		append_field(priv, name, json_object_get(v));
+		append_field(pub, name, v);
 	}
 	return 0;
 }
