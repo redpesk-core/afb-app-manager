@@ -268,13 +268,17 @@ static int install_icon(const struct wgt_desc *desc)
 
 static int install_exec_flag(const struct wgt_desc *desc)
 {
-	int i;
+	int i, rc;
 
 	if (desc->content_type) {
 		i = sizeof exec_type_strings / sizeof *exec_type_strings;
 		while (i) {
-			if (!strcasecmp(desc->content_type, exec_type_strings[--i]))
-				return fchmodat(workdirfd, desc->content_src, 0755, 0);
+			if (!strcasecmp(desc->content_type, exec_type_strings[--i])) {
+				rc = fchmodat(workdirfd, desc->content_src, 0755, 0);
+				if (rc < 0)
+					ERROR("can't make executable the file %s", desc->content_src);
+				return rc;
+			}
 		}
 	}
 	return 0;
