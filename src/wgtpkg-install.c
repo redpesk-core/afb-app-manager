@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 
 #include "verbose.h"
@@ -208,6 +209,74 @@ static int check_permissions(const struct wgt_desc *desc)
 	return result;
 }
 
+static int for_all_content(const struct wgt_desc *desc, int (*action)(const char *src, const char *type))
+{
+	int rc, rc2;
+	struct wgt_desc_feature *feat;
+	const char *src, *type;
+
+	rc = action(desc->content_src, desc->content_type);
+	feat = desc->features;
+	while (feat) {
+		if (!strcmp(feat->name, "urn:AGL:widget:provided-unit")) {
+			src = wgt_info_param(feat, "content.src");
+			type = wgt_info_param(feat, "content.type");
+			rc2 = action(src, type);
+			if (rc >= 0 && rc2 < 0)
+				rc = rc2;
+		}
+		feat = feat->next;
+	}
+	return rc;
+}
+
+static int set_exec_flag(const char *src, const char *type)
+{
+	int i, rc;
+
+	if (src && type) {
+		i = sizeof exec_type_strings / sizeof *exec_type_strings;
+		while (i) {
+			if (!strcasecmp(type, exec_type_strings[--i])) {
+				rc = fchmodat(workdirfd, src, 0755, 0);
+				if (rc < 0)
+					ERROR("can't make executable the file %s", src);
+				return rc;
+			}
+		}
+	}
+	return 0;
+}
+
+static int check_one_content(const char *src, const char *type)
+{
+	int rc;
+	struct stat s;
+
+	if (!src) {
+		ERROR("a content src is missing");
+		errno = EINVAL;
+		rc = -1;
+	} else {
+		/* TODO: when dealing with HTML and languages, the check should
+		 * include i18n path search of widgets */
+		rc = fstatat(workdirfd, src, &s, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
+		if (rc < 0)
+			ERROR("can't get info on content %s: %m", src);
+		else if (!S_ISREG(s.st_mode)) {
+			ERROR("content %s isn't a regular file", src);
+			errno = EINVAL;
+			rc = -1;
+		}
+	}
+	return rc;
+}
+
+static int check_content(const struct wgt_desc *desc)
+{
+	return for_all_content(desc, check_one_content);
+}
+
 static int check_widget(const struct wgt_desc *desc)
 {
 	int result;
@@ -215,6 +284,8 @@ static int check_widget(const struct wgt_desc *desc)
 	result = check_temporary_constraints(desc);
 	if (result >= 0)
 		result = check_permissions(desc);
+	if (result >= 0)
+		result = check_content(desc);
 	return result;
 }
 
@@ -268,20 +339,7 @@ static int install_icon(const struct wgt_desc *desc)
 
 static int install_exec_flag(const struct wgt_desc *desc)
 {
-	int i, rc;
-
-	if (desc->content_type) {
-		i = sizeof exec_type_strings / sizeof *exec_type_strings;
-		while (i) {
-			if (!strcasecmp(desc->content_type, exec_type_strings[--i])) {
-				rc = fchmodat(workdirfd, desc->content_src, 0755, 0);
-				if (rc < 0)
-					ERROR("can't make executable the file %s", desc->content_src);
-				return rc;
-			}
-		}
-	}
-	return 0;
+	return for_all_content(desc, set_exec_flag);
 }
 
 static int install_security(const struct wgt_desc *desc)
