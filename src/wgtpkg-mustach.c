@@ -21,10 +21,12 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include <json-c/json.h>
 
 #include "mustach.h"
+#include "verbose.h"
 
 #define MAX_DEPTH 256
 
@@ -321,8 +323,29 @@ static struct mustach_itf itf = {
  */
 int apply_mustach(const char *template, struct json_object *root, char **result, size_t *size)
 {
+	int rc;
 	struct expl e;
+
 	e.root = root;
-	return mustach(template, &itf, &e, result, size);
+	rc = mustach(template, &itf, &e, result, size);
+	if (rc < 0) {
+		static const char *msgs[] = {
+			"SYSTEM",
+			"UNEXPECTED_END",
+			"EMPTY_TAG",
+			"TAG_TOO_LONG",
+			"BAD_SEPARATORS",
+			"TOO_DEPTH",
+			"CLOSING",
+			"BAD_UNESCAPE_TAG"
+		};
+
+		rc = -(rc + 1);
+		ERROR("mustach error found: MUSTACH_ERROR_%s",
+			rc < 0 || rc >= (int)(sizeof msgs / sizeof * msgs) ? "???" : msgs[rc]);
+		rc = -1;
+		errno = EINVAL;
+	}
+	return rc;
 }
 
