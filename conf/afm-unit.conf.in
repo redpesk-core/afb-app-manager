@@ -259,19 +259,17 @@ ListenStream=%t/bindings/{{name}}
 FileDescriptorName={{name}}
 
 {{#required-permission.urn:AGL:permission::public:hidden}}\
-Service=afm-service-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+Service=afm-service-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}.service
 {{/required-permission.urn:AGL:permission::public:hidden}}\
 {{^required-permission.urn:AGL:permission::public:hidden}}\
-Service=afm-appli-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+Service=afm-appli-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}.service
 {{/required-permission.urn:AGL:permission::public:hidden}}\
 
 ;---------------------------------------------------------------------------------
-{{#required-permission.urn:AGL:permission::system:run-by-default}}
 %nl
 [Install]
 WantedBy=default.target
 %systemd-unit wanted-by default.target
-{{/required-permission.urn:AGL:permission::system:run-by-default}}
 ;---------------------------------------------------------------------------------
 
 %end systemd-unit
