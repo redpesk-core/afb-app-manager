@@ -6,7 +6,7 @@ Foreword
 --------
 
 This document describes application framework fundamentals. 
-FCF (Fully Conform to Specification) implementation is still under development.
+FCS (Fully Conform to Specification) implementation is still under development.
 It may happen that current implementation somehow diverges with specifications.
 
 Overview

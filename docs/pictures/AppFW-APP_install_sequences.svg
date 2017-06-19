@@ -222,7 +222,7 @@
        <path fill="none" stroke="rgb(52,101,164)" d="M 65136,6322 C 65008,6322 64880,6450 64880,6578 L 64880,7602 C 64880,7730 65008,7858 65136,7858 L 70052,7858 C 70180,7858 70308,7730 70308,7602 L 70308,6578 C 70308,6450 70180,6322 70052,6322 L 65136,6322 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 64880,6322 L 64880,6322 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 70308,7858 L 70308,7858 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="65551" y="7310"><tspan fill="rgb(0,0,0)" stroke="none">D-Bus session</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="65551" y="7310"><tspan fill="rgb(0,0,0)" stroke="none">Application UI</tspan></tspan></tspan></text>
       </g>
      </g>
      <g class="Group">

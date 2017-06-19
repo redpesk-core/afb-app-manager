@@ -5,7 +5,7 @@ Foreword
 --------
 
 This document describes application framework daemons
-FCF (Fully Conform to Specification) implementation is still under development.
+FCS (Fully Conform to Specification) implementation is still under development.
 It may happen that current implementation somehow diverges with specifications.
 
 Introduction
@@ -423,7 +423,7 @@ Starting **afm daemons**
 ***afm-system-daemon*** and ***afm-user-daemon*** are launched as systemd
 services attached to system and user respectively. Normally, service files are
 locatedat */lib/systemd/system/afm-system-daemon.service* and
-*/lib/systemd/user/afm-user-daemon.service*.
+*/usr/lib/systemd/user/afm-user-daemon.service*.
 
 ### ***afm-system-daemon*** options
 
