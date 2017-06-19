@@ -80,14 +80,14 @@ Conversely, permissions linked to cynara can't carry data
 except in their name.
 
 Thus to have a simple and cleaner model, it is better to forbid
-attachement of value to permission.
+attachment of value to permission.
 
 
 Example of permissions
 ----------------------
 
 Here is a list of some possible permissions. These
-permissions are available the 17th of March 2017. 
+permissions are available the 17th of March 2017.
 
  - urn:AGL:permission::platform:no-oom
 

@@ -48,7 +48,7 @@ Connect through SSH on the target board and check for Application Framework daem
 
 We can see that there are two daemons running:
 * **afm-system-daemon** runs with a system user 'afm' and is responsible for installing/uninstalling packages
-* **afm-user-daemon** runs as a user daemon (currently as root because it's the only real user on the target board) and is responsible for the whole lifecycle of the applications running inside the user session.
+* **afm-user-daemon** runs as a user daemon (currently as root because it's the only real user on the target board) and is responsible for the whole life cycle of the applications running inside the user session.
 
 The application framework has a tool running on the Command Line Interface (CLI). Using the **afm-util** command, you can install, uninstall, list, run, pause ... applications.
 

@@ -30,7 +30,7 @@ depending upon ***D-Bus*** destination.
 The figure below summarizes the situation of both **afm-system-daemon** and
 **afm-user-daemon** in the system.
 
-![afm-daemons][afm-daemons]
+![afm-daemons][afm-daemons]{style width:65%;}
 
 The D-Bus interface
 -------------------
@@ -198,7 +198,7 @@ the fields described below.
       "id":          string, the application id (id@version)
       "version":     string, the version of the application
       "width":       integer, requested width of the application
-      "height":      integer, resqueted height of the application
+      "height":      integer, requested height of the application
       "name":        string, the name of the application
       "description": string, the description of the application
       "shortname":   string, the short name of the application
@@ -388,7 +388,7 @@ Use **org.AGL.afm.user.resume** instead.
 
 #### Method org.AGL.afm.user.state
 
-**Description**: Get informations about a running instance of *runid*.
+**Description**: Get information about a running instance of *runid*.
 
 **Input**: The *runid* (integer) of the running instance inspected.
 
@@ -431,49 +431,49 @@ The options for launching **afm-system-daemon** are:
 
     -r
     --root directory
-   
+
          Set the root application directory.
 
          Note that the default root directory is defined
          to be /usr/share/afm/applications (may change).
-   
+
     -d
     --daemon
-   
-         Daemonizes the process. It is not needed by sytemd.
-   
+
+         Daemonizes the process. It is not needed by systemd.
+
     -q
     --quiet
-   
+
          Reduces the verbosity (can be repeated).
-   
+
     -v
     --verbose
-   
+
          Increases the verbosity (can be repeated).
-   
+
     -h
     --help
-   
+
          Prints a short help.
-   
+
 ### ***afm-user-daemon*** options
 
 The options for launching **afm-user-daemon** are:
 
     -a
     --application directory
-   
+
          [Currently not available in the systemd version]
 
          Includes the given application directory to
          the database base of applications.
-   
+
          Can be repeated.
-   
+
     -r
     --root directory
-   
+
          [Currently not available in the systemd version]
 
          Includes root application directory or directories when
@@ -483,33 +483,33 @@ The options for launching **afm-user-daemon** are:
          Note that default root directory for
          applications is always added. In current version
          /usr/share/afm/applications is used as default.
-       
+
     -m
     --mode (local|remote)
-   
+
          [Currently not available in the systemd version]
 
          Set the default launch mode.
          The default value is 'local'
-   
+
     -d
     --daemon
-   
-         Daemonizes the process. It is not needed by sytemd.
-   
+
+         Daemonizes the process. It is not needed by systemd.
+
     -q
     --quiet
-   
+
          Reduces the verbosity (can be repeated).
-   
+
     -v
     --verbose
-   
+
          Increases the verbosity (can be repeated).
-   
+
     -h
     --help
-   
+
          Prints a short help.
 
 Tasks of **afm-user-daemon**
@@ -518,7 +518,7 @@ Tasks of **afm-user-daemon**
 ### Maintaining list of applications
 
 At start **afm-user-daemon** scans the directories containing
-applications and load in memory a list of avaliable applications
+applications and load in memory a list of available applications
 accessible by current user.
 
 When **afm-system-daemon** installs or removes an application.
@@ -528,7 +528,7 @@ applications list.
 
 **afm-user-daemon** provides the data it collects about
 applications to its clients. Clients may either request the full list
-of avaliable applications or a more specific information about a
+of available applications or a more specific information about a
 given application.
 
 ### Launching application
