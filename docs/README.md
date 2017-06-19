@@ -225,8 +225,6 @@ This basis is not meant as being rigid and it can be extended in the
 future to include for example incremental delivery.
 
 
-
-
 [meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"
 [widgets]:          http://www.w3.org/TR/widgets                                    "Packaged Web Apps"
 [widgets-digsig]:   http://www.w3.org/TR/widgets-digsig                             "XML Digital Signatures for Widgets"
@@ -241,6 +239,5 @@ future to include for example incremental delivery.
 [app-manifest]:     http://www.w3.org/TR/appmanifest                                "Web App Manifest"
 [tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
 [tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"
-
 [AppFW-APP_install_sequences]: pictures/AppFW-APP_install_sequences.svg
 [Security_model_history]: pictures/Security_model_history.svg
