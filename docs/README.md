@@ -1,5 +1,5 @@
-AGL framework, IoT.bzh proposal overview
-========================================
+AGL framework overview
+======================
 
 Foreword
 --------
