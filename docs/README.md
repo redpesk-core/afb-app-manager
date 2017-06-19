@@ -79,7 +79,7 @@ This documentation explains the framework created by IoT.bzh
 by rewriting the Tizen Application Framework. Be aware of the
 previous foreword.
 
-
+<!-- pagebreak -->
 Overview
 --------
 
@@ -87,7 +87,7 @@ The figure below shows the major components of the framework
 and their interactions going through the following scenario:
 APPLICATION installs an other application and then launch it.
 
-![AppFW-APP_install_sequences][AppFW-APP_install_sequences]
+![AppFW-APP_install_sequences][AppFW-APP_install_sequences]{style width:70%}
 
 Let follow the sequence of calls:
 

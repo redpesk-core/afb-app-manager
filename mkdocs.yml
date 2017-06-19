@@ -2,7 +2,7 @@ site_name: AGL Application Framework
 theme: readthedocs
 docs_dir: docs
 pages:
-  - 'Overview' : 'index.md'
+  - 'Overview' : 'README.md'
   - 'Quick tutorial' : 'quick-tutorial.md'
   - 'The frameworks' :
       - 'The application framework': 'application-framework.md'

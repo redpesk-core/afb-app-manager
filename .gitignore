@@ -5,3 +5,5 @@ build/
 tests-w3c/
 prepare-build.sh
 
+node_modules/
+_book/
