@@ -1,5 +1,6 @@
 {
     "title": "Application Framework Service",
+    "subtitle": "",
     "description": "Application Framework Service of Automotive Grade Linux",
     "keywords": "AGL, Development, application, framework, service",
     "author": "IoT.Bzh Team",

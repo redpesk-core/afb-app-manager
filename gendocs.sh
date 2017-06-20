@@ -1,8 +1,12 @@
 #!/bin/bash
 
-OUTFILENAME="Application-Framework-Service"
+OUTFILENAME="Application-Framework-Service-Guide"
 
 SCRIPT=$(basename $BASH_SOURCE)
+
+VERSION=$(grep '"version":' $(dirname $BASH_SOURCE)/book.json | cut -d'"' -f 4)
+[ "$VERSION" != "" ] && OUTFILENAME="${OUTFILENAME}_${VERSION}"
+
 
 function usage() {
 	cat <<EOF >&2
@@ -59,6 +63,10 @@ if [ "$DO_ACTION" = "pdf" -o "$DO_ACTION" = "serve" ]; then
     [ "$?" = "1" ] && { echo "You must install calibre first, using: 'sudo apt install calibre' or refer to https://calibre-ebook.com/download"; exit 1; }
 
     if [ "$DO_ACTION" = "pdf" ]; then
+
+        # Update cover when book.json has been changed
+        [[ $ROOTDIR/book.json -nt $ROOTDIR/docs/cover.jpg ]] && { echo "Update cover files"; $ROOTDIR/docs/resources/make_cover.sh || exit 1; }
+
 	    OUTFILE=$OUT_DIR/$OUTFILENAME.pdf
         $DRY $GITBOOK pdf $ROOTDIR $OUTFILE $DEBUG_FLAG
         [ "$?" = "0" ] && echo "PDF has been successfully generated in $OUTFILE"
