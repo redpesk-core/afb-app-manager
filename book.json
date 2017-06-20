@@ -22,8 +22,8 @@
         "pdf": "resources/ebook.css"
     },
 
-    "hidepageheaders": [2],
-    "hidepagefooters": [2],
+    "hidepageheaders": [],
+    "hidepagefooters": [],
 
     "plugins": [
         "regexplace"
