@@ -501,6 +501,7 @@ const char *wgt_info_param(const struct wgt_desc_feature *feature, const char *n
 	while(param) {
 		if (0 == strcmp(name, param->name))
 			return param->value;
+		param = param->next;
 	}
 	return NULL;
 }
