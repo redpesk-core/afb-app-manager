@@ -100,6 +100,8 @@ X-AFM--wgtdir={{:#metadata.install-dir}}
 X-AFM--workdir={{&#metadata.app-data-dir}}/{{id}}
 %nl
 
+Wants=sockets.target
+
 # Adds check to smack
 ConditionSecurity=smack
 %nl
@@ -138,6 +140,7 @@ Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
 {{^required-permission.urn:AGL:permission::public:hidden}}\
 %systemd-unit service afm-appli-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 {{/required-permission.urn:AGL:permission::public:hidden}}\
+
 
 ;---------------------------------------------------------------------------------
 ;----   text/html  application/vnd.agl.native  application/vnd.agl.service    ----
@@ -255,7 +258,7 @@ WantedBy=default.target
 
 [Socket]
 SmackLabel=*
-ListenStream=%t/bindings/{{name}}
+ListenStream=%t/apis/ws/{{name}}
 FileDescriptorName={{name}}
 
 {{#required-permission.urn:AGL:permission::public:hidden}}\
@@ -268,8 +271,8 @@ Service=afm-appli-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}.serv
 ;---------------------------------------------------------------------------------
 %nl
 [Install]
-WantedBy=default.target
-%systemd-unit wanted-by default.target
+WantedBy=sockets.target
+%systemd-unit wanted-by sockets.target
 ;---------------------------------------------------------------------------------
 
 %end systemd-unit
