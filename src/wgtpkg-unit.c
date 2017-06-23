@@ -497,7 +497,7 @@ static int do_send_reload(const struct generatedesc *desc)
 		reloadusr = systemd_daemon_reload(1);
 	if (reloadsys)
 		reloadsys = systemd_daemon_reload(0);
-	return reloadsys ? : reloadusr ? : 0;
+	return 0;
 }
 
 static int do_uninstall_units(void *closure, const struct generatedesc *desc)

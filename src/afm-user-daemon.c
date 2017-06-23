@@ -29,6 +29,7 @@
 #include "verbose.h"
 #include "utils-jbus.h"
 #include "utils-json.h"
+#include "utils-systemd.h"
 #include "afm.h"
 #include "afm-launch-mode.h"
 #ifdef LEGACY_MODE_WITHOUT_SYSTEMD
@@ -487,6 +488,9 @@ static void on_uninstall(struct sd_bus_message *smsg, const char *msg, void *unu
  */
 static void on_signal_changed(struct json_object *obj, void *unused)
 {
+	/* enforce daemon reload */
+	systemd_daemon_reload(1);
+
 	/* update the database */
 #ifdef LEGACY_MODE_WITHOUT_SYSTEMD
 	afm_db_update_applications(afdb);
