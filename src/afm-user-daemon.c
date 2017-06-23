@@ -490,6 +490,7 @@ static void on_signal_changed(struct json_object *obj, void *unused)
 {
 	/* enforce daemon reload */
 	systemd_daemon_reload(1);
+	systemd_unit_restart_name(1, "sockets.target");
 
 	/* update the database */
 #ifdef LEGACY_MODE_WITHOUT_SYSTEMD

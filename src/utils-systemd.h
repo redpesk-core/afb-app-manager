@@ -35,9 +35,11 @@ extern char *systemd_unit_dpath_by_name(int isuser, const char *name, int load);
 extern char *systemd_unit_dpath_by_pid(int isuser, unsigned pid);
 
 extern int systemd_unit_start_dpath(int isuser, const char *dpath);
+extern int systemd_unit_restart_dpath(int isuser, const char *dpath);
 extern int systemd_unit_stop_dpath(int isuser, const char *dpath);
 
 extern int systemd_unit_start_name(int isuser, const char *name);
+extern int systemd_unit_restart_name(int isuser, const char *name);
 extern int systemd_unit_stop_name(int isuser, const char *name);
 extern int systemd_unit_stop_pid(int isuser, unsigned pid);
 

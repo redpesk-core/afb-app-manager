@@ -57,8 +57,10 @@ static const char sdbi_unit[] = "org.freedesktop.systemd1.Unit";
 static const char sdbi_service[] = "org.freedesktop.systemd1.Service";
 static const char sdbm_reload[] = "Reload";
 static const char sdbm_start_unit[] = "StartUnit";
+static const char sdbm_restart_unit[] = "RestartUnit";
 static const char sdbm_stop_unit[] = "StopUnit";
 static const char sdbm_start[] = "Start";
+static const char sdbm_restart[] = "Restart";
 static const char sdbm_stop[] = "Stop";
 static const char sdbm_get_unit[] = "GetUnit";
 static const char sdbm_get_unit_by_pid[] = "GetUnitByPID";
@@ -289,6 +291,17 @@ static int unit_start(struct sd_bus *bus, const char *dpath)
 	return rc;
 }
 
+static int unit_restart(struct sd_bus *bus, const char *dpath)
+{
+	int rc;
+	struct sd_bus_message *ret = NULL;
+	sd_bus_error err = SD_BUS_ERROR_NULL;
+
+	rc = sd_bus_call_method(bus, sdb_destination, dpath, sdbi_unit, sdbm_restart, &err, &ret, "s", "replace");
+	sd_bus_message_unref(ret);
+	return rc;
+}
+
 static int unit_stop(struct sd_bus *bus, const char *dpath)
 {
 	int rc;
@@ -307,6 +320,17 @@ static int unit_start_name(struct sd_bus *bus, const char *name)
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_start_unit, &err, &ret, "ss", name, "replace");
+	sd_bus_message_unref(ret);
+	return rc;
+}
+
+static int unit_restart_name(struct sd_bus *bus, const char *name)
+{
+	int rc;
+	struct sd_bus_message *ret = NULL;
+	sd_bus_error err = SD_BUS_ERROR_NULL;
+
+	rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_restart_unit, &err, &ret, "ss", name, "replace");
 	sd_bus_message_unref(ret);
 	return rc;
 }
@@ -478,6 +502,15 @@ int systemd_unit_start_dpath(int isuser, const char *dpath)
 	return rc < 0 ? rc : unit_start(bus, dpath);
 }
 
+int systemd_unit_restart_dpath(int isuser, const char *dpath)
+{
+	int rc;
+	struct sd_bus *bus;
+
+	rc = get_bus(isuser, &bus);
+	return rc < 0 ? rc : unit_restart(bus, dpath);
+}
+
 int systemd_unit_stop_dpath(int isuser, const char *dpath)
 {
 	int rc;
@@ -495,6 +528,17 @@ int systemd_unit_start_name(int isuser, const char *name)
 	rc = get_bus(isuser, &bus);
 	if (rc >= 0)
 		rc = unit_start_name(bus, name);
+	return rc;
+}
+
+int systemd_unit_restart_name(int isuser, const char *name)
+{
+	int rc;
+	struct sd_bus *bus;
+
+	rc = get_bus(isuser, &bus);
+	if (rc >= 0)
+		rc = unit_restart_name(bus, name);
 	return rc;
 }
 
