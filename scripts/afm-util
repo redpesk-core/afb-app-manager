@@ -20,6 +20,7 @@ send() {
 		org.AGL.afm.user.$1 \
 		"string:$2" |
 	pretty
+	return ${PIPESTATUS[0]}
 }
 
 case "$1" in
