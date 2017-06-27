@@ -488,14 +488,15 @@ static void on_uninstall(struct sd_bus_message *smsg, const char *msg, void *unu
  */
 static void on_signal_changed(struct json_object *obj, void *unused)
 {
+#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
+	/* update the database */
+	afm_db_update_applications(afdb);
+#else
 	/* enforce daemon reload */
 	systemd_daemon_reload(1);
 	systemd_unit_restart_name(1, "sockets.target");
 
 	/* update the database */
-#ifdef LEGACY_MODE_WITHOUT_SYSTEMD
-	afm_db_update_applications(afdb);
-#else
 	afm_udb_update(afudb);
 #endif
 	/* re-propagate now */

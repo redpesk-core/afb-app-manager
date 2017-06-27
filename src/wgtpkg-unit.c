@@ -470,36 +470,6 @@ static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *d
 	return rc;
 }
 
-static int do_send_reload(const struct generatedesc *desc)
-{
-	int i;
-	int reloadsys, reloadusr;
-	const struct unitdesc *u;
-
-	reloadsys = reloadusr = 0;
-	for (i = 0 ; i < desc->nunits ; i++) {
-		u = &desc->units[i];
-		if (u->wanted_by != NULL) {
-			switch (u->scope) {
-			case unitscope_user:
-				reloadusr = 1;
-				break;
-			case unitscope_system:
-				reloadsys = 1;
-				break;
-			default:
-				break;
-			}
-		}
-	}
-
-	if (reloadusr)
-		reloadusr = systemd_daemon_reload(1);
-	if (reloadsys)
-		reloadsys = systemd_daemon_reload(0);
-	return 0;
-}
-
 static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 {
 	int rc, rc2;
@@ -527,9 +497,6 @@ static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 		if (rc2 < 0 && rc == 0)
 			rc = rc2;
 	}
-	rc2 = do_send_reload(desc);
-	if (rc2 < 0 && rc == 0)
-		rc = rc2;
 	return rc;
 }
 
@@ -564,9 +531,6 @@ static int do_install_units(void *closure, const struct generatedesc *desc)
 		if (rc < 0)
 			goto error;
 	}
-	rc = do_send_reload(desc);
-	if (rc < 0)
-		goto error;
 	return 0;
 error:
 	i = errno;

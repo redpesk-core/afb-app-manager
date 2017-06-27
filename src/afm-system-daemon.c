@@ -29,6 +29,7 @@
 #include "verbose.h"
 #include "utils-jbus.h"
 #include "utils-json.h"
+#include "utils-systemd.h"
 #include "afm.h"
 #include "afm-db.h"
 #include "wgt-info.h"
@@ -68,11 +69,21 @@ const char error_bad_request[] = "\"bad request\"";
 const char error_not_found[] = "\"not found\"";
 const char error_cant_start[] = "\"can't start\"";
 
+static void do_reloads()
+{
+#ifndef LEGACY_MODE_WITHOUT_SYSTEMD
+	/* enforce daemon reload */
+	systemd_daemon_reload(0);
+	systemd_unit_restart_name(0, "sockets.target");
+#endif
+}
+
 static void on_install(struct sd_bus_message *smsg, struct json_object *req, void *unused)
 {
 	const char *wgtfile;
 	const char *root;
 	int force;
+	int reload;
 	struct wgt_info *ifo;
 	struct json_object *resp;
 
@@ -82,12 +93,14 @@ static void on_install(struct sd_bus_message *smsg, struct json_object *req, voi
 		wgtfile = json_object_get_string(req);
 		root = rootdir;
 		force = 0;
+		reload = 1;
 		break;
 	case json_type_object:
 		wgtfile = j_string_at(req, "wgt", NULL);
 		if (wgtfile != NULL) {
 			root = j_string_at(req, "root", rootdir);
 			force = j_boolean_at(req, "force", 0);
+			reload = j_boolean_at(req, "reload", 1);
 			break;
 		}
 	default:
@@ -100,6 +113,10 @@ static void on_install(struct sd_bus_message *smsg, struct json_object *req, voi
 	if (ifo == NULL)
 		jbus_reply_error_s(smsg, "\"installation failed\"");
 	else {
+		/* reload if needed */
+		if (reload)
+			do_reloads();
+
 		/* build the response */
 		resp = json_object_new_object();
 		if(!resp || !j_add_string(resp, "added", wgt_info_desc(ifo)->idaver))
