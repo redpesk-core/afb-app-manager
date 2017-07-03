@@ -51,7 +51,40 @@ static const char* exec_type_strings[] = {
 	"application/vnd.agl.native"
 };
 
-static const char key_http_port[] = "X-AFM--http-port";
+static const char key_afm_prefix[] = "X-AFM-";
+static const char key_http_port[] = "http-port";
+
+/*
+ * normalize unit files: remove comments, remove heading blanks,
+ * make single lines
+ */
+static void normalize_unit_file(char *content)
+{
+	char *read, *write, c;
+
+	read = write = content;
+	c = *read++;
+	while (c) {
+		switch (c) {
+		case '\n':
+		case ' ':
+		case '\t':
+			c = *read++;
+			break;
+		case '#':
+		case ';':
+			do { c = *read++; } while(c && c != '\n');
+			break;
+		default:
+			*write++ = c;
+			do { *write++ = c = *read++; } while(c && c != '\n');
+			if (write - content >= 2 && write[-2] == '\\')
+				(--write)[-1] = ' ';
+			break;
+		}
+	}
+	*write = c;
+}
 
 static int get_port_cb(void *closure, const char *name, const char *path, int isuser)
 {
@@ -65,19 +98,27 @@ static int get_port_cb(void *closure, const char *name, const char *path, int is
 	if (rc < 0)
 		return rc;
 
+	/* normalize the unit file */
+	normalize_unit_file(content);
+
 	/* process the file */
-	iter = strstr(content, key_http_port);
+	iter = strstr(content, key_afm_prefix);
 	while (iter) {
-		iter += sizeof key_http_port - 1;
-		while(*iter && *iter != '=' && *iter != '\n')
+		iter += sizeof key_afm_prefix - 1;
+		if (*iter == '-')
 			iter++;
-		if (*iter == '=') {
-			while(*++iter == ' ');
-			p = atoi(iter);
-			if (p >= 0 && p < 32768)
-				((uint32_t*)closure)[p >> 5] |= (uint32_t)1 << (p & 31);
+		if (!strncmp(iter, key_http_port, sizeof key_http_port - 1)) {
+			iter += sizeof key_http_port - 1;
+			while(*iter && *iter != '=' && *iter != '\n')
+				iter++;
+			if (*iter == '=') {
+				while(*++iter == ' ');
+				p = atoi(iter);
+				if (p >= 0 && p < 32768)
+					((uint32_t*)closure)[p >> 5] |= (uint32_t)1 << (p & 31);
+			}
 		}
-		iter = strstr(iter, key_http_port);
+		iter = strstr(iter, key_afm_prefix);
 	}
 	free(content);
 	return 0;
@@ -95,6 +136,7 @@ static int get_port()
 		if (rc >= 0) {
 			for (rc = 1024 ; rc < 32768 && !~ports[rc >> 5] ; rc += 32);
 			if (rc == 32768) {
+				ERROR("Can't compute a valid port");
 				errno = EADDRNOTAVAIL;
 				rc = -1;
 			} else {
