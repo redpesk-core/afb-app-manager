@@ -6,11 +6,19 @@ fi
 export DBUS_SESSION_BUS_ADDRESS
 
 pretty() {
-	sed \
-		-e '/^method return .*/d' \
-		-e 's/^Error org.freedesktop.DBus.Error.Failed: "\?\(.*\)"\?$/ERROR: \1/' \
-		-e 's/^   string "\(.*\)"/\1/' \
-		-e 's/},/&\n/'
+	sed '	/^method return .*/d
+		s/^Error org.freedesktop.DBus.Error.Failed: "\?\(.*\)"\?$/ERROR: \1/
+		s/^   string "\(.*\)"/\1/
+		s:[[{,]:&\n:g
+		s: *[]}]:\n&:g
+	' |
+	sed '	s:^ *::
+		s: *$::
+		/[]}],*$/ {x;s:...::;x}
+		G
+		/[[{]\n/ {x;s:$:   :;x}
+		s:^\(.*[^\n]\)\n\( *\)$:\2\1:
+	'
 }
 
 send() {
