@@ -231,12 +231,10 @@ ExecStart={{:#metadata.install-dir}}/{{content.src}}
 ; auto start
 ;---------------------------------------------------------------------------------
 {{#required-permission.urn:AGL:permission::system:run-by-default}}
-{{^provided-api}}
 %nl
 [Install]
 WantedBy=default.target
 %systemd-unit wanted-by default.target
-{{/provided-api}}
 {{/required-permission.urn:AGL:permission::system:run-by-default}}
 
 %end systemd-unit
