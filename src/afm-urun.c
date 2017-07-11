@@ -290,10 +290,12 @@ struct json_object *afm_urun_list(struct afm_udb *db)
 			pid = systemd_unit_pid_of_dpath(isuser, udpath);
 			if (pid > 0 && j_read_string_at(appli, "id", &id)) {
 				state = systemd_unit_state_of_dpath(isuser, udpath);
-				desc = mkstate(id, pid, pid, state);
-				if (desc && json_object_array_add(result, desc) == -1) {
-					ERROR("can't add desc %s to result", json_object_get_string(desc));
-					json_object_put(desc);
+				if (state == SysD_State_Active) {
+					desc = mkstate(id, pid, pid, state);
+					if (desc && json_object_array_add(result, desc) == -1) {
+						ERROR("can't add desc %s to result", json_object_get_string(desc));
+						json_object_put(desc);
+					}
 				}
 			}
 		}
@@ -325,7 +327,6 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid)
 	/* get the dpath */
 	dpath = systemd_unit_dpath_by_pid(1 /* TODO: isuser? */, (unsigned)runid);
 	if (!dpath) {
-		result = NULL;
 		errno = EINVAL;
 		WARNING("searched runid %d not found", runid);
 	} else {
@@ -340,11 +341,11 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid)
 			 && j_read_string_at(appli, "id", &id)) {
 				pid = systemd_unit_pid_of_dpath(isuser, udpath);
 				state = systemd_unit_state_of_dpath(isuser, dpath);
-				result = mkstate(id, runid, pid, state);
+				if (state == SysD_State_Active)
+					result = mkstate(id, runid, pid, state);
 				goto end;
 			}
 		}
-		result = NULL;
 		errno = ENOENT;
 		WARNING("searched runid %d of dpath %s isn't an applications", runid, dpath);
 end:
