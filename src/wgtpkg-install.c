@@ -188,12 +188,13 @@ static int check_temporary_constraints(const struct wgt_desc *desc)
 	result  = check_valid_string(desc->id, "id");
 	result |= check_valid_string(desc->version, "version");
 	result |= check_valid_string(desc->ver, "ver");
-	result |= check_defined(desc->icons, "icon");
 	result |= check_defined(desc->content_src, "content");
+	if (desc->icons)
+		result |= check_defined(desc->icons->src, "icon.src");
 	if (result)
 		return result;
 
-	if (desc->icons->next) {
+	if (desc->icons && desc->icons->next) {
 		ERROR("widget has more than one icon defined (temporary constraints)");
 		errno = EINVAL;
 		result = -1;
@@ -357,6 +358,9 @@ static int install_icon(const struct wgt_desc *desc)
 	char target[PATH_MAX];
 	int rc;
 
+	if (!desc->icons)
+		return 0;
+
 	create_directory(FWK_ICON_DIR, 0755, 1);
 	rc = snprintf(link, sizeof link, "%s/%s", FWK_ICON_DIR, desc->idaver);
 	if (rc >= (int)sizeof link) {
@@ -411,7 +415,7 @@ static int install_security(const struct wgt_desc *desc)
 	}
 	len--;
 	*head++ = '/';
-	icon = desc->icons->src;
+	icon = desc->icons ? desc->icons->src : NULL;
 	lic = (unsigned)strlen(icon);
 	n = file_count();
 	i = 0;
@@ -424,7 +428,7 @@ static int install_security(const struct wgt_desc *desc)
 			goto error2;
 		}
 		strcpy(head, f->name);
-		if (lf <= lic && !memcmp(f->name, icon, lf) && (!f->name[lf] || f->name[lf] == '/'))
+		if (lf <= lic && icon && !memcmp(f->name, icon, lf) && (!f->name[lf] || f->name[lf] == '/'))
 			rc = secmgr_path_public_read_only(path);
 		else
 			rc = secmgr_path_read_only(path);
