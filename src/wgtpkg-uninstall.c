@@ -87,8 +87,8 @@ int uninstall_widget(const char *idaver, const char *root)
 	rc = snprintf(path, sizeof path, "%s/%s", FWK_ICON_DIR, idaver);
 	assert(rc < (int)sizeof path);
 	rc = unlink(path);
-	if (rc < 0)
-		ERROR("can't removing '%s': %m", path);
+	if (rc < 0 && errno != ENOENT)
+		ERROR("can't remove '%s': %m", path);
 
 	/* removes the parent directory if empty */
 	rc2 = snprintf(path, sizeof path, "%s/%s", root, id);
@@ -97,7 +97,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	if (rc < 0 && errno == ENOTEMPTY)
 		return rc;
 	if (rc < 0) {
-		ERROR("error while removing directory '%s': %m", path);
+		ERROR("while removing directory '%s': %m", path);
 		return -1;
 	}
 
