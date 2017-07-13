@@ -133,6 +133,10 @@ WorkingDirectory=-{{&#metadata.app-data-dir}}/{{id}}
 ExecStartPre=/bin/mkdir -p {{&#metadata.app-data-dir}}/{{id}}
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
 
+; Needed to enable debug
+Environment=AFM_ID={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+EnvironmentFile=-/var/run/afm-debug/{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}.env
+
 %systemd-unit user
 {{#required-permission.urn:AGL:permission::public:hidden}}\
 %systemd-unit service afm-service-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}

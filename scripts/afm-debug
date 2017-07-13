@@ -1,0 +1,90 @@
+#!/bin/bash
+
+###########################################################################
+# Copyright 2017 IoT.bzh
+#
+# Author: Stephane Desneux <sdx@iot.bzh>
+#         Sebastien Douheret <sebastien@iot.bzh>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+###########################################################################
+
+# This script should be invoked by gdb client through a ssh connection.
+# It relays gdbmi protocol from gdbserver to gdb client
+#
+# WARNING: nothing should be sent to stdout except gdbserver output
+
+# FIXME: add support of --debugger option to support tcf or gdb-remote
+
+
+function error() {
+	echo "ERR: $@" >&2
+	exit 1
+}
+function info() {
+	echo "INF: $@" >&2
+}
+
+# setup debug dir (shared with service file)
+DBGDIR=/var/run/afm-debug
+mkdir -p $DBGDIR
+
+# check application name passed as first arg by gdb
+APP=$1
+[[ -z "$APP" ]] && error "Invalid application name"
+
+# redirect to log file
+exec 2>$DBGDIR/$APP.dbgclt.log
+
+# activate DEBUG in environment file sourced in systemd service
+AFB_WAIT_POINT="start-start"
+echo "AFB_DEBUG_WAIT=$AFB_WAIT_POINT" >$DBGDIR/$APP.env
+
+# remove debug env file on exit
+trap "rm $DBGDIR/$APP.*" STOP INT QUIT EXIT
+
+# ask appfw to start application
+pid=$(afm-util start $APP)
+[[ -z "$pid" || ! -e "/proc/$pid" ]] && error "Failed to start application $APP"
+info "$APP started with pid=$pid"
+
+# wait debugging process is stop/waiting at start-start point
+AFB_FILE=/tmp/afb-debug-$pid
+tmo=100
+info "Waiting for process stopped..."
+while [[ ! -e "$AFB_FILE" ]]; do
+    sleep 0.1
+    tmo=$(expr $tmo - 1)
+    [[ "$tmo" == "0" ]] && error "Timeout waiting for process $pid stopped"
+done
+
+info "Waiting for process stopped..."
+AFB_WAIT_FILE=/tmp/afb-debug-$pid
+tmo=100
+res=1
+while [[ "$res" != "0" ]]; do
+    sleep 0.1
+    tmo=$(expr $tmo - 1)
+    [[ "$tmo" == "0" ]] && error "Timeout waiting for process $pid stopped"
+    grep $AFB_WAIT_POINT $AFB_WAIT_FILE > /dev/null 2>&1
+    res=$?
+done
+
+# debugging
+info "Attaching gdbserver to pid $pid ..."
+gdbserver --attach - $pid
+
+# end of debug session
+info "proxy connection terminated - killing $APP (pid $pid)"
+afm-util kill $pid >&2
+info "$APP killed"
