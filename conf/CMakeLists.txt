@@ -20,6 +20,7 @@ cmake_minimum_required(VERSION 2.8)
 
 configure_file(afm-launch.conf.in afm-launch.conf)
 configure_file(afm-unit.conf.in afm-unit.conf)
+configure_file(afm-unit-debug.conf.in afm-unit-debug.conf)
 configure_file(afm-system-daemon.service.in afm-system-daemon.service)
 configure_file(afm-user-daemon.service.in afm-user-daemon.service)
 
@@ -34,7 +35,12 @@ if(NOT USE_SDK)
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-launch.conf           DESTINATION ${afm_confdir})
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
 	install(DIRECTORY DESTINATION ${afm_confdir}/unit.env.d)
+
+	if(AGL_DEVEL)
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit-debug.conf       DESTINATION ${afm_confdir} RENAME afm-unit.conf)
+	else()
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
+	endif()
 endif()
 
