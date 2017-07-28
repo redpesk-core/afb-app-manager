@@ -1,25 +1,23 @@
-The application framework daemons
-=================================
+# The application framework daemons
 
-Foreword
---------
+## Foreword
 
 This document describes application framework daemons
-FCS (Fully Conform to Specification) implementation is still under development.
+FCS (Fully Conform to Specification) implementation is still under development.  
 It may happen that current implementation somehow diverges with specifications.
 
-Introduction
-------------
+## Introduction
 
 Daemons ***afm-user-daemon*** and ***afm-system-daemon*** handle applications
-life. Understand that they will manage operations like:
+life.  
+Understand that they will manage operations like:
 
- - ***installation***
- - ***uninstallation***
- - ***running***
- - ***suspend***
- - ***inventory***
- - ...
+- ***installation***
+- ***uninstallation***
+- ***running***
+- ***suspend***
+- ***inventory***
+- ...
 
 In addition, they ensure that operations use the security framework as needed
 and that applications are executed in the correct context.
@@ -32,13 +30,13 @@ The figure below summarizes the situation of both **afm-system-daemon** and
 
 ![afm-daemons][afm-daemons]{style width:65%;}
 
-The D-Bus interface
--------------------
+## The D-Bus interface
 
 ### Overview of the dbus interface
 
 The ***afm daemons*** takes theirs orders from the session instance
-of D-Bus. The use of D-Bus is great because it allows to implement
+of D-Bus.  
+The use of D-Bus is great because it allows to implement
 discovery and signaling.
 
 The dbus session is by default addressed by environment
@@ -51,47 +49,52 @@ at the object of path ***/org/AGL/afm/[user|system]*** on the interface
 ***org.AGL.afm.[user|system]***  for the below detailed members for the
 ***afm-system-daemon***:
 
- - ***install***
- - ***uninstall***
+- ***install***
+- ***uninstall***
 
 And for ***afm-user-daemon***:
 
- - ***runnables***
- - ***detail***
- - ***start***
- - ***once***
- - ***terminate***
- - ***pause***
- - ***resume***
- - ***runners***
- - ***state***
- - ***install***
- - ***uninstall***
+- ***runnables***
+- ***detail***
+- ***start***
+- ***once***
+- ***terminate***
+- ***pause***
+- ***resume***
+- ***runners***
+- ***state***
+- ***install***
+- ***uninstall***
 
-D-Bus is mainly used for signaling and discovery. Its optimized
-typed protocol is not used except for transmitting only one string
-in both directions.
+D-Bus is mainly used for signaling and discovery.  
+Its optimized typed protocol is not used except for transmitting
+ only one string in both directions.
 
 The client and the service are using JSON serialization to
-exchange data. Signature of any member of the D-Bus interface is
-***string -> string*** for ***JSON -> JSON***. This is the normal case, if there
-is an error, current implementation returns a dbus error that is a string.
+exchange data.  
+Signature of any member of the D-Bus interface is
+***string -> string*** for ***JSON -> JSON***.  
+This is the normal case, if there is an error, current implementation 
+returns a dbus error that is a string.
 
 Here are examples using *dbus-send*, here to install an application from a
 widget file:
 
-    dbus-send --session --print-reply \
-        --dest=org.AGL.afm.system \
-        /org/AGL/afm/system \
-        org.AGL.afm.system.install 'string:"/tmp/appli.wgt"
-
+```bash
+dbus-send --session --print-reply \
+    --dest=org.AGL.afm.system \
+    /org/AGL/afm/system \
+    org.AGL.afm.system.install 'string:"/tmp/appli.wgt"
+```
 
 And here, to query data on installed applications that can be run:
 
-    dbus-send --session --print-reply \
-        --dest=org.AGL.afm.user \
-        /org/AGL/afm/user \
-        org.AGL.afm.user.runnables string:true
+```bash
+dbus-send --session --print-reply \
+    --dest=org.AGL.afm.user \
+    /org/AGL/afm/user \
+    org.AGL.afm.user.runnables string:true
+```
 
 ### The protocol over D-Bus
 
@@ -101,11 +104,9 @@ are considered as self-explanatory.
 
 The D-Bus interface is defined by:
 
- * **DESTINATION**: org.AGL.afm.[user|system]
-
- * **PATH**: /org/AGL/afm/[user|system]
-
- * **INTERFACE**: org.AGL.afm.[user|system]
+- **DESTINATION**: org.AGL.afm.[user|system]
+- **PATH**: /org/AGL/afm/[user|system]
+- **INTERFACE**: org.AGL.afm.[user|system]
 
 #### Method org.AGL.afm.system.install
 
@@ -129,29 +130,34 @@ a flag to *force* reinstallation, and, optionally, a *root* directory.
 
 Either just a string being the absolute path of the widget file:
 
-    "/a/path/driving/to/the/widget"
+```bash
+"/a/path/driving/to/the/widget"
+```
 
 Or an object:
 
-    {
-      "wgt": "/a/path/to/the/widget",
-      "force": false,
-      "root": "/a/path/to/the/root"
-    }
+```json
+{
+  "wgt": "/a/path/to/the/widget",
+  "force": false,
+  "root": "/a/path/to/the/root"
+}
+```
 
 "wgt" and "root" must be absolute paths.
 
 **output**: An object with the field "added" being the string for
 the id of the added application.
 
-    {"added":"appli@x.y"}
+```json
+{"added":"appli@x.y"}
+```
 
 ---
 
 #### Method org.AGL.afm.system.uninstall
 
 **Description**: Uninstall an application from its id.
-
 
 Note that this methods is a simple method accessor of
 ***org.AGL.afm.system.uninstall*** from ***afm-system-daemon***.
@@ -163,14 +169,18 @@ After the uninstallation and before returning to the sender,
 
 Either a string:
 
-    "appli@x.y"
+```bash
+"appli@x.y"
+```
 
 Or an object:
 
-    {
-      "id": "appli@x.y",
-      "root": "/a/path/to/the/root"
-    }
+```json
+{
+  "id": "appli@x.y",
+  "root": "/a/path/to/the/root"
+}
+```
 
 **output**: the value 'true'.
 
@@ -178,32 +188,37 @@ Or an object:
 
 #### Method org.AGL.afm.user.detail
 
-
 **Description**: Get details about an application from its id.
 
 **Input**: the id of the application as below.
 
 Either just a string:
 
-    "appli@x.y"
+```bash
+"appli@x.y"
+```
 
 Or an object having the field "id" of type string:
 
-    {"id":"appli@x.y"}
+```json
+{"id":"appli@x.y"}
+```
 
 **Output**: A JSON object describing the application containing
 the fields described below.
 
-    {
-      "id":          string, the application id (id@version)
-      "version":     string, the version of the application
-      "width":       integer, requested width of the application
-      "height":      integer, requested height of the application
-      "name":        string, the name of the application
-      "description": string, the description of the application
-      "shortname":   string, the short name of the application
-      "author":      string, the author of the application
-    }
+```json
+{
+  "id":          string, the application id (id@version)
+  "version":     string, the version of the application
+  "width":       integer, requested width of the application
+  "height":      integer, requested height of the application
+  "name":        string, the name of the application
+  "description": string, the description of the application
+  "shortname":   string, the short name of the application
+  "author":      string, the author of the application
+}
+```
 
 ---
 
@@ -243,28 +258,33 @@ a flag to *force* reinstallation and/or a *root* directory.
 
 Simple form a simple string containing the absolute widget path:
 
-    "/a/path/driving/to/the/widget"
+```bash
+"/a/path/driving/to/the/widget"
+```
 
 Or an object:
 
-    {
-      "wgt": "/a/path/to/the/widget",
-      "force": false,
-      "root": "/a/path/to/the/root"
-    }
+```json
+{
+  "wgt": "/a/path/to/the/widget",
+  "force": false,
+  "root": "/a/path/to/the/root"
+}
+```
 
 ***wgt*** and ***root*** MUST be absolute paths.
 
 **output**: An object containing field "added" to use as application ID.
 
-    {"added":"appli@x.y"}
+```json
+{"added":"appli@x.y"}
+```
 
 ---
 
 #### Method org.AGL.afm.user.uninstall
 
 **Description**: Uninstall an application from its id.
-
 
 Note that this methods is a simple accessor to
 ***org.AGL.afm.system.uninstall*** method from ***afm-system-daemon***.
@@ -277,14 +297,18 @@ application *root*.
 
 Either a string:
 
-    "appli@x.y"
+```bash
+"appli@x.y"
+```
 
 Or an object:
 
-    {
-      "id": "appli@x.y",
-      "root": "/a/path/to/the/root"
-    }
+```json
+{
+  "id": "appli@x.y",
+  "root": "/a/path/to/the/root"
+}
+```
 
 **output**: the value 'true'.
 
@@ -299,12 +323,16 @@ start *mode* as below.
 
 Either just a string:
 
-    "appli@x.y"
+```bash
+"appli@x.y"
+```
 
 Or an object containing field "id" of type string and
 optionally a field mode:
 
-    {"id":"appli@x.y","mode":"local"}
+```json
+{"id":"appli@x.y","mode":"local"}
+```
 
 The field "mode" is a string equal to either "local" or "remote".
 
@@ -322,11 +350,15 @@ The field "mode" is a string equal to either "local" or "remote".
 
 Either just a string:
 
-    "appli@x.y"
+```bash
+"appli@x.y"
+```
 
 Or an object containing field "id" of type string.
 
-    {"id":"appli@x.y"}
+```json
+{"id":"appli@x.y"}
+```
 
 **output**: The *state* of the application retrieved or launched.
 See *org.AGL.afm.user.state* to get a description of the returned
@@ -392,19 +424,25 @@ Use **org.AGL.afm.user.resume** instead.
 
 **Input**: The *runid* (integer) of the running instance inspected.
 
-**output**: An object describing instance state. It contains:
-the runid (integer), the pids of the processes as an array starting
-with the group leader, the id of the running application (string),
-the state of the application (string either: "starting", "running", "paused").
+**output**: An object describing instance state.  
+It contains:
+
+- the runid (integer)
+- the pids of the processes as an array starting
+- with the group leader
+- the id of the running application (string)
+- the state of the application (string either: "starting", "running", "paused").
 
 Example of returned state:
 
+```json
     {
       "runid": 2,
       "pids": [ 435, 436 ],
       "state": "running",
       "id": "appli@x.y"
     }
+```
 
 ---
 
@@ -417,18 +455,18 @@ Example of returned state:
 **output**: An array of states, one per running instance, as returned by
 the method ***org.AGL.afm.user.state***.
 
-Starting **afm daemons**
-----------------------
+## Starting **afm daemons**
 
 ***afm-system-daemon*** and ***afm-user-daemon*** are launched as systemd
-services attached to system and user respectively. Normally, service files are
-locatedat */lib/systemd/system/afm-system-daemon.service* and
+services attached to system and user respectively.  
+Normally, service files are locatedat */lib/systemd/system/afm-system-daemon.service* and
 */usr/lib/systemd/user/afm-user-daemon.service*.
 
 ### ***afm-system-daemon*** options
 
 The options for launching **afm-system-daemon** are:
 
+```bash
     -r
     --root directory
 
@@ -456,11 +494,13 @@ The options for launching **afm-system-daemon** are:
     --help
 
          Prints a short help.
+```
 
 ### ***afm-user-daemon*** options
 
 The options for launching **afm-user-daemon** are:
 
+```bash
     -a
     --application directory
 
@@ -511,9 +551,9 @@ The options for launching **afm-user-daemon** are:
     --help
 
          Prints a short help.
+```
 
-Tasks of **afm-user-daemon**
-----------------------------
+## Tasks of **afm-user-daemon**
 
 ### Maintaining list of applications
 
@@ -522,12 +562,13 @@ applications and load in memory a list of available applications
 accessible by current user.
 
 When **afm-system-daemon** installs or removes an application.
-On success it sends the signal *org.AGL.afm.system.changed*.
+On success it sends the signal *org.AGL.afm.system.changed*.  
 When receiving such a signal, **afm-user-daemon** rebuilds its
 applications list.
 
 **afm-user-daemon** provides the data it collects about
-applications to its clients. Clients may either request the full list
+applications to its clients.  
+Clients may either request the full list
 of available applications or a more specific information about a
 given application.
 
@@ -538,8 +579,8 @@ Systemd builds a secure environment for the application
 before starting it.
 
 Once launched, running instances of application receive
-a runid that identify them. To make interface with systemd
-evident, the pid is the runid.
+a runid that identify them.  
+To make interface with systemd evident, the pid is the runid.
 
 ### Managing instances of running applications
 
@@ -548,7 +589,8 @@ that it launched.
 
 When owning the right permissions, a client can get the list
 of running instances and details about a specific
-running instance. It can also terminate a given application.
+running instance.  
+It can also terminate a given application.
 
 ### Installing and uninstalling applications
 
@@ -556,58 +598,50 @@ If the client own the right permissions,
 **afm-user-daemon** delegates that task
 to **afm-system-daemon**.
 
-Using ***afm-util***
---------------------
+## Using ***afm-util***
 
 The command line tool ***afm-util*** uses dbus-send to send
-orders to **afm-user-daemon**. This small scripts allows to
-send command to ***afm-user-daemon*** either interactively
-at shell prompt or scriptically.
+orders to **afm-user-daemon**.  
+This small scripts allows to send command to ***afm-user-daemon*** either
+interactively at shell prompt or scriptically.
 
-The syntax is simple: it accept a command and when requires attached arguments.
+The syntax is simple:
+
+- it accept a command and when requires attached arguments.
 
 Here is the summary of ***afm-util***:
 
- - **afm-util runnables      **:
+- **afm-util runnables      **:  
+  list the runnable widgets installed
 
-   list the runnable widgets installed
+- **afm-util install    wgt **:  
+  install the wgt file
 
- - **afm-util install    wgt **:
+- **afm-util uninstall  id  **:  
+  remove the installed widget of id
 
-   install the wgt file
+- **afm-util detail     id  **:  
+  print detail about the installed widget of id
 
- - **afm-util uninstall  id  **:
+- **afm-util runners        **:  
+  list the running instance
 
-   remove the installed widget of id
+- **afm-util start      id  **:  
+  start an instance of the widget of id
 
- - **afm-util detail     id  **:
+- **afm-util once      id  **:  
+  run once an instance of the widget of id
 
-   print detail about the installed widget of id
+- **afm-util terminate  rid **:  
+  terminate the running instance rid
 
- - **afm-util runners        **:
-
-   list the running instance
-
- - **afm-util start      id  **:
-
-   start an instance of the widget of id
-
- - **afm-util once      id  **:
-
-   run once an instance of the widget of id
-
- - **afm-util terminate  rid **:
-
-   terminate the running instance rid
-
- - **afm-util state      rid **:
-
-   get status of the running instance rid
-
+- **afm-util state      rid **:  
+  get status of the running instance rid
 
 Here is how to list applications using ***afm-util***:
 
+```bash
     afm-util runnables
-
+```
 
 [afm-daemons]: pictures/afm-daemons.svg
