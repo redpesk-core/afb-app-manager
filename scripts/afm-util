@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ "x" = "x${DBUS_SESSION_BUS_ADDRESS}" ]; then
 	DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$UID/bus"
