@@ -109,8 +109,8 @@ ConditionSecurity=smack
 # Automatic bound to required api
 {{#required-api}}
 {{#value=auto|ws}}
-BindsTo=afm-api-ws-{{name}}
-After=afm-api-ws-{{name}}
+BindsTo=afm-api-ws-{{name}}.socket
+After=afm-api-ws-{{name}}.socket
 {{/value=auto|ws}}
 {{/required-api}}
 %nl
