@@ -132,6 +132,7 @@ SuccessExitStatus=0 SIGKILL
 WorkingDirectory=-{{&#metadata.app-data-dir}}/{{id}}
 ExecStartPre=/bin/mkdir -p {{&#metadata.app-data-dir}}/{{id}}
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
+Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
 
 %systemd-unit user
 {{#required-permission.urn:AGL:permission::public:hidden}}\
