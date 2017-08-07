@@ -388,6 +388,37 @@ static int install_exec_flag(const struct wgt_desc *desc)
 	return for_all_content(desc, set_exec_flag);
 }
 
+static int install_file_properties(const struct wgt_desc *desc)
+{
+	int rc, rc2;
+	struct wgt_desc_feature *feat;
+	struct wgt_desc_param *param;
+
+	rc = 0;
+	feat = desc->features;
+	while (feat) {
+		if (!strcmp(feat->name, "urn:AGL:widget:file-properties")) {
+			param = feat->params;
+			while (param) {
+				if (!strcmp(param->value, "executable")) {
+					rc2 = fchmodat(workdirfd, param->name, 0755, 0);
+					if (rc2 < 0)
+						ERROR("can't make executable the file %s: %m", param->name);
+				} else {
+					ERROR("unknown file property %s for %s", param->value, param->name);
+					errno = EINVAL;
+					rc2 = -1;
+				}
+				if (rc2 < 0 && !rc)
+					rc = rc2;
+				param = param->next;
+			}
+		}
+		feat = feat->next;
+	}
+	return rc;
+}
+
 static int install_security(const struct wgt_desc *desc)
 {
 	char path[PATH_MAX], *head;
@@ -500,6 +531,9 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 		goto error4;
 
 	if (install_exec_flag(desc))
+		goto error4;
+
+	if (install_file_properties(desc))
 		goto error4;
 
 	port = get_port();
