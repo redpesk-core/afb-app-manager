@@ -142,6 +142,8 @@ Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
 %systemd-unit service afm-appli-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 {{/required-permission.urn:AGL:permission::public:hidden}}\
 
+Environment=LD_LIBRARY_PATH=$ORIGIN/lib
+
 
 ;---------------------------------------------------------------------------------
 ;----   text/html  application/vnd.agl.native  application/vnd.agl.service    ----
@@ -221,8 +223,6 @@ ExecStart=/usr/bin/afb-daemon \
 ;----                 application/x-executable                                ----
 ;---------------------------------------------------------------------------------
 {{#content.type=application/x-executable}}
-
-Environment=LD_LIBRARY_PATH=$ORIGIN/$LIB
 
 ExecStart={{:#metadata.install-dir}}/{{content.src}}
 
