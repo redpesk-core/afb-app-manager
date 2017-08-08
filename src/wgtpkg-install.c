@@ -295,6 +295,7 @@ static int check_one_content(const char *src, const char *type)
 {
 	int rc;
 	struct stat s;
+	int fhtdocs, serr;
 
 	if (!src) {
 		ERROR("a content src is missing");
@@ -304,6 +305,16 @@ static int check_one_content(const char *src, const char *type)
 		/* TODO: when dealing with HTML and languages, the check should
 		 * include i18n path search of widgets */
 		rc = fstatat(workdirfd, src, &s, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
+		if (rc < 0) {
+			serr = errno;
+			fhtdocs = openat(workdirfd, "htdocs", O_DIRECTORY|O_PATH);
+			if (fhtdocs >= 0) {
+				rc = fstatat(fhtdocs, src, &s, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
+				serr = errno;
+				close(fhtdocs);
+			}
+			errno = serr;
+		}
 		if (rc < 0)
 			ERROR("can't get info on content %s: %m", src);
 		else if (!S_ISREG(s.st_mode)) {
