@@ -144,6 +144,10 @@ Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
 
 Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 
+SyslogIdentifier={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
 
 ;---------------------------------------------------------------------------------
 ;----   text/html  application/vnd.agl.native  application/vnd.agl.service    ----
@@ -155,6 +159,12 @@ X-AFM--http-port={{:#metadata.http-port}}
 {{/content.type=application/vnd.agl.service}}
 
 ExecStart=/usr/bin/afb-daemon \
+	--name {{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
+	--rootdir={{:#metadata.install-dir}} \
+	--workdir={{&#metadata.app-data-dir}}/{{id}} \
+	{{#content.type=application/vnd.agl.service}}\
+		--no-httpd \
+	{{/content.type=application/vnd.agl.service}}\
 	{{^content.type=application/vnd.agl.service}}\
 		--port={{:#metadata.http-port}} \
 		--random-token \
@@ -165,8 +175,6 @@ ExecStart=/usr/bin/afb-daemon \
 			--roothttp=htdocs \
 		{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
 	{{/content.type=application/vnd.agl.service}}\
-	--rootdir={{:#metadata.install-dir}} \
-	--workdir={{&#metadata.app-data-dir}}/{{id}} \
 	{{#required-permission.urn:AGL:permission::public:applications:read}}\
 		--alias=/icons:{{:#metadata.icons-dir}} \
 	{{/required-permission.urn:AGL:permission::public:applications:read}}\
@@ -206,9 +214,6 @@ ExecStart=/usr/bin/afb-daemon \
 			--dbus-server={{name}} \
 		{{/value=dbus}}\
 	{{/provided-api}}\
-	{{#content.type=application/vnd.agl.service}}\
-		--no-httpd \
-	{{/content.type=application/vnd.agl.service}}\
 	{{#content.type=text/html}}\
 		--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t
 	{{/content.type=text/html}}\

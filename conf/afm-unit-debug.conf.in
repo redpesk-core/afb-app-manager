@@ -148,6 +148,10 @@ EnvironmentFile=-/var/run/afm-debug/{{idaver}}{{^#target=main}}@{{:#target}}{{/#
 
 Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 
+SyslogIdentifier={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
 
 ;---------------------------------------------------------------------------------
 ;----   text/html  application/vnd.agl.native  application/vnd.agl.service    ----
@@ -157,10 +161,11 @@ Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 X-AFM--http-port={{:#metadata.http-port}}
 
 ExecStart=/usr/bin/afb-daemon \
-	--port={{:#metadata.http-port}} \
-	--token=HELLO \
+	--name {{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
+	--port={{:#metadata.http-port}} \
+	--token=HELLO \
 	{{#content.type=application/vnd.agl.service}} \
 		--roothttp=. \
 	{{/content.type=application/vnd.agl.service}} \
