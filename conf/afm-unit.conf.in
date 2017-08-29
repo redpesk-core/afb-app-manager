@@ -158,15 +158,15 @@ ExecStart=/usr/bin/afb-daemon \
 	{{^content.type=application/vnd.agl.service}}\
 		--port={{:#metadata.http-port}} \
 		--random-token \
+		{{#required-permission.urn:AGL:permission::public:no-htdocs}}\
+			--roothttp=. \
+		{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
+		{{^required-permission.urn:AGL:permission::public:no-htdocs}}\
+			--roothttp=htdocs \
+		{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
 	{{/content.type=application/vnd.agl.service}}\
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
-	{{#required-permission.urn:AGL:permission::public:no-htdocs}}\
-		--roothttp=. \
-	{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
-	{{^required-permission.urn:AGL:permission::public:no-htdocs}}\
-		--roothttp=htdocs \
-	{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
 	{{#required-permission.urn:AGL:permission::public:applications:read}}\
 		--alias=/icons:{{:#metadata.icons-dir}} \
 	{{/required-permission.urn:AGL:permission::public:applications:read}}\
@@ -206,15 +206,15 @@ ExecStart=/usr/bin/afb-daemon \
 			--dbus-server={{name}} \
 		{{/value=dbus}}\
 	{{/provided-api}}\
+	{{#content.type=application/vnd.agl.service}}\
+		--no-httpd \
+	{{/content.type=application/vnd.agl.service}}\
 	{{#content.type=text/html}}\
 		--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t
 	{{/content.type=text/html}}\
 	{{#content.type=application/vnd.agl.native}}\
 		--exec {{:#metadata.install-dir}}/{{content.src}} @p @t
-	{{/content.type=application/vnd.agl.native}}\
-	{{#content.type=application/vnd.agl.service}}\
-		--no-httpd
-	{{/content.type=application/vnd.agl.service}}
+	{{/content.type=application/vnd.agl.native}}
 
 {{/content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
 

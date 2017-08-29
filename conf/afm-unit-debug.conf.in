@@ -154,23 +154,24 @@ Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 ;---------------------------------------------------------------------------------
 {{#content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
 
-{{^content.type=application/vnd.agl.service}}
 X-AFM--http-port={{:#metadata.http-port}}
-{{/content.type=application/vnd.agl.service}}
 
 ExecStart=/usr/bin/afb-daemon \
-	{{^content.type=application/vnd.agl.service}}\
-		--port={{:#metadata.http-port}} \
-		--random-token \
-	{{/content.type=application/vnd.agl.service}}\
+	--port={{:#metadata.http-port}} \
+	--random-token \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
-	{{#required-permission.urn:AGL:permission::public:no-htdocs}}\
+	{{#content.type=application/vnd.agl.service}} \
 		--roothttp=. \
-	{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
-	{{^required-permission.urn:AGL:permission::public:no-htdocs}}\
-		--roothttp=htdocs \
-	{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
+	{{/content.type=application/vnd.agl.service}} \
+	{{^content.type=application/vnd.agl.service}} \
+		{{#required-permission.urn:AGL:permission::public:no-htdocs}}\
+			--roothttp=. \
+		{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
+		{{^required-permission.urn:AGL:permission::public:no-htdocs}}\
+			--roothttp=htdocs \
+		{{/required-permission.urn:AGL:permission::public:no-htdocs}}\
+	{{/content.type=application/vnd.agl.service}} \
 	{{#required-permission.urn:AGL:permission::public:applications:read}}\
 		--alias=/icons:{{:#metadata.icons-dir}} \
 	{{/required-permission.urn:AGL:permission::public:applications:read}}\
@@ -215,10 +216,7 @@ ExecStart=/usr/bin/afb-daemon \
 	{{/content.type=text/html}}\
 	{{#content.type=application/vnd.agl.native}}\
 		--exec {{:#metadata.install-dir}}/{{content.src}} @p @t
-	{{/content.type=application/vnd.agl.native}}\
-	{{#content.type=application/vnd.agl.service}}\
-		--no-httpd
-	{{/content.type=application/vnd.agl.service}}
+	{{/content.type=application/vnd.agl.native}}
 
 {{/content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
 
