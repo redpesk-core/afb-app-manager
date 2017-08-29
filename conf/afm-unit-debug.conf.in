@@ -158,7 +158,7 @@ X-AFM--http-port={{:#metadata.http-port}}
 
 ExecStart=/usr/bin/afb-daemon \
 	--port={{:#metadata.http-port}} \
-	--random-token \
+	--token=HELLO \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
 	{{#content.type=application/vnd.agl.service}} \
