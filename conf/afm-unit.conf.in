@@ -144,7 +144,7 @@ Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
 
 Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 
-SyslogIdentifier={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+SyslogIdentifier=afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
@@ -159,7 +159,7 @@ X-AFM--http-port={{:#metadata.http-port}}
 {{/content.type=application/vnd.agl.service}}
 
 ExecStart=/usr/bin/afb-daemon \
-	--name {{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
+	--name afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
 	{{#content.type=application/vnd.agl.service}}\

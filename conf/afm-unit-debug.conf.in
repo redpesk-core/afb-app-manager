@@ -148,7 +148,7 @@ EnvironmentFile=-/var/run/afm-debug/{{idaver}}{{^#target=main}}@{{:#target}}{{/#
 
 Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 
-SyslogIdentifier={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+SyslogIdentifier=afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
@@ -161,7 +161,7 @@ StandardError=journal
 X-AFM--http-port={{:#metadata.http-port}}
 
 ExecStart=/usr/bin/afb-daemon \
-	--name {{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
+	--name afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
 	--port={{:#metadata.http-port}} \
