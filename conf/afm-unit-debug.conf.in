@@ -167,6 +167,7 @@ ExecStart=/usr/bin/afb-daemon \
 	--port={{:#metadata.http-port}} \
 	--token=HELLO \
 	--verbose \
+	--monitoring \
 	{{#content.type=application/vnd.agl.service}} \
 		--roothttp=. \
 	{{/content.type=application/vnd.agl.service}} \
@@ -217,7 +218,6 @@ ExecStart=/usr/bin/afb-daemon \
 			--dbus-server={{name}} \
 		{{/value=dbus}}\
 	{{/provided-api}}\
-	--monitoring \
 	{{#content.type=text/html}}\
 		--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t
 	{{/content.type=text/html}}\
