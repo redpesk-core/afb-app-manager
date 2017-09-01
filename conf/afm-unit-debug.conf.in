@@ -166,6 +166,7 @@ ExecStart=/usr/bin/afb-daemon \
 	--workdir={{&#metadata.app-data-dir}}/{{id}} \
 	--port={{:#metadata.http-port}} \
 	--token=HELLO \
+	--verbose \
 	{{#content.type=application/vnd.agl.service}} \
 		--roothttp=. \
 	{{/content.type=application/vnd.agl.service}} \
