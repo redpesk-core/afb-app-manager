@@ -21,23 +21,19 @@
 #include <assert.h>
 #include <json-c/json.h>
 
-#define AFB_BINDING_VERSION 1
+#define AFB_BINDING_VERSION 2
 #include <afb/afb-binding.h>
 
 #include "utils-jbus.h"
 
 static const char _added_[]     = "added";
-static const char _auto_[]      = "auto";
 static const char _continue_[]  = "continue";
 static const char _changed_[]   = "changed";
 static const char _detail_[]    = "detail";
 static const char _id_[]        = "id";
 static const char _install_[]   = "install";
-static const char _local_[]     = "local";
-static const char _mode_[]      = "mode";
 static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
-static const char _remote_[]    = "remote";
 static const char _resume_[]    = "resume";
 static const char _runid_[]     = "runid";
 static const char _runnables_[] = "runnables";
@@ -47,8 +43,6 @@ static const char _state_[]     = "state";
 static const char _stop_[]      = "stop";
 static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
-
-static const struct afb_binding_interface *binder;
 
 static struct jbus *jbus;
 
@@ -107,7 +101,7 @@ static void memo_success(struct memo *memo, struct json_object *obj, const char 
  */
 static void application_list_changed(const char *data, void *closure)
 {
-	afb_daemon_broadcast_event(binder->daemon, "application-list-changed", NULL);
+	afb_daemon_broadcast_event("application-list-changed", NULL);
 }
 
 /*
@@ -141,7 +135,7 @@ static struct json_object *embed(const char *tag, struct json_object *obj)
  */
 static void embed_call_void_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
-	DEBUG(binder, "(afm-main-binding) %s(true) -> %s\n", memo->method,
+	AFB_DEBUG("(afm-main-binding) %s(true) -> %s\n", memo->method,
 			obj ? json_object_to_json_string(obj) : "NULL");
 
 	if (iserror) {
@@ -172,7 +166,7 @@ static void embed_call_void(struct afb_req request, const char *method)
  */
 static void call_xxxid_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
-	DEBUG(binder, "(afm-main-binding) %s -> %s\n", memo->method, 
+	AFB_DEBUG("(afm-main-binding) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
 
 	if (iserror) {
@@ -245,7 +239,7 @@ static void detail(struct afb_req request)
 
 static void start_callback(int iserror, struct json_object *obj, struct memo *memo)
 {
-	DEBUG(binder, "(afm-main-binding) %s -> %s\n", memo->method, 
+	AFB_DEBUG("(afm-main-binding) %s -> %s\n", memo->method, 
 			obj ? json_object_to_json_string(obj) : "NULL");
 
 	if (iserror) {
@@ -261,7 +255,7 @@ static void start_callback(int iserror, struct json_object *obj, struct memo *me
 static void start(struct afb_req request)
 {
 	struct memo *memo;
-	const char *id, *mode;
+	const char *id;
 	char *query;
 	int rc;
 
@@ -272,19 +266,13 @@ static void start(struct afb_req request)
 		return;
 	}
 
-	/* get the mode */
-	mode = afb_req_value(request, _mode_);
-	if (mode == NULL || !strcmp(mode, _auto_)) {
-		mode = binder->mode == AFB_MODE_REMOTE ? _remote_ : _local_;
-	}
-
 	/* prepares asynchronous request */
 	memo = memo_create(request, _start_);
 	if (memo == NULL)
 		return;
 
 	/* create the query */
-	rc = asprintf(&query, "{\"id\":\"%s\",\"mode\":\"%s\"}", id, mode);
+	rc = asprintf(&query, "{\"id\":\"%s\"}", id);
 	if (rc < 0) {
 		memo_fail(memo, "out of memory");
 		return;
@@ -377,57 +365,55 @@ static void uninstall(struct afb_req request)
 	call_appid(request, _uninstall_);
 }
 
-static const struct afb_verb_desc_v1 verbs[] =
-{
-	{_runnables_, AFB_SESSION_CHECK, runnables,  "Get list of runnable applications"},
-	{_detail_   , AFB_SESSION_CHECK, detail, "Get the details for one application"},
-	{_start_    , AFB_SESSION_CHECK, start, "Start an application"},
-	{_once_     , AFB_SESSION_CHECK, once, "Start once an application"},
-	{_terminate_, AFB_SESSION_CHECK, terminate, "Terminate a running application"},
-	{_pause_    , AFB_SESSION_CHECK, pause, "Pause a running application"},
-	{_resume_   , AFB_SESSION_CHECK, resume, "Resume a paused application"},
-	{_stop_     , AFB_SESSION_CHECK, pause, "Obsolete since 2016/11/08, use 'pause' instead"},
-	{_continue_ , AFB_SESSION_CHECK, resume, "Obsolete since 2016/11/08, use 'resume' instead"},
-	{_runners_  , AFB_SESSION_CHECK, runners,  "Get the list of running applications"},
-	{_state_    , AFB_SESSION_CHECK, state, "Get the state of a running application"},
-	{_install_  , AFB_SESSION_CHECK, install,  "Install an application using a widget file"},
-	{_uninstall_, AFB_SESSION_CHECK, uninstall, "Uninstall an application"},
-	{ NULL, 0, NULL, NULL }
-};
-
-static const struct afb_binding plug_desc = {
-	.type = AFB_BINDING_VERSION_1,
-	.v1 = {
-		.info = "Application Framework Master Service",
-		.prefix = "afm-main",
-		.verbs = verbs
-	}
-};
-
-const struct afb_binding *afbBindingV1Register(const struct afb_binding_interface *itf)
+static int init()
 {
 	int rc;
 	struct sd_bus *sbus;
 
-	/* records the interface */
-	assert (binder == NULL);
-	binder = itf;
-
 	/* creates the jbus for accessing afm-user-daemon */
-	sbus = afb_daemon_get_user_bus(itf->daemon);
+	sbus = afb_daemon_get_user_bus();
 	if (sbus == NULL)
-		return NULL;
+		return -1;
 	jbus = create_jbus(sbus, "/org/AGL/afm/user");
         if (jbus == NULL)
-		return NULL;
+		return -1;
 
 	/* records the signal handler */
 	rc = jbus_on_signal_s(jbus, _changed_, application_list_changed, NULL);
 	if (rc < 0) {
 		jbus_unref(jbus);
-		return NULL;
+		return -1;
 	}
 
-	return &plug_desc;
+	return 0;
 }
+
+static const struct afb_verb_v2 verbs[] =
+{
+	{_runnables_, runnables, NULL, "Get list of runnable applications",          AFB_SESSION_CHECK },
+	{_detail_   , detail,    NULL, "Get the details for one application",        AFB_SESSION_CHECK },
+	{_start_    , start,     NULL, "Start an application",                       AFB_SESSION_CHECK },
+	{_once_     , once,      NULL, "Start once an application",                  AFB_SESSION_CHECK },
+	{_terminate_, terminate, NULL, "Terminate a running application",            AFB_SESSION_CHECK },
+	{_pause_    , pause,     NULL, "Pause a running application",                AFB_SESSION_CHECK },
+	{_resume_   , resume,    NULL, "Resume a paused application",                AFB_SESSION_CHECK },
+	{_stop_     , pause,     NULL, "Obsolete since 2016/11/08, use 'pause' instead", AFB_SESSION_CHECK },
+	{_continue_ , resume,    NULL, "Obsolete since 2016/11/08, use 'resume' instead", AFB_SESSION_CHECK },
+	{_runners_  , runners,   NULL, "Get the list of running applications",       AFB_SESSION_CHECK },
+	{_state_    , state,     NULL, "Get the state of a running application",     AFB_SESSION_CHECK },
+	{_install_  , install,   NULL, "Install an application using a widget file", AFB_SESSION_CHECK },
+	{_uninstall_, uninstall, NULL, "Uninstall an application",                   AFB_SESSION_CHECK },
+	{ NULL, NULL, NULL, NULL, 0 }
+};
+
+const struct afb_binding_v2 afbBindingV2 = {
+	.api = "afm-main",
+	.specification = NULL,
+	.info = "Application Framework Master Service",
+	.verbs = verbs,
+	.preinit = NULL,
+	.init = init,
+	.onevent = NULL,
+	.noconcurrency = 0
+};
 

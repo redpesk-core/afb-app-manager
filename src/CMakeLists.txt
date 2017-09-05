@@ -172,7 +172,7 @@ if(libsystemd_FOUND)
 	###########################################################################
 	# the binding for afb
 
-	pkg_check_modules(AFB afb-daemon)
+	pkg_check_modules(AFB afb-daemon>=4.0)
 	if(AFB_FOUND)
 		message(STATUS "Creation afm-main-binding for AFB-DAEMON")
 		###############################################################
