@@ -610,6 +610,7 @@ static union arguments instantiate_arguments(
 						break;
 					case '%':
 						c = 0;
+						/*@fallthrough@*/
 					default:
 						mini[1] = c;
 						v = mini;

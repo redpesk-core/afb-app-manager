@@ -62,8 +62,8 @@ static char *keyval(char *read, int isptr)
 		} else {
 			if (c == '\\') {
 				switch (read[1]) {
-				case '\\': *write++ = c;
-				case '=': c = *++read;
+				case '\\': *write++ = c; /*@fallthrough@*/
+				case '=': c = *++read; /*@fallthrough@*/
 				default: break;
 				}
 			}
@@ -92,8 +92,8 @@ static char *first(char **name, int isptr)
 			while (c && c != '/') {
 				if (c == '~') {
 					switch(read[1]) {
-					case '1': c = '/';
-					case '0': read++;
+					case '1': c = '/'; /*@fallthrough@*/
+					case '0': read++; /*@fallthrough@*/
 					default: break;
 					}
 				}

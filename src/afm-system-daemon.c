@@ -103,6 +103,7 @@ static void on_install(struct sd_bus_message *smsg, struct json_object *req, voi
 			reload = j_boolean_at(req, "reload", 1);
 			break;
 		}
+		/*@fallthrough@*/
 	default:
 		jbus_reply_error_s(smsg, error_bad_request);
 		return;
@@ -150,6 +151,7 @@ static void on_uninstall(struct sd_bus_message *smsg, struct json_object *req, v
 			root = j_string_at(req, "root", rootdir);
 			break;
 		}
+		/*@fallthrough@*/
 	default:
 		jbus_reply_error_s(smsg, error_bad_request);
 		return;
