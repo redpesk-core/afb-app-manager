@@ -27,6 +27,7 @@ set(PROJECT_NAME "AFM Main")
 set(PROJECT_PRETTY_NAME "Application Framework Main")
 set(PROJECT_DESCRIPTION "Secured Application framework for Automotive Grade Linux")
 set(PROJECT_VERSION "1.0")
+set(PROJECT_URL "https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-main.git;a=summary")
 
 set(USE_LIBZIP     ON  CACHE BOOL "should try to use libzip?")
 set(USE_SIMULATION OFF CACHE BOOL "if set simulates security manager and smack")
