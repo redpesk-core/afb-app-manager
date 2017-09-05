@@ -344,7 +344,7 @@ static int process_all_units(char *corpus, const struct unitconf *conf, int (*pr
 /*
  * Clear the unit generator
  */
-void unit_generator_off()
+void unit_generator_close_template()
 {
 	free(template);
 	template = NULL;
@@ -354,13 +354,13 @@ void unit_generator_off()
  * Initialises the unit generator with the content of the file of path 'filename'.
  * Returns 0 in case of success or a negative number in case of error.
  */
-int unit_generator_on(const char *filename)
+int unit_generator_open_template(const char *filename)
 {
 	size_t size;
 	char *tmp;
 	int rc;
 
-	unit_generator_off();
+	unit_generator_close_template();
 	rc = getfile(filename ? : FWK_UNIT_CONF, &template, NULL);
 	if (!rc) {
 		size = pack(template, ';');
@@ -388,7 +388,7 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
  * Applies the object 'jdesc' augmented of meta data coming
  * from 'conf' to the current unit generator.
  * The current unit generator will be set to the default one if not unit
- * was previously set using the function 'unit_generator_on'.
+ * was previously set using the function 'unit_generator_open_template'.
  * The callback function 'process' is then called with the
  * unit descriptors array and the expected closure.
  * Return what returned process in case of success or a negative
@@ -404,7 +404,7 @@ int unit_generator_process(struct json_object *jdesc, const struct unitconf *con
 	if (rc)
 		ERROR("can't set the metadata. %m");
 	else {
-		rc = template ? 0 : unit_generator_on(NULL);
+		rc = template ? 0 : unit_generator_open_template(NULL);
 		if (!rc) {
 			instance = NULL;
 			rc = apply_mustach(template, jdesc, &instance, &size);

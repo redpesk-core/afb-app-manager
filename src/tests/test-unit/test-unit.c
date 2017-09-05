@@ -74,7 +74,7 @@ int main(int ac, char **av)
 	conf.installdir = "INSTALL-DIR";
 	conf.icondir = "ICONS-DIR";
 	conf.port = 666;
-	rc = unit_generator_on(*++av);
+	rc = unit_generator_open_template(*++av);
 	if (rc < 0)
 		error("can't read template %s: %m",*av);
 	while(*++av) {

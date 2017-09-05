@@ -57,8 +57,8 @@ struct generatedesc {
 	int nunits;
 };
 
-extern int unit_generator_on(const char *filename);
-extern void unit_generator_off();
+extern int unit_generator_open_template(const char *filename);
+extern void unit_generator_close_template();
 extern int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure);
 extern int unit_install(struct wgt_info *ifo, const struct unitconf *conf);
 extern int unit_uninstall(struct wgt_info *ifo, const struct unitconf *conf);
