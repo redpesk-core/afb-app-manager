@@ -31,7 +31,6 @@
 #include "utils-json.h"
 #include "utils-systemd.h"
 #include "afm.h"
-#include "afm-db.h"
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
 #include "wgtpkg-uninstall.h"
@@ -87,11 +86,9 @@ const char error_cant_start[] = "\"can't start\"";
 
 static void do_reloads()
 {
-#ifndef LEGACY_MODE_WITHOUT_SYSTEMD
 	/* enforce daemon reload */
 	systemd_daemon_reload(0);
 	systemd_unit_restart_name(0, "sockets.target");
-#endif
 }
 
 static void on_install(struct sd_bus_message *smsg, struct json_object *req, void *unused)

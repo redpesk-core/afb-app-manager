@@ -126,11 +126,7 @@ add_library(secwrp STATIC
 	)
 
 add_library(afm STATIC
-	afm-db.c
 	afm-udb.c
-	afm-launch.c
-	afm-launch-mode.c
-	afm-run.c
 	afm-urun.c
 	)
 
