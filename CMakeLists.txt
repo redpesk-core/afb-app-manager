@@ -26,7 +26,7 @@ include(CTest)
 set(PROJECT_NAME "AFM Main")
 set(PROJECT_PRETTY_NAME "Application Framework Main")
 set(PROJECT_DESCRIPTION "Secured Application framework for Automotive Grade Linux")
-set(PROJECT_VERSION "1.0")
+set(PROJECT_VERSION "4.1")
 set(PROJECT_URL "https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-main.git;a=summary")
 
 set(USE_LIBZIP     ON  CACHE BOOL "should try to use libzip?")
@@ -65,6 +65,7 @@ add_definitions(
 	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
 	-DFWK_USER_APP_DIR_LABEL="${afm_user_appdir_label}"
 	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
+	-DAFM_VERSION="${PROJECT_VERSION}"
 )
 
 add_subdirectory(src)

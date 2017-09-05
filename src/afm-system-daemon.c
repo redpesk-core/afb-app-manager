@@ -39,6 +39,20 @@
 static const char appname[] = "afm-system-daemon";
 static const char *rootdir = NULL;
 
+static void version()
+{
+	printf(
+		"\n"
+		"  %s  version="AFM_VERSION"\n"
+		"\n"
+		"  Copyright (C) 2015, 2016, 2017 \"IoT.bzh\"\n"
+		"  AFB comes with ABSOLUTELY NO WARRANTY.\n"
+		"  Licence Apache 2\n"
+		"\n",
+		appname
+	);
+}
+
 static void usage()
 {
 	printf(
@@ -48,6 +62,7 @@ static void usage()
 		"   -d           run as a daemon\n"
 		"   -q           quiet\n"
 		"   -v           verbose\n"
+		"   -V           version\n"
 		"\n",
 		appname
 	);
@@ -59,6 +74,7 @@ static struct option options[] = {
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, 'h' },
+	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -186,10 +202,13 @@ int main(int ac, char **av)
 	LOGAUTH(appname);
 
 	/* interpretation of arguments */
-	while ((i = getopt_long(ac, av, "hdqvr:", options, NULL)) >= 0) {
+	while ((i = getopt_long(ac, av, "hdqvVr:", options, NULL)) >= 0) {
 		switch (i) {
 		case 'h':
 			usage();
+			return 0;
+		case 'V':
+			version();
 			return 0;
 		case 'q':
 			if (verbosity)

@@ -39,6 +39,20 @@ static const char appname[] = "wgtpkg-info";
 
 static void show(const char *wgtfile);
 
+static void version()
+{
+	printf(
+		"\n"
+		"  %s  version="AFM_VERSION"\n"
+		"\n"
+		"  Copyright (C) 2015, 2016, 2017 \"IoT.bzh\"\n"
+		"  AFB comes with ABSOLUTELY NO WARRANTY.\n"
+		"  Licence Apache 2\n"
+		"\n",
+		appname
+	);
+}
+
 static void usage()
 {
 	printf(
@@ -46,6 +60,7 @@ static void usage()
 		"\n"
 		"   -q            quiet\n"
 		"   -v            verbose\n"
+		"   -V            version\n"
 		"\n",
 		appname
 	);
@@ -55,6 +70,7 @@ static struct option options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -69,7 +85,7 @@ int main(int ac, char **av)
 	xmlsec_init();
 
 	for (;;) {
-		i = getopt_long(ac, av, "hqv", options, NULL);
+		i = getopt_long(ac, av, "hqvV", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
@@ -83,6 +99,9 @@ int main(int ac, char **av)
 		case 'v':
 			verbosity++;
 			break;
+		case 'V':
+			version();
+			return 0;
 		case ':':
 			ERROR("missing argument value");
 			return 1;

@@ -60,6 +60,20 @@ static unsigned int get_number(const char *value)
 	return (unsigned int)val;
 }
 
+static void version()
+{
+	printf(
+		"\n"
+		"  %s  version="AFM_VERSION"\n"
+		"\n"
+		"  Copyright (C) 2015, 2016, 2017 \"IoT.bzh\"\n"
+		"  AFB comes with ABSOLUTELY NO WARRANTY.\n"
+		"  Licence Apache 2\n"
+		"\n",
+		appname
+	);
+}
+
 static void usage()
 {
 	printf(
@@ -72,6 +86,7 @@ static void usage()
 		"   -f               force overwriting\n"
 		"   -q               quiet\n"
 		"   -v               verbose\n"
+		"   -V               version\n"
 		"\n",
 		appname
 	);
@@ -86,6 +101,7 @@ static struct option options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -103,7 +119,7 @@ int main(int ac, char **av)
 	number = UINT_MAX;
 	keyfile = directory = NULL;
 	for (;;) {
-		i = getopt_long(ac, av, "hfqvak:c:d:", options, NULL);
+		i = getopt_long(ac, av, "hfqvVak:c:d:", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
@@ -119,6 +135,7 @@ int main(int ac, char **av)
 		case 'f': force = 1; continue;
 		case 'a': author = 1; continue;
 		case 'h': usage(); return 0;
+		case 'V': version(); return 0;
 		case 'q':
 			if (verbosity)
 				verbosity--;

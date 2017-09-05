@@ -46,6 +46,18 @@
 static const char appname[] = "afm-user-daemon";
 
 /*
+ * string for printing version
+ */
+static const char versionstr[] =
+	"\n"
+	"  %s  version="AFM_VERSION"\n"
+	"\n"
+	"  Copyright (C) 2015, 2016, 2017 \"IoT.bzh\"\n"
+	"  AFB comes with ABSOLUTELY NO WARRANTY.\n"
+	"  Licence Apache 2\n"
+	"\n";
+
+/*
  * string for printing usage
  */
 static const char usagestr[] =
@@ -64,19 +76,20 @@ static const char usagestr[] =
 	"   -s addr      address of system D-Bus to use\n"
 	"   -q           quiet\n"
 	"   -v           verbose\n"
+	"   -V           version\n"
 	"\n";
 
 /*
  * Option definition for getopt_long
  */
 #ifdef LEGACY_MODE_WITHOUT_SYSTEMD
-static const char options_s[] = "hdqvr:a:m:";
+static const char options_s[] = "hdqvVr:a:m:";
 static struct option options_l[] = {
 	{ "root",        required_argument, NULL, 'r' },
 	{ "application", required_argument, NULL, 'a' },
 	{ "mode",        required_argument, NULL, 'm' },
 #else
-static const char options_s[] = "hdqv";
+static const char options_s[] = "hdqvV";
 static struct option options_l[] = {
 #endif
 	{ "user-dbus",   required_argument, NULL, 'u' },
@@ -85,6 +98,7 @@ static struct option options_l[] = {
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, 'h' },
+	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -578,6 +592,9 @@ int main(int ac, char **av)
 		switch (i) {
 		case 'h':
 			printf(usagestr, appname);
+			return 0;
+		case 'V':
+			printf(versionstr, appname);
 			return 0;
 		case 'q':
 			if (verbosity)
