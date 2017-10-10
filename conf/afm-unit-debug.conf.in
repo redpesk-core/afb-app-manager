@@ -131,6 +131,10 @@ SuccessExitStatus=0 SIGKILL
 PAMName=su
 User=%i
 
+CapabilityBoundingSet=
+AmbientCapabilities=
+SecureBits=no-setuid-fixup-locked
+
 {{#required-permission}}
   {{#urn:AGL:permission::platform:no-oom}}      OOMScoreAdjust=-500             {{/urn:AGL:permission::platform:no-oom}}
   {{#urn:AGL:permission::partner:real-time}}    IOSchedulingClass=realtime      {{/urn:AGL:permission::partner:real-time}}
