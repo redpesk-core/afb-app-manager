@@ -34,7 +34,6 @@
 
 #include "afm-udb.h"
 
-
 static const char x_afm_prefix[] = "X-AFM-";
 static const char service_extension[] = ".service";
 static const char key_unit_path[] = "-unit-path";
@@ -367,12 +366,14 @@ static int update_cb(void *closure, const char *name, const char *path, int isus
 	/* reads the file */
 	rc = read_unit_file(path, &content, &length);
 	if (rc < 0)
-		return rc;
+		return 0;
 
 	/* process the file */
 	rc = addunit(&updt->applications, isuser, path, name, content, length);
+	/* TODO: if (rc < 0)
+		ERROR("Ignored boggus unit %s (error: %m)", path); */
 	free(content);
-	return rc;
+	return 0;
 }
 
 /*
