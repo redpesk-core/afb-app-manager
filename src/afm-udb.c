@@ -264,6 +264,65 @@ error:
 }
 
 /*
+ * read a unit file
+ */
+static int read_unit_file(const char *path, char **content, size_t *length)
+{
+	int rc, st;
+	char c, *read, *write;
+
+	/* read the file */
+	rc = getfile(path, content, length);
+	if (rc >= 0) {
+		/* removes any comment and join lines */
+		st = 0;
+		read = write = *content;
+		for (;;) {
+			do { c = *read++; } while (c == '\r');
+			if (!c)
+				break;
+			switch (st) {
+			case 0:
+				if (c == ';' || c == '#') {
+					st = 3; /* removes lines starting with ; or # */
+					break;
+				}
+				if (c == '\n')
+					break; /* removes empty lines */
+enter_state_1:
+				st = 1;
+				/*@fallthrough@*/
+			case 1:
+				if (c == '\\')
+					st = 2;
+				else {
+					*write++ = c;
+					if (c == '\n')
+						st = 0;
+				}
+				break;
+			case 2:
+				if (c == '\n')
+					c = ' ';
+				else
+					*write++ = '\\';
+				goto enter_state_1;
+			case 3:
+				if (c == '\n')
+					st = 0;
+				break;
+			}
+		}
+		if (st == 1)
+			*write++ = '\n';
+		*write = 0;
+		*length = (size_t)(write - *content);
+		*content = realloc(*content, *length + 1);
+	}
+	return rc;
+}
+
+/*
  * called for each unit
  */
 static int update_cb(void *closure, const char *name, const char *path, int isuser)
@@ -284,7 +343,7 @@ static int update_cb(void *closure, const char *name, const char *path, int isus
 		return 0;
 
 	/* reads the file */
-	rc = getfile(path, &content, &length);
+	rc = read_unit_file(path, &content, &length);
 	if (rc < 0)
 		return rc;
 
