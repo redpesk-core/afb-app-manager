@@ -61,7 +61,7 @@ add_compile_options(${libsystemd_CFLAGS})
 include_directories(${libsystemd_INCLUDE_DIRS})
 link_libraries(${libsystemd_LIBRARIES})
 
-pkg_check_modules(AFB REQUIRED afb-daemon>=4.0)
+pkg_check_modules(AFB REQUIRED afb-daemon>=4.99 libafbwsc>=4.99)
 
 ###########################################################################
 
@@ -155,7 +155,7 @@ MESSAGE(STATUS "Creating daemons")
 add_library(jbus STATIC utils-jbus.c)
 
 add_executable(afm-user-daemon afm-user-daemon.c)
-target_link_libraries(afm-user-daemon afm secwrp wgt utils jbus)
+target_link_libraries(afm-user-daemon jbus utils afbwsc)
 install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_executable(afm-system-daemon afm-system-daemon.c)

@@ -16,6 +16,7 @@
  limitations under the License.
 */
 
+#define _GNU_SOURCE
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
@@ -26,13 +27,13 @@
 #include <systemd/sd-event.h>
 #include <json-c/json.h>
 
+#include <afb/afb-ws-client.h>
+#include <afb/afb-proto-ws.h>
+
+#include "afm.h"
 #include "verbose.h"
 #include "utils-jbus.h"
 #include "utils-json.h"
-#include "utils-systemd.h"
-#include "afm.h"
-#include "afm-udb.h"
-#include "afm-urun.h"
 
 /*
  * name of the application
@@ -55,11 +56,10 @@ static const char versionstr[] =
  * string for printing usage
  */
 static const char usagestr[] =
-	"usage: %s [option(s)]\n"
+	"usage: %s [option(s)] afm-main-uri\n"
 	"\n"
 	"   -d           run as a daemon\n"
 	"   -u addr      address of user D-Bus to use\n"
-	"   -s addr      address of system D-Bus to use\n"
 	"   -q           quiet\n"
 	"   -v           verbose\n"
 	"   -V           version\n"
@@ -68,10 +68,9 @@ static const char usagestr[] =
 /*
  * Option definition for getopt_long
  */
-static const char options_s[] = "hdqvV";
+static const char options_s[] = "hdqvVu:";
 static struct option options_l[] = {
 	{ "user-dbus",   required_argument, NULL, 'u' },
-	{ "system-dbus", required_argument, NULL, 's' },
 	{ "daemon",      no_argument,       NULL, 'd' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -81,348 +80,121 @@ static struct option options_l[] = {
 };
 
 /*
- * Connections to D-Bus
- * This is an array for using the function
- *    jbus_read_write_dispatch_multiple
- * directly without transformations.
+ * The methods propagated
  */
-static struct jbus *jbuses[2];
-#define system_bus  jbuses[0]
-#define user_bus    jbuses[1]
+static const char *methods[] = {
+	"runnables",
+	"detail",
+	"start",
+	"once",
+	"terminate",
+	"pause",
+	"resume",
+	"stop",
+	"continue",
+	"runners",
+	"state",
+	"install",
+	"uninstall",
+	NULL
+};
 
 /*
- * Handle to the database of applications
+ * Connections
  */
-static struct afm_udb *afudb;
+static struct sd_event *evloop;
+static struct jbus *user_bus;
+static struct afb_proto_ws *pws;
+static char *sessionid;
+static const char *uri;
 
 /*
- * Returned error strings
+ * 
  */
-const char error_nothing[] = "[]";
-const char error_bad_request[] = "\"bad request\"";
-const char error_not_found[] = "\"not found\"";
-const char error_cant_start[] = "\"can't start\"";
-const char error_system[] = "\"system error\"";
+static void on_pws_hangup(void *closure);
+static void on_pws_reply_success(void *closure, void *request, struct json_object *result, const char *info);
+static void on_pws_reply_fail(void *closure, void *request, const char *status, const char *info);
+static void on_pws_event_broadcast(void *closure, const char *event_name, struct json_object *data);
 
+/* the callback interface for pws */
+static struct afb_proto_ws_client_itf pws_itf = {
+	.on_reply_success = on_pws_reply_success,
+	.on_reply_fail = on_pws_reply_fail,
+	.on_event_broadcast = on_pws_event_broadcast,
+};
 
-/*
- * retrieves the 'runid' in 'obj' parameters received with the
- * request 'smsg' for the 'method'.
- *
- * Returns 1 in case of success.
- * Otherwise, if the 'runid' can't be retrived, an error stating
- * the bad request is replied for 'smsg' and 0 is returned.
- */
-static int onrunid(struct sd_bus_message *smsg, struct json_object *obj,
-						const char *method, int *runid)
+static int try_connect_pws()
 {
-	if (!j_read_integer(obj, runid)
-				&& !j_read_integer_at(obj, "runid", runid)) {
-		INFO("bad request method %s: %s", method,
-					json_object_to_json_string(obj));
-		jbus_reply_error_s(smsg, error_bad_request);
+	pws = afb_ws_client_connect_api(evloop, uri, &pws_itf, NULL);
+	if (pws == NULL) {
+		fprintf(stderr, "connection to %s failed: %m\n", uri);
 		return 0;
 	}
-
-	INFO("method %s called for %d", method, *runid);
+	afb_proto_ws_on_hangup(pws, on_pws_hangup);
 	return 1;
 }
 
-/*
- * Sends the reply 'resp' to the request 'smsg' if 'resp' is not NULL.
- * Otherwise, when 'resp' is NULL replies the error string 'errstr'.
- */
-static void reply(struct sd_bus_message *smsg, struct json_object *resp,
-						const char *errstr)
+static void attempt_connect_pws(int count);
+
+static int timehand(sd_event_source *s, uint64_t usec, void *userdata)
 {
-	if (resp)
-		jbus_reply_j(smsg, resp);
-	else
-		jbus_reply_error_s(smsg, errstr);
+	sd_event_source_unref(s);
+	attempt_connect_pws((int)(intptr_t)userdata);
+	return 0;
 }
 
-/*
- * Sends the reply "true" to the request 'smsg' if 'status' is zero.
- * Otherwise, when 'status' is not zero replies the error string 'errstr'.
- */
-static void reply_status(struct sd_bus_message *smsg, int status, const char *errstr)
+static void attempt_connect_pws(int count)
 {
-	if (status)
-		jbus_reply_error_s(smsg, errstr);
-	else
-		jbus_reply_s(smsg, "true");
-}
-
-/*
- * On query "runnables" from 'smsg' with parameters of 'obj'.
- *
- * Nothing is expected in 'obj' that can be anything.
- */
-static void on_runnables(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	struct json_object *resp;
-	INFO("method runnables called");
-	resp = afm_udb_applications_public(afudb);
-	jbus_reply_j(smsg, resp);
-	json_object_put(resp);
-}
-
-/*
- * On query "detail" from 'smsg' with parameters of 'obj'.
- */
-static void on_detail(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	const char *appid;
-	struct json_object *resp;
-
-	/* get the parameters */
-	if (j_read_string(obj, &appid))
-		; /* appid as a string */
-	else if (j_read_string_at(obj, "id", &appid))
-		; /* appid as obj.id string */
-	else {
-		INFO("method detail called but bad request!");
-		jbus_reply_error_s(smsg, error_bad_request);
-		return;
-	}
-
-	/* wants details for appid */
-	INFO("method detail called for %s", appid);
-	resp = afm_udb_get_application_public(afudb, appid);
-	reply(smsg, resp, error_not_found);
-	json_object_put(resp);
-}
-
-/*
- * On query "start" from 'smsg' with parameters of 'obj'.
- */
-static void on_start(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	const char *appid;
-	char *uri;
-	struct json_object *appli, *resp;
-	int runid;
-	char runidstr[20];
-
-	/* get the parameters */
-	if (!j_read_string(obj, &appid)) {
-		if (!j_read_string_at(obj, "id", &appid)) {
-			jbus_reply_error_s(smsg, error_bad_request);
-			return;
+	sd_event_source *s;
+	if (!try_connect_pws()) {
+		if (--count <= 0) {
+			ERROR("Definitely disconnected");
+			exit(1);
 		}
+		sd_event_add_time(evloop, &s, CLOCK_MONOTONIC, 5000000, 0, timehand, (void*)(intptr_t)count);
 	}
+}
 
-	/* get the application */
-	INFO("method start called for %s", appid);
-	appli = afm_udb_get_application_private(afudb, appid);
-	if (appli == NULL) {
-		jbus_reply_error_s(smsg, error_not_found);
-		return;
-	}
+static void on_pws_reply_success(void *closure, void *request, struct json_object *result, const char *info)
+{
+	struct sd_bus_message *smsg = request;
+	jbus_reply_j(smsg, result);
+}
 
-	/* launch the application */
-	uri = NULL;
-	runid = afm_urun_start(appli);
-	if (runid <= 0) {
-		jbus_reply_error_s(smsg, error_cant_start);
-		free(uri);
-		return;
-	}
+static void on_pws_reply_fail(void *closure, void *request, const char *status, const char *info)
+{
+	struct sd_bus_message *smsg = request;
+	jbus_reply_error_s(smsg, status);
+}
 
-	if (uri == NULL) {
-		/* returns only the runid */
-		snprintf(runidstr, sizeof runidstr, "%d", runid);
-		runidstr[sizeof runidstr - 1] = 0;
-		jbus_reply_s(smsg, runidstr);
-		return;
-	}
+static void on_pws_event_broadcast(void *closure, const char *event_name, struct json_object *data)
+{
+	jbus_send_signal_j(user_bus, "changed", data);
+}
 
-	/* returns the runid and its uri */
-	resp = json_object_new_object();
-	if (resp != NULL && j_add_integer(resp, "runid", runid)
-					&& j_add_string(resp, "uri", uri))
-		jbus_reply_j(smsg, resp);
+/* called when pws hangsup */
+static void on_pws_hangup(void *closure)
+{
+	struct afb_proto_ws *apw = pws;
+	pws = NULL;
+	afb_proto_ws_unref(apw);
+	attempt_connect_pws(10);
+}
+
+/* propagate the call to the service */
+static void propagate(struct sd_bus_message *smsg, struct json_object *obj, void *closure)
+{
+	int rc;
+	const char *verb = closure;
+
+	INFO("method %s propagated for %s", verb, json_object_to_json_string(obj));
+	if (!pws)
+		jbus_reply_error_s(smsg, "disconnected");
 	else {
-		afm_urun_terminate(runid);
-		jbus_reply_error_s(smsg, error_system);
-	}
-	json_object_put(resp);
-	free(uri);
-}
-
-/*
- * On query "once" from 'smsg' with parameters of 'obj'.
- */
-static void on_once(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	const char *appid;
-	struct json_object *appli, *resp;
-	int runid;
-
-	/* get the parameters */
-	if (!j_read_string(obj, &appid) && !j_read_string_at(obj, "id", &appid)) {
-		jbus_reply_error_s(smsg, error_bad_request);
-		return;
-	}
-
-	/* get the application */
-	INFO("method once called for %s", appid);
-	appli = afm_udb_get_application_private(afudb, appid);
-	if (appli == NULL) {
-		jbus_reply_error_s(smsg, error_not_found);
-		return;
-	}
-
-	/* launch the application */
-	runid = afm_urun_once(appli);
-	if (runid <= 0) {
-		jbus_reply_error_s(smsg, error_cant_start);
-		return;
-	}
-
-	/* returns the state */
-	resp = afm_urun_state(afudb, runid);
-	reply(smsg, resp, error_not_found);
-	json_object_put(resp);
-}
-
-/*
- * On query "pause" from 'smsg' with parameters of 'obj'.
- */
-static void on_pause(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	int runid, status;
-	if (onrunid(smsg, obj, "pause", &runid)) {
-		status = afm_urun_pause(runid);
-		reply_status(smsg, status, error_not_found);
-	}
-}
-
-/*
- * On query "resume" from 'smsg' with parameters of 'obj'.
- */
-static void on_resume(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	int runid, status;
-	if (onrunid(smsg, obj, "resume", &runid)) {
-		status = afm_urun_resume(runid);
-		reply_status(smsg, status, error_not_found);
-	}
-}
-
-/*
- * On query "stop" from 'smsg' with parameters of 'obj'.
- */
-static void on_stop(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	NOTICE("call to obsolete 'stop'");
-	on_pause(smsg, obj, unused);
-}
-
-/*
- * On query "continue" from 'smsg' with parameters of 'obj'.
- */
-static void on_continue(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	NOTICE("call to obsolete 'continue'");
-	on_resume(smsg, obj, unused);
-}
-
-/*
- * On query "terminate" from 'smsg' with parameters of 'obj'.
- */
-static void on_terminate(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	int runid, status;
-	if (onrunid(smsg, obj, "terminate", &runid)) {
-		status = afm_urun_terminate(runid);
-		reply_status(smsg, status, error_not_found);
-	}
-}
-
-/*
- * On query "runners" from 'smsg' with parameters of 'obj'.
- */
-static void on_runners(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	struct json_object *resp;
-	INFO("method runners called");
-	resp = afm_urun_list(afudb);
-	jbus_reply_j(smsg, resp);
-	json_object_put(resp);
-}
-
-/*
- * On query "state" from 'smsg' with parameters of 'obj'.
- */
-static void on_state(struct sd_bus_message *smsg, struct json_object *obj, void *unused)
-{
-	int runid;
-	struct json_object *resp;
-	if (onrunid(smsg, obj, "state", &runid)) {
-		resp = afm_urun_state(afudb, runid);
-		reply(smsg, resp, error_not_found);
-		json_object_put(resp);
-	}
-}
-
-/*
- * Calls the system daemon to achieve application management of
- * the 'method' gotten from 'smsg' with the parameter's string 'msg'.
- *
- * The principle is very simple: call the corresponding system method
- * and reply its response to the caller.
- *
- * The request and reply is synchronous and is blocking.
- * It is possible to implment it in an asynchrounous way but it
- * would brake the common behaviour. It would be a call like
- * jbus_call_ss(system_bus, method, msg, callback, smsg)
- */
-static void propagate(struct sd_bus_message *smsg, const char *msg, const char *method)
-{
-	char *reply;
-	INFO("method %s propagated with %s", method, msg);
-	reply = jbus_call_ss_sync(system_bus, method, msg);
-	if (reply) {
-		jbus_reply_s(smsg, reply);
-		free(reply);
-	}
-	else
-		jbus_reply_error_s(smsg, error_system);
-}
-
-#if defined(EXPLICIT_CALL)
-/*
- * On query "install" from 'smsg' with parameters of 'msg'.
- */
-static void on_install(struct sd_bus_message *smsg, const char *msg, void *unused)
-{
-	return propagate(smsg, msg, "install");
-}
-
-/*
- * On query "uninstall" from 'smsg' with parameters of 'msg'.
- */
-static void on_uninstall(struct sd_bus_message *smsg, const char *msg, void *unused)
-{
-	return propagate(smsg, msg, "uninstall");
-}
-#endif
-
-/*
- * On system signaling that applications list changed
- */
-static void on_signal_changed(struct json_object *obj, void *unused)
-{
-	/* enforce daemon reload */
-	systemd_daemon_reload(1);
-	systemd_unit_restart_name(1, "sockets.target");
-
-	/* update the database */
-	afm_udb_update(afudb);
-
-	/* re-propagate now */
-	jbus_send_signal_j(user_bus, "changed", obj);
+		rc = afb_proto_ws_client_call(pws, verb, obj, sessionid, smsg);
+		if (rc < 0)
+			ERROR("calling %s(%s) failed: %m\n", verb, json_object_to_json_string(obj));
+	} 
 }
 
 /*
@@ -484,14 +256,13 @@ fail:
 int main(int ac, char **av)
 {
 	int i, daemon = 0, rc;
-	struct sd_event *evloop;
-	struct sd_bus *sysbus, *usrbus;
-	const char *sys_bus_addr, *usr_bus_addr;
+	struct sd_bus *usrbus;
+	const char *usr_bus_addr;
+	const char **iter;
 
 	LOGAUTH(appname);
 
 	/* first interpretation of arguments */
-	sys_bus_addr = NULL;
 	usr_bus_addr = NULL;
 	while ((i = getopt_long(ac, av, options_s, options_l, NULL)) >= 0) {
 		switch (i) {
@@ -514,9 +285,6 @@ int main(int ac, char **av)
 		case 'u':
 			usr_bus_addr = optarg;
 			break;
-		case 's':
-			sys_bus_addr = optarg;
-			break;
 		case ':':
 			ERROR("missing argument value");
 			return 1;
@@ -526,15 +294,19 @@ int main(int ac, char **av)
 		}
 	}
 
-	/* init random generator */
-	srandom((unsigned int)time(NULL));
-
-	/* init database */
-	afudb = afm_udb_create(1, 1, "afm-appli-");
-	if (!afudb) {
-		ERROR("afm_udb_create failed");
+	/* check argument count */
+	if (optind >= ac) {
+		ERROR("Uri to the framework is missing");
 		return 1;
 	}
+	if (optind + 1 != ac) {
+		ERROR("Extra parameters found");
+		return 1;
+	}
+	uri = av[optind];
+
+	/* init sessionid */
+	asprintf(&sessionid, "%d-%s", (int)getuid(), appname);
 
 	/* daemonize if requested */
 	if (daemon && daemonize()) {
@@ -548,16 +320,6 @@ int main(int ac, char **av)
 		ERROR("can't create event loop");
 		return 1;
 	}
-	rc = open_bus(&sysbus, 0, sys_bus_addr);
-	if (rc < 0) {
-		ERROR("can't create system bus");
-		return 1;
-	}
-	rc = sd_bus_attach_event(sysbus, evloop, 0);
-	if (rc < 0) {
-		ERROR("can't attach system bus to event loop");
-		return 1;
-	}
 	rc = open_bus(&usrbus, 1, usr_bus_addr);
 	if (rc < 0) {
 		ERROR("can't create user bus");
@@ -569,16 +331,9 @@ int main(int ac, char **av)
 		return 1;
 	}
 
-	/* connects to the system bus */
-	system_bus = create_jbus(sysbus, AFM_SYSTEM_DBUS_PATH);
-	if (!system_bus) {
-		ERROR("create_jbus failed for system");
-		return 1;
-	}
-
-	/* observe signals of system */
-	if(jbus_on_signal_j(system_bus, "changed", on_signal_changed, NULL)) {
-		ERROR("adding signal observer failed");
+	/* connect to framework */
+	if (!try_connect_pws()) {
+		ERROR("connection to %s failed: %m\n", uri);
 		return 1;
 	}
 
@@ -590,27 +345,11 @@ int main(int ac, char **av)
 	}
 
 	/* init services */
-	if (jbus_add_service_j(user_bus, "runnables", on_runnables, NULL)
-	 || jbus_add_service_j(user_bus, "detail",    on_detail, NULL)
-	 || jbus_add_service_j(user_bus, "start",     on_start, NULL)
-	 || jbus_add_service_j(user_bus, "once",      on_once, NULL)
-	 || jbus_add_service_j(user_bus, "terminate", on_terminate, NULL)
-	 || jbus_add_service_j(user_bus, "pause",     on_pause, NULL)
-	 || jbus_add_service_j(user_bus, "resume",    on_resume, NULL)
-	 || jbus_add_service_j(user_bus, "stop",      on_stop, NULL)
-	 || jbus_add_service_j(user_bus, "continue",  on_continue, NULL)
-	 || jbus_add_service_j(user_bus, "runners",   on_runners, NULL)
-	 || jbus_add_service_j(user_bus, "state",     on_state, NULL)
-#if defined(EXPLICIT_CALL)
-	 || jbus_add_service_s(user_bus, "install",   on_install, NULL)
-	 || jbus_add_service_s(user_bus, "uninstall", on_uninstall, NULL)
-#else
-	 || jbus_add_service_s(user_bus, "install",   (void (*)(struct sd_bus_message *, const char *, void *))propagate, "install")
-	 || jbus_add_service_s(user_bus, "uninstall", (void (*)(struct sd_bus_message *, const char *, void *))propagate, "uninstall")
-#endif
-	 ) {
-		ERROR("adding services failed");
-		return 1;
+	for (iter = methods ; *iter ; iter ++) {
+		if (jbus_add_service_j(user_bus, *iter, propagate, (void*)*iter)) {
+			ERROR("adding services failed");
+			return 1;
+		}
 	}
 
 	/* start servicing */
