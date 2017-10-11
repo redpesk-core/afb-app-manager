@@ -97,11 +97,12 @@ static int errno2sderr(int rc)
 	return rc < 0 ? -errno : rc;
 }
 
-/* Returns in 'ret' either the system bus (if isuser==0)
+/*
+ * Returns in 'ret' either the system bus (if isuser==0)
  * or the user bus (if isuser!=0).
  * Returns 0 in case of success or -1 in case of error
  */
-static int get_bus(int isuser, struct sd_bus **ret)
+int systemd_get_bus(int isuser, struct sd_bus **ret)
 {
 	int rc;
 	struct sd_bus *bus;
@@ -123,6 +124,14 @@ static int get_bus(int isuser, struct sd_bus **ret)
 	return 0;
 error:
 	return sderr2errno(rc);
+}
+
+void systemd_set_bus(int isuser, struct sd_bus *bus)
+{
+	struct sd_bus **target = isuser ? &usrbus : &sysbus;
+	if (*target)
+		sd_bus_unref(*target);
+	*target = bus;
 }
 
 #if 0
@@ -401,7 +410,7 @@ int systemd_daemon_reload(int isuser)
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0) {
 		/* TODO: asynchronous bind... */
 		/* TODO: more diagnostic... */
@@ -483,14 +492,14 @@ char *systemd_unit_dpath_by_name(int isuser, const char *name, int load)
 {
 	struct sd_bus *bus;
 
-	return get_bus(isuser, &bus) < 0 ? NULL : get_unit_dpath(bus, name, load);
+	return systemd_get_bus(isuser, &bus) < 0 ? NULL : get_unit_dpath(bus, name, load);
 }
 
 char *systemd_unit_dpath_by_pid(int isuser, unsigned pid)
 {
 	struct sd_bus *bus;
 
-	return get_bus(isuser, &bus) < 0 ? NULL : get_unit_dpath_by_pid(bus, pid);
+	return systemd_get_bus(isuser, &bus) < 0 ? NULL : get_unit_dpath_by_pid(bus, pid);
 }
 
 int systemd_unit_start_dpath(int isuser, const char *dpath)
@@ -498,7 +507,7 @@ int systemd_unit_start_dpath(int isuser, const char *dpath)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	return rc < 0 ? rc : unit_start(bus, dpath);
 }
 
@@ -507,7 +516,7 @@ int systemd_unit_restart_dpath(int isuser, const char *dpath)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	return rc < 0 ? rc : unit_restart(bus, dpath);
 }
 
@@ -516,7 +525,7 @@ int systemd_unit_stop_dpath(int isuser, const char *dpath)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	return rc < 0 ? rc : unit_stop(bus, dpath);
 }
 
@@ -525,7 +534,7 @@ int systemd_unit_start_name(int isuser, const char *name)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0)
 		rc = unit_start_name(bus, name);
 	return rc;
@@ -536,7 +545,7 @@ int systemd_unit_restart_name(int isuser, const char *name)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0)
 		rc = unit_restart_name(bus, name);
 	return rc;
@@ -547,7 +556,7 @@ int systemd_unit_stop_name(int isuser, const char *name)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0)
 		rc = unit_stop_name(bus, name);
 	return rc;
@@ -559,7 +568,7 @@ int systemd_unit_stop_pid(int isuser, unsigned pid)
 	struct sd_bus *bus;
 	char *dpath;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0) {
 		dpath = get_unit_dpath_by_pid(bus, pid);
 		if (!dpath)
@@ -577,7 +586,7 @@ int systemd_unit_pid_of_dpath(int isuser, const char *dpath)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	return rc < 0 ? rc : unit_pid(bus, dpath);
 }
 
@@ -586,7 +595,7 @@ const char *systemd_unit_state_of_dpath(int isuser, const char *dpath)
 	int rc;
 	struct sd_bus *bus;
 
-	rc = get_bus(isuser, &bus);
+	rc = systemd_get_bus(isuser, &bus);
 	return rc < 0 ? NULL : unit_state(bus, dpath);
 }
 
