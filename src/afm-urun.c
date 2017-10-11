@@ -40,10 +40,13 @@ static const char key_unit_d_path[] = "-unit-dpath-";
 
 /**************** get appli basis *********************/
 
-static int get_basis(struct json_object *appli, int *isuser, const char **dpath, int load)
+static int get_basis(struct json_object *appli, int *isuser, const char **dpath, int load, int uid)
 {
-	char *dp;
+	char userid[40];
+	char *dp, *arodot, *nun;
 	const char *uname, *uscope;
+	struct json_object *odp;
+	int rc;
 
 	/* get the scope */
 	if (!j_read_string_at(appli, "unit-scope", &uscope)) {
@@ -52,21 +55,81 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 	}
 	*isuser = strcmp(uscope, "system") != 0;
 
-	/* get dpath */
-	if (!j_read_string_at(appli, key_unit_d_path, dpath)) {
-		if (!load) {
-			errno = ENOENT;
-			goto error;
+	/* get dpaths of known users */
+	odp = NULL;
+	if (json_object_object_get_ex(appli, key_unit_d_path, &odp)) {
+		/* try not parametric dpath */
+		if (json_object_get_type(odp) == json_type_string) {
+			*dpath = json_object_get_string(odp);
+			return 0;
 		}
-		if (!j_read_string_at(appli, "unit-name", &uname)) {
-			ERROR("'unit-name' missing in appli description %s", json_object_get_string(appli));
+		assert(json_object_get_type(odp) == json_type_object);
+		/* get userid */
+		if (uid < 0) {
+			ERROR("unexpected uid %d", uid);
 			goto inval;
 		}
+		rc = snprintf(userid, sizeof userid, "%d", uid);
+		assert(rc < (int)(sizeof userid));
+		/* try dpath for the user */
+		if (j_read_string_at(odp, userid, dpath))
+			return 0;
+	}
+
+	/* not here. load it? */
+	if (!load) {
+		errno = ENOENT;
+		goto error;
+	}
+
+	/* get uname */
+	if (!j_read_string_at(appli, "unit-name", &uname)) {
+		ERROR("'unit-name' missing in appli description %s", json_object_get_string(appli));
+		goto inval;
+	}
+
+	/* is user parametric? */
+	arodot = strchr(uname, '@');
+	if (arodot && *++arodot == '.') {
+		if (!odp) {
+			/* get userid */
+			if (uid < 0) {
+				ERROR("unexpected uid %d", uid);
+				goto inval;
+			}
+			rc = snprintf(userid, sizeof userid, "%d", uid);
+			assert(rc < (int)(sizeof userid));
+
+			/* create the dpaths of known users */
+			odp = json_object_new_object();
+			if (!odp)
+				goto nomem;
+			json_object_object_add(appli, key_unit_d_path, odp);
+		}
+
+		/* get dpath of userid */
+		nun = alloca((size_t)(arodot - uname) + strlen(userid) + strlen(arodot) + 1);
+		stpcpy(stpcpy(stpncpy(nun, uname, (size_t)(arodot - uname)), userid), arodot);
 		dp = systemd_unit_dpath_by_name(*isuser, uname, 1);
 		if (dp == NULL) {
 			ERROR("Can't load unit of name %s for %s: %m", uname, uscope);
 			goto error;
 		}
+		/* record the dpath */
+		if (!j_add_string(odp, userid, dp)) {
+			free(dp);
+			goto nomem;
+		}
+		free(dp);
+		j_read_string_at(odp, userid, dpath);
+	} else {
+		/* get dpath */
+		dp = systemd_unit_dpath_by_name(*isuser, uname, 1);
+		if (dp == NULL) {
+			ERROR("Can't load unit of name %s for %s: %m", uname, uscope);
+			goto error;
+		}
+		/* record the dpath */
 		if (!j_add_string(appli, key_unit_d_path, dp)) {
 			free(dp);
 			goto nomem;
@@ -74,7 +137,6 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		free(dp);
 		j_read_string_at(appli, key_unit_d_path, dpath);
 	}
-
 	return 0;
 
 nomem:
@@ -162,9 +224,9 @@ error:
  *
  * Returns the runid in case of success or -1 in case of error
  */
-int afm_urun_start(struct json_object *appli)
+int afm_urun_start(struct json_object *appli, int uid)
 {
-	return afm_urun_once(appli);
+	return afm_urun_once(appli, uid);
 }
 
 /*
@@ -178,13 +240,13 @@ int afm_urun_start(struct json_object *appli)
  *
  * Returns the runid in case of success or -1 in case of error
  */
-int afm_urun_once(struct json_object *appli)
+int afm_urun_once(struct json_object *appli, int uid)
 {
 	const char *udpath, *state, *uscope, *uname;
 	int rc, isuser;
 
 	/* retrieve basis */
-	rc = get_basis(appli, &isuser, &udpath, 1);
+	rc = get_basis(appli, &isuser, &udpath, 1, uid);
 	if (rc < 0)
 		goto error;
 
@@ -237,7 +299,7 @@ static int not_yet_implemented(const char *what)
  *
  * Returns 0 in case of success or -1 in case of error
  */
-int afm_urun_terminate(int runid)
+int afm_urun_terminate(int runid, int uid)
 {
 	int rc = systemd_unit_stop_pid(1 /* TODO: isuser? */, (unsigned)runid);
 	if (rc < 0)
@@ -250,7 +312,7 @@ int afm_urun_terminate(int runid)
  *
  * Returns 0 in case of success or -1 in case of error
  */
-int afm_urun_pause(int runid)
+int afm_urun_pause(int runid, int uid)
 {
 	return not_yet_implemented("pause");
 }
@@ -260,7 +322,7 @@ int afm_urun_pause(int runid)
  *
  * Returns 0 in case of success or -1 in case of error
  */
-int afm_urun_resume(int runid)
+int afm_urun_resume(int runid, int uid)
 {
 	return not_yet_implemented("resume");
 }
@@ -270,7 +332,7 @@ int afm_urun_resume(int runid)
  *
  * Returns the list or NULL in case of error.
  */
-struct json_object *afm_urun_list(struct afm_udb *db)
+struct json_object *afm_urun_list(struct afm_udb *db, int uid)
 {
 	int i, n, isuser, pid;
 	const char *udpath;
@@ -286,11 +348,11 @@ struct json_object *afm_urun_list(struct afm_udb *db)
 	if (result == NULL)
 		goto error;
 
-	apps = afm_udb_applications_private(db);
+	apps = afm_udb_applications_private(db, uid);
 	n = json_object_array_length(apps);
 	for (i = 0 ; i < n ; i++) {
 		appli = json_object_array_get_idx(apps, i);
-		if (appli && get_basis(appli, &isuser, &udpath, 0) >= 0) {
+		if (appli && get_basis(appli, &isuser, &udpath, 0, uid) >= 0) {
 			pid = systemd_unit_pid_of_dpath(isuser, udpath);
 			if (pid > 0 && j_read_string_at(appli, "id", &id)) {
 				state = systemd_unit_state_of_dpath(isuser, udpath);
@@ -315,7 +377,7 @@ error:
  *
  * Returns the state or NULL in case of success
  */
-struct json_object *afm_urun_state(struct afm_udb *db, int runid)
+struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 {
 	int i, n, isuser, pid, wasuser;
 	char *dpath;
@@ -337,12 +399,12 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid)
 		WARNING("searched runid %d not found", runid);
 	} else {
 		/* search in the base */
-		apps = afm_udb_applications_private(db);
+		apps = afm_udb_applications_private(db, uid);
 		n = json_object_array_length(apps);
 		for (i = 0 ; i < n ; i++) {
 			appli = json_object_array_get_idx(apps, i);
 			if (appli
-			 && get_basis(appli, &isuser, &udpath, 0) >= 0
+			 && get_basis(appli, &isuser, &udpath, 0, uid) >= 0
 			 && !strcmp(dpath, udpath)
 			 && j_read_string_at(appli, "id", &id)) {
 				pid = systemd_unit_pid_of_dpath(isuser, udpath);

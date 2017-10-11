@@ -143,7 +143,7 @@ static void runnables(struct afb_req req)
 {
 	struct json_object *resp;
 	INFO("method runnables called");
-	resp = afm_udb_applications_public(afudb);
+	resp = afm_udb_applications_public(afudb, afb_req_get_uid(req));
 	afb_req_success(req, resp, NULL);
 }
 
@@ -165,7 +165,7 @@ static void detail(struct afb_req req)
 
 	/* wants details for appid */
 	INFO("method detail called for %s", appid);
-	resp = afm_udb_get_application_public(afudb, appid);
+	resp = afm_udb_get_application_public(afudb, appid, afb_req_get_uid(req));
 	if (resp)
 		afb_req_success(req, resp, NULL);
 	else
@@ -191,14 +191,14 @@ static void start(struct afb_req req)
 
 	/* get the application */
 	INFO("method start called for %s", appid);
-	appli = afm_udb_get_application_private(afudb, appid);
+	appli = afm_udb_get_application_private(afudb, appid, afb_req_get_uid(req));
 	if (appli == NULL) {
 		not_found(req);
 		return;
 	}
 
 	/* launch the application */
-	runid = afm_urun_start(appli);
+	runid = afm_urun_start(appli, afb_req_get_uid(req));
 	if (runid <= 0) {
 		cant_start(req);
 		return;
@@ -229,21 +229,21 @@ static void once(struct afb_req req)
 
 	/* get the application */
 	INFO("method once called for %s", appid);
-	appli = afm_udb_get_application_private(afudb, appid);
+	appli = afm_udb_get_application_private(afudb, appid, afb_req_get_uid(req));
 	if (appli == NULL) {
 		not_found(req);
 		return;
 	}
 
 	/* launch the application */
-	runid = afm_urun_once(appli);
+	runid = afm_urun_once(appli, afb_req_get_uid(req));
 	if (runid <= 0) {
 		cant_start(req);
 		return;
 	}
 
 	/* returns the state */
-	resp = afm_urun_state(afudb, runid);
+	resp = afm_urun_state(afudb, runid, afb_req_get_uid(req));
 	afb_req_success(req, resp, NULL);
 }
 
@@ -254,7 +254,7 @@ static void pause(struct afb_req req)
 {
 	int runid, status;
 	if (onrunid(req, "pause", &runid)) {
-		status = afm_urun_pause(runid);
+		status = afm_urun_pause(runid, afb_req_get_uid(req));
 		reply_status(req, status, _not_found_);
 	}
 }
@@ -266,7 +266,7 @@ static void resume(struct afb_req req)
 {
 	int runid, status;
 	if (onrunid(req, "resume", &runid)) {
-		status = afm_urun_resume(runid);
+		status = afm_urun_resume(runid, afb_req_get_uid(req));
 		reply_status(req, status, _not_found_);
 	}
 }
@@ -278,7 +278,7 @@ static void terminate(struct afb_req req)
 {
 	int runid, status;
 	if (onrunid(req, "terminate", &runid)) {
-		status = afm_urun_terminate(runid);
+		status = afm_urun_terminate(runid, afb_req_get_uid(req));
 		reply_status(req, status, _not_found_);
 	}
 }
@@ -290,7 +290,7 @@ static void runners(struct afb_req req)
 {
 	struct json_object *resp;
 	INFO("method runners called");
-	resp = afm_urun_list(afudb);
+	resp = afm_urun_list(afudb, afb_req_get_uid(req));
 	afb_req_success(req, resp, NULL);
 }
 
@@ -302,55 +302,10 @@ static void state(struct afb_req req)
 	int runid;
 	struct json_object *resp;
 	if (onrunid(req, "state", &runid)) {
-		resp = afm_urun_state(afudb, runid);
+		resp = afm_urun_state(afudb, runid, afb_req_get_uid(req));
 		reply(req, resp, _not_found_);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 static void install(struct afb_req req)
 {
@@ -371,7 +326,7 @@ static void install(struct afb_req req)
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", &wgtfile)
 		|| wrap_json_unpack(json, "{ss s?s s?b s?b}",
-				"widget", &wgtfile,
+				"wgt", &wgtfile,
 				"root", &root,
 				"force", &force,
 				"reload", &reload)) {
@@ -429,7 +384,7 @@ static void uninstall(struct afb_req req)
 static int init()
 {
 	/* init database */
-	afudb = afm_udb_create(1, 1, "afm-appli-");
+	afudb = afm_udb_create(1, 0, "afm-appli-");
 	if (!afudb) {
 		ERROR("afm_udb_create failed");
 		return -1;
