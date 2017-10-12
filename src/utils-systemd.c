@@ -34,6 +34,7 @@
   struct sd_bus;
   struct sd_bus_message;
   typedef struct { const char *name; const char *message; } sd_bus_error;
+# define sd_bus_unref(...)                ((void)0)
 # define sd_bus_default_user(p)           ((*(p)=NULL),(-ENOTSUP))
 # define sd_bus_default_system(p)         ((*(p)=NULL),(-ENOTSUP))
 # define sd_bus_call_method(...)          (-ENOTSUP)

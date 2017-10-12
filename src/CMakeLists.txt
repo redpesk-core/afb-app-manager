@@ -57,11 +57,20 @@ else()
 endif()
 
 pkg_check_modules(libsystemd libsystemd>=222)
-if(NOT libsystemd_FOUND)
+if(libsystemd_FOUND)
+	add_compile_options(${libsystemd_CFLAGS})
+	include_directories(${libsystemd_INCLUDE_DIRS})
+	link_libraries(${libsystemd_LIBRARIES})
+else()
 	add_definitions(-DNO_LIBSYSTEMD)
 endif()
 
 pkg_check_modules(AFB afb-daemon>=4.99 libafbwsc>=4.99)
+if(AFB_FOUND)
+	add_compile_options(${AFB_CFLAGS})
+	include_directories(${AFB_INCLUDE_DIRS})
+	link_libraries(${AFB_LIBRARIES})
+endif()
 
 ###########################################################################
 
@@ -152,10 +161,6 @@ install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION
 
 if(libsystemd_FOUND AND AFB_FOUND)
 	MESSAGE(STATUS "Creating daemons")
-
-	add_compile_options(${libsystemd_CFLAGS} ${AFB_CFLAGS})
-	include_directories(${libsystemd_INCLUDE_DIRS} ${AFB_INCLUDE_DIRS})
-	link_libraries(${libsystemd_LIBRARIES} ${AFB_LIBRARIES})
 
 	add_library(jbus STATIC utils-jbus.c)
 
