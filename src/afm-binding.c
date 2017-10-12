@@ -104,7 +104,7 @@ static int onrunid(struct afb_req req, const char *method, int *runid)
 
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", runid)
-		|| wrap_json_unpack(json, "{ss}", "runid", runid)) {
+		&& wrap_json_unpack(json, "{ss}", "runid", runid)) {
 		INFO("bad request method %s: %s", method,
 					json_object_to_json_string(json));
 		bad_request(req);
@@ -158,7 +158,7 @@ static void detail(struct afb_req req)
 	/* scan the request */
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", &appid)
-		|| wrap_json_unpack(json, "{ss}", _id_, &appid)) {
+		&& wrap_json_unpack(json, "{ss}", _id_, &appid)) {
 		bad_request(req);
 		return;
 	}
@@ -184,7 +184,7 @@ static void start(struct afb_req req)
 	/* scan the request */
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", &appid)
-		|| wrap_json_unpack(json, "{ss}", _id_, &appid)) {
+		&& wrap_json_unpack(json, "{ss}", _id_, &appid)) {
 		bad_request(req);
 		return;
 	}
@@ -222,7 +222,7 @@ static void once(struct afb_req req)
 	/* scan the request */
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", &appid)
-		|| wrap_json_unpack(json, "{ss}", _id_, &appid)) {
+		&& wrap_json_unpack(json, "{ss}", _id_, &appid)) {
 		bad_request(req);
 		return;
 	}
@@ -325,7 +325,7 @@ static void install(struct afb_req req)
 	/* scan the request */
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", &wgtfile)
-		|| wrap_json_unpack(json, "{ss s?s s?b s?b}",
+		&& wrap_json_unpack(json, "{ss s?s s?b s?b}",
 				"wgt", &wgtfile,
 				"root", &root,
 				"force", &force,
@@ -338,6 +338,7 @@ static void install(struct afb_req req)
 	if (ifo == NULL)
 		afb_req_fail_f(req, "failed", "installation failed: %m");
 	else {
+		afm_udb_update(afudb);
 		/* reload if needed */
 		if (reload)
 			do_reloads();
@@ -365,7 +366,7 @@ static void uninstall(struct afb_req req)
 	/* scan the request */
 	json = afb_req_json(req);
 	if (wrap_json_unpack(json, "s", &idaver)
-		|| wrap_json_unpack(json, "{ss s?s}",
+		&& wrap_json_unpack(json, "{ss s?s}",
 				_id_, &idaver,
 				"root", &root)) {
 		return bad_request(req);
@@ -376,6 +377,7 @@ static void uninstall(struct afb_req req)
 	if (rc)
 		afb_req_fail_f(req, "failed", "uninstallation failed: %m");
 	else {
+		afm_udb_update(afudb);
 		afb_req_success(req, NULL, NULL);
 		application_list_changed(_uninstall_, idaver);
 	}
@@ -389,10 +391,6 @@ static int init()
 		ERROR("afm_udb_create failed");
 		return -1;
 	}
-
-	/* set the systemd's buses */
-	systemd_set_bus(0, afb_daemon_get_system_bus());
-	systemd_set_bus(1, afb_daemon_get_user_bus());
 
 	/* create TRUE */
 	json_true = json_object_new_boolean(1);

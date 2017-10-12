@@ -110,9 +110,9 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		/* get dpath of userid */
 		nun = alloca((size_t)(arodot - uname) + strlen(userid) + strlen(arodot) + 1);
 		stpcpy(stpcpy(stpncpy(nun, uname, (size_t)(arodot - uname)), userid), arodot);
-		dp = systemd_unit_dpath_by_name(*isuser, uname, 1);
+		dp = systemd_unit_dpath_by_name(*isuser, nun, 1);
 		if (dp == NULL) {
-			ERROR("Can't load unit of name %s for %s: %m", uname, uscope);
+			ERROR("Can't load unit of name %s for %s: %m", nun, uscope);
 			goto error;
 		}
 		/* record the dpath */
@@ -255,7 +255,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 	if (rc < 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't start %s unit %s", uscope, uname);
+		ERROR("can't start %s unit %s for uid %d", uscope, uname, uid);
 		goto error;
 	}
 
@@ -263,13 +263,13 @@ int afm_urun_once(struct json_object *appli, int uid)
 	if (state == NULL) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't wait %s unit %s: %m", uscope, uname);
+		ERROR("can't wait %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
 	if (state != SysD_State_Active) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("start error %s unit %s: %s", uscope, uname, state);
+		ERROR("start error %s unit %s for uid %d: %s", uscope, uname, uid, state);
 		goto error;
 	}
 
@@ -277,7 +277,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 	if (rc < 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't getpid of %s unit %s: %m", uscope, uname);
+		ERROR("can't getpid of %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
 		

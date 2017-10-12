@@ -4,7 +4,8 @@ Description=Application Framework Master, system side
 [Service]
 User=afm
 Group=afm
-ExecStart=/usr/bin/afb-daemon --name=afm-system-daemon -no-httpd --no-ldpaths --binding=@CMAKE_INSTALL_LIBEXECDIR@/afm/afm-binding.so --ws-server=sd:afm-main
+SyslogIdentifier=afm-system-daemon
+ExecStart=/usr/bin/afb-daemon --name=afm-system-daemon --no-httpd --no-ldpaths --binding=@CMAKE_INSTALL_FULL_LIBEXECDIR@/afm/afm-binding.so --ws-server=sd:afm-main
 Restart=on-failure
 RestartSec=5
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_MAC_OVERRIDE

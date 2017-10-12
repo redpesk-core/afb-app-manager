@@ -4,7 +4,7 @@ Description=Application Framework Master, User side
 [Service]
 Type=dbus                                
 BusName=org.AGL.afm.user          
-ExecStart=/usr/bin/afm-user-daemon --user-dbus=unix:path=%t/bus
+ExecStart=/usr/bin/afm-user-daemon --user-dbus=unix:path=%t/bus unix:/run/afm/apis/ws/afm-main
 Environment=AFM_APP_INSTALL_DIR=%%r
 EnvironmentFile=-@afm_confdir@/unit.env.d/*
 Restart=on-failure
