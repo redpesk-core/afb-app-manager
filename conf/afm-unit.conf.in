@@ -147,6 +147,8 @@ WorkingDirectory=-{{&#metadata.app-data-dir}}/{{:id}}
 ExecStartPre=/bin/mkdir -p {{&#metadata.app-data-dir}}/{{:id}}
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
 Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
+Environment=XDG_RUNTIME_DIR=/run/user/%i
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
 
 %systemd-unit system
 {{#required-permission.urn:AGL:permission::public:hidden}}\

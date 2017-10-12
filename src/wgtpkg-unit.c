@@ -378,7 +378,7 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 	sprintf(portstr, "%d", conf->port);
 	return 	j_add_many_strings_m(jdesc,
 		"#metadata.install-dir", conf->installdir,
-		"#metadata.app-data-dir", "%h/app-data",
+		"#metadata.app-data-dir", "/home/%i/app-data",
 		"#metadata.icons-dir", conf->icondir,
 		"#metadata.http-port", portstr,
 		NULL) ? 0 : -1;
