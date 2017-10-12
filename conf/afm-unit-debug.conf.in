@@ -133,7 +133,6 @@ User=%i
 
 CapabilityBoundingSet=
 AmbientCapabilities=
-SecureBits=no-setuid-fixup-locked
 
 {{#required-permission}}
   {{#urn:AGL:permission::platform:no-oom}}      OOMScoreAdjust=-500             {{/urn:AGL:permission::platform:no-oom}}
