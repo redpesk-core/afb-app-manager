@@ -56,12 +56,12 @@ else()
 	add_definitions(-DUSE_LIBZIP=0)
 endif()
 
-pkg_check_modules(libsystemd REQUIRED libsystemd>=222)
-add_compile_options(${libsystemd_CFLAGS})
-include_directories(${libsystemd_INCLUDE_DIRS})
-link_libraries(${libsystemd_LIBRARIES})
+pkg_check_modules(libsystemd libsystemd>=222)
+if(NOT libsystemd_FOUND)
+	add_definitions(-DNO_LIBSYSTEMD)
+endif()
 
-pkg_check_modules(AFB REQUIRED afb-daemon>=4.99 libafbwsc>=4.99)
+pkg_check_modules(AFB afb-daemon>=4.99 libafbwsc>=4.99)
 
 ###########################################################################
 
@@ -129,7 +129,7 @@ add_library(afm STATIC
 	)
 
 ###########################################################################
-# packaging tools
+# off line tools tools
 
 MESSAGE(STATUS "Creating packaging tools")
 
@@ -148,36 +148,31 @@ target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
 install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ###########################################################################
-# the daemons
+# dynamic tool daemons
 
-MESSAGE(STATUS "Creating daemons")
+if(libsystemd_FOUND AND AFB_FOUND)
+	MESSAGE(STATUS "Creating daemons")
 
-add_library(jbus STATIC utils-jbus.c)
+	add_compile_options(${libsystemd_CFLAGS} ${AFB_CFLAGS})
+	include_directories(${libsystemd_INCLUDE_DIRS} ${AFB_INCLUDE_DIRS})
+	link_libraries(${libsystemd_LIBRARIES} ${AFB_LIBRARIES})
 
-add_executable(afm-user-daemon afm-user-daemon.c)
-target_link_libraries(afm-user-daemon jbus utils afbwsc)
-install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_library(jbus STATIC utils-jbus.c)
 
-add_executable(afm-system-daemon afm-system-daemon.c)
-target_link_libraries(afm-system-daemon wgtpkg afm secwrp wgt utils jbus)
-install(TARGETS afm-system-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_executable(afm-user-daemon afm-user-daemon.c)
+	target_link_libraries(afm-user-daemon jbus utils afbwsc)
+	install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-###########################################################################
-# the binding for afb
-
-message(STATUS "Creation afm-binding for AFB-DAEMON")
-###############################################################
-pkg_get_variable(afb_binding_install_dir afb-daemon binding_install_dir)
-###############################################################
-add_library(afm-binding MODULE afm-binding.c)
-target_compile_options(afm-binding PRIVATE ${AFB_CFLAGS})
-target_include_directories(afm-binding PRIVATE ${AFB_INCLUDE_DIRS})
-target_link_libraries(afm-binding wgtpkg wgt secwrp utils afm ${AFB_LIBRARIES})
-set_target_properties(afm-binding PROPERTIES
-	PREFIX ""
-	LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-binding.export-map"
-)
-install(TARGETS afm-binding LIBRARY DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/afm)
+	add_library(afm-binding MODULE afm-binding.c)
+	target_link_libraries(afm-binding wgtpkg wgt secwrp utils afm)
+	set_target_properties(afm-binding PROPERTIES
+		PREFIX ""
+		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-binding.export-map"
+	)
+	install(TARGETS afm-binding LIBRARY DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/afm)
+else()
+	MESSAGE(STATUS "Not creating daemons")
+endif()
 
 ###########################################################################
 # the tests
