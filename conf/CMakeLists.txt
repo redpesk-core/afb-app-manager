@@ -25,10 +25,12 @@ configure_file(afm-system-daemon.socket.in afm-system-daemon.socket)
 configure_file(afm-user-daemon.service.in afm-user-daemon.service)
 
 if(NOT USE_SDK)
+	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
 	set(SYSCONFDIR_DBUS_USER   ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/session.d CACHE STRING "Path to dbus session configuration files")
 	set(UNITDIR_SYSTEM         ${CMAKE_INSTALL_LIBDIR}/systemd/system CACHE STRING "Path to systemd system unit files")
 	set(UNITDIR_USER           ${CMAKE_INSTALL_LIBDIR}/systemd/user CACHE STRING "Path to systemd system unit files")
 
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.service DESTINATION ${UNITDIR_SYSTEM})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.socket  DESTINATION ${UNITDIR_SYSTEM})
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
