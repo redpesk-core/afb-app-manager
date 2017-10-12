@@ -2,8 +2,8 @@
 Description=Application Framework Master, system side
 
 [Service]
-User=afm
-Group=afm
+#User=afm
+#Group=afm
 SyslogIdentifier=afm-system-daemon
 ExecStart=/usr/bin/afb-daemon --name=afm-system-daemon --no-httpd --no-ldpaths --binding=@CMAKE_INSTALL_FULL_LIBEXECDIR@/afm/afm-binding.so --ws-server=sd:afm-main
 Restart=on-failure
