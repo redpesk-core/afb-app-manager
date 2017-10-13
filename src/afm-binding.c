@@ -206,7 +206,11 @@ static void start(struct afb_req req)
 
 	/* returns */
 	resp = NULL;
+#if 0
 	wrap_json_pack(&resp, "{si}", _runid_, runid);
+#else
+	wrap_json_pack(&resp, "i", runid);
+#endif
 	afb_req_success(req, resp, NULL);
 }
 
