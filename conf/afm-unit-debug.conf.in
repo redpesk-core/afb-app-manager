@@ -130,6 +130,7 @@ SuccessExitStatus=0 SIGKILL
 
 PAMName=su
 User=%i
+Slice=user-%i.slice
 
 CapabilityBoundingSet=
 AmbientCapabilities=
