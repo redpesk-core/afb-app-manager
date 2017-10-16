@@ -128,7 +128,7 @@ EnvironmentFile=-@afm_confdir@/unit.env.d/*
 SmackProcessLabel=User::App::{{:id}}
 SuccessExitStatus=0 SIGKILL
 
-PAMName=su
+#PAMName=su
 User=%i
 Slice=user-%i.slice
 
