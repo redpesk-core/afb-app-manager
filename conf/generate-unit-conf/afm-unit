@@ -1,0 +1,142 @@
+divert(-1)
+-----------------------------------------------------------------------
+-- Set the comment character of m4 to ; instead of #
+-- This is needed for substitution within lines starting with #
+changecom( ';')
+
+-----------------------------------------------------------------------
+-- 
+define( `X_EMITS', 1)
+define( `X_DIVERTS', `divert(eval(-!X_EMITS()))')
+define( `X_PUSH_DIVERTS', `pushdef(`X_EMITS', eval(X_EMITS() && $1))X_DIVERTS()')
+
+define( `X_IF', `pushdef(`X_COND', $1)X_PUSH_DIVERTS($1)')
+define( `X_ELSE', `popdef(`X_EMITS')X_PUSH_DIVERTS(eval(!X_COND))')
+define( `X_ELIF', `X_ELSE()X_IF($1)')
+define( `X_ENDIF', `popdef(`X_EMITS')popdef(`X_COND')X_DIVERTS()')
+
+define( `IF', `pushdef(`ELSE',`X_ELSE()')pushdef(`ELIF',`X_ELIF($1)')pushdef(`ENDIF',`X_ENDIF()popdef(`ELSE',`ELIF',`ENDIF')')X_IF($1)')
+
+-----------------------------------------------------------------------
+-- 
+define( `MUSTACH_ON', `ifelse(`$2',,,`{{#$1}}`$2'{{/$1}}')ifelse(`$3',,,`{{^$1}}`$3'{{/$1}}')')
+define( `MUSTACH_IF', `{{#$1}}pushdef(`ELSE',`{{/$1}}{{^$1}}')pushdef(`ENDIF',`{{/$1}}popdef(`ELSE',`ENDIF')')')
+define( `MUSTACH_IF_NOT', `{{^$1}}pushdef(`ELSE',`{{/$1}}{{#$1}}')pushdef(`ENDIF',`{{/$1}}popdef(`ELSE',`ENDIF')')')
+
+-----------------------------------------------------------------------
+-- 
+define( `PERM', `urn:AGL:permission:$1')
+define( `REQPERM', `required-permission.PERM($1)')
+
+define( `ON_PERM', `MUSTACH_ON(REQPERM($1),$2,$3)')
+define( `IF_PERM', `MUSTACH_IF(REQPERM($1))')
+define( `IF_NOT_PERM', `MUSTACH_IF_NOT(REQPERM($1))')
+
+define( `ON_CONTENT', `MUSTACH_ON(content.type=$1,$2,$3)')
+define( `IF_CONTENT', `MUSTACH_IF(content.type=$1)')
+define( `IF_NOT_CONTENT', `MUSTACH_IF_NOT(content.type=$1)')
+
+define( `ON_VALUE', `MUSTACH_ON(value=$1,$2,$3)')
+define( `IF_VALUE', `MUSTACH_IF(value=$1)')
+define( `IF_NOT_VALUE', `MUSTACH_IF_NOT(value=$1)')
+
+-----------------------------------------------------------------------
+-- 
+define( `TARGET', `{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}')
+define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-{{:id}}--{{:ver}}--{{:#target}}')
+define( `UNIT_NAME_SERVICE', `UNIT_NAME_BASE%i.service')
+define( `UNIT_NAME_SOCKET_FOR', `afm-api-ws-$1@%i.socket')
+
+-----------------------------------------------------------------------
+-- 
+define( `ON_AGL_DEVEL', `ifdef(`AGL_DEVEL', $1, $2)')
+define( `IF_AGL_DEVEL', `IF(ON_AGL_DEVEL(1,0))')
+
+divert(0)dnl
+;---------------------------------------------------------------------------------
+; File:
+;
+;    afm-unit.conf
+;
+; Mode:
+;
+;    ON_AGL_DEVEL(DEVEL, RELEASE)
+;
+; Role:
+;
+;    Configure how installation of widget produces unit files for systemd
+;
+; Processing and format:
+;
+;    1. File load
+;
+;           Lines beginning with ; are firstly removed
+;
+;    2. File instantiation
+;
+;           Mustache (extended) substitutions are applied using JSON
+;           data deduced from config.xml file of the widget.
+;
+;    3. Extraction of units
+;
+;           Extract produced units, pack it (remove empty lines and directives)
+;
+; Directives:
+;
+;    Any directive occupy one whole line starting with %
+;
+;     - %nl
+;
+;             produce an empty line at the end
+;
+;     - %begin systemd-unit
+;     - %end systemd-unit
+;
+;             delimit the produced unit
+;
+;     - %systemd-unit user
+;     - %systemd-unit system
+;
+;             tells the kind of unit (user/system)
+;
+;     - %systemd-unit service NAME
+;     - %systemd-unit socket NAME
+;
+;             gives the name and type of the unit
+;
+;     - %systemd-unit wanted-by NAME
+;
+;             tells to install a link to unit in the wants of NAME
+;
+; Setting variables:
+;
+;    AFM uses the feature of systemd that completely ignores options prefixed
+;    with X-
+;
+;    Consequently, options starting with X-AFM- are recorded as public data
+;    about the application and options starting starting with X-AFM-- are
+;    recorded as private data.
+;
+;    Examples:
+;
+;        X-AFM-description={{description}}
+;
+;              Records the description of the unit in the field "description"
+;              of both the public and private object describing the unit.
+;
+;        X-AFM--wgtdir={{:#metadata.install-dir}}
+;
+;              Records the installation directory path in the field "wgtdir"
+;              of the private object only.
+;
+;---------------------------------------------------------------------------------
+{{#targets}}
+
+include(service.inc)
+
+include(provided.inc)
+
+{{/targets}}
+;---------------------------------------------------------------------------------
+; End of file afm-unit.conf mode ON_AGL_DEVEL(DEVEL, RELEASE)
+;---------------------------------------------------------------------------------
