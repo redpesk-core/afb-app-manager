@@ -30,7 +30,7 @@ X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
 X-AFM--wgtdir={{:#metadata.install-dir}}
-X-AFM--workdir={{&#metadata.app-data-dir}}/{{:id}}
+X-AFM--workdir=APP_DATA_DIR/{{:id}}
 %nl
 
 Wants=sockets.target
@@ -66,13 +66,13 @@ ON_PERM(:public:display,    SupplementaryGroups=display)
 ON_PERM(:public:syscall:clock, , SystemCallFilter=~@clock)
 %nl
 
-WorkingDirectory=-{{&#metadata.app-data-dir}}/{{:id}}
-ExecStartPre=/bin/mkdir -p {{&#metadata.app-data-dir}}/{{:id}}
+WorkingDirectory=-APP_DATA_DIR/{{:id}}
+ExecStartPre=/bin/mkdir -p APP_DATA_DIR/{{:id}}
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
 Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
-Environment=XDG_DATA_HOME={{&#metadata.app-data-dir}}/{{:id}}
-Environment=XDG_CONFIG_HOME={{&#metadata.app-data-dir}}/{{:id}}
-Environment=XDG_CACHE_HOME={{&#metadata.app-data-dir}}/{{:id}}
+Environment=XDG_DATA_HOME=APP_DATA_DIR/{{:id}}
+Environment=XDG_CONFIG_HOME=APP_DATA_DIR/{{:id}}
+Environment=XDG_CACHE_HOME=APP_DATA_DIR/{{:id}}
 Environment=XDG_RUNTIME_DIR=/run/user/%i
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
 Environment=LD_LIBRARY_PATH=$ORIGIN/lib

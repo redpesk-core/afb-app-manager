@@ -10,7 +10,7 @@ ENDIF
 ExecStart=/usr/bin/afb-daemon \
 	--name afbd-TARGET \
 	--rootdir={{:#metadata.install-dir}} \
-	--workdir={{&#metadata.app-data-dir}}/{{id}} \
+	--workdir=APP_DATA_DIR/{{id}} \
 IF_AGL_DEVEL \
 	--verbose \
 	--verbose \
