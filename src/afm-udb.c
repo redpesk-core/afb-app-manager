@@ -280,7 +280,7 @@ static int read_unit_file(const char *path, char **content, size_t *length)
 	/* read the file */
 	rc = getfile(path, content, length);
 	if (rc >= 0) {
-		/* removes any comment and join lines */
+		/* removes any comment and join continued lines */
 		st = 0;
 		read = write = *content;
 		for (;;) {
@@ -289,6 +289,7 @@ static int read_unit_file(const char *path, char **content, size_t *length)
 				break;
 			switch (st) {
 			case 0:
+				/* state 0: begin of a line */
 				if (c == ';' || c == '#') {
 					st = 3; /* removes lines starting with ; or # */
 					break;
@@ -299,6 +300,7 @@ enter_state_1:
 				st = 1;
 				/*@fallthrough@*/
 			case 1:
+				/* state 1: emitting a normal line */
 				if (c == '\\')
 					st = 2;
 				else {
@@ -308,12 +310,14 @@ enter_state_1:
 				}
 				break;
 			case 2:
+				/* state 2: character after '\' */
 				if (c == '\n')
 					c = ' ';
 				else
 					*write++ = '\\';
 				goto enter_state_1;
 			case 3:
+				/* state 3: inside a comment, wait its end */
 				if (c == '\n')
 					st = 0;
 				break;
