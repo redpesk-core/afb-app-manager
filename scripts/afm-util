@@ -1,34 +1,8 @@
 #!/bin/bash
 
-if [ "x" = "x${DBUS_SESSION_BUS_ADDRESS}" ]; then
-	DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$UID/bus"
-fi
-export DBUS_SESSION_BUS_ADDRESS
-
-pretty() {
-	sed '	/^method return .*/d
-		s/^Error org.freedesktop.DBus.Error.Failed: "\?\(.*\)"\?$/ERROR: \1/
-		s/^   string "\(.*\)"/\1/
-		s:[[{,]:&\n:g
-		s: *[]}]:\n&:g
-	' |
-	sed '	s:^ *::
-		s: *$::
-		/[]}],*$/ {x;s:...::;x}
-		G
-		/[[{]\n/ {x;s:$:   :;x}
-		s:^\(.*[^\n]\)\n\( *\)$:\2\1:
-	'
-}
-
 send() {
-	dbus-send --session --print-reply \
-		--dest=org.AGL.afm.user \
-		/org/AGL/afm/user \
-		org.AGL.afm.user.$1 \
-		"string:$2" |
-	pretty
-	return ${PIPESTATUS[0]}
+	afb-client-demo -H -d unix:/run/afm/apis/ws/afm-main "$1" "$2" |
+	awk '$1=="ON-REPLY-FAIL"{$1="ERROR:";$2="";print;exit 1;}NR>1'
 }
 
 case "$1" in

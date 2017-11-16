@@ -20,6 +20,7 @@ cmake_minimum_required(VERSION 2.8)
 
 if(NOT USE_SDK)
 	install(PROGRAMS afm-util DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(PROGRAMS afm-install DESTINATION ${CMAKE_INSTALL_BINDIR})
 	if(AGL_DEVEL)
 		install(PROGRAMS afm-debug DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
