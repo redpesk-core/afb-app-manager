@@ -87,12 +87,7 @@ Description={{description}}
 X-AFM-description={{description}}
 X-AFM-name={{name.content}}
 X-AFM-shortname={{name.short}}
-#***************
-# use X-AFM-id={{:id}}--{{:ver}}--{{:#target}}
-# instead of:
 X-AFM-id={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
-# when home screen will use real ids
-#**************
 X-AFM-version={{:version}}
 X-AFM-author={{author.content}}
 X-AFM-author-email={{author.email}}
@@ -145,7 +140,7 @@ Environment=XDG_RUNTIME_DIR=/run/user/%i
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
 Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 %systemd-unit system
-%systemd-unit service afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}
+%systemd-unit service afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}@
 SyslogIdentifier=afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 StandardInput=null
 StandardOutput=journal
@@ -211,7 +206,7 @@ WantedBy=default.target
 SmackLabel=*
 ListenStream=%t/apis/ws/{{name}}
 FileDescriptorName={{name}}
-Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}%i.service
+Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}@%i.service
 %nl
 [Install]
 WantedBy=sockets.target

@@ -42,8 +42,12 @@ define( `IF_NOT_VALUE', `MUSTACH_IF_NOT(value=$1)')
 
 -----------------------------------------------------------------------
 -- 
+ when home screen will use real ids
+ use TARGET={{:id}}--{{:ver}}--{{:#target}}
+ instead of TARGET={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
+
 define( `TARGET', `{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}')
-define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-{{:id}}--{{:ver}}--{{:#target}}')
+define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-{{:id}}--{{:ver}}--{{:#target}}@')
 define( `UNIT_NAME_SERVICE', `UNIT_NAME_BASE%i.service')
 define( `UNIT_NAME_SOCKET_FOR', `afm-api-ws-$1@%i.socket')
 define( `APP_DATA_DIR', `/home/%i/app-data')

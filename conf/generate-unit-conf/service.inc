@@ -11,12 +11,7 @@ Description={{description}}
 X-AFM-description={{description}}
 X-AFM-name={{name.content}}
 X-AFM-shortname={{name.short}}
-#***************
-# use X-AFM-id={{:id}}--{{:ver}}--{{:#target}}
-# instead of:
 X-AFM-id=TARGET
-# when home screen will use real ids
-#**************
 X-AFM-version={{:version}}
 X-AFM-author={{author.content}}
 X-AFM-author-email={{author.email}}
