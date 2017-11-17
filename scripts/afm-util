@@ -13,7 +13,9 @@ case "$1" in
 
   add|install)
     f=$(realpath $2)
-    send install '{"wgt":"'"$f"'","force":true}'
+    r=true
+    if [[ "$(basename $0)" = "afm-install" ]]; then r=false; fi
+    send install '{"wgt":"'"$f"'","force":true,"reload":'"$r"'}'
     ;;
 
   remove|uninstall)
