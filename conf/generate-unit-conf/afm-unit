@@ -1,4 +1,5 @@
 divert(-1)
+dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 -----------------------------------------------------------------------
 -- Set the comment character of m4 to ; instead of #
 -- This is needed for substitution within lines starting with #

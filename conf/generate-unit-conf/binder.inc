@@ -1,3 +1,4 @@
+dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
 IF_AGL_DEVEL
 X-AFM-http-port={{:#metadata.http-port}}
