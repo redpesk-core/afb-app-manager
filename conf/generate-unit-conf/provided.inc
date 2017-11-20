@@ -15,7 +15,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
 [Socket]
 SmackLabel=*
-ListenStream=%t/apis/ws/{{name}}
+ListenStream=USER_RUN_DIR/apis/ws/{{name}}
 FileDescriptorName={{name}}
 
 Service=UNIT_NAME_SERVICE
@@ -26,6 +26,8 @@ WantedBy=sockets.target
 %systemd-unit wanted-by sockets.target
 
 %end systemd-unit
+
+
 
 {{/value=ws|auto}}
 {{/provided-api}}

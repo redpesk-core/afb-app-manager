@@ -165,9 +165,9 @@ ExecStart=/usr/bin/afb-daemon \
 	{{/content.type=application/vnd.agl.service}} \
 	{{#required-permission.urn:AGL:permission::public:applications:read}}--alias=/icons:{{:#metadata.icons-dir}}{{/required-permission.urn:AGL:permission::public:applications:read}} \
 	{{#required-api}} \
-		{{#value=auto|ws}}--ws-client=unix:%t/apis/ws/{{name}}{{/value=auto|ws}} \
+		{{#value=auto|ws}}--ws-client=unix:/run/user/%i/apis/ws/{{name}}{{/value=auto|ws}} \
 		{{#value=dbus}}--dbus-client={{name}}{{/value=dbus}} \
-		{{#value=link}}--binding=%t/apis/lib/{{name}}{{/value=link}} \
+		{{#value=link}}--binding=/run/user/%i/apis/lib/{{name}}{{/value=link}} \
 		{{#value=cloud}}--cloud-client={{name}}{{/value=cloud}} \
 		{{#value=local}}--binding={{:#metadata.install-dir}}/{{name}}{{/value=local}} \
 	{{/required-api}} \
@@ -204,7 +204,7 @@ WantedBy=default.target
 %systemd-unit socket afm-api-ws-{{name}}@
 [Socket]
 SmackLabel=*
-ListenStream=%t/apis/ws/{{name}}
+ListenStream=/run/user/%i/apis/ws/{{name}}
 FileDescriptorName={{name}}
 Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}@%i.service
 %nl
