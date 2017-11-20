@@ -153,6 +153,7 @@ StandardError=journal
 ;---------------------------------------------------------------------------------
 {{#content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
 X-AFM-http-port={{:#metadata.http-port}}
+Type=notify
 ExecStart=/usr/bin/afb-daemon \
 	--name afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
 	--rootdir={{:#metadata.install-dir}} \

@@ -8,6 +8,7 @@ X-AFM--http-port={{:#metadata.http-port}}
 ENDIF
 ENDIF
 
+Type=notify
 ExecStart=/usr/bin/afb-daemon \
 	--name afbd-TARGET \
 	--rootdir={{:#metadata.install-dir}} \
