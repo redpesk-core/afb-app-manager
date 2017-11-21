@@ -53,8 +53,8 @@ SuccessExitStatus=0 SIGKILL
 User=%i
 Slice=user-%i.slice
 
-CapabilityBoundingSet=
-AmbientCapabilities=
+#CapabilityBoundingSet=
+#AmbientCapabilities=
 
 ON_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
 ON_PERM(:partner:real-time, IOSchedulingClass=realtime)
