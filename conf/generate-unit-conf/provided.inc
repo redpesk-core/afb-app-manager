@@ -23,7 +23,7 @@ Service=UNIT_NAME_SERVICE
 %nl
 [Install]
 WantedBy=sockets.target
-%systemd-unit wanted-by sockets.target
+%systemd-unit wanted-by agl-user-session@.service
 
 %end systemd-unit
 

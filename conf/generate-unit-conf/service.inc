@@ -107,7 +107,7 @@ IF_PERM(:system:run-by-default)
 ;---------------------------------------------------------------------------------
 [Install]
 WantedBy=default.target
-%systemd-unit wanted-by default.target
+%systemd-unit wanted-by agl-user-session@.service
 ENDIF
 
 %end systemd-unit

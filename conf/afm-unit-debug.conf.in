@@ -191,7 +191,7 @@ ExecStart={{:#metadata.install-dir}}/{{content.src}}
 ;---------------------------------------------------------------------------------
 [Install]
 WantedBy=default.target
-%systemd-unit wanted-by default.target
+%systemd-unit wanted-by agl-user-session@.service
 {{/required-permission.urn:AGL:permission::system:run-by-default}}
 %end systemd-unit
 ;---------------------------------------------------------------------------------
@@ -211,7 +211,7 @@ Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/
 %nl
 [Install]
 WantedBy=sockets.target
-%systemd-unit wanted-by sockets.target
+%systemd-unit wanted-by agl-user-session@.service
 %end systemd-unit
 {{/value=ws|auto}}
 {{/provided-api}}
