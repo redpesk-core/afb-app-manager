@@ -103,8 +103,8 @@ static int onrunid(struct afb_req req, const char *method, int *runid)
 	struct json_object *json;
 
 	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "s", runid)
-		&& wrap_json_unpack(json, "{ss}", "runid", runid)) {
+	if (wrap_json_unpack(json, "i", runid)
+		&& wrap_json_unpack(json, "{si}", "runid", runid)) {
 		INFO("bad request method %s: %s", method,
 					json_object_to_json_string(json));
 		bad_request(req);
