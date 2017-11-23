@@ -47,6 +47,13 @@ BindsTo=UNIT_NAME_SOCKET_FOR({{name}})
 After=UNIT_NAME_SOCKET_FOR({{name}})
 {{/value=auto|ws}}
 {{/required-api}}
+{{#provided-api}}
+{{#value=ws|auto}}
+Requires=UNIT_NAME_SOCKET_FOR({{name}})
+After=UNIT_NAME_SOCKET_FOR({{name}})
+{{/value=ws|auto}}
+{{/provided-api}}
+
 %nl
 
 [Service]

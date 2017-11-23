@@ -16,6 +16,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 Description=Provides api {{name}} for user %i
 Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
+DefaultDependencies=no
 
 [Socket]
 SmackLabel=*

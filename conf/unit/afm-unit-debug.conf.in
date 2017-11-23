@@ -118,6 +118,12 @@ BindsTo=afm-api-ws-{{name}}@%i.socket
 After=afm-api-ws-{{name}}@%i.socket
 {{/value=auto|ws}}
 {{/required-api}}
+{{#provided-api}}
+{{#value=ws|auto}}
+Requires=afm-api-ws-{{name}}@%i.socket
+After=afm-api-ws-{{name}}@%i.socket
+{{/value=ws|auto}}
+{{/provided-api}}
 %nl
 [Service]
 EnvironmentFile=-@afm_confdir@/unit.env.d/*
@@ -208,6 +214,7 @@ WantedBy=afm-user-session@.target
 Description=Provides api {{name}} for user %i
 Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
+DefaultDependencies=no
 [Socket]
 SmackLabel=*
 ListenStream=/run/user/%i/apis/ws/{{name}}
