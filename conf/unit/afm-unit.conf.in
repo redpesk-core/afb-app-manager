@@ -190,8 +190,8 @@ ExecStart={{:#metadata.install-dir}}/{{content.src}}
 ; auto start
 ;---------------------------------------------------------------------------------
 [Install]
-WantedBy=agl-user-session@.target
-%systemd-unit wanted-by agl-user-session@.target
+WantedBy=afm-user-session@.target
+%systemd-unit wanted-by afm-user-session@.target
 {{/required-permission.urn:AGL:permission::system:run-by-default}}
 %end systemd-unit
 ;---------------------------------------------------------------------------------
@@ -213,8 +213,8 @@ FileDescriptorName={{name}}
 Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}@%i.service
 %nl
 [Install]
-WantedBy=agl-user-session@.target
-%systemd-unit wanted-by agl-user-session@.target
+WantedBy=afm-user-session@.target
+%systemd-unit wanted-by afm-user-session@.target
 %end systemd-unit
 {{/value=ws|auto}}
 {{/provided-api}}

@@ -25,8 +25,8 @@ Service=UNIT_NAME_SERVICE
 
 %nl
 [Install]
-WantedBy=agl-user-session@.target
-%systemd-unit wanted-by agl-user-session@.target
+WantedBy=afm-user-session@.target
+%systemd-unit wanted-by afm-user-session@.target
 
 %end systemd-unit
 

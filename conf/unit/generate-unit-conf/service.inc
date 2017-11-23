@@ -106,8 +106,8 @@ IF_PERM(:system:run-by-default)
 ; auto start
 ;---------------------------------------------------------------------------------
 [Install]
-WantedBy=agl-user-session@.target
-%systemd-unit wanted-by agl-user-session@.target
+WantedBy=afm-user-session@.target
+%systemd-unit wanted-by afm-user-session@.target
 ENDIF
 
 %end systemd-unit
