@@ -32,7 +32,8 @@ X-AFM--wgtdir={{:#metadata.install-dir}}
 X-AFM--workdir=APP_DATA_DIR/{{:id}}
 %nl
 
-Wants=afm-user-session@%i.target
+Requires=afm-user-session@%i.target
+Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
 
 # Adds check to smack

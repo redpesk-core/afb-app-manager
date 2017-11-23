@@ -105,7 +105,8 @@ X-AFM--type={{content.type}}
 X-AFM--wgtdir={{:#metadata.install-dir}}
 X-AFM--workdir=/home/%i/app-data/{{:id}}
 %nl
-Wants=afm-user-session@%i.target
+Requires=afm-user-session@%i.target
+Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
 # Adds check to smack
 ConditionSecurity=smack
@@ -205,6 +206,7 @@ WantedBy=afm-user-session@.target
 %systemd-unit socket afm-api-ws-{{name}}@
 [Unit]
 Description=Provides api {{name}} for user %i
+Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
 [Socket]
 SmackLabel=*

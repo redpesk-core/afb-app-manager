@@ -1,3 +1,4 @@
 [Unit]
-After=afm-user-session@%i.service
+Description=Target group of afm-user-session %i
+Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service

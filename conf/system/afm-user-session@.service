@@ -1,5 +1,5 @@
 [Unit]
-Description=Starts the session of afm user %i
+Description=Initiate afm-user-session %i
 After=systemd-user-sessions.service
 Wants=afm-user-setup@%i.service
 Before=afm-user-setup@%i.service

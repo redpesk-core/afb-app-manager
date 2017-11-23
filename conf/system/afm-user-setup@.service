@@ -1,15 +1,13 @@
 [Unit]
-Description=Starts the session of afm user %i
+Description=Setup completion of afm-user-session %i
 Requires=afm-user-setup@%i.path
 After=afm-user-setup@%i.path
+Requires=afm-user-session@%i.service
 After=afm-user-session@%i.service
 Before=afm-user-session@%i.target
-After=user@%i.service
 [Service]
 User=%i
 Type=oneshot
-ExecStartPre=/bin/echo USER SETUP %i
-ExecStartPre=/bin/systemctl status
 ExecStart=/bin/rm /run/user/%i/afm-user-started
 
 
