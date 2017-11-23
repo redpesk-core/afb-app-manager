@@ -3,8 +3,6 @@
 SmackLabel=*
 ListenStream=/run/afm/apis/ws/afm-main
 FileDescriptorName=afm-main
-SocketUser=afm
-SocketGroup=afm
 
 Service=afm-system-daemon.service
 

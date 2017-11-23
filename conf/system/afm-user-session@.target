@@ -1,0 +1,3 @@
+[Unit]
+After=afm-user-session@%i.service
+After=afm-user-setup@%i.service

@@ -12,6 +12,9 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
 %systemd-unit system
 %systemd-unit socket afm-api-ws-{{name}}@
+[Unit]
+Description=Provides api {{name}} for user %i
+After=afm-user-setup@%i.service
 
 [Socket]
 SmackLabel=*
@@ -22,8 +25,8 @@ Service=UNIT_NAME_SERVICE
 
 %nl
 [Install]
-WantedBy=sockets.target
-%systemd-unit wanted-by agl-user-session@.service
+WantedBy=agl-user-session@.target
+%systemd-unit wanted-by agl-user-session@.target
 
 %end systemd-unit
 

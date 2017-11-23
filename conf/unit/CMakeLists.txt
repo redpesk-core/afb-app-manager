@@ -1,5 +1,5 @@
 ###########################################################################
-# Copyright 2017 IoT.bzh
+# Copyright 2015, 2016, 2017 IoT.bzh
 #
 # author: José Bollo <jose.bollo@iot.bzh>
 #
@@ -16,7 +16,16 @@
 # limitations under the License.
 ###########################################################################
 
-add_subdirectory(unit)
-add_subdirectory(system)
-add_subdirectory(user)
+cmake_minimum_required(VERSION 2.8)
+
+if(AGL_DEVEL)
+	configure_file(afm-unit-debug.conf.in afm-unit.conf)
+else()
+	configure_file(afm-unit.conf.in afm-unit.conf)
+endif()
+
+if(NOT USE_SDK)
+	install(DIRECTORY DESTINATION ${afm_confdir}/unit.env.d)
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
+endif()
 

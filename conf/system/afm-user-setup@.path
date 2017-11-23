@@ -1,0 +1,7 @@
+[Unit]
+DefaultDependencies=false
+[Path]
+PathExists=/run/user/%i/wayland-0
+PathExists=/run/user/%i/afm-user-started
+
+

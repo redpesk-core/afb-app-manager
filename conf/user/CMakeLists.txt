@@ -1,5 +1,5 @@
 ###########################################################################
-# Copyright 2017 IoT.bzh
+# Copyright 2015, 2016, 2017 IoT.bzh
 #
 # author: José Bollo <jose.bollo@iot.bzh>
 #
@@ -16,7 +16,16 @@
 # limitations under the License.
 ###########################################################################
 
-add_subdirectory(unit)
-add_subdirectory(system)
-add_subdirectory(user)
+cmake_minimum_required(VERSION 2.8)
+
+configure_file(afm-user-daemon.service.in afm-user-daemon.service)
+
+if(NOT USE_SDK)
+	set(SYSCONFDIR_DBUS_USER   ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/session.d CACHE STRING "Path to dbus session configuration files")
+	set(UNITDIR_USER           ${CMAKE_INSTALL_LIBDIR}/systemd/user CACHE STRING "Path to systemd system unit files")
+
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-start.service    DESTINATION ${UNITDIR_USER})
+endif()
 
