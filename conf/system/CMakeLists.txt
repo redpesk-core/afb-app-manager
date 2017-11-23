@@ -23,9 +23,11 @@ configure_file(afm-system-daemon.socket.in afm-system-daemon.socket)
 
 if(NOT USE_SDK)
 	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
-	set(UNITDIR_SYSTEM         ${CMAKE_INSTALL_LIBDIR}/systemd/system CACHE STRING "Path to systemd system unit files")
+	set(SYSCONFDIR_PAMD        ${CMAKE_INSTALL_SYSCONFDIR}/pam.d           CACHE STRING "Path to pam configuration files")
+	set(UNITDIR_SYSTEM         ${CMAKE_INSTALL_LIBDIR}/systemd/system      CACHE STRING "Path to systemd system unit files")
 
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session.pamd     DESTINATION ${SYSCONFDIR_PAMD} RENAME afm-user-session)
 	install(
 		FILES
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.service

@@ -6,7 +6,7 @@ Before=afm-user-setup@%i.service
 Wants=afm-user-session@%i.target
 Before=afm-user-session@%i.target
 [Service]
-PAMName=agl-user-session
+PAMName=afm-user-session
 User=%i
 Type=simple
 ExecStartPre=/bin/echo START afm-user-session@%i

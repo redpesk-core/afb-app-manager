@@ -1,0 +1,4 @@
+account  include common-account
+session  required pam_loginuid.so
+session  include common-session
+
