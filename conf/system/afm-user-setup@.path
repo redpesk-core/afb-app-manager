@@ -1,8 +1,0 @@
-[Unit]
-Description=Path for setup completion of afm-user-session %i
-DefaultDependencies=false
-[Path]
-PathExists=/run/user/%i/wayland-0
-PathExists=/run/user/%i/afm-user-started
-
-

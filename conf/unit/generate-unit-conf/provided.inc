@@ -14,8 +14,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 %systemd-unit socket afm-api-ws-{{name}}@
 [Unit]
 Description=Provides api {{name}} for user %i
-Requires=afm-user-setup@%i.service
-After=afm-user-setup@%i.service
+After=user@%i.service
 DefaultDependencies=no
 
 [Socket]

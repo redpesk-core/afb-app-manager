@@ -35,8 +35,6 @@ if(NOT USE_SDK)
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.conf
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session@.service
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session@.target
-			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-setup@.path
-			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-setup@.service
 		DESTINATION
 			${UNITDIR_SYSTEM}
 	)

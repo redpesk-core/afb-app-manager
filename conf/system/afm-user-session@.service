@@ -2,10 +2,7 @@
 Description=Initiate afm-user-session %i
 Requires=systemd-user-sessions.service
 After=systemd-user-sessions.service
-Requires=afm-user-session@%i.target
-Before=afm-user-session@%i.target
 [Service]
-PAMName=afm-user-session
 User=%i
-Type=simple
-ExecStart=/bin/sleep 2147483648
+PAMName=afm-user-session
+ExecStart=/bin/systemctl --wait start afm-user-session@%i.target

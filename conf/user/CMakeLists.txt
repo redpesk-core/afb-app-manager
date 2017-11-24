@@ -26,6 +26,5 @@ if(NOT USE_SDK)
 
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-daemon.conf      DESTINATION ${SYSCONFDIR_DBUS_USER})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-user-daemon.service   DESTINATION ${UNITDIR_USER})
-	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-start.service    DESTINATION ${UNITDIR_USER})
 endif()
 

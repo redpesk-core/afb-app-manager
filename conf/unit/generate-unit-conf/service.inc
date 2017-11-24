@@ -33,8 +33,7 @@ X-AFM--workdir=APP_DATA_DIR/{{:id}}
 %nl
 
 Requires=afm-user-session@%i.target
-Requires=afm-user-setup@%i.service
-After=afm-user-setup@%i.service
+After=user@%i.service
 
 # Adds check to smack
 ConditionSecurity=smack

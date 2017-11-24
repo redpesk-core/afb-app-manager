@@ -1,8 +1,0 @@
-[Unit]
-Description=start mark of afm user
-
-[Service]
-Type=oneshot
-ExecStart=/bin/touch %t/afm-user-started
-
-
