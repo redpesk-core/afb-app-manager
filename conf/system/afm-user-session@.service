@@ -1,15 +1,11 @@
 [Unit]
 Description=Initiate afm-user-session %i
+Requires=systemd-user-sessions.service
 After=systemd-user-sessions.service
-Wants=afm-user-setup@%i.service
-Before=afm-user-setup@%i.service
-Wants=afm-user-session@%i.target
+Requires=afm-user-session@%i.target
 Before=afm-user-session@%i.target
 [Service]
 PAMName=afm-user-session
 User=%i
 Type=simple
-ExecStartPre=/bin/echo START afm-user-session@%i
 ExecStart=/bin/sleep 2147483648
-ExecStop=/bin/echo STOP afm-user-session@%i
-RemainAfterExit=yes
