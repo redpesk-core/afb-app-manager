@@ -3,3 +3,4 @@ host=gerrit.automotivelinux.org
 port=29418
 project=src/app-framework-main
 
+defaultbranch=eel
