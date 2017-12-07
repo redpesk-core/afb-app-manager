@@ -75,13 +75,13 @@ ON_PERM(:public:syscall:clock, , SystemCallFilter=~@clock)
 WorkingDirectory=-APP_DATA_DIR/{{:id}}
 ExecStartPre=/bin/mkdir -p APP_DATA_DIR/{{:id}}
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
-Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}
+Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}/bin
+Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
 Environment=XDG_DATA_HOME=APP_DATA_DIR/{{:id}}
 Environment=XDG_CONFIG_HOME=APP_DATA_DIR/{{:id}}
 Environment=XDG_CACHE_HOME=APP_DATA_DIR/{{:id}}
 Environment=XDG_RUNTIME_DIR=/run/user/%i
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
-Environment=LD_LIBRARY_PATH=$ORIGIN/lib
 
 IF_AGL_DEVEL
 ; Needed to enable debug
