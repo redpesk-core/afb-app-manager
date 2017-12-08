@@ -1,6 +1,6 @@
 # Summary
 
-* [Document revisions](README.md)
+* [Document revisions](REVISIONS.md)
 * [Introduction](0-introduction.md)
 * [The afm daemons](1-afm-daemons.md)
 * [Widgets](2-widgets.md)
