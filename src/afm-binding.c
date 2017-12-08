@@ -27,7 +27,6 @@
 
 #include "verbose.h"
 #include "utils-systemd.h"
-#include "afm.h"
 #include "afm-udb.h"
 #include "afm-urun.h"
 #include "wgt-info.h"

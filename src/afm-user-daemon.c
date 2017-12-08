@@ -30,10 +30,11 @@
 #include <afb/afb-ws-client.h>
 #include <afb/afb-proto-ws.h>
 
-#include "afm.h"
 #include "verbose.h"
 #include "utils-jbus.h"
 #include "utils-json.h"
+
+#define AFM_USER_DBUS_PATH	"/org/AGL/afm/user"
 
 /*
  * name of the application
