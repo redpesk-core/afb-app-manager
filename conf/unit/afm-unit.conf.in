@@ -215,6 +215,8 @@ After=user@%i.service
 DefaultDependencies=no
 [Socket]
 SmackLabel=*
+SmackLabelIPIn=*
+SmackLabelIPOut=*
 ListenStream=/run/user/%i/apis/ws/{{name}}
 FileDescriptorName={{name}}
 Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}@%i.service

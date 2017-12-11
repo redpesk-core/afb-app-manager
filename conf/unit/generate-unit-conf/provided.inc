@@ -19,6 +19,8 @@ DefaultDependencies=no
 
 [Socket]
 SmackLabel=*
+SmackLabelIPIn=*
+SmackLabelIPOut=*
 ListenStream=USER_RUN_DIR/apis/ws/{{name}}
 FileDescriptorName={{name}}
 
