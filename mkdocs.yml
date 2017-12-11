@@ -2,12 +2,12 @@ site_name: AGL Application Framework
 theme: readthedocs
 docs_dir: docs
 pages:
-  - 'Overview' : 'README.md'
-  - 'Quick tutorial' : 'quick-tutorial.md'
-  - 'The frameworks' :
-      - 'The application framework': 'application-framework.md'
-      - 'The security framework': 'security-framework.md'
-  - 'The afm daemons' : 'afm-daemons.md'
-  - 'Widgets of the framework' :
-      - 'Overview of widgets': 'widgets.md'
-      - 'The configuration file': 'config.xml.md'
+  - 'Introduction' : 'index.md'
+  - 'The afm daemons' : '1-afm-daemons.md'
+  - 'Widgets' :
+      - '' : '2-widgets.md'
+      - 'Overview of widgets' : '2.1-widgets.md'
+      - 'The configuration file' : '2.2-config.xml.md'
+  - 'The permissions' : '3-permissions.md'
+  - 'Quick tutorial' : '4-quick-tutorial.md'
+  - 'Document revisions' : 'REVISIONS.md'
