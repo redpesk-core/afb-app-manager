@@ -1,51 +1,69 @@
+This directory contains the source of the AGL application framework.
+
 
 Summary of source files
 =======================
 
-afm-db.[ch]
+afm-udb.[ch]
 -----------
 
-Handles a set of directories as a set of applications.
 Builds in memory the list of the applications.
+Provide application database.
 
-
-afm-launch.[ch]
----------------
-
-Launches applications.
-Uses the descriptions in /etc/afm to know how to launch
-applications based on their types.
-
-
-afm-launch-mode.[ch]
---------------------
-
-Simple file for managing the known launch modes.
-
-afm-run.[ch]
+afm-urun.[ch]
 ------------
 
-Manages the live of running applications: starts it, stop it,
-continue it, terminates it. Manages the list of running
-applications.
+Manages the live of running applications using systemd:
+starts it, stop it, continue it, terminates it, list it.
 
-Applications are handled as process groups. It allows to use
-applications that fork or the binder/client division.
+afm-binding.c
+-------------
 
-afm-system-daemon.[ch]
-----------------------
+The binding that implements afm-system-daemon: the service
+that installs, uninstalls, runs, list applications and services.
 
 afm-user-daemon.[ch]
 --------------------
 
-User daemon serving on the D-Bus of the session.
+Legacy daemon that at the moment just bridge DBUS calls to
+the true API. To be removed for FF (Funky Flounder).
 
-wgt.[ch]
---------
+widget configuration
+--------------------
+(wgt.c wgt-config.c wgt-info.c wgt-json.c wgt-strings.c)
 
 Access to files of a widget.
 
 Implements the mechanism for seeking for files using the locale settings. 
 
+Fact that it seeks for locale if done until EE (Electric Eel version of AGL).
+Locale management to be changed for FF (Funky Flounder).
 
+utilities
+---------
+(mustach.c secmgr-wrap.c utils-dir.c utils-file.c utils-jbus.c utils-json.c utils-systemd.c verbose.c wrap-json.c)
 
+These files provide utility features.
+
+utils-jbus is only used by afm-user-daemon. It should be removed for FF.
+
+widget package management
+-------------------------
+(wgtpkg-base64.c
+wgtpkg-certs.c
+wgtpkg-digsig.c
+wgtpkg-files.c
+wgtpkg-info.c
+wgtpkg-install.c
+wgtpkg-installer.c
+wgtpkg-mustach.c
+wgtpkg-pack.c
+wgtpkg-permissions.c
+wgtpkg-sign.c
+wgtpkg-uninstall.c
+wgtpkg-unit.c
+wgtpkg-workdir.c
+wgtpkg-xmlsec.c
+wgtpkg-zip.c)
+
+Components for handling widgets as packages of data.
