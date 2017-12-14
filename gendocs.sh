@@ -9,7 +9,7 @@ VERSION=$(grep '"version":' $(dirname $BASH_SOURCE)/book.json | cut -d'"' -f 4)
 
 
 function usage() {
-	cat <<EOF >&2
+    cat <<EOF >&2
 Usage: $SCRIPT [options] [pdf|serve|doxygen]
 
 Options:
@@ -21,14 +21,19 @@ Options:
       get this help
 
 Example:
-	$SCRIPT pdf
+    $SCRIPT pdf
 
 EOF
-	exit 1
+    exit ${1:-1}
 }
 
 function info() {
-	echo "$@" >&2
+    echo "$@" >&2
+}
+
+function error() {
+    info "error:" "$@"
+    exit 1
 }
 
 #default values
@@ -39,13 +44,13 @@ OUT_DIR=./build
 
 [[ $? != 0 ]] && usage
 while [ $# -gt 0 ]; do
-	case "$1" in
-		--debug) DEBUG_FLAG="--log=debug --debug";;
-		-d|--dry) DRY=echo;;
-		-h|--help) usage;;
+    case "$1" in
+        --debug) DEBUG_FLAG="--log=debug --debug";;
+        -d|--dry) DRY=echo;;
+        -h|--help) usage 0;;
         pdf | serve | doxygen) DO_ACTION=$1;;
-		--) break;;
-	esac
+        --) break;;
+    esac
     shift
 done
 
@@ -56,18 +61,15 @@ ROOTDIR=`pwd -P`
 [ -d $OUT_DIR ] || mkdir -p $OUT_DIR
 
 if [ "$DO_ACTION" = "pdf" -o "$DO_ACTION" = "serve" ]; then
-    GITBOOK=`which gitbook`
-    [ "$?" = "1" ] && { echo "You must install gitbook first, using: sudo npm install -g gitbook-cli"; exit 1; }
-
-    EBCONV=`which ebook-convert`
-    [ "$?" = "1" ] && { echo "You must install calibre first, using: 'sudo apt install calibre' or refer to https://calibre-ebook.com/download"; exit 1; }
+    GITBOOK=`which gitbook` || error "You must install gitbook first, using: sudo npm install -g gitbook-cli"
+    EBCONV=`which ebook-convert` || error "You must install calibre first, using: 'sudo apt install calibre' or refer to https://calibre-ebook.com/download"
 
     if [ "$DO_ACTION" = "pdf" ]; then
 
         # Update cover when book.json has been changed
         [[ $ROOTDIR/book.json -nt $ROOTDIR/docs/cover.jpg ]] && { echo "Update cover files"; $ROOTDIR/docs/resources/make_cover.sh || exit 1; }
 
-	    OUTFILE=$OUT_DIR/$OUTFILENAME.pdf
+        OUTFILE=$OUT_DIR/$OUTFILENAME.pdf
         $DRY $GITBOOK pdf $ROOTDIR $OUTFILE $DEBUG_FLAG
         [ "$?" = "0" ] && echo "PDF has been successfully generated in $OUTFILE"
     else
