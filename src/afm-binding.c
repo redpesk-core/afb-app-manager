@@ -90,11 +90,41 @@ static void application_list_changed(const char *operation, const char *data)
 }
 
 /*
+ * retrieves the 'appid' in parameters received with the
+ * request 'req' for the 'method'.
+ *
+ * Returns 1 in case of success.
+ * Otherwise, if the 'appid' can't be retrieved, an error stating
+ * the bad request is replied for 'req' and 0 is returned.
+ */
+static int onappid(struct afb_req req, const char *method, const char **appid)
+{
+	struct json_object *json;
+
+	/* get the paramaters of the request */
+	json = afb_req_json(req);
+
+	/* get the appid if any */
+	if (!wrap_json_unpack(json, "s", appid)
+	 || !wrap_json_unpack(json, "{si}", _id_, appid)) {
+		/* found */
+		INFO("method %s called for %s", method, *appid);
+		return 1;
+	}
+
+	/* nothing appropriate */
+	INFO("bad request method %s: %s", method,
+					json_object_to_json_string(json));
+	bad_request(req);
+	return 0;
+}
+
+/*
  * retrieves the 'runid' in parameters received with the
  * request 'req' for the 'method'.
  *
  * Returns 1 in case of success.
- * Otherwise, if the 'runid' can't be retrived, an error stating
+ * Otherwise, if the 'runid' can't be retrieved, an error stating
  * the bad request is replied for 'req' and 0 is returned.
  */
 static int onrunid(struct afb_req req, const char *method, int *runid)
@@ -152,18 +182,13 @@ static void runnables(struct afb_req req)
 static void detail(struct afb_req req)
 {
 	const char *appid;
-	struct json_object *resp, *json;
+	struct json_object *resp;
 
 	/* scan the request */
-	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "s", &appid)
-		&& wrap_json_unpack(json, "{ss}", _id_, &appid)) {
-		bad_request(req);
+	if (!onappid(req, _detail_, &appid))
 		return;
-	}
 
 	/* wants details for appid */
-	INFO("method detail called for %s", appid);
 	resp = afm_udb_get_application_public(afudb, appid, afb_req_get_uid(req));
 	if (resp)
 		afb_req_success(req, resp, NULL);
@@ -177,19 +202,14 @@ static void detail(struct afb_req req)
 static void start(struct afb_req req)
 {
 	const char *appid;
-	struct json_object *appli, *resp, *json;
+	struct json_object *appli, *resp;
 	int runid;
 
 	/* scan the request */
-	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "s", &appid)
-		&& wrap_json_unpack(json, "{ss}", _id_, &appid)) {
-		bad_request(req);
+	if (!onappid(req, _start_, &appid))
 		return;
-	}
 
 	/* get the application */
-	INFO("method start called for %s", appid);
 	appli = afm_udb_get_application_private(afudb, appid, afb_req_get_uid(req));
 	if (appli == NULL) {
 		not_found(req);
@@ -219,19 +239,14 @@ static void start(struct afb_req req)
 static void once(struct afb_req req)
 {
 	const char *appid;
-	struct json_object *appli, *resp, *json;
+	struct json_object *appli, *resp;
 	int runid;
 
 	/* scan the request */
-	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "s", &appid)
-		&& wrap_json_unpack(json, "{ss}", _id_, &appid)) {
-		bad_request(req);
+	if (!onappid(req, _once_, &appid))
 		return;
-	}
 
 	/* get the application */
-	INFO("method once called for %s", appid);
 	appli = afm_udb_get_application_private(afudb, appid, afb_req_get_uid(req));
 	if (appli == NULL) {
 		not_found(req);
