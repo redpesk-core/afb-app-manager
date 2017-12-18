@@ -424,3 +424,26 @@ end:
 	return result;
 }
 
+/*
+ * Search the runid, if any, of the application of 'id' for the user 'uid'.
+ * Returns the pid (a positive not null number) or -1 in case of error.
+ */
+int afm_urun_search_runid(struct afm_udb *db, const char *id, int uid)
+{
+	int isuser, pid;
+	const char *udpath;
+	struct json_object *appli;
+
+	appli = afm_udb_get_application_private(db, id, uid);
+	if (!appli) {
+		NOTICE("Unknown appid %s", id);
+		errno = ENOENT;
+		pid = -1;
+	} else if (get_basis(appli, &isuser, &udpath, 0, uid) < 0) {
+		pid = -1;
+	} else {
+		pid = systemd_unit_pid_of_dpath(isuser, udpath);
+	}
+	return pid;
+}
+

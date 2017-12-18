@@ -130,17 +130,34 @@ static int onappid(struct afb_req req, const char *method, const char **appid)
 static int onrunid(struct afb_req req, const char *method, int *runid)
 {
 	struct json_object *json;
+	const char *appid;
 
+	/* get the paramaters of the request */
 	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "i", runid)
-		&& wrap_json_unpack(json, "{si}", _runid_, runid)) {
-		INFO("bad request method %s: %s", method,
-					json_object_to_json_string(json));
-		bad_request(req);
+
+	/* get the runid if any */
+	if (!wrap_json_unpack(json, "i", runid)
+	 || !wrap_json_unpack(json, "{si}", _runid_, runid)) {
+		INFO("method %s called for %d", method, *runid);
+		return 1;
+	}
+
+	/* get the appid if any */
+	if (!onappid(req, method, &appid))
+		return 0;
+
+	/* search the runid of the appid */
+	*runid = afm_urun_search_runid(afudb, appid, afb_req_get_uid(req));
+	if (*runid < 0) {
+		/* nothing appropriate */
+		INFO("method %s can't get runid for %s: %m", method,
+							appid);
+		not_found(req);
 		return 0;
 	}
 
-	INFO("method %s called for %d", method, *runid);
+	/* found */
+	INFO("method %s called for %s -> %d", method, appid, *runid);
 	return 1;
 }
 
