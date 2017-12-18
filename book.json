@@ -5,8 +5,8 @@
     "keywords": "AGL, Development, application, framework, service",
     "author": "IoT.Bzh Team",
     "website": "http://iot.bzh",
-    "published": "June 2017",
-    "version": "4.0",
+    "published": "September 2017",
+    "version": "4.99-EERC1",
 
     "gitbook": "3.2.2",
     "root": "docs",
