@@ -113,6 +113,8 @@ BindsTo=afm-api-ws-{{name}}.socket
 After=afm-api-ws-{{name}}.socket
 {{/value=auto|ws}}
 {{/required-api}}
+Requires=user-config.service
+After=user-config.service
 %nl
 
 [Service]
