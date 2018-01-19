@@ -11,3 +11,4 @@ Document revisions
 | 20 Mar 2017  |    3.1     | Systemd integration                          | J. Bollo [ IoT.bzh ] <br/> S. Desneux [ IoT.bzh ]     |
 | 21 Jun 2017  |    4.0     | Update for AGL DD                            | J. Bollo [ IoT.bzh ] <br/> S. Desneux [ IoT.bzh ]     |
 | 21 Sep 2017  | 4.99-EERC1 | Update for AGL EE-RC1                        | J. Bollo [ IoT.bzh ] <br/> S. Desneux [ IoT.bzh ]     |
+|  8 Dec 2017  | 5.99-FFRC0 | Major update for FF (funky flounder)         | J. Bollo [ IoT.bzh ]                                  |
