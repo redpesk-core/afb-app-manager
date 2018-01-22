@@ -175,6 +175,9 @@ if(libsystemd_FOUND AND AFB_FOUND)
 		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-binding.export-map"
 	)
 	install(TARGETS afm-binding LIBRARY DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/afm)
+
+	add_executable(afm-user-session afm-user-session.c)
+	install(TARGETS afm-user-session DESTINATION ${CMAKE_INSTALL_BINDIR})
 else()
 	MESSAGE(STATUS "Not creating daemons")
 endif()
