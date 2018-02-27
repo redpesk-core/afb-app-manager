@@ -1,5 +1,5 @@
 ###########################################################################
-# Copyright 2017 IoT.bzh
+# Copyright (C) 2017, 2018 IoT.bzh
 #
 # author: José Bollo <jose.bollo@iot.bzh>
 #
