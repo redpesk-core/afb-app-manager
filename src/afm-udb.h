@@ -23,8 +23,9 @@ extern struct afm_udb *afm_udb_create(int sys, int usr, const char *prefix);
 extern void afm_udb_addref(struct afm_udb *afdb);
 extern void afm_udb_unref(struct afm_udb *afdb);
 extern int afm_udb_update(struct afm_udb *afdb);
+extern void afm_udb_set_default_lang(const char *lang);
 extern struct json_object *afm_udb_applications_private(struct afm_udb *afdb, int uid);
-extern struct json_object *afm_udb_applications_public(struct afm_udb *afdb, int uid);
 extern struct json_object *afm_udb_get_application_private(struct afm_udb *afdb, const char *id, int uid);
-extern struct json_object *afm_udb_get_application_public(struct afm_udb *afdb, const char *id, int uid);
+extern struct json_object *afm_udb_applications_public(struct afm_udb *afdb, int uid, const char *lang);
+extern struct json_object *afm_udb_get_application_public(struct afm_udb *afdb, const char *id, int uid, const char *lang);
 

@@ -39,6 +39,7 @@ static const char _a_l_c_[]     = "application-list-changed";
 static const char _detail_[]    = "detail";
 static const char _id_[]        = "id";
 static const char _install_[]   = "install";
+static const char _lang_[]      = "lang";
 static const char _not_found_[] = "not-found";
 static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
@@ -88,6 +89,22 @@ static void application_list_changed(const char *operation, const char *data)
 	wrap_json_pack(&e, "{ss ss}", "operation", operation, "data", data);
 	afb_event_broadcast(applist_changed_event, e);
 }
+
+/*
+ * Retrieve the required language from 'req'.
+ */
+static const char *get_lang(struct afb_req req)
+{
+	const char *lang;
+
+	/* get the optional language */
+	lang = afb_req_value(req, _lang_);
+
+	/* TODO use the req to get the lang of the session (if any) */
+
+	return lang;
+}
+
 
 /*
  * retrieves the 'appid' in parameters received with the
@@ -187,9 +204,14 @@ static void reply_status(struct afb_req req, int status, const char *errstr)
  */
 static void runnables(struct afb_req req)
 {
+	const char *lang;
 	struct json_object *resp;
-	INFO("method runnables called");
-	resp = afm_udb_applications_public(afudb, afb_req_get_uid(req));
+
+	/* get the language */
+	lang = get_lang(req);
+
+	/* get the details */
+	resp = afm_udb_applications_public(afudb, afb_req_get_uid(req), lang);
 	afb_req_success(req, resp, NULL);
 }
 
@@ -198,6 +220,7 @@ static void runnables(struct afb_req req)
  */
 static void detail(struct afb_req req)
 {
+	const char *lang;
 	const char *appid;
 	struct json_object *resp;
 
@@ -205,8 +228,11 @@ static void detail(struct afb_req req)
 	if (!onappid(req, _detail_, &appid))
 		return;
 
+	/* get the language */
+	lang = get_lang(req);
+
 	/* wants details for appid */
-	resp = afm_udb_get_application_public(afudb, appid, afb_req_get_uid(req));
+	resp = afm_udb_get_application_public(afudb, appid, afb_req_get_uid(req), lang);
 	if (resp)
 		afb_req_success(req, resp, NULL);
 	else
@@ -324,7 +350,6 @@ static void terminate(struct afb_req req)
 static void runners(struct afb_req req)
 {
 	struct json_object *resp;
-	INFO("method runners called");
 	resp = afm_urun_list(afudb, afb_req_get_uid(req));
 	afb_req_success(req, resp, NULL);
 }
@@ -342,6 +367,9 @@ static void state(struct afb_req req)
 	}
 }
 
+/*
+ * On querying installation of widget(s)
+ */
 static void install(struct afb_req req)
 {
 	const char *wgtfile;

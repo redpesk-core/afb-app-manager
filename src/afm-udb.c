@@ -79,6 +79,11 @@ struct afm_updt {
 };
 
 /*
+ * The default language
+ */
+static char *default_lang;
+
+/*
  * Release the data of the afm_apps object 'apps'.
  */
 static void apps_put(struct afm_apps *apps)
@@ -469,6 +474,13 @@ error:
 	return -1;
 }
 
+void afm_udb_set_default_lang(const char *lang)
+{
+	char *oldval = default_lang;
+	default_lang = lang ? strdup(lang) : NULL;
+	free(oldval);
+}
+
 /*
  * Get the list of the applications private data of the afm_udb object 'afudb'.
  * The list is returned as a JSON-array that must be released using
@@ -486,7 +498,7 @@ struct json_object *afm_udb_applications_private(struct afm_udb *afudb, int uid)
  * 'json_object_put'.
  * Returns NULL in case of error.
  */
-struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int uid)
+struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int uid, const char *lang)
 {
 	return json_object_get(afudb->applications.pubarr);
 }
@@ -496,7 +508,7 @@ struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int uid)
  * It returns a JSON-object that must be released using 'json_object_put'.
  * Returns NULL in case of error.
  */
-static struct json_object *get_no_case(struct json_object *object, const char *id, int uid)
+static struct json_object *get_no_case(struct json_object *object, const char *id, int uid, const char *lang)
 {
 	struct json_object *result;
 	struct json_object_iter i;
@@ -520,7 +532,7 @@ static struct json_object *get_no_case(struct json_object *object, const char *i
  */
 struct json_object *afm_udb_get_application_private(struct afm_udb *afudb, const char *id, int uid)
 {
-	return get_no_case(afudb->applications.prvobj, id, uid);
+	return get_no_case(afudb->applications.prvobj, id, uid, NULL);
 }
 
 /*
@@ -529,9 +541,9 @@ struct json_object *afm_udb_get_application_private(struct afm_udb *afudb, const
  * Returns NULL in case of error.
  */
 struct json_object *afm_udb_get_application_public(struct afm_udb *afudb,
-							const char *id, int uid)
+							const char *id, int uid, const char *lang)
 {
-	return get_no_case(afudb->applications.pubobj, id, uid);
+	return get_no_case(afudb->applications.pubobj, id, uid, lang);
 }
 
 
