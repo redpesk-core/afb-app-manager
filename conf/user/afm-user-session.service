@@ -1,0 +1,10 @@
+[Unit]
+Description=Application Framework Master, User session setup
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/afm-user-session
+
+[Install]
+WantedBy=default.target
+

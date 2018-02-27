@@ -16,23 +16,20 @@
  limitations under the License.
 */
 
-#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <systemd/sd-daemon.h>
+
+extern char **environ;
 
 int main()
 {
-	sigset_t ass, bss;
+	char buffer[100];
+	char *args[] = { "/bin/systemctl", "--wait", "start", buffer, 0 };
 
-	sigemptyset(&ass);
-	sigaddset(&ass, SIGTERM);
-
-	sigfillset(&bss);
-	sigdelset(&bss, SIGTERM);
-
+	sprintf(buffer, "afm-user-session@%d.target", (int)getuid());
 	sd_notify(0, "READY=1");
-	sigprocmask(SIG_SETMASK, &bss, 0);
-	sigwaitinfo(&ass, 0);
-
-	return 0;
+	execve(args[0], args, environ);
+	return 1;
 }
 

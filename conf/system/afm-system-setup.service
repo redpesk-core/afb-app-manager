@@ -1,0 +1,9 @@
+[Unit]
+Description=Initiate afm-system-setup
+Before=weston.service
+[Service]
+Type=one-shot
+ExecStart=-/bin/sh -c "/bin/mkdir -m 755 -Z '*' /run/platform"
+ExecStart=-/bin/sh -c "/bin/mkdir -m 755 -Z '*' /run/platform/display"
+ExecStart=-/bin/sh -c "/bin/mkdir -m 755 -Z '*' /run/platform/apis"
+ExecStart=-/bin/sh -c "/bin/mkdir -m 755 -Z '*' /run/platform/apis/ws"

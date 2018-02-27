@@ -177,7 +177,7 @@ if(libsystemd_FOUND AND AFB_FOUND)
 	install(TARGETS afm-binding LIBRARY DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/afm)
 
 	add_executable(afm-user-session afm-user-session.c)
-	install(TARGETS afm-user-session DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(TARGETS afm-user-session DESTINATION ${CMAKE_INSTALL_BINDIR} PERMISSIONS SETUID OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE)
 else()
 	MESSAGE(STATUS "Not creating daemons")
 endif()
