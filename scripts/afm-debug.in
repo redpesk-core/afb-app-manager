@@ -36,7 +36,7 @@ function info() {
 }
 
 # setup debug dir (shared with service file)
-DBGDIR=/var/run/afm-debug
+DBGDIR=@afm_platform_rundir@/debug
 mkdir -p $DBGDIR
 
 # check application name passed as first arg by gdb

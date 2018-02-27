@@ -18,9 +18,9 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-configure_file(afm-user-daemon.service.in afm-user-daemon.service)
-
 if(NOT USE_SDK)
+	configure_file(afm-user-daemon.service.in afm-user-daemon.service)
+
 	set(SYSCONFDIR_DBUS_USER   ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/session.d CACHE STRING "Path to dbus session configuration files")
 	set(UNITDIR_USER           ${CMAKE_INSTALL_LIBDIR}/systemd/user CACHE STRING "Path to systemd system unit files")
 

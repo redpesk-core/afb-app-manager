@@ -145,8 +145,8 @@ Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
 Environment=XDG_DATA_HOME=/home/%i/app-data/{{:id}}
 Environment=XDG_CONFIG_HOME=/home/%i/app-data/{{:id}}
 Environment=XDG_CACHE_HOME=/home/%i/app-data/{{:id}}
-Environment=XDG_RUNTIME_DIR=/run/user/%i
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
+Environment=XDG_RUNTIME_DIR=@afm_users_rundir@/%i
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=@afm_users_rundir@/%i/bus
 SyslogIdentifier=afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 StandardInput=null
 StandardOutput=journal
@@ -172,9 +172,9 @@ ExecStart=/usr/bin/afb-daemon \
 	{{/content.type=application/vnd.agl.service}} \
 	{{#required-permission.urn:AGL:permission::public:applications:read}}--alias=/icons:{{:#metadata.icons-dir}}{{/required-permission.urn:AGL:permission::public:applications:read}} \
 	{{#required-api}} \
-		{{#value=auto|ws}}--ws-client=unix:/run/user/%i/apis/ws/{{name}}{{/value=auto|ws}} \
+		{{#value=auto|ws}}--ws-client=unix:@afm_users_rundir@/%i/apis/ws/{{name}}{{/value=auto|ws}} \
 		{{#value=dbus}}--dbus-client={{name}}{{/value=dbus}} \
-		{{#value=link}}--binding=/run/user/%i/apis/lib/{{name}}{{/value=link}} \
+		{{#value=link}}--binding=@afm_users_rundir@/%i/apis/lib/{{name}}{{/value=link}} \
 		{{#value=cloud}}--cloud-client={{name}}{{/value=cloud}} \
 		{{#value=local}}--binding={{:#metadata.install-dir}}/{{name}}{{/value=local}} \
 	{{/required-api}} \
@@ -217,7 +217,7 @@ DefaultDependencies=no
 SmackLabel=*
 SmackLabelIPIn=*
 SmackLabelIPOut=*
-ListenStream=/run/user/%i/apis/ws/{{name}}
+ListenStream=@afm_users_rundir@/%i/apis/ws/{{name}}
 FileDescriptorName={{name}}
 Service=afm-{{#required-permission.urn:AGL:permission::public:hidden}}service{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}appli{{/required-permission.urn:AGL:permission::public:hidden}}-{{:id}}--{{:ver}}--{{:#target}}@%i.service
 %nl

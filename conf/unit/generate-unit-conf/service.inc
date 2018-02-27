@@ -80,13 +80,13 @@ Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
 Environment=XDG_DATA_HOME=APP_DATA_DIR/{{:id}}
 Environment=XDG_CONFIG_HOME=APP_DATA_DIR/{{:id}}
 Environment=XDG_CACHE_HOME=APP_DATA_DIR/{{:id}}
-Environment=XDG_RUNTIME_DIR=/run/user/%i
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
+Environment=XDG_RUNTIME_DIR=USER_RUN_DIR
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 
 IF_AGL_DEVEL
 ; Needed to enable debug
 Environment=AFM_ID=TARGET
-EnvironmentFile=-/var/run/afm-debug/TARGET.env
+EnvironmentFile=-DEBUGGING_DIR/TARGET.env
 ENDIF
 
 SyslogIdentifier=afbd-TARGET

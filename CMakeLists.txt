@@ -47,6 +47,8 @@ set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for appli
 set(afm_user_appdir_label   "User::App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
 set(systemd_units_root      "${CMAKE_INSTALL_FULL_LIBDIR}/systemd" CACHE STRING "Place where unit files are to be set")
 set(wgtpkg_trusted_cert_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
+set(afm_platform_rundir     "/run/platform" CACHE STRING "Path to location of platform runtime sockets")
+set(afm_users_rundir        "/run/user" CACHE STRING "Path to location of users runtime sockets")
 
 if(USE_SIMULATION)
     set(SIMULATE_SECMGR ON)

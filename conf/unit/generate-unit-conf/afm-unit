@@ -52,7 +52,8 @@ define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-{{:
 define( `UNIT_NAME_SERVICE', `UNIT_NAME_BASE%i.service')
 define( `UNIT_NAME_SOCKET_FOR', `afm-api-ws-$1@%i.socket')
 define( `APP_DATA_DIR', `/home/%i/app-data')
-define( `USER_RUN_DIR', `/run/user/%i')
+define( `USER_RUN_DIR', `@afm_users_rundir@/%i')
+define( `DEBUGGING_DIR', `@afm_platform_rundir@/debug')
 
 -----------------------------------------------------------------------
 -- 
