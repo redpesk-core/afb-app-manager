@@ -1,5 +1,6 @@
 [Unit]
 Description=Application Framework Master, system side
+Require=afm-system-setup.service
 
 [Service]
 #User=afm

@@ -211,7 +211,8 @@ WantedBy=afm-user-session@.target
 %systemd-unit socket afm-api-ws-{{name}}@
 [Unit]
 Description=Provides api {{name}} for user %i
-After=user@%i.service
+Requires=afm-user-setup@%i.service
+After=afm-user-setup@%i.service
 DefaultDependencies=no
 [Socket]
 SmackLabel=*

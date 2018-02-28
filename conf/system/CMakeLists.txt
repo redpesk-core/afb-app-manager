@@ -32,9 +32,10 @@ if(NOT USE_SDK)
 		FILES
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.service
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.socket
-			${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.conf
+			${CMAKE_CURRENT_SOURCE_DIR}/afm-system-setup.service
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session@.service
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session@.target
+			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-setup@.service
 		DESTINATION
 			${UNITDIR_SYSTEM}
 	)
