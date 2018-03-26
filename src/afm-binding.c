@@ -58,6 +58,44 @@ static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
 
 /*
+ * the permissions
+ */
+static const struct afb_auth
+	auth_install = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget:install"
+	},
+	auth_uninstall = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget:uninstall"
+	},
+	auth_preinstall = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget:preinstall"
+	},
+	auth_detail = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget:detail"
+	},
+	auth_start = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget:start"
+	},
+	auth_view_all = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget:view-all"
+	},
+	auth_state = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:runner:state"
+	},
+	auth_kill = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:runner:kill"
+	}
+;
+
+/*
  * default root
  */
 static const char *rootdir = FWK_APP_DIR;
@@ -489,30 +527,19 @@ static int init()
 	return -!afb_event_is_valid(applist_changed_event);
 }
 
-static const struct afb_auth
-	auth_install = {
-		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:install"
-	},
-	auth_uninstall = {
-		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:uninstall"
-	}
-;
-
 static const struct afb_verb_v2 verbs[] =
 {
-	{_runnables_, runnables, NULL, "Get list of runnable applications",          AFB_SESSION_CHECK_V2 },
-	{_detail_   , detail,    NULL, "Get the details for one application",        AFB_SESSION_CHECK_V2 },
-	{_start_    , start,     NULL, "Start an application",                       AFB_SESSION_CHECK_V2 },
-	{_once_     , once,      NULL, "Start once an application",                  AFB_SESSION_CHECK_V2 },
-	{_terminate_, terminate, NULL, "Terminate a running application",            AFB_SESSION_CHECK_V2 },
-	{_pause_    , pause,     NULL, "Pause a running application",                AFB_SESSION_CHECK_V2 },
-	{_resume_   , resume,    NULL, "Resume a paused application",                AFB_SESSION_CHECK_V2 },
-	{_runners_  , runners,   NULL, "Get the list of running applications",       AFB_SESSION_CHECK_V2 },
-	{_state_    , state,     NULL, "Get the state of a running application",     AFB_SESSION_CHECK_V2 },
-	{_install_  , install,   NULL, "Install an application using a widget file", AFB_SESSION_CHECK_V2 },
-	{_uninstall_, uninstall, NULL, "Uninstall an application",                   AFB_SESSION_CHECK_V2 },
+	{_runnables_, runnables, &auth_detail, "Get list of runnable applications",          AFB_SESSION_CHECK_V2 },
+	{_detail_   , detail,    &auth_detail, "Get the details for one application",        AFB_SESSION_CHECK_V2 },
+	{_start_    , start,     &auth_start, "Start an application",                       AFB_SESSION_CHECK_V2 },
+	{_once_     , once,      &auth_start, "Start once an application",                  AFB_SESSION_CHECK_V2 },
+	{_terminate_, terminate, &auth_kill, "Terminate a running application",            AFB_SESSION_CHECK_V2 },
+	{_pause_    , pause,     &auth_kill, "Pause a running application",                AFB_SESSION_CHECK_V2 },
+	{_resume_   , resume,    &auth_kill, "Resume a paused application",                AFB_SESSION_CHECK_V2 },
+	{_runners_  , runners,   &auth_state, "Get the list of running applications",       AFB_SESSION_CHECK_V2 },
+	{_state_    , state,     &auth_state, "Get the state of a running application",     AFB_SESSION_CHECK_V2 },
+	{_install_  , install,   &auth_install, "Install an application using a widget file", AFB_SESSION_CHECK_V2 },
+	{_uninstall_, uninstall, &auth_uninstall, "Uninstall an application",                   AFB_SESSION_CHECK_V2 },
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
