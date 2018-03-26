@@ -34,8 +34,13 @@
 #include "wgtpkg-uninstall.h"
 #include "wrap-json.h"
 
+/*
+ * constant strings
+ */
 static const char _added_[]     = "added";
 static const char _a_l_c_[]     = "application-list-changed";
+static const char _bad_request_[] = "bad-request";
+static const char _cannot_start_[] = "cannot-start";
 static const char _detail_[]    = "detail";
 static const char _id_[]        = "id";
 static const char _install_[]   = "install";
@@ -52,31 +57,49 @@ static const char _state_[]     = "state";
 static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
 
+/*
+ * default root
+ */
 static const char *rootdir = FWK_APP_DIR;
-static struct afb_event applist_changed_event;
+
+/*
+ * the internal application database
+ */
 static struct afm_udb *afudb;
+
+/*
+ * the event signalling that application list changed
+ */
+static struct afb_event applist_changed_event;
+
+/*
+ * the preallocated true json_object
+ */
 static struct json_object *json_true;
 
+/* enforce daemon reload */
 static void do_reloads()
 {
-	/* enforce daemon reload */
 	systemd_daemon_reload(0);
 	systemd_unit_restart_name(0, "sockets.target");
 }
 
+/* common bad request reply */
 static void bad_request(struct afb_req req)
 {
-	afb_req_fail(req, "bad-request", NULL);
+	afb_req_fail(req, _bad_request_, NULL);
 }
 
+/* common not found reply */
 static void not_found(struct afb_req req)
 {
 	afb_req_fail(req, _not_found_, NULL);
 }
 
+/* common can't start reply */
 static void cant_start(struct afb_req req)
 {
-	afb_req_fail(req, "cannot-start", NULL);
+	afb_req_fail(req, _cannot_start_, NULL);
 }
 
 /*
@@ -416,6 +439,9 @@ static void install(struct afb_req req)
 	}
 }
 
+/*
+ * On querying uninstallation of widget(s)
+ */
 static void uninstall(struct afb_req req)
 {
 	const char *idaver;
