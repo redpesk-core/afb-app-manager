@@ -465,12 +465,12 @@ int afm_udb_update(struct afm_udb *afudb)
 	tmp = afudb->applications;
 	afudb->applications = updt.applications;
 	apps_put(&tmp);
-	afm_udb_addref(afudb);
+	afm_udb_unref(afudb);
 	return 0;
 
 error:
 	apps_put(&updt.applications);
-	afm_udb_addref(afudb);
+	afm_udb_unref(afudb);
 	return -1;
 }
 
