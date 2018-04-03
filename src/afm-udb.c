@@ -117,7 +117,7 @@ static int append_field(
 			array = json_object_new_array();
 			if (!array)
 				goto error;
-			json_object_array_add(array, item);
+			json_object_array_add(array, json_object_get(item));
 			json_object_object_add(object, name, array);
 		}
 		json_object_array_add(array, data);
