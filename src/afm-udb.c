@@ -474,6 +474,9 @@ error:
 	return -1;
 }
 
+/*
+ * set the default language to 'lang'
+ */
 void afm_udb_set_default_lang(const char *lang)
 {
 	char *oldval = default_lang;
