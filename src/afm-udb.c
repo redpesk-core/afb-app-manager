@@ -275,64 +275,76 @@ error:
 }
 
 /*
+ * Crop and trim unit 'content' of 'length'. Return the new length.
+ */
+static size_t crop_and_trim_unit_content(char *content, size_t length)
+{
+	int st;
+	char c, *read, *write;
+
+	/* removes any comment and join continued lines */
+	st = 0;
+	read = write = content;
+	for (;;) {
+		do { c = *read++; } while (c == '\r');
+		if (!c)
+			break;
+		switch (st) {
+		case 0:
+			/* state 0: begin of a line */
+			if (c == ';' || c == '#') {
+				st = 3; /* removes lines starting with ; or # */
+				break;
+			}
+			if (c == '\n')
+				break; /* removes empty lines */
+enter_state_1:
+			st = 1;
+			/*@fallthrough@*/
+		case 1:
+			/* state 1: emitting a normal line */
+			if (c == '\\')
+				st = 2;
+			else {
+				*write++ = c;
+				if (c == '\n')
+					st = 0;
+			}
+			break;
+		case 2:
+			/* state 2: character after '\' */
+			if (c == '\n')
+				c = ' ';
+			else
+				*write++ = '\\';
+			goto enter_state_1;
+		case 3:
+			/* state 3: inside a comment, wait its end */
+			if (c == '\n')
+				st = 0;
+			break;
+		}
+	}
+	if (st == 1)
+		*write++ = '\n';
+	*write = 0;
+	return (size_t)(write - content);
+}
+
+/*
  * read a unit file
  */
 static int read_unit_file(const char *path, char **content, size_t *length)
 {
-	int rc, st;
-	char c, *read, *write;
+	int rc;
+	size_t nl;
 
 	/* read the file */
 	rc = getfile(path, content, length);
 	if (rc >= 0) {
-		/* removes any comment and join continued lines */
-		st = 0;
-		read = write = *content;
-		for (;;) {
-			do { c = *read++; } while (c == '\r');
-			if (!c)
-				break;
-			switch (st) {
-			case 0:
-				/* state 0: begin of a line */
-				if (c == ';' || c == '#') {
-					st = 3; /* removes lines starting with ; or # */
-					break;
-				}
-				if (c == '\n')
-					break; /* removes empty lines */
-enter_state_1:
-				st = 1;
-				/*@fallthrough@*/
-			case 1:
-				/* state 1: emitting a normal line */
-				if (c == '\\')
-					st = 2;
-				else {
-					*write++ = c;
-					if (c == '\n')
-						st = 0;
-				}
-				break;
-			case 2:
-				/* state 2: character after '\' */
-				if (c == '\n')
-					c = ' ';
-				else
-					*write++ = '\\';
-				goto enter_state_1;
-			case 3:
-				/* state 3: inside a comment, wait its end */
-				if (c == '\n')
-					st = 0;
-				break;
-			}
-		}
-		if (st == 1)
-			*write++ = '\n';
-		*write = 0;
-		*length = (size_t)(write - *content);
-		*content = realloc(*content, *length + 1);
+		/* crop and trim it */
+		*length = nl = crop_and_trim_unit_content(*content, *length);
+		*content = realloc(*content, nl + 1);
 	}
 	return rc;
 }
