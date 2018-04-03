@@ -182,17 +182,25 @@ static int add_fields_of_content(
 {
 	char *name, *value, *read, *write;
 
-	read = strstr(content, x_afm_prefix);
-	while (read) {
+	/* start at the beginning */
+	read = content;
+	for (;;) {
+		/* search the next key */
+		read = strstr(read, x_afm_prefix);
+		if (!read)
+			return 0;
+
+		/* search to equal */
 		name = read + x_afm_prefix_length;
 		value = strchr(name, '=');
 		if (value == NULL)
-			read = strstr(name, x_afm_prefix);
+			read = name; /* not found */
 		else {
+			/* get the value (translate it) */
 			*value++ = 0;
 			read = write = value;
 			while(*read && *read != '\n') {
-				if (read[0] != '\\')
+				if (*read != '\\')
 					*write++ = *read++;
 				else {
 					switch(*++read) {
@@ -203,13 +211,14 @@ static int add_fields_of_content(
 					read += !!*read;
 				}
 			}
-			read = strstr(read, x_afm_prefix);
+			read += !!*read;
 			*write = 0;
+
+			/* add the found field now */
 			if (add_field(priv, pub, name, value) < 0)
 				return -1;
 		}
 	}
-	return 0;
 }
 
 /*
