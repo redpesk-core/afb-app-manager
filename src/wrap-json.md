@@ -2,7 +2,7 @@ WRAP-JSON facility
 ==================
 
 The facility wrap-json is based on the pack/unpack API on the
-libray jansson. The two chapters below are copied from the
+library jansson. The two chapters below are copied from the
 documentation of jansson library copyrighted by Petri Lehtinen
 (see at end).
 
@@ -65,6 +65,28 @@ arguments.
 `+%` (string) \[const char \*, size\_t\]
 
 :   Like `+#` but the length argument is of type size\_t.
+
+`y` (byte array) \[const uint8_t \*, size\_t\]
+
+:   Convert the byte array whose length is given to
+    its base64url string representation.
+
+`Y` (byte array) \[const uint8_t \*, size\_t\]
+
+:   Like 'y' but output is base64.
+
+`y?`, `Y?` (byte array or null) \[const uint8_t \*, size\_t\]
+
+:   Like 'y' or 'Y' but allows to output a JSON null value
+    either when the buffer is *NULL* or when the size is *0*.
+
+`y*`, `y*` (optional byte array) \[const uint8_t \*, size\_t\]
+
+:   Like 'y' or 'Y' but do not put JSON value
+    either when the buffer is *NULL* or when the size is *0*.
+    This format can only be used inside an object or an array. If used
+    inside an object, the corresponding key is additionally suppressed
+    when the value is omitted. See below for an example.
 
 `n` (null)
 
@@ -183,6 +205,16 @@ type whose address should be passed.
 :   Convert a JSON string to a pointer to a null terminated UTF-8 string
     and its length.
 
+`y` (byte array) \[uint8_t \*\*, size\_t \*\]
+
+:   Convert an input string base64url encoded to its
+    byte array representation. The result and its length
+    are stored. The returned buffer must be freed by the caller.
+
+`Y` (byte array) \[uint8_t \*\*, size\_t \*\]
+
+:   Like 'y' but input is base64.
+
 `n` (null)
 
 :   Expect a JSON null value. Nothing is extracted.
@@ -279,7 +311,6 @@ Examples:
                 "bar", &myint2, &myint3);
     /* myint1, myint2 or myint3 is no touched as "foo" and "bar" don't exist */
 
-
 Copyright
 ---------
 
@@ -302,4 +333,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
