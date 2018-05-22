@@ -113,14 +113,23 @@ static const char *uri;
  * 
  */
 static void on_pws_hangup(void *closure);
-static void on_pws_reply_success(void *closure, void *request, struct json_object *result, const char *info);
-static void on_pws_reply_fail(void *closure, void *request, const char *status, const char *info);
+static void on_pws_reply(void *closure, void *request, struct json_object *obj, const char *error, const char *info);
+#if !defined(AFB_PROTO_WS_VERSION) || (AFB_PROTO_WS_VERSION < 3)
+static void on_pws_reply_success(void *closure, void *request, struct json_object *result, const char *info)
+	{ on_pws_reply(closure, request, result, NULL, info); }
+static void on_pws_reply_fail(void *closure, void *request, const char *error, const char *info)
+	{ on_pws_reply(closure, request, NULL, error, info); }
+#endif
 static void on_pws_event_broadcast(void *closure, const char *event_name, struct json_object *data);
 
 /* the callback interface for pws */
 static struct afb_proto_ws_client_itf pws_itf = {
+#if !defined(AFB_PROTO_WS_VERSION) || (AFB_PROTO_WS_VERSION < 3)
 	.on_reply_success = on_pws_reply_success,
 	.on_reply_fail = on_pws_reply_fail,
+#else
+	.on_reply = on_pws_reply,
+#endif
 	.on_event_broadcast = on_pws_event_broadcast,
 };
 
@@ -156,16 +165,13 @@ static void attempt_connect_pws(int count)
 	}
 }
 
-static void on_pws_reply_success(void *closure, void *request, struct json_object *result, const char *info)
+static void on_pws_reply(void *closure, void *request, struct json_object *obj, const char *error, const char *info)
 {
 	struct sd_bus_message *smsg = request;
-	jbus_reply_j(smsg, result);
-}
-
-static void on_pws_reply_fail(void *closure, void *request, const char *status, const char *info)
-{
-	struct sd_bus_message *smsg = request;
-	jbus_reply_error_s(smsg, status);
+	if (error)
+		jbus_reply_error_s(smsg, error);
+	else
+		jbus_reply_j(smsg, obj);
 }
 
 static void on_pws_event_broadcast(void *closure, const char *event_name, struct json_object *data)
