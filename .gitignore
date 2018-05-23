@@ -1,6 +1,7 @@
 .*.swp
 .vscode
 build/
+nbproject/
 
 tests-w3c/
 prepare-build.sh
