@@ -16,13 +16,15 @@
  */
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <signal.h>
 
 #include <json-c/json.h>
 
-#define AFB_BINDING_VERSION 2
+#define AFB_BINDING_VERSION 3
 #include <afb/afb-binding.h>
 
 #include "verbose.h"
@@ -56,42 +58,92 @@ static const char _start_[]     = "start";
 static const char _state_[]     = "state";
 static const char _terminate_[] = "terminate";
 static const char _uninstall_[] = "uninstall";
+static const char _update_[]    = "update";
 
 /*
  * the permissions
  */
 static const struct afb_auth
-	auth_install = {
+	auth_perm_widget = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:widget"
+	},
+	auth_perm_widget_install = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:widget:install"
 	},
-	auth_uninstall = {
+	auth_perm_widget_uninstall = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:widget:uninstall"
 	},
-	auth_preinstall = {
+	auth_perm_widget_preinstall = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:widget:preinstall"
 	},
-	auth_detail = {
+	auth_perm_widget_detail = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:widget:detail"
 	},
-	auth_start = {
+	auth_perm_widget_start = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:widget:start"
 	},
-	auth_view_all = {
+	auth_perm_widget_view_all = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:widget:view-all"
 	},
-	auth_state = {
+	auth_perm_runner = {
+		.type = afb_auth_Permission,
+		.text = "urn:AGL:permission:afm:system:runner"
+	},
+	auth_perm_runner_state = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:runner:state"
 	},
-	auth_kill = {
+	auth_perm_runner_kill = {
 		.type = afb_auth_Permission,
 		.text = "urn:AGL:permission:afm:system:runner:kill"
+	},
+
+	auth_install = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_install
+	},
+	auth_uninstall = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_uninstall
+	},
+	auth_preinstall = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_preinstall
+	},
+	auth_detail = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_detail
+	},
+	auth_start = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_start
+	},
+	auth_view_all = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_view_all
+	},
+	auth_state = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_runner,
+		.next = &auth_perm_runner_state
+	},
+	auth_kill = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_runner,
+		.next = &auth_perm_runner_kill
 	}
 ;
 
@@ -106,9 +158,9 @@ static const char *rootdir = FWK_APP_DIR;
 static struct afm_udb *afudb;
 
 /*
- * the event signalling that application list changed
+ * the event signaling that application list changed
  */
-static struct afb_event applist_changed_event;
+static afb_event_t applist_changed_event;
 
 /*
  * the preallocated true json_object
@@ -123,19 +175,19 @@ static void do_reloads()
 }
 
 /* common bad request reply */
-static void bad_request(struct afb_req req)
+static void bad_request(afb_req_t req)
 {
 	afb_req_fail(req, _bad_request_, NULL);
 }
 
 /* common not found reply */
-static void not_found(struct afb_req req)
+static void not_found(afb_req_t req)
 {
 	afb_req_fail(req, _not_found_, NULL);
 }
 
 /* common can't start reply */
-static void cant_start(struct afb_req req)
+static void cant_start(afb_req_t req)
 {
 	afb_req_fail(req, _cannot_start_, NULL);
 }
@@ -154,7 +206,7 @@ static void application_list_changed(const char *operation, const char *data)
 /*
  * Retrieve the required language from 'req'.
  */
-static const char *get_lang(struct afb_req req)
+static const char *get_lang(afb_req_t req)
 {
 	const char *lang;
 
@@ -175,7 +227,7 @@ static const char *get_lang(struct afb_req req)
  * Otherwise, if the 'appid' can't be retrieved, an error stating
  * the bad request is replied for 'req' and 0 is returned.
  */
-static int onappid(struct afb_req req, const char *method, const char **appid)
+static int onappid(afb_req_t req, const char *method, const char **appid)
 {
 	struct json_object *json;
 
@@ -205,7 +257,7 @@ static int onappid(struct afb_req req, const char *method, const char **appid)
  * Otherwise, if the 'runid' can't be retrieved, an error stating
  * the bad request is replied for 'req' and 0 is returned.
  */
-static int onrunid(struct afb_req req, const char *method, int *runid)
+static int onrunid(afb_req_t req, const char *method, int *runid)
 {
 	struct json_object *json;
 	const char *appid;
@@ -243,7 +295,7 @@ static int onrunid(struct afb_req req, const char *method, int *runid)
  * Sends the reply 'resp' to the request 'req' if 'resp' is not NULLzero.
  * Otherwise, when 'resp' is NULL replies the error string 'errstr'.
  */
-static void reply(struct afb_req req, struct json_object *resp, const char *errstr)
+static void reply(afb_req_t req, struct json_object *resp, const char *errstr)
 {
 	if (!resp)
 		afb_req_fail(req, errstr, NULL);
@@ -255,7 +307,7 @@ static void reply(struct afb_req req, struct json_object *resp, const char *errs
  * Sends the reply "true" to the request 'req' if 'status' is zero.
  * Otherwise, when 'status' is not zero replies the error string 'errstr'.
  */
-static void reply_status(struct afb_req req, int status, const char *errstr)
+static void reply_status(afb_req_t req, int status, const char *errstr)
 {
 	reply(req, status ? NULL : json_object_get(json_true), errstr);
 }
@@ -263,7 +315,7 @@ static void reply_status(struct afb_req req, int status, const char *errstr)
 /*
  * On query "runnables"
  */
-static void runnables(struct afb_req req)
+static void runnables(afb_req_t req)
 {
 	const char *lang;
 	struct json_object *resp;
@@ -279,7 +331,7 @@ static void runnables(struct afb_req req)
 /*
  * On query "detail"
  */
-static void detail(struct afb_req req)
+static void detail(afb_req_t req)
 {
 	const char *lang;
 	const char *appid;
@@ -303,7 +355,7 @@ static void detail(struct afb_req req)
 /*
  * On query "start"
  */
-static void start(struct afb_req req)
+static void start(afb_req_t req)
 {
 	const char *appid;
 	struct json_object *appli, *resp;
@@ -340,7 +392,7 @@ static void start(struct afb_req req)
 /*
  * On query "once"
  */
-static void once(struct afb_req req)
+static void once(afb_req_t req)
 {
 	const char *appid;
 	struct json_object *appli, *resp;
@@ -372,7 +424,7 @@ static void once(struct afb_req req)
 /*
  * On query "pause"
  */
-static void pause(struct afb_req req)
+static void pause(afb_req_t req)
 {
 	int runid, status;
 	if (onrunid(req, "pause", &runid)) {
@@ -384,7 +436,7 @@ static void pause(struct afb_req req)
 /*
  * On query "resume" from 'smsg' with parameters of 'obj'.
  */
-static void resume(struct afb_req req)
+static void resume(afb_req_t req)
 {
 	int runid, status;
 	if (onrunid(req, "resume", &runid)) {
@@ -396,7 +448,7 @@ static void resume(struct afb_req req)
 /*
  * On query "terminate"
  */
-static void terminate(struct afb_req req)
+static void terminate(afb_req_t req)
 {
 	int runid, status;
 	if (onrunid(req, "terminate", &runid)) {
@@ -408,7 +460,7 @@ static void terminate(struct afb_req req)
 /*
  * On query "runners"
  */
-static void runners(struct afb_req req)
+static void runners(afb_req_t req)
 {
 	struct json_object *resp;
 	resp = afm_urun_list(afudb, afb_req_get_uid(req));
@@ -418,7 +470,7 @@ static void runners(struct afb_req req)
 /*
  * On query "state"
  */
-static void state(struct afb_req req)
+static void state(afb_req_t req)
 {
 	int runid;
 	struct json_object *resp;
@@ -431,7 +483,7 @@ static void state(struct afb_req req)
 /*
  * On querying installation of widget(s)
  */
-static void install(struct afb_req req)
+static void install(afb_req_t req)
 {
 	const char *wgtfile;
 	const char *root;
@@ -480,7 +532,7 @@ static void install(struct afb_req req)
 /*
  * On querying uninstallation of widget(s)
  */
-static void uninstall(struct afb_req req)
+static void uninstall(afb_req_t req)
 {
 	const char *idaver;
 	const char *root;
@@ -510,8 +562,17 @@ static void uninstall(struct afb_req req)
 	}
 }
 
-static int init()
+static void onsighup(int signal)
 {
+	afm_udb_update(afudb);
+	application_list_changed(_update_, _update_);
+}
+
+static int init(afb_api_t api)
+{
+	/* create TRUE */
+	json_true = json_object_new_boolean(1);
+
 	/* init database */
 	afudb = afm_udb_create(1, 0, "afm-appli-");
 	if (!afudb) {
@@ -519,31 +580,30 @@ static int init()
 		return -1;
 	}
 
-	/* create TRUE */
-	json_true = json_object_new_boolean(1);
+	signal(SIGHUP, onsighup);
 
 	/* create the event */
-	applist_changed_event = afb_daemon_make_event(_a_l_c_);
+	applist_changed_event = afb_api_make_event(api, _a_l_c_);
 	return -!afb_event_is_valid(applist_changed_event);
 }
 
-static const struct afb_verb_v2 verbs[] =
+static const afb_verb_t verbs[] =
 {
-	{_runnables_, runnables, &auth_detail, "Get list of runnable applications",          AFB_SESSION_CHECK_V2 },
-	{_detail_   , detail,    &auth_detail, "Get the details for one application",        AFB_SESSION_CHECK_V2 },
-	{_start_    , start,     &auth_start, "Start an application",                       AFB_SESSION_CHECK_V2 },
-	{_once_     , once,      &auth_start, "Start once an application",                  AFB_SESSION_CHECK_V2 },
-	{_terminate_, terminate, &auth_kill, "Terminate a running application",            AFB_SESSION_CHECK_V2 },
-	{_pause_    , pause,     &auth_kill, "Pause a running application",                AFB_SESSION_CHECK_V2 },
-	{_resume_   , resume,    &auth_kill, "Resume a paused application",                AFB_SESSION_CHECK_V2 },
-	{_runners_  , runners,   &auth_state, "Get the list of running applications",       AFB_SESSION_CHECK_V2 },
-	{_state_    , state,     &auth_state, "Get the state of a running application",     AFB_SESSION_CHECK_V2 },
-	{_install_  , install,   &auth_install, "Install an application using a widget file", AFB_SESSION_CHECK_V2 },
-	{_uninstall_, uninstall, &auth_uninstall, "Uninstall an application",                   AFB_SESSION_CHECK_V2 },
-	{ NULL, NULL, NULL, NULL, 0 }
+	{.verb=_runnables_, .callback=runnables, .auth=&auth_detail,    .info="Get list of runnable applications",          .session=AFB_SESSION_CHECK },
+	{.verb=_detail_   , .callback=detail,    .auth=&auth_detail,    .info="Get the details for one application",        .session=AFB_SESSION_CHECK },
+	{.verb=_start_    , .callback=start,     .auth=&auth_start,     .info="Start an application",                       .session=AFB_SESSION_CHECK },
+	{.verb=_once_     , .callback=once,      .auth=&auth_start,     .info="Start once an application",                  .session=AFB_SESSION_CHECK },
+	{.verb=_terminate_, .callback=terminate, .auth=&auth_kill,      .info="Terminate a running application",            .session=AFB_SESSION_CHECK },
+	{.verb=_pause_    , .callback=pause,     .auth=&auth_kill,      .info="Pause a running application",                .session=AFB_SESSION_CHECK },
+	{.verb=_resume_   , .callback=resume,    .auth=&auth_kill,      .info="Resume a paused application",                .session=AFB_SESSION_CHECK },
+	{.verb=_runners_  , .callback=runners,   .auth=&auth_state,     .info="Get the list of running applications",       .session=AFB_SESSION_CHECK },
+	{.verb=_state_    , .callback=state,     .auth=&auth_state,     .info="Get the state of a running application",     .session=AFB_SESSION_CHECK },
+	{.verb=_install_  , .callback=install,   .auth=&auth_install,   .info="Install an application using a widget file", .session=AFB_SESSION_CHECK },
+	{.verb=_uninstall_, .callback=uninstall, .auth=&auth_uninstall, .info="Uninstall an application",                   .session=AFB_SESSION_CHECK },
+	{.verb=NULL }
 };
 
-const struct afb_binding_v2 afbBindingV2 = {
+const afb_binding_t afbBindingExport = {
 	.api = "afm-main",
 	.specification = NULL,
 	.info = "Application Framework Master Service",
@@ -551,6 +611,6 @@ const struct afb_binding_v2 afbBindingV2 = {
 	.preinit = NULL,
 	.init = init,
 	.onevent = NULL,
-	.noconcurrency = 1 /* relies on binder for serialisation of requests */
+	.noconcurrency = 1 /* relies on binder for serialization of requests */
 };
 
