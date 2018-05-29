@@ -17,6 +17,7 @@
 */
 
 #include <string.h>
+#include <limits.h>
 
 #include "wrap-json.h"
 
@@ -528,7 +529,7 @@ static int vunpack(struct json_object *object, const char *desc, va_list args, i
 	int64_t *pI = NULL;
 	size_t *pz = NULL;
 	uint8_t **py = NULL;
-	struct { struct json_object *parent; const char *acc; size_t index; size_t count; char type; } stack[STACKCOUNT], *top;
+	struct { struct json_object *parent; const char *acc; int index; int count; char type; } stack[STACKCOUNT], *top;
 	struct json_object *obj;
 	struct json_object **po;
 
@@ -702,7 +703,7 @@ static int vunpack(struct json_object *object, const char *desc, va_list args, i
 				if (!ignore) {
 					if (!json_object_is_type(obj, json_type_array))
 						goto missfit;
-					top->count = json_object_array_length(obj);
+					top->count = (int)json_object_array_length(obj);
 				}
 				xacc[0] = ']';
 				acc = unpack_accept_arr;
@@ -863,8 +864,8 @@ static void object_for_all(struct json_object *object, void (*callback)(void*,st
 
 static void array_for_all(struct json_object *object, void (*callback)(void*,struct json_object*), void *closure)
 {
-	size_t n = json_object_array_length(object);
-	size_t i = 0;
+	int n = (int)json_object_array_length(object);
+	int i = 0;
 	while(i < n)
 		callback(closure, json_object_array_get_idx(object, i++));
 }
@@ -906,15 +907,98 @@ void wrap_json_for_all(struct json_object *object, void (*callback)(void*,struct
 	else if (!json_object_is_type(object, json_type_array))
 		callback(closure, object, NULL);
 	else {
-		size_t n = json_object_array_length(object);
-		size_t i = 0;
+		int n = (int)json_object_array_length(object);
+		int i = 0;
 		while(i < n)
 			callback(closure, json_object_array_get_idx(object, i++), NULL);
 	}
 }
 
+static struct json_object *clone_any(struct json_object *object, int deep);
+
+static struct json_object *clone_object(struct json_object *object, int subdeep)
+{
+	struct json_object *r = json_object_new_object();
+	struct json_object_iterator it = json_object_iter_begin(object);
+	struct json_object_iterator end = json_object_iter_end(object);
+	while (!json_object_iter_equal(&it, &end)) {
+		json_object_object_add(r,
+			json_object_iter_peek_name(&it),
+			clone_any(json_object_iter_peek_value(&it), subdeep));
+		json_object_iter_next(&it);
+	}
+	return r;
+}
+
+static struct json_object *clone_array(struct json_object *object, int subdeep)
+{
+	int n = json_object_array_length(object);
+	struct json_object *r = json_object_new_array();
+	while (n) {
+		n--;
+		json_object_array_put_idx(r, n,
+			clone_any(json_object_array_get_idx(object, n), subdeep));
+	}
+	return r;
+}
+
+static struct json_object *clone_any(struct json_object *object, int deep)
+{
+	if (deep) {
+		switch (json_object_get_type(object)) {
+		case json_type_object:
+			return clone_object(object, deep - 1);
+		case json_type_array:
+			return clone_array(object, deep - 1);
+		default:
+			break;
+		}
+	}
+	return json_object_get(object);
+}
+
+struct json_object *wrap_json_clone(struct json_object *object)
+{
+	return clone_any(object, 1);
+}
+
+struct json_object *wrap_json_clone_deep(struct json_object *object)
+{
+	return clone_any(object, INT_MAX);
+}
+
+void wrap_json_object_add(struct json_object *dest, struct json_object *added)
+{
+	struct json_object_iterator it, end;
+	if (json_object_is_type(dest, json_type_object) && json_object_is_type(added, json_type_object)) {
+		it = json_object_iter_begin(added);
+		end = json_object_iter_end(added);
+		while (!json_object_iter_equal(&it, &end)) {
+			json_object_object_add(dest,
+				json_object_iter_peek_name(&it),
+				json_object_get(json_object_iter_peek_value(&it)));
+			json_object_iter_next(&it);
+		}
+	}
+}
+
 #if defined(WRAP_JSON_TEST)
 #include <stdio.h>
+
+void tclone(struct json_object *obj)
+{
+	struct json_object *o;
+
+	o = wrap_json_clone(obj);
+	if (strcmp(json_object_to_json_string(obj), json_object_to_json_string(o)))
+		printf("ERROR in clone: %s VERSUS %s\n", json_object_to_json_string(obj), json_object_to_json_string(o));
+	json_object_put(o);
+
+	o = wrap_json_clone_deep(obj);
+	if (strcmp(json_object_to_json_string(obj), json_object_to_json_string(o)))
+		printf("ERROR in clone_deep: %s VERSUS %s\n", json_object_to_json_string(obj), json_object_to_json_string(o));
+	json_object_put(o);
+}
 
 void p(const char *desc, ...)
 {
@@ -929,6 +1013,7 @@ void p(const char *desc, ...)
 		printf("  SUCCESS %s\n\n", json_object_to_json_string(result));
 	else
 		printf("  ERROR[char %d err %d] %s\n\n", wrap_json_get_error_position(rc), wrap_json_get_error_code(rc), wrap_json_get_error_string(rc));
+	tclone(result);
 	json_object_put(result);
 }
 
@@ -996,6 +1081,7 @@ void u(const char *value, const char *desc, ...)
 		va_end(args);
 		printf("\n\n");
 	}
+	tclone(obj);
 	json_object_put(obj);
 }
 
