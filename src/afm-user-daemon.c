@@ -193,12 +193,17 @@ static void propagate(struct sd_bus_message *smsg, struct json_object *obj, void
 {
 	int rc;
 	const char *verb = closure;
+	const char *onbehalf = NULL; /* TODO: on behalf of the client */
 
 	INFO("method %s propagated for %s", verb, json_object_to_json_string(obj));
 	if (!pws)
 		jbus_reply_error_s(smsg, "disconnected");
 	else {
+#if defined(AFB_PROTO_WS_VERSION) && (AFB_PROTO_WS_VERSION >= 3)
+		rc = afb_proto_ws_client_call(pws, verb, obj, sessionid, smsg, onbehalf);
+#else
 		rc = afb_proto_ws_client_call(pws, verb, obj, sessionid, smsg);
+#endif
 		if (rc < 0)
 			ERROR("calling %s(%s) failed: %m\n", verb, json_object_to_json_string(obj));
 	} 
