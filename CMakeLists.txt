@@ -26,7 +26,7 @@ include(CTest)
 set(PROJECT_NAME "AFM Main")
 set(PROJECT_PRETTY_NAME "Application Framework Main")
 set(PROJECT_DESCRIPTION "Secured Application framework for Automotive Grade Linux")
-set(PROJECT_VERSION "5.99-FF-draft")
+set(PROJECT_VERSION "5.99.FFRC2")
 set(PROJECT_URL "https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-main.git;a=summary")
 
 set(USE_LIBZIP     ON  CACHE BOOL "should try to use libzip?")
