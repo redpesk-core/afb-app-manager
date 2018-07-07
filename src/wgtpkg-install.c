@@ -458,7 +458,7 @@ static int install_security(const struct wgt_desc *desc)
 	len--;
 	*head++ = '/';
 	icon = desc->icons ? desc->icons->src : NULL;
-	lic = (unsigned)strlen(icon);
+	lic = (unsigned)(icon ? strlen(icon) : 0);
 	n = file_count();
 	i = 0;
 	while(i < n) {
