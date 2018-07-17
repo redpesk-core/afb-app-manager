@@ -347,7 +347,7 @@ int check_all_signatures()
 	for (i = n ; i-- > 0 ; ) {
 		fdesc = signature_of_index(i);
 		irc = verify_digsig(fdesc);
-		if (!irc)
+		if (irc < 0)
 			rc = irc;
 	}
 
