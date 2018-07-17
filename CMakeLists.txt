@@ -32,6 +32,7 @@ set(PROJECT_URL "https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-fram
 set(USE_LIBZIP     ON  CACHE BOOL "should try to use libzip?")
 set(USE_SIMULATION OFF CACHE BOOL "if set simulates security manager and smack")
 set(USE_SDK        OFF CACHE BOOL "if set, avoids installating system runtime files")
+set(ALLOW_NO_SIGNATURE OFF CACHE BOOL "if set, widgets without signature are accepted")
 
 set(SIMULATE_SECMGR OFF CACHE BOOL "if set, the security manager is simulated")
 set(SIMULATE_SMACK  OFF CACHE BOOL "if set, the smack environment is simulated")
@@ -69,6 +70,12 @@ add_definitions(
 	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
 	-DAFM_VERSION="${PROJECT_VERSION}"
 )
+if(ALLOW_NO_SIGNATURE)
+	add_definitions(-DDEFAULT_ALLOW_NO_SIGNATURE=1)
+else(ALLOW_NO_SIGNATURE)
+	add_definitions(-DDEFAULT_ALLOW_NO_SIGNATURE=0)
+endif(ALLOW_NO_SIGNATURE)
+
 
 add_subdirectory(src)
 add_subdirectory(conf)

@@ -336,13 +336,17 @@ int verify_digsig(struct filedesc *fdesc)
 }
 
 /* check all the signature files */
-int check_all_signatures()
+int check_all_signatures(int allow_none)
 {
 	int rc, irc;
 	unsigned int i, n;
 	struct filedesc *fdesc;
 
 	n = signature_count();
+	if (n == 0 && !allow_none) {
+		ERROR("no signature found");
+		return -1;
+	}
 	rc = 0;
 	for (i = n ; i-- > 0 ; ) {
 		fdesc = signature_of_index(i);

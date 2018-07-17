@@ -155,11 +155,11 @@ static void show(const char *wgtfile)
 	if (zread(wgtfile, 0))
 		goto error2;
 
-	if (check_all_signatures())
+	if (check_all_signatures(1)) /* info even on WGT without signature */
 		goto error2;
 
 	check_and_show();
-	
+
 error2:
 	remove_workdir();
 	return;
