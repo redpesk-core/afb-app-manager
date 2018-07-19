@@ -20,6 +20,7 @@ cmake_minimum_required(VERSION 2.8)
 
 configure_file(afm-system-daemon.service.in afm-system-daemon.service)
 configure_file(afm-system-daemon.socket.in afm-system-daemon.socket)
+configure_file(afm-api-afm-main@.service.in afm-api-afm-main@.service)
 
 if(NOT USE_SDK)
 	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
@@ -30,6 +31,7 @@ if(NOT USE_SDK)
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session.pamd     DESTINATION ${SYSCONFDIR_PAMD} RENAME afm-user-session)
 	install(
 		FILES
+			${CMAKE_CURRENT_BINARY_DIR}/afm-api-afm-main@.service
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.service
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-daemon.socket
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-system-setup.service

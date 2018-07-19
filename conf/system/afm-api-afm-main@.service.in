@@ -1,0 +1,13 @@
+[Unit]
+Description=Provides api afm-main for user %i
+X-AFM-API-TYPE=ws
+
+Requires=afm-user-setup@%i.service
+After=afm-user-setup@%i.service
+Requires=afm-system-daemon.socket
+After=afm-system-daemon.socket
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/ln -s @afm_platform_rundir@/apis/ws/afm-main /run/user/%i/apis/ws/afm-main
