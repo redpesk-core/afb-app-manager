@@ -53,6 +53,8 @@ define( `UNIT_NAME_SERVICE', `UNIT_NAME_BASE%i.service')
 define( `UNIT_NAME_API_BASE', `afm-api-$1')
 define( `UNIT_NAME_API_SERVICE', `UNIT_NAME_API_BASE($1)@$2.service')
 define( `UNIT_NAME_API_SOCKET', `UNIT_NAME_API_BASE($1)@$2.socket')
+define( `UNIT_NAME_BINDING_BASE', `afm-link-$1')
+define( `UNIT_NAME_BINDING_SERVICE', `UNIT_NAME_BINDING_BASE($1)@$2.service')
 define( `APP_DATA_DIR', `/home/%i/app-data')
 define( `USER_RUN_DIR', `@afm_users_rundir@/%i')
 define( `DEBUGGING_DIR', `@afm_platform_rundir@/debug')
@@ -144,7 +146,9 @@ divert(0)dnl
 
 include(service.inc)
 
-include(provided.inc)
+include(provided-api.inc)
+
+include(provided-binding.inc)
 
 {{/targets}}
 ;---------------------------------------------------------------------------------

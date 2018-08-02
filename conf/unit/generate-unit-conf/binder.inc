@@ -33,10 +33,13 @@ ENDIF \
 	{{#required-api}} \
 		ON_VALUE(auto|ws,	--ws-client=unix:USER_RUN_DIR/apis/ws/{{name}}) \
 		ON_VALUE(dbus,		--dbus-client={{name}}) \
-		ON_VALUE(link,		--binding=USER_RUN_DIR/apis/lib/{{name}}) \
 		ON_VALUE(cloud,		--cloud-client={{name}}) \
 		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
 	{{/required-api}} \
+	{{#required-binding}} \
+		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
+		ON_VALUE(extern,	--binding=USER_RUN_DIR/apis/link/{{name}}) \
+	{{/required-binding}} \
 	{{#provided-api}} \
 		ON_VALUE(auto|ws,	--ws-server=sd:{{name}}) \
 		ON_VALUE(dbus,		--dbus-server={{name}}) \

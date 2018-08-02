@@ -40,6 +40,12 @@ ConditionSecurity=smack
 %nl
 
 # Automatic bound to required api
+{{#required-binding}}
+{{#value=extern}}
+BindsTo=UNIT_NAME_BINDING_SERVICE({{name}},%i)
+After=UNIT_NAME_BINDING_SERVICE({{name}},%i)
+{{/value=extern}}
+{{/required-binding}}
 {{#required-api}}
 {{#value=auto|ws}}
 BindsTo=UNIT_NAME_API_SERVICE({{name}},%i)
@@ -48,8 +54,8 @@ After=UNIT_NAME_API_SERVICE({{name}},%i)
 {{/required-api}}
 {{#provided-api}}
 {{#value=ws|auto}}
-Requires=UNIT_NAME_API_SERVICE({{name}},%i)
-After=UNIT_NAME_API_SERVICE({{name}},%i)
+Requires=UNIT_NAME_API_SOCKET({{name}},%i)
+After=UNIT_NAME_API_SOCKET({{name}},%i)
 {{/value=ws|auto}}
 {{/provided-api}}
 

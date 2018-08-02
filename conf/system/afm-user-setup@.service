@@ -6,6 +6,7 @@ Type=oneshot
 ExecStart=-/bin/sh -c "/bin/mkdir /run/user/%i; /bin/chown %i:%i /run/user/%i; /usr/bin/chsmack -a '*' /run/user/%i"
 ExecStart=-/bin/sh -c "/bin/mkdir /run/user/%i/apis; /bin/chown %i:%i /run/user/%i/apis; /usr/bin/chsmack -a '*' /run/user/%i/apis"
 ExecStart=-/bin/sh -c "/bin/mkdir /run/user/%i/apis/ws; /bin/chown %i:%i /run/user/%i/apis/ws; /usr/bin/chsmack -a '*' /run/user/%i/apis/ws"
+ExecStart=-/bin/sh -c "/bin/mkdir /run/user/%i/apis/link; /bin/chown %i:%i /run/user/%i/apis/link; /usr/bin/chsmack -a '*' /run/user/%i/apis/link"
 ExecStart=-/bin/sh -c "/bin/ln -sf /run/platform/display/wayland-0 /run/user/%i/wayland-0; /bin/chown %i:%i /run/user/%i/wayland-0; /usr/bin/chsmack -a '*' /run/user/%i/wayland-0"
 
 

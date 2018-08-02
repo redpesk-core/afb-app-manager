@@ -387,6 +387,26 @@ static int add_required_api(struct json_object *targets, const struct wgt_desc_f
 	return add_targeted_params(targets, feat, actions);
 }
 
+/* Treats the feature "provided_binding" */
+static int add_provided_binding(struct json_object *targets, const struct wgt_desc_feature *feat)
+{
+	static struct paramaction actions[] = {
+		{ .name = string_sharp_target, .action = NULL, .closure = NULL }, /* TODO: should be an error! */
+		{ .name = NULL, .action = add_param_array, .closure = (void*)string_provided_binding }
+	};
+	return add_targeted_params(targets, feat, actions);
+}
+
+/* Treats the feature "required_binding" */
+static int add_required_binding(struct json_object *targets, const struct wgt_desc_feature *feat)
+{
+	static struct paramaction actions[] = {
+		{ .name = string_sharp_target, .action = NULL, .closure = NULL }, /* skip #target */
+		{ .name = NULL, .action = add_param_array, .closure = (void*)string_required_binding }
+	};
+	return add_targeted_params(targets, feat, actions);
+}
+
 /* Treats the feature "required_permission" */
 static int add_required_permission(struct json_object *targets, const struct wgt_desc_feature *feat)
 {
@@ -460,8 +480,14 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 			else if (!strcmp(featname, string_provided_api)) {
 				rc2 = add_provided_api(targets, feat);
 			}
+			else if (!strcmp(featname, string_provided_binding)) {
+				rc2 = add_provided_binding(targets, feat);
+			}
 			else if (!strcmp(featname, string_required_api)) {
 				rc2 = add_required_api(targets, feat);
+			}
+			else if (!strcmp(featname, string_required_binding)) {
+				rc2 = add_required_binding(targets, feat);
 			}
 			else if (!strcmp(featname, string_required_permission)) {
 				rc2 = add_required_permission(targets, feat);

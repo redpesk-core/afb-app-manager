@@ -33,14 +33,6 @@ RemainAfterExit=yes
 {{#value=ws|auto}}
 ExecStart=/bin/true
 {{/value=ws|auto}}
-dnl {{#value=link}}
-dnl ExecStart=/bin/ln -s {{:#metadata.install-dir}}/ USER_RUN_DIR/apis/link/{{name}}
-dnl {{/value=link}}
-
-dnl %nl
-dnl [Install]
-dnl WantedBy=afm-user-session@.target
-dnl %systemd-unit wanted-by afm-user-session@.target
 
 %end systemd-unit
 

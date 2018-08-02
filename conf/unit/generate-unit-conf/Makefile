@@ -2,7 +2,7 @@
 
 MAIN = afm-unit
 
-FILES = $(MAIN) binder.inc provided.inc service.inc Makefile
+FILES = $(MAIN) binder.inc provided-api.inc provided-binding.inc service.inc Makefile
 
 DIR = ..
 
