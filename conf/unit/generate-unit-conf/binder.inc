@@ -35,6 +35,7 @@ ENDIF \
 		ON_VALUE(dbus,		--dbus-client={{name}}) \
 		ON_VALUE(cloud,		--cloud-client={{name}}) \
 		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
+		ON_VALUE(tcp,		--ws-client=tcp:{{name}}) \
 	{{/required-api}} \
 	{{#required-binding}} \
 		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
@@ -43,6 +44,7 @@ ENDIF \
 	{{#provided-api}} \
 		ON_VALUE(auto|ws,	--ws-server=sd:{{name}}) \
 		ON_VALUE(dbus,		--dbus-server={{name}}) \
+		ON_VALUE(tcp,		--ws-server=tcp:{{name}}) \
 	{{/provided-api}} \
 	ON_CONTENT(text/html,			--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t) \
 	ON_CONTENT(application/vnd.agl.native,	--exec {{:#metadata.install-dir}}/{{content.src}} @p @t)
