@@ -40,6 +40,7 @@
 #include "wgtpkg-permissions.h"
 #include "wgtpkg-digsig.h"
 #include "wgtpkg-install.h"
+#include "wgtpkg-uninstall.h"
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
 #include "wgtpkg-unit.h"
@@ -531,6 +532,16 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 
 	if (get_target_directory(installdir, root, desc))
 		goto error3;
+
+	if (access(installdir, F_OK) == 0) {
+		if (!force) {
+			ERROR("widget already installed");
+			errno = EEXIST;
+			goto error3;
+		}
+		if (uninstall_widget(desc->idaver, root))
+			goto error3;
+	}
 
 	if (move_widget_to(installdir, force))
 		goto error3;
