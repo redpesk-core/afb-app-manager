@@ -3,13 +3,13 @@
 ## Foreword
 
 This document describes application framework daemons
-FCS (Fully Conform to Specification) implementation is still under development.  
+FCS (Fully Conform to Specification) implementation is still under development.
 It may happen that current implementation somehow diverges with specifications.
 
 ## Introduction
 
 Daemons ***afm-user-daemon*** and ***afm-system-daemon*** handle applications
-life.  
+life.
 Understand that they will manage operations like:
 
 - ***installation***
@@ -28,14 +28,14 @@ depending upon ***D-Bus*** destination.
 The figure below summarizes the situation of both **afm-system-daemon** and
 **afm-user-daemon** in the system.
 
-![afm-daemons][afm-daemons]{style width:65%;}
+![afm-daemons][afm-daemons]{:: style="width:65%;"}
 
 ## The D-Bus interface
 
 ### Overview of the dbus interface
 
 The ***afm daemons*** takes theirs orders from the session instance
-of D-Bus.  
+of D-Bus.
 The use of D-Bus is great because it allows to implement
 discovery and signaling.
 
@@ -66,15 +66,15 @@ And for ***afm-user-daemon***:
 - ***install***
 - ***uninstall***
 
-D-Bus is mainly used for signaling and discovery.  
+D-Bus is mainly used for signaling and discovery.
 Its optimized typed protocol is not used except for transmitting
  only one string in both directions.
 
 The client and the service are using JSON serialization to
-exchange data.  
+exchange data.
 Signature of any member of the D-Bus interface is
-***string -> string*** for ***JSON -> JSON***.  
-This is the normal case, if there is an error, current implementation 
+***string -> string*** for ***JSON -> JSON***.
+This is the normal case, if there is an error, current implementation
 returns a dbus error that is a string.
 
 Here are examples using *dbus-send*, here to install an application from a
@@ -424,7 +424,7 @@ Use **org.AGL.afm.user.resume** instead.
 
 **Input**: The *runid* (integer) of the running instance inspected.
 
-**output**: An object describing instance state.  
+**output**: An object describing instance state.
 It contains:
 
 - the runid (integer)
@@ -458,7 +458,7 @@ the method ***org.AGL.afm.user.state***.
 ## Starting **afm daemons**
 
 ***afm-system-daemon*** and ***afm-user-daemon*** are launched as systemd
-services attached to system and user respectively.  
+services attached to system and user respectively.
 Normally, service files are locatedat */lib/systemd/system/afm-system-daemon.service* and
 */usr/lib/systemd/user/afm-user-daemon.service*.
 
@@ -562,12 +562,12 @@ applications and load in memory a list of available applications
 accessible by current user.
 
 When **afm-system-daemon** installs or removes an application.
-On success it sends the signal *org.AGL.afm.system.changed*.  
+On success it sends the signal *org.AGL.afm.system.changed*.
 When receiving such a signal, **afm-user-daemon** rebuilds its
 applications list.
 
 **afm-user-daemon** provides the data it collects about
-applications to its clients.  
+applications to its clients.
 Clients may either request the full list
 of available applications or a more specific information about a
 given application.
@@ -579,7 +579,7 @@ Systemd builds a secure environment for the application
 before starting it.
 
 Once launched, running instances of application receive
-a runid that identify them.  
+a runid that identify them.
 To make interface with systemd evident, the pid is the runid.
 
 ### Managing instances of running applications
@@ -589,7 +589,7 @@ that it launched.
 
 When owning the right permissions, a client can get the list
 of running instances and details about a specific
-running instance.  
+running instance.
 It can also terminate a given application.
 
 ### Installing and uninstalling applications
@@ -601,7 +601,7 @@ to **afm-system-daemon**.
 ## Using ***afm-util***
 
 The command line tool ***afm-util*** uses dbus-send to send
-orders to **afm-user-daemon**.  
+orders to **afm-user-daemon**.
 This small scripts allows to send command to ***afm-user-daemon*** either
 interactively at shell prompt or scriptically.
 
@@ -611,31 +611,31 @@ The syntax is simple:
 
 Here is the summary of ***afm-util***:
 
-- **afm-util runnables      **:  
+- **afm-util runnables      **:
   list the runnable widgets installed
 
-- **afm-util install    wgt **:  
+- **afm-util install    wgt **:
   install the wgt file
 
-- **afm-util uninstall  id  **:  
+- **afm-util uninstall  id  **:
   remove the installed widget of id
 
-- **afm-util detail     id  **:  
+- **afm-util detail     id  **:
   print detail about the installed widget of id
 
-- **afm-util runners        **:  
+- **afm-util runners        **:
   list the running instance
 
-- **afm-util start      id  **:  
+- **afm-util start      id  **:
   start an instance of the widget of id
 
-- **afm-util once      id  **:  
+- **afm-util once      id  **:
   run once an instance of the widget of id
 
-- **afm-util terminate  rid **:  
+- **afm-util terminate  rid **:
   terminate the running instance rid
 
-- **afm-util state      rid **:  
+- **afm-util state      rid **:
   get status of the running instance rid
 
 Here is how to list applications using ***afm-util***:

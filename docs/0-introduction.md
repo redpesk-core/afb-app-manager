@@ -2,7 +2,7 @@
 
 ## Foreword
 
-This document describes what we intend to do.  
+This document describes what we intend to do.
 It may happen that our current implementation and the content of this document differ.
 
 In case of differences, it is assumed that this document is right
@@ -25,7 +25,7 @@ Here is a minimal list of what was needed:
 - platform/core/appfw/pkgmgr-info
 - platform/core/appfw/slp-pkgmgr
 
-But this list isn't complete because many dependencies are hidden.  
+But this list isn't complete because many dependencies are hidden.
 Those hidden dependencies are including some common libraries but also many
 tizen specific sub-components:
 
@@ -37,12 +37,12 @@ tizen specific sub-components:
 - vconf-buxton
 - ...
 
-This is an issue because AGL is not expected to be Tizen.  
+This is an issue because AGL is not expected to be Tizen.
 Taking it would either need to patch it for removing unwanted components or to take all of them.
 
 However, a careful study of the core components of the security framework
 of Tizen showed that their dependencies to Tizen are light (and since some
-of our work, there is no more dependency to tizen).  
+of our work, there is no more dependency to tizen).
 Those components are :
 
 - **cynara**
@@ -50,9 +50,9 @@ Those components are :
 - **D-Bus aware of cynara**
 
 Luckily, these core security components of Tizen are provided
-by [meta-intel-iot-security][meta-intel], a set of yocto layers.  
+by [meta-intel-iot-security][meta-intel], a set of yocto layers.
 These layers were created by Intel to isolate Tizen specific security
-components from the initial port of Tizen to Yocto.  
+components from the initial port of Tizen to Yocto.
 The 3 layers are providing components for:
 
 - Implementing Smack LSM
@@ -81,13 +81,13 @@ They provides infrastructure for installing, uninstalling,
 launching, terminating, pausing and resuming applications in
 a multi user secure environment.
 
-A third component exists in the framework, the binder **afb-daemon**.  
+A third component exists in the framework, the binder **afb-daemon**.
 The binder provides the easiest way to provide secured API for
-any tier.   
+any tier.
 Currently, the use of the binder is not absolutely mandatory.
 
 This documentation explains the framework created by IoT.bzh
-by rewriting the Tizen Application Framework.  
+by rewriting the Tizen Application Framework.
 Be aware of the previous foreword.
 
 <!-- pagebreak -->
@@ -99,7 +99,7 @@ and their interactions going through the following scenario:
 
 - APPLICATION installs an other application and then launch it.
 
-![AppFW-APP_install_sequences][AppFW-APP_install_sequences]{style width:70%}
+![AppFW-APP_install_sequences][AppFW-APP_install_sequences]{:: style="width:70%;"}
 
 Let follow the sequence of calls:
 
@@ -140,7 +140,7 @@ Let follow the sequence of calls:
 
 1. **afm-user-daemon** launches the OTHER application.
 
-This scenario does not cover all the features of the frameworks.  
+This scenario does not cover all the features of the frameworks.
 Shortly because details will be revealed in the next chapters,
 the components are:
 
@@ -173,7 +173,7 @@ security and to the tools that are provided for implementing that model.
 
 The security model refers to how DAC (Discretionary Access Control),
 MAC (Mandatory Access Control) and Capabilities are used by the system
-to ensure security and privacy.  
+to ensure security and privacy.
 It also includes features of reporting using audit features and by managing
 logs and alerts.
 
@@ -191,31 +191,31 @@ to ensure the security and the privacy of the applications that
 it manages.
 
 The application framework must be compliant with the underlying
-security model/framework.  
+security model/framework.
 But it should hide it to the applications.
 
 ## The security framework
 
-The implemented security model is the security model of Tizen 3.  
+The implemented security model is the security model of Tizen 3.
 This model is described [here][tizen-secu-3].
 
 The security framework then comes from Tizen 3 but through
-the [meta-intel].  
+the [meta-intel].
 It includes:
 
 - **Security-Manager**
 - **Cynara**
 - **D-Bus** compliant to Cynara.
 
-Two patches are applied to the security-manager.  
-The goal of these patches is to remove specific dependencies with Tizen packages that are not needed by AGL.  
+Two patches are applied to the security-manager.
+The goal of these patches is to remove specific dependencies with Tizen packages that are not needed by AGL.
 None of these patches adds or removes any behaviour.
 
 **In theory, the security framework/model is an implementation details
 that should not impact the layers above the application framework**.
 
 The security framework of Tizen provides "nice lad" a valuable component to
-scan log files and analyse auditing.  
+scan log files and analyse auditing.
 This component is still in development.
 
 ## The application framework
@@ -230,12 +230,12 @@ the security framework to the applications.
 For the reasons explained in introduction, we did not used the
 application framework of Tizen as is but used an adaptation of it.
 
-The basis is kept identical: 
+The basis is kept identical:
 
-- The applications are distributed in a digitally signed container that must 
+- The applications are distributed in a digitally signed container that must
   match the specifications of widgets (web applications).
-  
-This is described by the technical recommendations [widgets] and 
+
+This is described by the technical recommendations [widgets] and
 [widgets-digsig] of the W3 consortium.
 
 This model allows:
