@@ -107,6 +107,7 @@ X-AFM--workdir=/home/%i/app-data/{{:id}}
 %nl
 Requires=afm-user-session@%i.target
 After=user@%i.service
+After=Network.target
 # Adds check to smack
 ConditionSecurity=smack
 %nl
