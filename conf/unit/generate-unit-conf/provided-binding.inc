@@ -24,7 +24,7 @@ After=afm-user-setup@%i.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -s {{:#metadata.install-dir}}/{{value}} USER_RUN_DIR/apis/link/{{name}}
+ExecStart=/bin/ln -sf {{:#metadata.install-dir}}/{{value}} USER_RUN_DIR/apis/link/{{name}}
 
 %end systemd-unit
 
