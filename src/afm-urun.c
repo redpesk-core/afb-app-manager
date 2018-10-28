@@ -40,7 +40,7 @@ static const char key_unit_d_path[] = "-unit-dpath-";
 
 /**************** get appli basis *********************/
 
-static int get_basis(struct json_object *appli, int *isuser, const char **dpath, int load, int uid)
+static int get_basis(struct json_object *appli, int *isuser, const char **dpath, int uid)
 {
 	char userid[40];
 	char *dp, *arodot, *nun;
@@ -74,12 +74,6 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		/* try dpath for the user */
 		if (j_read_string_at(odp, userid, dpath))
 			return 0;
-	}
-
-	/* not here. load it? */
-	if (!load) {
-		errno = ENOENT;
-		goto error;
 	}
 
 	/* get uname */
@@ -246,7 +240,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 	int rc, isuser;
 
 	/* retrieve basis */
-	rc = get_basis(appli, &isuser, &udpath, 1, uid);
+	rc = get_basis(appli, &isuser, &udpath, uid);
 	if (rc < 0)
 		goto error;
 
@@ -280,7 +274,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 		ERROR("can't getpid of %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
-		
+
 	return rc;
 
 error:
@@ -352,7 +346,7 @@ struct json_object *afm_urun_list(struct afm_udb *db, int uid)
 	n = json_object_array_length(apps);
 	for (i = 0 ; i < n ; i++) {
 		appli = json_object_array_get_idx(apps, i);
-		if (appli && get_basis(appli, &isuser, &udpath, 0, uid) >= 0) {
+		if (appli && get_basis(appli, &isuser, &udpath, uid) >= 0) {
 			pid = systemd_unit_pid_of_dpath(isuser, udpath);
 			if (pid > 0 && j_read_string_at(appli, "id", &id)) {
 				state = systemd_unit_state_of_dpath(isuser, udpath);
@@ -404,7 +398,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 		for (i = 0 ; i < n ; i++) {
 			appli = json_object_array_get_idx(apps, i);
 			if (appli
-			 && get_basis(appli, &isuser, &udpath, 0, uid) >= 0
+			 && get_basis(appli, &isuser, &udpath, uid) >= 0
 			 && !strcmp(dpath, udpath)
 			 && j_read_string_at(appli, "id", &id)) {
 				pid = systemd_unit_pid_of_dpath(isuser, udpath);
@@ -418,7 +412,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 		WARNING("searched runid %d of dpath %s isn't an applications", runid, dpath);
 end:
 		json_object_put(apps);
-		free(dpath);	
+		free(dpath);
 	}
 
 	return result;
@@ -439,7 +433,7 @@ int afm_urun_search_runid(struct afm_udb *db, const char *id, int uid)
 		NOTICE("Unknown appid %s", id);
 		errno = ENOENT;
 		pid = -1;
-	} else if (get_basis(appli, &isuser, &udpath, 0, uid) < 0) {
+	} else if (get_basis(appli, &isuser, &udpath, uid) < 0) {
 		pid = -1;
 	} else {
 		pid = systemd_unit_pid_of_dpath(isuser, udpath);
