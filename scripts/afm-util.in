@@ -2,7 +2,7 @@
 
 send() {
 	afb-client-demo -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$1" "$2" |
-	awk '$1=="ON-REPLY-FAIL"{$1="ERROR:";$2="";print;exit 1;}NR>1'
+	awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
 }
 
 case "$1" in
