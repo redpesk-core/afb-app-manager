@@ -21,6 +21,7 @@
 #include <string.h>
 #include <assert.h>
 #include <signal.h>
+#include <errno.h>
 
 #include <json-c/json.h>
 
@@ -295,21 +296,21 @@ static int onrunid(afb_req_t req, const char *method, int *runid)
  * Sends the reply 'resp' to the request 'req' if 'resp' is not NULLzero.
  * Otherwise, when 'resp' is NULL replies the error string 'errstr'.
  */
-static void reply(afb_req_t req, struct json_object *resp, const char *errstr)
+static void reply(afb_req_t req, struct json_object *resp)
 {
-	if (!resp)
-		afb_req_fail(req, errstr, NULL);
+	if (resp)
+		afb_req_reply(req, resp, NULL, NULL);
 	else
-		afb_req_success(req, resp, NULL);
+		afb_req_reply(req, NULL, "failed", strerror(errno));
 }
 
 /*
  * Sends the reply "true" to the request 'req' if 'status' is zero.
  * Otherwise, when 'status' is not zero replies the error string 'errstr'.
  */
-static void reply_status(afb_req_t req, int status, const char *errstr)
+static void reply_status(afb_req_t req, int status)
 {
-	reply(req, status ? NULL : json_object_get(json_true), errstr);
+	reply(req, status ? NULL : json_object_get(json_true));
 }
 
 /*
@@ -429,7 +430,7 @@ static void pause(afb_req_t req)
 	int runid, status;
 	if (onrunid(req, "pause", &runid)) {
 		status = afm_urun_pause(runid, afb_req_get_uid(req));
-		reply_status(req, status, _not_found_);
+		reply_status(req, status);
 	}
 }
 
@@ -441,7 +442,7 @@ static void resume(afb_req_t req)
 	int runid, status;
 	if (onrunid(req, "resume", &runid)) {
 		status = afm_urun_resume(runid, afb_req_get_uid(req));
-		reply_status(req, status, _not_found_);
+		reply_status(req, status);
 	}
 }
 
@@ -453,7 +454,7 @@ static void terminate(afb_req_t req)
 	int runid, status;
 	if (onrunid(req, "terminate", &runid)) {
 		status = afm_urun_terminate(runid, afb_req_get_uid(req));
-		reply_status(req, status, _not_found_);
+		reply_status(req, status);
 	}
 }
 
@@ -476,7 +477,7 @@ static void state(afb_req_t req)
 	struct json_object *resp;
 	if (onrunid(req, "state", &runid)) {
 		resp = afm_urun_state(afudb, runid, afb_req_get_uid(req));
-		reply(req, resp, _not_found_);
+		reply(req, resp);
 	}
 }
 
