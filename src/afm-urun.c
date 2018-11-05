@@ -268,7 +268,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 	}
 
 	rc = systemd_unit_pid_of_dpath(isuser, udpath);
-	if (rc < 0) {
+	if (rc <= 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
 		ERROR("can't getpid of %s unit %s for uid %d: %m", uscope, uname, uid);
@@ -403,7 +403,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 			 && j_read_string_at(appli, "id", &id)) {
 				pid = systemd_unit_pid_of_dpath(isuser, udpath);
 				state = systemd_unit_state_of_dpath(isuser, dpath);
-				if (state == SysD_State_Active)
+				if (pid > 0 && state == SysD_State_Active)
 					result = mkstate(id, runid, pid, state);
 				goto end;
 			}
@@ -437,6 +437,10 @@ int afm_urun_search_runid(struct afm_udb *db, const char *id, int uid)
 		pid = -1;
 	} else {
 		pid = systemd_unit_pid_of_dpath(isuser, udpath);
+		if (pid == 0) {
+			errno = ESRCH;
+			pid = -1;
+		}
 	}
 	return pid;
 }

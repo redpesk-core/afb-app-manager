@@ -49,6 +49,7 @@ static const char _id_[]        = "id";
 static const char _install_[]   = "install";
 static const char _lang_[]      = "lang";
 static const char _not_found_[] = "not-found";
+static const char _not_running_[] = "not-running";
 static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
 static const char _resume_[]    = "resume";
@@ -187,6 +188,12 @@ static void not_found(afb_req_t req)
 	afb_req_fail(req, _not_found_, NULL);
 }
 
+/* common not running reply */
+static void not_running(afb_req_t req)
+{
+	afb_req_fail(req, _not_running_, NULL);
+}
+
 /* common can't start reply */
 static void cant_start(afb_req_t req)
 {
@@ -283,7 +290,10 @@ static int onrunid(afb_req_t req, const char *method, int *runid)
 		/* nothing appropriate */
 		INFO("method %s can't get runid for %s: %m", method,
 							appid);
-		not_found(req);
+		if (errno == ESRCH)
+			not_running(req);
+		else
+			not_found(req);
 		return 0;
 	}
 
