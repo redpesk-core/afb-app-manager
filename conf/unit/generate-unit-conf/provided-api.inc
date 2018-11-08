@@ -58,7 +58,7 @@ DefaultDependencies=no
 SmackLabel=*
 SmackLabelIPIn=System
 SmackLabelIPOut=System
-ListenStream=USER_RUN_DIR/apis/ws/{{name}}
+ListenStream=API_PATH_WS/{{name}}
 FileDescriptorName={{name}}
 Service=UNIT_NAME_SERVICE
 

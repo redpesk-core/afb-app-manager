@@ -81,7 +81,10 @@ ON_PERM(:public:syscall:clock, , SystemCallFilter=~@clock)
 
 WorkingDirectory=-APP_DATA_DIR/{{:id}}
 ExecStartPre=/bin/mkdir -p APP_DATA_DIR/{{:id}}
+Environment=AFM_ID=TARGET
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
+Environment=AFM_WORKDIR=APP_DATA_DIR/{{:id}}
+Environment=AFM_WSAPI_DIR=API_PATH_WS
 Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}/bin
 Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
 Environment=XDG_DATA_HOME=APP_DATA_DIR/{{:id}}
@@ -92,7 +95,6 @@ Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 
 IF_AGL_DEVEL
 ; Needed to enable debug
-Environment=AFM_ID=TARGET
 EnvironmentFile=-DEBUGGING_DIR/TARGET.env
 ENDIF
 

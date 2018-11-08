@@ -31,7 +31,7 @@ ELSE \
 ENDIF \
 	ON_PERM(:public:applications:read, --alias=/icons:{{:#metadata.icons-dir}}) \
 	{{#required-api}} \
-		ON_VALUE(auto|ws,	--ws-client=unix:USER_RUN_DIR/apis/ws/{{name}}) \
+		ON_VALUE(auto|ws,	--ws-client=unix:API_PATH_WS/{{name}}) \
 		ON_VALUE(dbus,		--dbus-client={{name}}) \
 		ON_VALUE(cloud,		--cloud-client={{name}}) \
 		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
@@ -39,7 +39,7 @@ ENDIF \
 	{{/required-api}} \
 	{{#required-binding}} \
 		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
-		ON_VALUE(extern,	--binding=USER_RUN_DIR/apis/link/{{name}}) \
+		ON_VALUE(extern,	--binding=API_PATH_LINK/{{name}}) \
 	{{/required-binding}} \
 	{{#provided-api}} \
 		ON_VALUE(auto|ws,	--ws-server=sd:{{name}}) \

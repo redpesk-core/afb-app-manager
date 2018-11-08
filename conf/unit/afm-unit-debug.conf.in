@@ -146,7 +146,10 @@ Slice=user-%i.slice
 %nl
 WorkingDirectory=-/home/%i/app-data/{{:id}}
 ExecStartPre=/bin/mkdir -p /home/%i/app-data/{{:id}}
+Environment=AFM_ID={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
+Environment=AFM_WORKDIR=/home/%i/app-data/{{:id}}
+Environment=AFM_WSAPI_DIR=@afm_users_rundir@/%i/apis/ws
 Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}/bin
 Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
 Environment=XDG_DATA_HOME=/home/%i/app-data/{{:id}}
@@ -155,7 +158,6 @@ Environment=XDG_CACHE_HOME=/home/%i/app-data/{{:id}}
 Environment=XDG_RUNTIME_DIR=@afm_users_rundir@/%i
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=@afm_users_rundir@/%i/bus
 ; Needed to enable debug
-Environment=AFM_ID={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 EnvironmentFile=-@afm_platform_rundir@/debug/{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}.env
 SyslogIdentifier=afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 StandardInput=null
