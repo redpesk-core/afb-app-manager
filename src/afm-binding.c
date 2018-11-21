@@ -244,7 +244,7 @@ static int onappid(afb_req_t req, const char *method, const char **appid)
 
 	/* get the appid if any */
 	if (!wrap_json_unpack(json, "s", appid)
-	 || !wrap_json_unpack(json, "{si}", _id_, appid)) {
+	 || !wrap_json_unpack(json, "{ss}", _id_, appid)) {
 		/* found */
 		INFO("method %s called for %s", method, *appid);
 		return 1;
