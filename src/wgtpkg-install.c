@@ -55,6 +55,18 @@ static const char* exec_type_strings[] = {
 static const char key_afm_prefix[] = "X-AFM-";
 static const char key_http_port[] = "http-port";
 
+#define HTTP_PORT_MIN			31000
+#define HTTP_PORT_MAX			32759
+#define HTTP_PORT_IS_VALID(port)	(HTTP_PORT_MIN <= (port) && (port) <= HTTP_PORT_MAX)
+#define HTTP_PORT_COUNT			(HTTP_PORT_MAX - HTTP_PORT_MIN + 1)
+#define HTTP_PORT_ACNT			((HTTP_PORT_COUNT + 31) >> 5)
+#define HTTP_PORT_ASFT(port)		(((port) - HTTP_PORT_MIN) & 31)
+#define HTTP_PORT_AIDX(port)		(((port) - HTTP_PORT_MIN) >> 5)
+#define HTTP_PORT_TEST(array,port)	((((array)[HTTP_PORT_AIDX(port)]) >> HTTP_PORT_ASFT(port)) & 1)
+#define HTTP_PORT_SET(array,port)	(((array)[HTTP_PORT_AIDX(port)]) |= (((uint32_t)1) << HTTP_PORT_ASFT(port)))
+
+static uint32_t *port_bits = NULL;
+
 /*
  * normalize unit files: remove comments, remove heading blanks,
  * make single lines
@@ -115,8 +127,8 @@ static int get_port_cb(void *closure, const char *name, const char *path, int is
 			if (*iter == '=') {
 				while(*++iter == ' ');
 				p = atoi(iter);
-				if (p >= 0 && p < 32768)
-					((uint32_t*)closure)[p >> 5] |= (uint32_t)1 << (p & 31);
+				if (HTTP_PORT_IS_VALID(p))
+					HTTP_PORT_SET((uint32_t*)closure, p);
 			}
 		}
 		iter = strstr(iter, key_afm_prefix);
@@ -125,27 +137,53 @@ static int get_port_cb(void *closure, const char *name, const char *path, int is
 	return 0;
 }
 
-static int get_port()
+static int update_portbits(uint32_t *portbits)
 {
 	int rc;
-	uint32_t ports[1024]; /* 1024 * 32 = 32768 */
 
-	memset(ports, 0, sizeof ports);
-	rc = systemd_unit_list(0, get_port_cb, &ports);
-	if (rc >= 0) {
-		rc = systemd_unit_list(1, get_port_cb, ports);
-		if (rc >= 0) {
-			for (rc = 1024 ; rc < 32768 && !~ports[rc >> 5] ; rc += 32);
-			if (rc == 32768) {
-				ERROR("Can't compute a valid port");
-				errno = EADDRNOTAVAIL;
-				rc = -1;
-			} else {
-				while (1 & (ports[rc >> 5] >> (rc & 31))) rc++;
-			}
-		}
-	}
+	memset(portbits, 0, HTTP_PORT_ACNT * sizeof(uint32_t));
+	rc = systemd_unit_list(0, get_port_cb, portbits);
+	if (rc >= 0)
+		rc = systemd_unit_list(1, get_port_cb, portbits);
+	if (rc < 0)
+		ERROR("troubles while updating ports");
 	return rc;
+}
+
+static int first_free_port(uint32_t *portbits)
+{
+	int port;
+
+	port = HTTP_PORT_MIN;
+	while (port <= HTTP_PORT_MAX && !~portbits[HTTP_PORT_AIDX(port)])
+		port += 32;
+	while (port <= HTTP_PORT_MAX && HTTP_PORT_TEST(portbits, port))
+		port++;
+	if (port > HTTP_PORT_MAX) {
+		ERROR("Can't compute a valid port");
+		errno = EADDRNOTAVAIL;
+		port = -1;
+	}
+	return port;
+}
+
+static int get_port()
+{
+	int port;
+
+	/* ensure existing port bitmap */
+	if (port_bits == NULL) {
+		port_bits = malloc(HTTP_PORT_ACNT * sizeof(uint32_t));
+		if (port_bits == NULL || update_portbits(port_bits) < 0)
+			return -1;
+	}
+
+	/* allocates the port */
+	port = first_free_port(port_bits);
+	if (port >= 0)
+		HTTP_PORT_SET(port_bits, port);
+
+	return port;
 }
 
 static int check_defined(const void *data, const char *name)
