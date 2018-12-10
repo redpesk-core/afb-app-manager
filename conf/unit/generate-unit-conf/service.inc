@@ -72,7 +72,7 @@ SuccessExitStatus=0 SIGKILL
 User=%i
 Slice=user-%i.slice
 
-#CapabilityBoundingSet=
+CapabilityBoundingSet=
 #AmbientCapabilities=
 
 ON_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
