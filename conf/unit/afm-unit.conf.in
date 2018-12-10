@@ -137,12 +137,13 @@ SmackProcessLabel=User::App::{{:id}}
 SuccessExitStatus=0 SIGKILL
 User=%i
 Slice=user-%i.slice
-#CapabilityBoundingSet=
+CapabilityBoundingSet=
 #AmbientCapabilities=
 {{#required-permission.urn:AGL:permission::platform:no-oom}}OOMScoreAdjust=-500{{/required-permission.urn:AGL:permission::platform:no-oom}}
 {{#required-permission.urn:AGL:permission::partner:real-time}}IOSchedulingClass=realtime{{/required-permission.urn:AGL:permission::partner:real-time}}
-{{#required-permission.urn:AGL:permission::public:display}}SupplementaryGroups=display{{/required-permission.urn:AGL:permission::public:display}}
 {{^required-permission.urn:AGL:permission::public:syscall:clock}}SystemCallFilter=~@clock{{/required-permission.urn:AGL:permission::public:syscall:clock}}
+#{{#required-permission.urn:AGL:permission::public:display}}SupplementaryGroups=display{{/required-permission.urn:AGL:permission::public:display}}
+SupplementaryGroups=display
 %nl
 WorkingDirectory=-/home/%i/app-data/{{:id}}
 ExecStartPre=/bin/mkdir -p /home/%i/app-data/{{:id}}
