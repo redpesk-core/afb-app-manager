@@ -1,0 +1,37 @@
+type: books
+books:
+-
+    id: api-reference
+    title: API Reference
+    description: API Reference documentation
+    keywords:
+    author: "IotBzh"
+    version: master
+    chapters:
+    - url: "%lang%/0-kristi-introduction.md"
+      name: API Reference
+-
+    id: application-framework
+    title: Application Framework
+    description: Application Framework documentation
+    keywords:
+    author: "IotBzh"
+    version: master
+    chapters:
+        - url: "%lang%/0-introduction.md"
+          name: Introduction
+        - url: "%lang%/0-kristi-introduction.md"
+          name: API Reference
+        - url: "%lang%/1-afm-daemons.md"
+          name: The afm daemons
+        - url: "%lang%/2-widgets.md"
+          name: Widgets
+        - url: "%lang%/2.1-widgets.md"
+          name: Overview of widgets
+        - url: "%lang%/2.2-config.xml.md"
+          name: Widget configuration file
+        - url: "%lang%/3-permissions.md"
+          name: Permissions
+        - url: "%lang%/4-quick-tutorial.md"
+          name: Quick Tutorial
+
