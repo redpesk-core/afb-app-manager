@@ -288,7 +288,7 @@ int wrap_json_vpack(struct json_object **result, const char *desc, va_list args)
 			goto truncated;
 		if (!strchr(top->acc, c))
 			goto invalid_character;
-		d = skip(++d);
+		d = skip(d + 1);
 		switch(c) {
 		case 's':
 			nullable = 0;
@@ -300,24 +300,24 @@ int wrap_json_vpack(struct json_object **result, const char *desc, va_list args)
 				if (strs[nstr].str)
 					notnull = 1;
 				if (*d == '?') {
-					d = skip(++d);
+					d = skip(d + 1);
 					nullable = 1;
 				}
 				switch(*d) {
-				case '%': strs[nstr].sz = va_arg(args, size_t); d = skip(++d); break;
-				case '#': strs[nstr].sz = (size_t)va_arg(args, int); d = skip(++d); break;
+				case '%': strs[nstr].sz = va_arg(args, size_t); d = skip(d + 1); break;
+				case '#': strs[nstr].sz = (size_t)va_arg(args, int); d = skip(d + 1); break;
 				default: strs[nstr].sz = strs[nstr].str ? strlen(strs[nstr].str) : 0; break;
 				}
 				sz += strs[nstr++].sz;
 				if (*d == '?') {
-					d = skip(++d);
+					d = skip(d + 1);
 					nullable = 1;
 				}
 				if (*d != '+')
 					break;
 				if (nstr >= STRCOUNT)
 					goto too_long;
-				d = skip(++d);
+				d = skip(d + 1);
 			}
 			if (*d == '*')
 				nullable = 1;
@@ -369,7 +369,7 @@ int wrap_json_vpack(struct json_object **result, const char *desc, va_list args)
 		case 'O':
 			obj = va_arg(args, struct json_object*);
 			if (*d == '?')
-				d = skip(++d);
+				d = skip(d + 1);
 			else if (*d != '*' && !obj)
 				goto null_object;
 			if (c == 'O')
@@ -392,7 +392,7 @@ int wrap_json_vpack(struct json_object **result, const char *desc, va_list args)
 					goto out_of_memory;
 			}
 			if (*d == '?')
-				d = skip(++d);
+				d = skip(d + 1);
 			else if (*d != '*' && !obj) {
 				obj = json_object_new_string_len(d, 0);
 				if (!obj)
@@ -441,7 +441,7 @@ int wrap_json_vpack(struct json_object **result, const char *desc, va_list args)
 			if (obj || *d != '*')
 				json_object_array_add(top->cont, obj);
 			if (*d == '*')
-				d = skip(++d);
+				d = skip(d + 1);
 			break;
 		case '}':
 			if (!obj)
@@ -454,7 +454,7 @@ int wrap_json_vpack(struct json_object **result, const char *desc, va_list args)
 			if (obj || *d != '*')
 				json_object_object_add(top->cont, json_object_get_string(top->key), obj);
 			if (*d == '*')
-				d = skip(++d);
+				d = skip(d + 1);
 			json_object_put(top->key);
 			top->key = NULL;
 			top->acc = pack_accept_key;
@@ -549,7 +549,7 @@ static int vunpack(struct json_object *object, const char *desc, va_list args, i
 			goto truncated;
 		if (!strchr(acc, c))
 			goto invalid_character;
-		d = skip(++d);
+		d = skip(d + 1);
 		switch(c) {
 		case 's':
 			if (xacc[0] == '}') {
@@ -561,7 +561,7 @@ static int vunpack(struct json_object *object, const char *desc, va_list args, i
 					optionnal = 0;
 				else {
 					optionnal = 1;
-					d = skip(++d);
+					d = skip(d + 1);
 				}
 				if (ignore)
 					ignore++;
@@ -591,7 +591,7 @@ static int vunpack(struct json_object *object, const char *desc, va_list args, i
 					*ps = json_object_get_string(obj);
 			}
 			if (*d == '%') {
-				d = skip(++d);
+				d = skip(d + 1);
 				if (store) {
 					pz = va_arg(args, size_t *);
 					if (!ignore && pz)
@@ -815,7 +815,7 @@ int wrap_json_check(struct json_object *object, const char *desc, ...)
 	va_list args;
 
 	va_start(args, desc);
-	rc = vunpack(object, desc, args, 0);
+	rc = wrap_json_vcheck(object, desc, args);
 	va_end(args);
 	return rc;
 }
@@ -831,9 +831,9 @@ int wrap_json_match(struct json_object *object, const char *desc, ...)
 	va_list args;
 
 	va_start(args, desc);
-	rc = vunpack(object, desc, args, 0);
+	rc = wrap_json_vmatch(object, desc, args);
 	va_end(args);
-	return !rc;
+	return rc;
 }
 
 int wrap_json_vunpack(struct json_object *object, const char *desc, va_list args)
@@ -914,9 +914,16 @@ void wrap_json_for_all(struct json_object *object, void (*callback)(void*,struct
 	}
 }
 
-static struct json_object *clone_any(struct json_object *object, int deep);
-
-static struct json_object *clone_object(struct json_object *object, int subdeep)
+/**
+ * Clones the 'object' for the depth 'subdepth'. The object 'object' is
+ * duplicated and all its fields are cloned with the depth 'subdepth'.
+ *
+ * @param object the object to clone. MUST be an **object**.
+ * @param subdepth the depth to use when cloning the fields of the object.
+ *
+ * @return the cloned object.
+ */
+static struct json_object *clone_object(struct json_object *object, int subdepth)
 {
 	struct json_object *r = json_object_new_object();
 	struct json_object_iterator it = json_object_iter_begin(object);
@@ -924,50 +931,113 @@ static struct json_object *clone_object(struct json_object *object, int subdeep)
 	while (!json_object_iter_equal(&it, &end)) {
 		json_object_object_add(r,
 			json_object_iter_peek_name(&it),
-			clone_any(json_object_iter_peek_value(&it), subdeep));
+			wrap_json_clone_depth(json_object_iter_peek_value(&it), subdepth));
 		json_object_iter_next(&it);
 	}
 	return r;
 }
 
-static struct json_object *clone_array(struct json_object *object, int subdeep)
+/**
+ * Clones the 'array' for the depth 'subdepth'. The array 'array' is
+ * duplicated and all its fields are cloned with the depth 'subdepth'.
+ *
+ * @param array the array to clone. MUST be an **array**.
+ * @param subdepth the depth to use when cloning the items of the array.
+ *
+ * @return the cloned array.
+ */
+static struct json_object *clone_array(struct json_object *array, int subdepth)
 {
-	int n = json_object_array_length(object);
+	int n = (int)json_object_array_length(array);
 	struct json_object *r = json_object_new_array();
 	while (n) {
 		n--;
 		json_object_array_put_idx(r, n,
-			clone_any(json_object_array_get_idx(object, n), subdeep));
+			wrap_json_clone_depth(json_object_array_get_idx(array, n), subdepth));
 	}
 	return r;
 }
 
-static struct json_object *clone_any(struct json_object *object, int deep)
+/**
+ * Clones any json 'item' for the depth 'depth'. The item is duplicated
+ * and if 'depth' is not zero, its contents is recursively cloned with
+ * the depth 'depth' - 1.
+ *
+ * Be aware that this implementation doesn't copies the primitive json
+ * items (numbers, nulls, booleans, strings) but instead increments their
+ * use count. This can cause issues with newer versions of libjson-c that
+ * now unfortunately allows to change their values.
+ *
+ * @param item the item to clone. Can be of any kind.
+ * @param depth the depth to use when cloning composites: object or arrays.
+ *
+ * @return the cloned array.
+ *
+ * @see wrap_json_clone
+ * @see wrap_json_clone_deep
+ */
+struct json_object *wrap_json_clone_depth(struct json_object *item, int depth)
 {
-	if (deep) {
-		switch (json_object_get_type(object)) {
+	if (depth) {
+		switch (json_object_get_type(item)) {
 		case json_type_object:
-			return clone_object(object, deep - 1);
+			return clone_object(item, depth - 1);
 		case json_type_array:
-			return clone_array(object, deep - 1);
+			return clone_array(item, depth - 1);
 		default:
 			break;
 		}
 	}
-	return json_object_get(object);
+	return json_object_get(item);
 }
 
+/**
+ * Clones the 'object': returns a copy of it. But doesn't clones
+ * the content. Synonym of wrap_json_clone_depth(object, 1).
+ *
+ * Be aware that this implementation doesn't clones content that is deeper
+ * than 1 but it does link these contents to the original object and
+ * increments their use count. So, everything deeper that 1 is still available.
+ *
+ * @param object the object to clone
+ *
+ * @return a copy of the object.
+ *
+ * @see wrap_json_clone_depth
+ * @see wrap_json_clone_deep
+ */
 struct json_object *wrap_json_clone(struct json_object *object)
 {
-	return clone_any(object, 1);
+	return wrap_json_clone_depth(object, 1);
 }
 
+/**
+ * Clones the 'object': returns a copy of it. Also clones all
+ * the content recursively. Synonym of wrap_json_clone_depth(object, INT_MAX).
+ *
+ * @param object the object to clone
+ *
+ * @return a copy of the object.
+ *
+ * @see wrap_json_clone_depth
+ * @see wrap_json_clone
+ */
 struct json_object *wrap_json_clone_deep(struct json_object *object)
 {
-	return clone_any(object, INT_MAX);
+	return wrap_json_clone_depth(object, INT_MAX);
 }
 
-void wrap_json_object_add(struct json_object *dest, struct json_object *added)
+/**
+ * Adds the items of the object 'added' to the object 'dest'.
+ *
+ * @param dest the object to complete this object is modified
+ * @added the object containing fields to add
+ *
+ * @return the destination object 'dest'
+ *
+ * @example wrap_json_object_add({"a":"a"},{"X":"X"}) -> {"a":"a","X":"X"}
+ */
+struct json_object *wrap_json_object_add(struct json_object *dest, struct json_object *added)
 {
 	struct json_object_iterator it, end;
 	if (json_object_is_type(dest, json_type_object) && json_object_is_type(added, json_type_object)) {
@@ -980,23 +1050,224 @@ void wrap_json_object_add(struct json_object *dest, struct json_object *added)
 			json_object_iter_next(&it);
 		}
 	}
+	return dest;
+}
+
+/**
+ * Sort the 'array' and returns it. Sorting is done accordingly to the
+ * order given by the function 'wrap_json_cmp'. If the paramater isn't
+ * an array, nothing is done and the parameter is returned unchanged.
+ *
+ * @param array the array to sort
+ *
+ * @returns the array sorted
+ */
+struct json_object *wrap_json_sort(struct json_object *array)
+{
+	if (json_object_is_type(array, json_type_array))
+		json_object_array_sort(array, (int(*)(const void*, const void*))wrap_json_cmp);
+
+	return array;
+}
+
+/**
+ * Returns a json array of the sorted keys of 'object' or null if 'object' has no keys.
+ *
+ * @param object the object whose keys are to be returned
+ *
+ * @return either NULL is 'object' isn't an object or a sorted array of the key's strings.
+ */
+struct json_object *wrap_json_keys(struct json_object *object)
+{
+	struct json_object *r;
+	struct json_object_iterator it, end;
+	if (!json_object_is_type(object, json_type_object))
+		r = NULL;
+	else {
+		r = json_object_new_array();
+		it = json_object_iter_begin(object);
+		end = json_object_iter_end(object);
+		while (!json_object_iter_equal(&it, &end)) {
+			json_object_array_add(r, json_object_new_string(json_object_iter_peek_name(&it)));
+			json_object_iter_next(&it);
+		}
+		wrap_json_sort(r);
+	}
+	return r;
+}
+
+/**
+ * Internal comparison of 'x' with 'y'
+ *
+ * @param x first object to compare
+ * @param y second object to compare
+ * @param inc boolean true if should test for inclusion of y in x
+ * @param sort boolean true if comparison used for sorting
+ *
+ * @return an integer indicating the computed result. Refer to
+ * the table below for meaning of the returned value.
+ *
+ * inc | sort |  x < y  |  x == y  |  x > y  |  y in x
+ * ----+------+---------+----------+---------+---------
+ *  0  |  0   |  != 0   |     0    |  != 0   |   > 0
+ *  0  |  1   |   < 0   |     0    |   > 0   |   > 0
+ *  1  |  0   |  != 0   |     0    |  != 0   |    0
+ *  1  |  1   |   < 0   |     0    |   > 0   |    0
+ *
+ *
+ * if 'x' is found, respectively, to be less  than,  to match,
+ * or be greater than 'y'. This is valid when 'sort'
+ */
+static int jcmp(struct json_object *x, struct json_object *y, int inc, int sort)
+{
+	double dx, dy;
+	int64_t ix, iy;
+	const char *sx, *sy;
+	enum json_type tx, ty;
+	int r, nx, ny, i;
+	struct json_object_iterator it, end;
+	struct json_object *jx, *jy;
+
+	/* check equality of pointers */
+	if (x == y)
+		return 0;
+
+	/* get the types */
+	tx = json_object_get_type(x);
+	ty = json_object_get_type(y);
+	r = (int)tx - (int)ty;
+	if (r)
+		return r;
+
+	/* compare following the type */
+	switch (tx) {
+	default:
+	case json_type_null:
+		break;
+
+	case json_type_boolean:
+		r = (int)json_object_get_boolean(x)
+			- (int)json_object_get_boolean(y);
+		break;
+
+	case json_type_double:
+		dx = json_object_get_double(x);
+		dy = json_object_get_double(y);
+		r =  dx < dy ? -1 : dx > dy;
+		break;
+
+	case json_type_int:
+		ix = json_object_get_int64(x);
+		iy = json_object_get_int64(y);
+		r = ix < iy ? -1 : ix > iy;
+		break;
+
+	case json_type_object:
+		it = json_object_iter_begin(y);
+		end = json_object_iter_end(y);
+		nx = json_object_object_length(x);
+		ny = json_object_object_length(y);
+		r = nx - ny;
+		if (r > 0 && inc)
+			r = 0;
+		while (!r && !json_object_iter_equal(&it, &end)) {
+			if (json_object_object_get_ex(x, json_object_iter_peek_name(&it), &jx)) {
+				jy = json_object_iter_peek_value(&it);
+				json_object_iter_next(&it);
+				r = jcmp(jx, jy, inc, sort);
+			} else if (sort) {
+				jx = wrap_json_keys(x);
+				jy = wrap_json_keys(y);
+				r = wrap_json_cmp(jx, jy);
+				json_object_put(jx);
+				json_object_put(jy);
+			} else
+				r = 1;
+		}
+		break;
+
+	case json_type_array:
+		nx = (int)json_object_array_length(x);
+		ny = (int)json_object_array_length(y);
+		r = nx - ny;
+		if (r > 0 && inc)
+			r = 0;
+		for (i = 0 ; !r && i < ny ; i++) {
+			jx = json_object_array_get_idx(x, i);
+			jy = json_object_array_get_idx(y, i);
+			r = jcmp(jx, jy, inc, sort);
+		}
+		break;
+
+	case json_type_string:
+		sx = json_object_get_string(x);
+		sy = json_object_get_string(y);
+		r = strcmp(sx, sy);
+		break;
+	}
+	return r;
+}
+
+/**
+ * Compares 'x' with 'y'
+ *
+ * @param x first object to compare
+ * @param y second object to compare
+ *
+ * @return an integer less than, equal to, or greater than zero
+ * if 'x' is found, respectively, to be less than, to match,
+ * or be greater than 'y'.
+ */
+int wrap_json_cmp(struct json_object *x, struct json_object *y)
+{
+	return jcmp(x, y, 0, 1);
+}
+
+/**
+ * Searchs wether 'x' equals 'y'
+ *
+ * @param x first object to compare
+ * @param y second object to compare
+ *
+ * @return an integer equal to zero when 'x' != 'y' or 1 when 'x' == 'y'.
+ */
+int wrap_json_equal(struct json_object *x, struct json_object *y)
+{
+	return !jcmp(x, y, 0, 0);
+}
+
+/**
+ * Searchs wether 'x' contains 'y'
+ *
+ * @param x first object to compare
+ * @param y second object to compare
+ *
+ * @return an integer equal to 1 when 'y' is a subset of 'x' or zero otherwise
+ */
+int wrap_json_contains(struct json_object *x, struct json_object *y)
+{
+	return !jcmp(x, y, 1, 0);
 }
 
 #if defined(WRAP_JSON_TEST)
 #include <stdio.h>
+#if !defined(JSON_C_TO_STRING_NOSLASHESCAPE)
+#define JSON_C_TO_STRING_NOSLASHESCAPE 0
+#endif
+#define j2t(o) json_object_to_json_string_ext((o), JSON_C_TO_STRING_NOSLASHESCAPE)
 
-void tclone(struct json_object *obj)
+void tclone(struct json_object *object)
 {
 	struct json_object *o;
 
-	o = wrap_json_clone(obj);
-	if (strcmp(json_object_to_json_string(obj), json_object_to_json_string(o)))
-		printf("ERROR in clone: %s VERSUS %s\n", json_object_to_json_string(obj), json_object_to_json_string(o));
+	o = wrap_json_clone(object);
+	if (!wrap_json_equal(object, o))
+		printf("ERROR in clone or equal: %s VERSUS %s\n", j2t(object), j2t(o));
 	json_object_put(o);
 
-	o = wrap_json_clone_deep(obj);
-	if (strcmp(json_object_to_json_string(obj), json_object_to_json_string(o)))
-		printf("ERROR in clone_deep: %s VERSUS %s\n", json_object_to_json_string(obj), json_object_to_json_string(o));
+	o = wrap_json_clone_deep(object);
+	if (!wrap_json_equal(object, o))
+		printf("ERROR in clone_deep or equal: %s VERSUS %s\n", j2t(object), j2t(o));
 	json_object_put(o);
 }
 
@@ -1010,7 +1281,7 @@ void p(const char *desc, ...)
 	rc = wrap_json_vpack(&result, desc, args);
 	va_end(args);
 	if (!rc)
-		printf("  SUCCESS %s\n\n", json_object_to_json_string(result));
+		printf("  SUCCESS %s\n\n", j2t(result));
 	else
 		printf("  ERROR[char %d err %d] %s\n\n", wrap_json_get_error_position(rc), wrap_json_get_error_code(rc), wrap_json_get_error_string(rc));
 	tclone(result);
@@ -1030,7 +1301,7 @@ void u(const char *value, const char *desc, ...)
 	unsigned m, k;
 	int rc;
 	va_list args;
-	struct json_object *obj, *o;
+	struct json_object *object, *o;
 
 	memset(xs, 0, sizeof xs);
 	memset(xi, 0, sizeof xi);
@@ -1039,9 +1310,9 @@ void u(const char *value, const char *desc, ...)
 	memset(xo, 0, sizeof xo);
 	memset(xy, 0, sizeof xy);
 	memset(xz, 0, sizeof xz);
-	obj = json_tokener_parse(value);
+	object = json_tokener_parse(value);
 	va_start(args, desc);
-	rc = wrap_json_vunpack(obj, desc, args);
+	rc = wrap_json_vunpack(object, desc, args);
 	va_end(args);
 	if (rc)
 		printf("  ERROR[char %d err %d] %s\n\n", wrap_json_get_error_position(rc), wrap_json_get_error_code(rc), wrap_json_get_error_string(rc));
@@ -1064,8 +1335,8 @@ void u(const char *value, const char *desc, ...)
 			case 'I': printf(" I:%lld", *va_arg(args, int64_t*)); k = m&1; break;
 			case 'f': printf(" f:%f", *va_arg(args, double*)); k = m&1; break;
 			case 'F': printf(" F:%f", *va_arg(args, double*)); k = m&1; break;
-			case 'o': printf(" o:%s", json_object_to_json_string(*va_arg(args, struct json_object**))); k = m&1; break;
-			case 'O': o = *va_arg(args, struct json_object**); printf(" O:%s", json_object_to_json_string(o)); json_object_put(o); k = m&1; break;
+			case 'o': printf(" o:%s", j2t(*va_arg(args, struct json_object**))); k = m&1; break;
+			case 'O': o = *va_arg(args, struct json_object**); printf(" O:%s", j2t(o)); json_object_put(o); k = m&1; break;
 			case 'y':
 			case 'Y': {
 				uint8_t *p = *va_arg(args, uint8_t**);
@@ -1081,8 +1352,30 @@ void u(const char *value, const char *desc, ...)
 		va_end(args);
 		printf("\n\n");
 	}
-	tclone(obj);
-	json_object_put(obj);
+	tclone(object);
+	json_object_put(object);
+}
+
+void c(const char *sx, const char *sy, int e, int c)
+{
+	int re, rc;
+	struct json_object *jx, *jy;
+
+	jx = json_tokener_parse(sx);
+	jy = json_tokener_parse(sy);
+
+	re = wrap_json_cmp(jx, jy);
+	rc = wrap_json_contains(jx, jy);
+
+	printf("compare(%s)(%s)\n", sx, sy);
+	printf("   -> %d / %d\n", re, rc);
+
+	if (!re != !!e)
+		printf("  ERROR should be %s\n", e ? "equal" : "different");
+	if (!rc != !c)
+		printf("  ERROR should %scontain\n", c ? "" : "not ");
+
+	printf("\n");
 }
 
 #define P(...) do{ printf("pack(%s)\n",#__VA_ARGS__); p(__VA_ARGS__); } while(0)
@@ -1231,6 +1524,41 @@ int main()
 	U("{\"foo\":\"Pz8_Pz8_P2hlbGxvPj4-Pj4-Pg\"}", "{s?y}", "foo", &xy[0], &xz[0]);
 	U("{\"foo\":\"\"}", "{s?y}", "foo", &xy[0], &xz[0]);
 	U("{}", "{s?y}", "foo", &xy[0], &xz[0]);
+
+	c("null", "null", 1, 1);
+	c("true", "true", 1, 1);
+	c("false", "false", 1, 1);
+	c("1", "1", 1, 1);
+	c("1.0", "1.0", 1, 1);
+	c("\"\"", "\"\"", 1, 1);
+	c("\"hi\"", "\"hi\"", 1, 1);
+	c("{}", "{}", 1, 1);
+	c("{\"a\":true,\"b\":false}", "{\"b\":false,\"a\":true}", 1, 1);
+	c("[]", "[]", 1, 1);
+	c("[1,true,null]", "[1,true,null]", 1, 1);
+
+	c("null", "true", 0, 0);
+	c("null", "false", 0, 0);
+	c("0", "1", 0, 0);
+	c("1", "0", 0, 0);
+	c("0", "true", 0, 0);
+	c("0", "false", 0, 0);
+	c("0", "null", 0, 0);
+
+	c("\"hi\"", "\"hello\"", 0, 0);
+	c("\"hello\"", "\"hi\"", 0, 0);
+
+	c("{}", "null", 0, 0);
+	c("{}", "true", 0, 0);
+	c("{}", "1", 0, 0);
+	c("{}", "1.0", 0, 0);
+	c("{}", "[]", 0, 0);
+	c("{}", "\"x\"", 0, 0);
+
+	c("[1,true,null]", "[1,true]", 0, 1);
+	c("{\"a\":true,\"b\":false}", "{\"a\":true}", 0, 1);
+	c("{\"a\":true,\"b\":false}", "{\"a\":true,\"c\":false}", 0, 0);
+	c("{\"a\":true,\"c\":false}", "{\"a\":true,\"b\":false}", 0, 0);
 	return 0;
 }
 
