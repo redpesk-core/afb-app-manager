@@ -47,7 +47,7 @@ struct unitdesc {
 struct unitconf {
 	const char *installdir;
 	const char *icondir;
-	int port;
+	int (*port)();
 };
 
 struct generatedesc {

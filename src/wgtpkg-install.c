@@ -541,7 +541,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 	char installdir[PATH_MAX];
-	int port, err;
+	int err;
 	struct unitconf uconf;
 
 	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
@@ -596,13 +596,9 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (install_file_properties(desc))
 		goto error4;
 
-	port = get_port();
-	if (port < 0)
-		goto error4;
-
 	uconf.installdir = installdir;
 	uconf.icondir = FWK_ICON_DIR;
-	uconf.port = port;
+	uconf.port = get_port;
 	if (unit_install(ifo, &uconf))
 		goto error4;
 

@@ -28,7 +28,7 @@
 #include <limits.h>
 
 #include <json-c/json.h>
- 
+
 #include "verbose.h"
 #include "utils-file.h"
 
@@ -38,6 +38,7 @@
 #include "utils-systemd.h"
 
 #include "wgtpkg-unit.h"
+#include "wgt-strings.h"
 
 #if 0
 #include <ctype.h>
@@ -54,7 +55,7 @@ static char *template;
  * When returning 1 and 'after' isn't NULL, the pointer to the
  * first character after the pettern in 'text' is stored in 'after'.
  * The characters '\n' and ' ' have a special meaning in the search:
- *  * '\n': matches any space or tabs (including none) followed 
+ *  * '\n': matches any space or tabs (including none) followed
  *          either by '\n' or '\0' (end of the string)
  *  * ' ': matches any space or tabs but at least one.
  */
@@ -373,13 +374,26 @@ int unit_generator_open_template(const char *filename)
 
 static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 {
+	struct json_object *targets, *targ;
 	char portstr[30];
+	int port, i, n;
 
-	sprintf(portstr, "%d", conf->port);
+	if (json_object_object_get_ex(jdesc, string_targets, &targets)) {
+		n = json_object_array_length(targets);
+		for (i = 0 ; i < n ; i++) {
+			targ = json_object_array_get_idx(targets, i);
+			port = conf->port();
+			if (port < 0)
+				return port;
+			sprintf(portstr, "%d", port);
+			if (!j_add_string_m(targ, "#metatarget.http-port", portstr))
+				return -1;
+		}
+	}
+
 	return 	j_add_many_strings_m(jdesc,
 		"#metadata.install-dir", conf->installdir,
 		"#metadata.icons-dir", conf->icondir,
-		"#metadata.http-port", portstr,
 		NULL) ? 0 : -1;
 }
 

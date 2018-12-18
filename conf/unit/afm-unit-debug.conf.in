@@ -167,7 +167,7 @@ StandardError=journal
 ;----   text/html  application/vnd.agl.native  application/vnd.agl.service    ----
 ;---------------------------------------------------------------------------------
 {{#content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
-X-AFM-http-port={{:#metadata.http-port}}
+X-AFM-http-port={{:#metatarget.http-port}}
 Type=notify
 ExecStart=/usr/bin/afb-daemon \
 	--name afbd-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}} \
@@ -176,7 +176,7 @@ ExecStart=/usr/bin/afb-daemon \
 	--verbose \
 	--verbose \
 	--monitoring \
-	--port={{:#metadata.http-port}} \
+	--port={{:#metatarget.http-port}} \
 	--token=HELLO \
 	--roothttp={{#content.type=application/vnd.agl.service}}.{{/content.type=application/vnd.agl.service}}{{^content.type=application/vnd.agl.service}}{{#required-permission.urn:AGL:permission::public:no-htdocs}}.{{/required-permission.urn:AGL:permission::public:no-htdocs}}{{^required-permission.urn:AGL:permission::public:no-htdocs}}htdocs{{/required-permission.urn:AGL:permission::public:no-htdocs}}{{/content.type=application/vnd.agl.service}} \
 	{{#required-permission.urn:AGL:permission::public:applications:read}}--alias=/icons:{{:#metadata.icons-dir}}{{/required-permission.urn:AGL:permission::public:applications:read}} \

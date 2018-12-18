@@ -1,10 +1,10 @@
 dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
 IF_AGL_DEVEL
-X-AFM-http-port={{:#metadata.http-port}}
+X-AFM-http-port={{:#metatarget.http-port}}
 ELSE
 IF_NOT_CONTENT(application/vnd.agl.service)
-X-AFM--http-port={{:#metadata.http-port}}
+X-AFM--http-port={{:#metatarget.http-port}}
 ENDIF
 ENDIF
 
@@ -17,14 +17,14 @@ IF_AGL_DEVEL \
 	--verbose \
 	--verbose \
 	--monitoring \
-	--port={{:#metadata.http-port}} \
+	--port={{:#metatarget.http-port}} \
 	--token=HELLO \
 	--roothttp=ON_CONTENT(application/vnd.agl.service, ., ON_PERM(:public:no-htdocs, ., htdocs)) \
 ELSE \
 	IF_CONTENT(application/vnd.agl.service) \
 		--no-httpd \
 	ELSE \
-		--port={{:#metadata.http-port}} \
+		--port={{:#metatarget.http-port}} \
 		--random-token \
 		--roothttp=ON_PERM(:public:no-htdocs, ., htdocs) \
 	ENDIF \

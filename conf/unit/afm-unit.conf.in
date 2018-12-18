@@ -166,7 +166,7 @@ StandardError=journal
 ;---------------------------------------------------------------------------------
 {{#content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
 {{^content.type=application/vnd.agl.service}}
-X-AFM--http-port={{:#metadata.http-port}}
+X-AFM--http-port={{:#metatarget.http-port}}
 {{/content.type=application/vnd.agl.service}}
 Type=notify
 ExecStart=/usr/bin/afb-daemon \
@@ -176,7 +176,7 @@ ExecStart=/usr/bin/afb-daemon \
 	{{#content.type=application/vnd.agl.service}} \
 		--no-httpd \
 	{{/content.type=application/vnd.agl.service}}{{^content.type=application/vnd.agl.service}} \
-		--port={{:#metadata.http-port}} \
+		--port={{:#metatarget.http-port}} \
 		--random-token \
 		--roothttp={{#required-permission.urn:AGL:permission::public:no-htdocs}}.{{/required-permission.urn:AGL:permission::public:no-htdocs}}{{^required-permission.urn:AGL:permission::public:no-htdocs}}htdocs{{/required-permission.urn:AGL:permission::public:no-htdocs}} \
 	{{/content.type=application/vnd.agl.service}} \

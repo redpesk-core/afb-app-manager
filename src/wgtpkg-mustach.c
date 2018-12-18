@@ -31,7 +31,7 @@
 #define MAX_DEPTH 256
 
 /*
- * exploration state when instanciating mustache
+ * exploration state when instantiating mustache
  */
 struct expl {
 	struct json_object *root;

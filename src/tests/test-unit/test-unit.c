@@ -65,6 +65,12 @@ puts(json_object_to_json_string_ext(desc->desc, JSON_C_TO_STRING_PRETTY));
 	return 0;
 }
 
+static int port()
+{
+	static int r = 10000;
+	return r++;
+}
+
 int main(int ac, char **av)
 {
 	struct unitconf conf;
@@ -73,7 +79,7 @@ int main(int ac, char **av)
 
 	conf.installdir = "INSTALL-DIR";
 	conf.icondir = "ICONS-DIR";
-	conf.port = 666;
+	conf.port = port;
 	rc = unit_generator_open_template(*++av);
 	if (rc < 0)
 		error("can't read template %s: %m",*av);
