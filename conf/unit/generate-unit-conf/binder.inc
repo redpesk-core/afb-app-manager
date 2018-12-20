@@ -32,6 +32,7 @@ ENDIF \
 	ON_PERM(:public:applications:read, --alias=/icons:{{:#metadata.icons-dir}}) \
 	{{#required-api}} \
 		ON_VALUE(auto|ws,	--ws-client=unix:API_PATH_WS/{{name}}) \
+		ON_VALUE(autoapi,	--api-auto=API_PATH_WS) \
 		ON_VALUE(dbus,		--dbus-client={{name}}) \
 		ON_VALUE(cloud,		--cloud-client={{name}}) \
 		ON_VALUE(local,		--binding={{:#metadata.install-dir}}/{{name}}) \
