@@ -182,7 +182,6 @@ ExecStart=/usr/bin/afb-daemon \
 	{{#required-permission.urn:AGL:permission::public:applications:read}}--alias=/icons:{{:#metadata.icons-dir}}{{/required-permission.urn:AGL:permission::public:applications:read}} \
 	{{#required-api}} \
 		{{#value=auto|ws}}--ws-client=unix:@afm_users_rundir@/%i/apis/ws/{{name}}{{/value=auto|ws}} \
-		{{#value=autoapi}}--auto-api=@afm_users_rundir@/%i/apis/ws{{/value=autoapi}} \
 		{{#value=dbus}}--dbus-client={{name}}{{/value=dbus}} \
 		{{#value=cloud}}--cloud-client={{name}}{{/value=cloud}} \
 		{{#value=local}}--binding={{:#metadata.install-dir}}/{{name}}{{/value=local}} \
