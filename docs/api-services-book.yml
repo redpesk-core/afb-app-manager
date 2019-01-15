@@ -1,0 +1,25 @@
+type: books
+books:
+-
+    id: application-framework
+    title: Application Framework
+    description: Application Framework documentation
+    keywords:
+    author: "IotBzh"
+    version: flounder
+    chapters:
+        - url: "0-introduction.md"
+          name: Introduction
+        - url: "1-afm-daemons.md"
+          name: The afm daemons
+        - url: "2-widgets.md"
+          name: Widgets
+        - url: "2.1-widgets.md"
+          name: Overview of widgets
+        - url: "2.2-config.xml.md"
+          name: Widget configuration file
+        - url: "3-permissions.md"
+          name: Permissions
+        - url: "4-quick-tutorial.md"
+          name: Quick Tutorial
+
