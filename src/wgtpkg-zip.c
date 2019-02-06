@@ -58,7 +58,7 @@ static int is_valid_filename(const char *filename)
 		if ((c < 0x1f)
 		 || ((lastsp = (c == 0x20)) && index == 0)
 		 || c == 0x7f || c == 0x3c || c == 0x3e
-		 || c == 0x3a || c == 0x22 
+		 || c == 0x3a || c == 0x22
 		 || c == 0x5c || c == 0x7c || c == 0x3f
 		 || c == 0x2a || c == 0x5e || c == 0x60
 		 || c == 0x7b || c == 0x7d || c == 0x21)
@@ -263,7 +263,7 @@ static int zwr(struct zws *zws, size_t offset)
 	ent = readdir(dir);
 	while (ent != NULL) {
 		len = strlen(ent->d_name);
-		if (ent->d_name[0] == '.' && (len == 1 || 
+		if (ent->d_name[0] == '.' && (len == 1 ||
 			(ent->d_name[1] == '.' && len == 2)))
 			;
 		else if (offset + len >= sizeof(zws->name)) {
@@ -447,6 +447,7 @@ int zwrite(const char *zipfile)
 {
 	const char *args[6];
 
+	unlink(zipfile);
 	args[0] = "zip";
 	args[1] = "-q";
 	args[2] = "-r";
