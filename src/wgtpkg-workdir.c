@@ -61,7 +61,7 @@ static void put_workdir(int fd, const char *name, size_t length)
 		workdir[1] = 0;
 		workdirfd = AT_FDCWD;
 	} else {
-		
+
 		assert(length < sizeof workdir);
 		memcpy(workdir, name, 1 + length);
 		workdirfd = fd;
@@ -79,6 +79,12 @@ int set_workdir(const char *name, int create)
 		ERROR("workdir name too long");
 		errno = EINVAL;
 		return -1;
+	}
+
+	/* check if . */
+	if (length == 1 && name[0] == '.') {
+		put_workdir(AT_FDCWD, name, length);
+		return 0;
 	}
 
 	/* opens the directory */

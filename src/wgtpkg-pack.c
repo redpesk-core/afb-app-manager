@@ -161,13 +161,17 @@ int main(int ac, char **av)
 	/* compute absolutes paths */
 	x = realpath(wgtfile, NULL);
 	if (x == NULL) {
-		ERROR("realpath failed for %s",wgtfile);
+		ERROR("realpath failed for %s", wgtfile);
 		return 1;
 	}
 	wgtfile = x;
 
 	/* set and enter the workdir */
-	if (set_workdir(directory, 0))
+	if (chdir(directory)) {
+		ERROR("failed to enter directory %s", directory);
+		return 1;
+	}
+	if (set_workdir(".", 0))
 		return 1;
 
 
