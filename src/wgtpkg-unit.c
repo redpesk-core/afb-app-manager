@@ -382,10 +382,14 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 		n = json_object_array_length(targets);
 		for (i = 0 ; i < n ; i++) {
 			targ = json_object_array_get_idx(targets, i);
-			port = conf->port();
-			if (port < 0)
-				return port;
-			sprintf(portstr, "%d", port);
+			if (!conf->port)
+				strcpy(portstr, "0");
+			else {
+				port = conf->port ? conf->port() : 0;
+				if (port < 0)
+					return port;
+				sprintf(portstr, "%d", port);
+			}
 			if (!j_add_string_m(targ, "#metatarget.http-port", portstr))
 				return -1;
 		}
