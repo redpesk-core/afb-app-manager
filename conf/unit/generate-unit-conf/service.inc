@@ -70,14 +70,13 @@ SuccessExitStatus=0 SIGKILL
 User=%i
 Slice=user-%i.slice
 
-CapabilityBoundingSet=
+#CapabilityBoundingSet=
 #AmbientCapabilities=
 
 ON_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
 ON_PERM(:partner:real-time, IOSchedulingClass=realtime)
+ON_PERM(:public:display,    SupplementaryGroups=display)
 ON_PERM(:public:syscall:clock, , SystemCallFilter=~@clock)
-#ON_PERM(:public:display,    SupplementaryGroups=display)
-SupplementaryGroups=display
 %nl
 
 WorkingDirectory=-APP_DATA_DIR/{{:id}}
