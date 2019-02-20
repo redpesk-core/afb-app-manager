@@ -1,6 +1,8 @@
 # Available APIs
 
-Introduction of Available APIs with categorization. If multiple categories apply, they will all be listed in the third column (e.g. first row in the following).
+The following is an introduction of Available APIs with categorization.
+When multiple categories apply, they are listed in the third column 
+(e.g. see the first row).
 
 
 
