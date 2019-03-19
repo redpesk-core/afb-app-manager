@@ -104,6 +104,7 @@ X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
 X-AFM--wgtdir={{:#metadata.install-dir}}
 X-AFM--workdir=/home/%i/app-data/{{:id}}
+X-AFM--visibility={{#required-permission.urn:AGL:permission::public:hidden}}hidden{{/required-permission.urn:AGL:permission::public:hidden}}{{^required-permission.urn:AGL:permission::public:hidden}}visible{{/required-permission.urn:AGL:permission::public:hidden}}
 %nl
 Requires=afm-user-session@%i.target
 After=user@%i.service

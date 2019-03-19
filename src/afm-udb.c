@@ -42,6 +42,8 @@ static const char key_unit_scope[] = "-unit-scope";
 static const char scope_user[] = "user";
 static const char scope_system[] = "system";
 static const char key_id[] = "id";
+static const char key_visibility[] = "visibility";
+static const char value_visible[] = "visible";
 
 #define x_afm_prefix_length  (sizeof x_afm_prefix - 1)
 #define service_extension_length  (sizeof service_extension - 1)
@@ -51,10 +53,11 @@ static const char key_id[] = "id";
  * for several accesses.
  */
 struct afm_apps {
-	struct json_object *prvarr; /* array of the private data of apps */
-	struct json_object *pubarr; /* array of the public data of apps */
-	struct json_object *pubobj; /* hash of application's publics */
-	struct json_object *prvobj; /* hash of application's privates */
+	struct {
+		struct json_object *visibles; /* array of the private data of visible apps */
+		struct json_object *all; /* array of the private data of all apps */
+		struct json_object *byname; /* hash of application's privates */
+	} privates, publics;
 };
 
 /*
@@ -84,14 +87,38 @@ struct afm_updt {
 static char *default_lang;
 
 /*
+ * initilize object 'apps'.
+ * returns 1 if okay or 0 on case of memory depletion
+ */
+static int apps_init(struct afm_apps *apps)
+{
+	apps->publics.all = json_object_new_array();
+	apps->publics.visibles = json_object_new_array();
+	apps->publics.byname = json_object_new_object();
+
+	apps->privates.all = json_object_new_array();
+	apps->privates.visibles = json_object_new_array();
+	apps->privates.byname = json_object_new_object();
+
+	return apps->publics.all
+	   && apps->publics.visibles
+	   && apps->publics.byname
+	   && apps->privates.all
+	   && apps->privates.visibles
+	   && apps->privates.byname;
+}
+
+/*
  * Release the data of the afm_apps object 'apps'.
  */
 static void apps_put(struct afm_apps *apps)
 {
-	json_object_put(apps->prvarr);
-	json_object_put(apps->pubarr);
-	json_object_put(apps->pubobj);
-	json_object_put(apps->prvobj);
+	json_object_put(apps->publics.all);
+	json_object_put(apps->publics.visibles);
+	json_object_put(apps->publics.byname);
+	json_object_put(apps->privates.all);
+	json_object_put(apps->privates.visibles);
+	json_object_put(apps->privates.byname);
 }
 
 /*
@@ -161,8 +188,10 @@ static int add_field(
 
 	/* add the value */
 	if (name[0] == '-') {
+		/* private value */
 		append_field(priv, &name[1], v);
 	} else {
+		/* public value */
 		append_field(priv, name, json_object_get(v));
 		append_field(pub, name, v);
 	}
@@ -236,7 +265,7 @@ static int addunit(
 		size_t length
 )
 {
-	struct json_object *priv, *pub, *id;
+	struct json_object *priv, *pub, *id, *visi;
 	const char *strid;
 	size_t len;
 
@@ -270,11 +299,19 @@ static int addunit(
 
 	/* record the application structure */
 	json_object_get(pub);
-	json_object_array_add(apps->pubarr, pub);
-	json_object_object_add(apps->pubobj, strid, pub);
+	json_object_array_add(apps->publics.all, pub);
+	json_object_object_add(apps->publics.byname, strid, pub);
 	json_object_get(priv);
-	json_object_array_add(apps->prvarr, priv);
-	json_object_object_add(apps->prvobj, strid, priv);
+	json_object_array_add(apps->privates.all, priv);
+	json_object_object_add(apps->privates.byname, strid, priv);
+
+	/* handle visibility */
+	if (json_object_object_get_ex(priv, key_visibility, &visi)
+		&& !strcasecmp(json_object_get_string(visi), value_visible)) {
+		json_object_array_add(apps->publics.visibles, json_object_get(pub));
+		json_object_array_add(apps->privates.visibles, json_object_get(priv));
+	}
+
 	return 0;
 
 error:
@@ -406,10 +443,7 @@ struct afm_udb *afm_udb_create(int sys, int usr, const char *prefix)
 		errno = ENOMEM;
 	else {
 		afudb->refcount = 1;
-		afudb->applications.prvarr = NULL;
-		afudb->applications.pubarr = NULL;
-		afudb->applications.pubobj = NULL;
-		afudb->applications.prvobj = NULL;
+		memset(&afudb->applications, 0, sizeof afudb->applications);
 		afudb->system = sys;
 		afudb->user = usr;
 		afudb->prefixlen = length;
@@ -456,43 +490,33 @@ int afm_udb_update(struct afm_udb *afudb)
 {
 	struct afm_updt updt;
 	struct afm_apps tmp;
+	int result;
 
 	/* lock the db */
 	afm_udb_addref(afudb);
 	updt.afudb = afudb;
 
-	/* create the result */
-	updt.applications.prvarr = json_object_new_array();
-	updt.applications.pubarr = json_object_new_array();
-	updt.applications.pubobj = json_object_new_object();
-	updt.applications.prvobj = json_object_new_object();
-	if (updt.applications.pubarr == NULL
-	 || updt.applications.prvarr == NULL
-	 || updt.applications.pubobj == NULL
-	 || updt.applications.prvobj == NULL) {
-		errno = ENOMEM;
-		goto error;
+	/* create the apps */
+	if (!apps_init(&updt.applications))
+		result = -1;
+	else {
+		/* scan the units */
+		if (afudb->user && systemd_unit_list(1, update_cb, &updt) < 0)
+			result = -1;
+		else if (afudb->system && systemd_unit_list(0, update_cb, &updt) < 0)
+			result = -1;
+		else {
+			/* commit the result */
+			tmp = afudb->applications;
+			afudb->applications = updt.applications;
+			updt.applications = tmp;
+			result = 0;
+		}
+		apps_put(&updt.applications);
 	}
-
-	/* scan the units */
-	if (afudb->user)
-		if (systemd_unit_list(1, update_cb, &updt) < 0)
-			goto error;
-	if (afudb->system)
-		if (systemd_unit_list(0, update_cb, &updt) < 0)
-			goto error;
-
-	/* commit the result */
-	tmp = afudb->applications;
-	afudb->applications = updt.applications;
-	apps_put(&tmp);
+	/* unlock the db and return status */
 	afm_udb_unref(afudb);
-	return 0;
-
-error:
-	apps_put(&updt.applications);
-	afm_udb_unref(afudb);
-	return -1;
+	return result;
 }
 
 /*
@@ -511,9 +535,9 @@ void afm_udb_set_default_lang(const char *lang)
  * 'json_object_put'.
  * Returns NULL in case of error.
  */
-struct json_object *afm_udb_applications_private(struct afm_udb *afudb, int uid)
+struct json_object *afm_udb_applications_private(struct afm_udb *afudb, int all, int uid)
 {
-	return json_object_get(afudb->applications.prvarr);
+	return json_object_get(all ? afudb->applications.privates.all : afudb->applications.privates.visibles);
 }
 
 /*
@@ -522,9 +546,9 @@ struct json_object *afm_udb_applications_private(struct afm_udb *afudb, int uid)
  * 'json_object_put'.
  * Returns NULL in case of error.
  */
-struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int uid, const char *lang)
+struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int all, int uid, const char *lang)
 {
-	return json_object_get(afudb->applications.pubarr);
+	return json_object_get(all ? afudb->applications.publics.all : afudb->applications.publics.visibles);
 }
 
 /*
@@ -556,7 +580,7 @@ static struct json_object *get_no_case(struct json_object *object, const char *i
  */
 struct json_object *afm_udb_get_application_private(struct afm_udb *afudb, const char *id, int uid)
 {
-	return get_no_case(afudb->applications.prvobj, id, uid, NULL);
+	return get_no_case(afudb->applications.privates.byname, id, uid, NULL);
 }
 
 /*
@@ -567,7 +591,7 @@ struct json_object *afm_udb_get_application_private(struct afm_udb *afudb, const
 struct json_object *afm_udb_get_application_public(struct afm_udb *afudb,
 							const char *id, int uid, const char *lang)
 {
-	return get_no_case(afudb->applications.pubobj, id, uid, lang);
+	return get_no_case(afudb->applications.publics.byname, id, uid, lang);
 }
 
 
@@ -577,9 +601,9 @@ struct json_object *afm_udb_get_application_public(struct afm_udb *afudb,
 int main()
 {
 struct afm_udb *afudb = afm_udb_create(1, 1, NULL);
-printf("array = %s\n", json_object_to_json_string_ext(afudb->applications.pubarr, 3));
-printf("pubobj = %s\n", json_object_to_json_string_ext(afudb->applications.pubobj, 3));
-printf("prvobj = %s\n", json_object_to_json_string_ext(afudb->applications.prvobj, 3));
+printf("publics.all = %s\n", json_object_to_json_string_ext(afudb->applications.publics.all, 3));
+printf("publics.byname = %s\n", json_object_to_json_string_ext(afudb->applications.publics.byname, 3));
+printf("privates.byname = %s\n", json_object_to_json_string_ext(afudb->applications.privates.byname, 3));
 return 0;
 }
 #endif

@@ -41,6 +41,7 @@
  * constant strings
  */
 static const char _added_[]     = "added";
+static const char _all_[]       = "all";
 static const char _a_l_c_[]     = "application-list-changed";
 static const char _bad_request_[] = "bad-request";
 static const char _cannot_start_[] = "cannot-start";
@@ -226,6 +227,18 @@ static const char *get_lang(afb_req_t req)
 	return lang;
 }
 
+/*
+ * Retrieve whether all is required from 'req'.
+ */
+static int get_all(afb_req_t req)
+{
+	struct json_object *val;
+
+	/* get the optional language */
+	return json_object_object_get_ex(afb_req_json(req), _all_, &val)
+		&& json_object_get_boolean(val);
+}
+
 
 /*
  * retrieves the 'appid' in parameters received with the
@@ -328,14 +341,18 @@ static void reply_status(afb_req_t req, int status)
  */
 static void runnables(afb_req_t req)
 {
+	int all;
 	const char *lang;
 	struct json_object *resp;
 
 	/* get the language */
 	lang = get_lang(req);
 
+	/* get the all */
+	all = get_all(req);
+
 	/* get the details */
-	resp = afm_udb_applications_public(afudb, afb_req_get_uid(req), lang);
+	resp = afm_udb_applications_public(afudb, all, afb_req_get_uid(req), lang);
 	afb_req_success(req, resp, NULL);
 }
 
@@ -473,8 +490,10 @@ static void terminate(afb_req_t req)
  */
 static void runners(afb_req_t req)
 {
+	int all;
 	struct json_object *resp;
-	resp = afm_urun_list(afudb, afb_req_get_uid(req));
+	all = get_all(req);
+	resp = afm_urun_list(afudb, all, afb_req_get_uid(req));
 	afb_req_success(req, resp, NULL);
 }
 
@@ -585,7 +604,7 @@ static int init(afb_api_t api)
 	json_true = json_object_new_boolean(1);
 
 	/* init database */
-	afudb = afm_udb_create(1, 0, "afm-appli-");
+	afudb = afm_udb_create(1, 0, "afm-");
 	if (!afudb) {
 		ERROR("afm_udb_create failed");
 		return -1;
