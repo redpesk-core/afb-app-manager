@@ -23,7 +23,7 @@ extern int afm_urun_once(struct json_object *appli, int uid);
 extern int afm_urun_terminate(int runid, int uid);
 extern int afm_urun_pause(int runid, int uid);
 extern int afm_urun_resume(int runid, int uid);
-extern struct json_object *afm_urun_list(struct afm_udb *db, int uid);
+extern struct json_object *afm_urun_list(struct afm_udb *db, int all, int uid);
 extern struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid);
 extern int afm_urun_search_runid(struct afm_udb *db, const char *id, int uid);
 

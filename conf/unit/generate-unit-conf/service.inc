@@ -30,6 +30,7 @@ X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
 X-AFM--wgtdir={{:#metadata.install-dir}}
 X-AFM--workdir=APP_DATA_DIR/{{:id}}
+X-AFM--visibility=ON_PERM(`:public:hidden', `hidden', `visible')
 %nl
 
 Requires=afm-user-session@%i.target

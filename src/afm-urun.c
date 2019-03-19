@@ -326,7 +326,7 @@ int afm_urun_resume(int runid, int uid)
  *
  * Returns the list or NULL in case of error.
  */
-struct json_object *afm_urun_list(struct afm_udb *db, int uid)
+struct json_object *afm_urun_list(struct afm_udb *db, int all, int uid)
 {
 	int i, n, isuser, pid;
 	const char *udpath;
@@ -342,7 +342,7 @@ struct json_object *afm_urun_list(struct afm_udb *db, int uid)
 	if (result == NULL)
 		goto error;
 
-	apps = afm_udb_applications_private(db, uid);
+	apps = afm_udb_applications_private(db, all, uid);
 	n = json_object_array_length(apps);
 	for (i = 0 ; i < n ; i++) {
 		appli = json_object_array_get_idx(apps, i);
@@ -393,7 +393,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 		WARNING("searched runid %d not found", runid);
 	} else {
 		/* search in the base */
-		apps = afm_udb_applications_private(db, uid);
+		apps = afm_udb_applications_private(db, 1, uid);
 		n = json_object_array_length(apps);
 		for (i = 0 ; i < n ; i++) {
 			appli = json_object_array_get_idx(apps, i);

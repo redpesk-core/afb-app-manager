@@ -5,10 +5,17 @@ send() {
 	awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
 }
 
+getall() {
+  case "$1" in
+    -a|--all) echo -n '{"all":true}';;
+    *) echo -n true;;
+  esac
+}
+
 case "$1" in
 
   list|runnables)
-    send runnables true
+    send runnables $(getall $2)
     ;;
 
   add|install)
@@ -29,7 +36,7 @@ case "$1" in
     ;;
 
   ps|runners)
-    send runners true
+    send runners  $(getall $2)
     ;;
 
   run|start)
@@ -75,6 +82,7 @@ The commands are:
 
   list
   runnables      list the runnable widgets installed
+                 option -a or --all for all instances
 
   add wgt
   install wgt    install the wgt file
@@ -87,6 +95,7 @@ The commands are:
 
   ps
   runners        list the running instance
+                 option -a or --all for all instances
 
   run id
   start id       start an instance of the widget of id
