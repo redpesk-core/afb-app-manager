@@ -134,6 +134,7 @@ After=afm-api-{{name}}@%i.socket
 %nl
 [Service]
 EnvironmentFile=-@afm_confdir@/unit.env.d/*
+EnvironmentFile=-@afm_confdir@/widget.env.d/{{:id}}/*
 SmackProcessLabel=User::App::{{:id}}
 SuccessExitStatus=0 SIGKILL
 User=%i

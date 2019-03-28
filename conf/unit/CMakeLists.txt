@@ -26,6 +26,7 @@ endif()
 
 if(NOT USE_SDK)
 	install(DIRECTORY DESTINATION ${afm_confdir}/unit.env.d)
+	install(DIRECTORY DESTINATION ${afm_confdir}/widget.env.d)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
 endif()
 

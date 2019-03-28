@@ -65,6 +65,7 @@ After=UNIT_NAME_API_SOCKET({{name}},%i)
 
 [Service]
 EnvironmentFile=-AFM_CONFIG_DIR/unit.env.d/*
+EnvironmentFile=-AFM_CONFIG_DIR/widget.env.d/{{:id}}/*
 SmackProcessLabel=User::App::{{:id}}
 SuccessExitStatus=0 SIGKILL
 
