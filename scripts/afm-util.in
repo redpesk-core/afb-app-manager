@@ -59,16 +59,6 @@ case "$1" in
     send terminate "$i"
     ;;
 
-  stop|pause)
-    i=$2
-    send pause "$i"
-    ;;
-
-  resume|continue)
-    i=$2
-    send resume "$i"
-    ;;
-
   state|status)
     i=$2
     send state "$i"
@@ -104,12 +94,6 @@ The commands are:
 
   kill rid
   terminate rid  terminate the running instance rid
-
-  stop rid
-  pause rid      pause the running instance rid
-
-  resume rid
-  continue rid   continue the previously paused rid
 
   status rid
   state rid      get status of the running instance rid
