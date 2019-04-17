@@ -1,16 +1,6 @@
 type: books
 books:
 -
-    id: api-reference
-    title: API Reference
-    description: API Reference documentation
-    keywords:
-    author: "IotBzh"
-    version: master
-    chapters:
-    - url: "0-kristi-introduction.md"
-      name: API Reference
--
     id: application-framework
     title: Application Framework
     description: Application Framework documentation
