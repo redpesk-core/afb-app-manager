@@ -6,7 +6,7 @@ Requires=afm-system-setup.service
 #User=afm
 #Group=afm
 SyslogIdentifier=afm-system-daemon
-ExecStart=/usr/bin/afb-daemon --name=afm-system-daemon --no-httpd --no-ldpaths --binding=@CMAKE_INSTALL_FULL_LIBEXECDIR@/afm/afm-binding.so --ws-server=sd:afm-main
+ExecStart=/usr/bin/afb-daemon --name=afm-system-daemon --no-httpd --no-ldpaths --binding=@afm_libexecdir@/afm-binding.so --ws-server=sd:afm-main
 Restart=on-failure
 RestartSec=5
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_MAC_OVERRIDE
