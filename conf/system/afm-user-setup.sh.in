@@ -1,0 +1,28 @@
+#!bin/sh
+
+uid=$1
+udir=/run/user/$uid
+
+dodir() {
+	if ! test -e $1; then
+		mkdir -m 700 $1
+		chown $uid:$uid $1
+		chsmack -a '*' $1
+	fi
+}
+
+dodir $udir
+dodir $udir/apis
+dodir $udir/apis/ws
+dodir $udir/apis/link
+
+doln() {
+	if ! test -e $2; then
+		ln -sf $1 $2
+		chown -h $uid:$uid $2
+		chsmack -a '*' $2
+	fi
+}
+
+doln @afm_platform_rundir@/display/wayland-0 $udir/wayland-0
+

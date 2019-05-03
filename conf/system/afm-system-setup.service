@@ -1,9 +1,0 @@
-[Unit]
-Description=Initiate afm-system-setup
-Before=weston.service afs-supervisor.service afm-system-daemon.service
-[Service]
-Type=oneshot
-ExecStart=-/bin/sh -c "/bin/mkdir -m 755 /run/platform; /usr/bin/chsmack -a '*' /run/platform"
-ExecStart=-/bin/sh -c "/bin/mkdir -m 755 /run/platform/display; /usr/bin/chsmack -a '*' /run/platform/display"
-ExecStart=-/bin/sh -c "/bin/mkdir -m 755 /run/platform/apis; /usr/bin/chsmack -a '*' /run/platform/apis"
-ExecStart=-/bin/sh -c "/bin/mkdir -m 755 /run/platform/apis/ws; /usr/bin/chsmack -a '*' /run/platform/apis/ws"

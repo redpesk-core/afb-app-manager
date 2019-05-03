@@ -1,0 +1,16 @@
+#!bin/sh
+
+pdir=@afm_platform_rundir@
+
+dodir() {
+	if ! test -e $1; then
+		mkdir -m 755  $1
+		chsmack -a '*' $1
+	fi
+}
+
+dodir $pdir
+dodir $pdir/display
+dodir $pdir/apis
+dodir $pdir/apis/ws
+

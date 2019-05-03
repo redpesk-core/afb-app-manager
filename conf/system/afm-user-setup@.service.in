@@ -1,0 +1,7 @@
+[Unit]
+Description=Initiate afm-user-setup %i
+After=user@%i.service
+[Service]
+Type=oneshot
+StartLimitInterval=0
+ExecStart=-@afm_libexecdir@/afm-user-setup.sh %i
