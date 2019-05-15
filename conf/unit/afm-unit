@@ -88,21 +88,39 @@ divert(0)dnl
 {{#targets}}
 ;-------------------------------------------------------------------------------
 include(service.inc)
+IF_PERM(:partner:scope-platform)
 ;-------------------------------------------------------------------------------
-;----        F O R E A C H   P R O V I D E D   A P I S                      ----
+;----        F O R E A C H   P R O V I D E D   A P I S           (PLATFORM) ----
 ;-------------------------------------------------------------------------------
 {{#provided-api}}
 {{#value=ws|auto}}
-include(provided-api.inc)
+include(provided-api-platform.inc)
 {{/value=ws|auto}}
 {{/provided-api}}
 ;-------------------------------------------------------------------------------
-;----        F O R E A C H   P R O V I D E D   B I N D I N G                ----
+;----        F O R E A C H   P R O V I D E D   B I N D I N G     (PLATFORM) ----
 ;-------------------------------------------------------------------------------
 {{#provided-binding}}
-include(provided-binding.inc)
+include(provided-binding-platform.inc)
 {{/provided-binding}}
 ;-------------------------------------------------------------------------------
+ELSE
+;-------------------------------------------------------------------------------
+;----        F O R E A C H   P R O V I D E D   A P I S           (USER)     ----
+;-------------------------------------------------------------------------------
+{{#provided-api}}
+{{#value=ws|auto}}
+include(provided-api-user.inc)
+{{/value=ws|auto}}
+{{/provided-api}}
+;-------------------------------------------------------------------------------
+;----        F O R E A C H   P R O V I D E D   B I N D I N G     (USER)     ----
+;-------------------------------------------------------------------------------
+{{#provided-binding}}
+include(provided-binding-user.inc)
+{{/provided-binding}}
+;-------------------------------------------------------------------------------
+ENDIF
 {{/targets}}
 ;-------------------------------------------------------------------------------
 ; End of file afm-unit.conf mode ON_AGL_DEVEL(DEVEL, RELEASE)

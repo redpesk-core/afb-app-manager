@@ -12,7 +12,7 @@ Type=notify
 ExecStart=/usr/bin/afb-daemon \
 	--name afbd-TARGET \
 	--rootdir={{:#metadata.install-dir}} \
-	--workdir=APP_DATA_DIR/{{id}} \
+	--workdir=APP_WORK_DIR \
 IF_AGL_DEVEL \
 	--verbose \
 	--verbose \
@@ -48,4 +48,4 @@ ENDIF \
 	{{/provided-api}} \
 	ON_CONTENT(text/html,			--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t) \
 	ON_CONTENT(application/vnd.agl.native,	--exec {{:#metadata.install-dir}}/{{content.src}} @p @t)
-
+%nl

@@ -90,7 +90,7 @@ attachment of value to permission.
 ## Example of permissions
 
 Here is a list of some possible permissions.  
-These permissions are available the 17th of March 2017.
+These permissions are available the 21th of May 2019.
 
 - urn:AGL:permission::platform:no-oom  
   Set OOMScoreAdjust=-500 to keep the out-of-memory
@@ -117,6 +117,12 @@ These permissions are available the 17th of March 2017.
   Forbids services to provide its API through D-Bus.
 - urn:AGL:permission::system:run-by-default  
   Starts automatically the application. Example: home-screen.
+- urn:AGL:permission::partner:scope-platform
+  Install the service at the scope of the platform.
+- urn:AGL:permission::system:capability:keep-all
+  Keep all capabilities for the service. Note that implementing
+  that permission is not mandatory or can be adapted for the given
+  system.
 - <http://tizen.org/privilege/internal/dbus>
   Permission to use D-Bus.
 

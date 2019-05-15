@@ -13,4 +13,4 @@ dodir $pdir
 dodir $pdir/display
 dodir $pdir/apis
 dodir $pdir/apis/ws
-
+@create_platform_debug@

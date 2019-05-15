@@ -8,7 +8,11 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 %nl
 
 %systemd-unit system
+IF_PERM(:partner:scope-platform)
+%systemd-unit service UNIT_NAME_BASE
+ELSE
 %systemd-unit service UNIT_NAME_BASE@
+ENDIF
 
 [Unit]
 Description={{description}}
@@ -29,12 +33,19 @@ X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
 X-AFM--wgtdir={{:#metadata.install-dir}}
-X-AFM--workdir=APP_DATA_DIR/{{:id}}
+X-AFM--workdir=APP_WORK_DIR
 X-AFM--visibility=ON_PERM(`:public:hidden', `hidden', `visible')
 %nl
 
+IF_PERM(:partner:scope-platform)
+X-AFM--scope=platform
+After=afm-system-setup.service
+ELSE
+X-AFM--scope=user
 Requires=afm-user-session@%i.target
 After=user@%i.service
+ENDIF
+
 After=Network.target
 
 # Adds check to smack
@@ -44,56 +55,71 @@ ConditionSecurity=smack
 # Automatic bound to required api
 {{#required-binding}}
 {{#value=extern}}
-BindsTo=UNIT_NAME_BINDING_SERVICE({{name}},%i)
-After=UNIT_NAME_BINDING_SERVICE({{name}},%i)
+BindsTo=UNIT_NAME_BINDING_SERVICE({{name}})
+After=UNIT_NAME_BINDING_SERVICE({{name}})
 {{/value=extern}}
 {{/required-binding}}
+
 {{#required-api}}
 {{#value=auto|ws}}
-BindsTo=UNIT_NAME_API_SERVICE({{name}},%i)
-After=UNIT_NAME_API_SERVICE({{name}},%i)
+BindsTo=UNIT_NAME_API_SERVICE({{name}})
+After=UNIT_NAME_API_SERVICE({{name}})
 {{/value=auto|ws}}
 {{/required-api}}
+
 {{#provided-api}}
 {{#value=ws|auto}}
-Requires=UNIT_NAME_API_SOCKET({{name}},%i)
-After=UNIT_NAME_API_SOCKET({{name}},%i)
+Requires=UNIT_NAME_API_SOCKET({{name}})
+After=UNIT_NAME_API_SOCKET({{name}})
 {{/value=ws|auto}}
 {{/provided-api}}
 
 %nl
 
 [Service]
+
 EnvironmentFile=-@afm_confdir@/unit.env.d/*
 EnvironmentFile=-@afm_confdir@/widget.env.d/{{:id}}/*
-SmackProcessLabel=User::App::{{:id}}
+SmackProcessLabel=SMACKLABEL
 SuccessExitStatus=0 SIGKILL
+UMask=0077
 
+IF_PERM(:partner:scope-platform)
+#DynamicUser=true
+User=daemon
+Group=nobody
+Slice=platform.slice
+ELSE
 User=%i
 Slice=user-%i.slice
-
+WorkingDirectory=-APP_WORK_DIR
+ExecStartPre=/bin/mkdir -p APP_WORK_DIR
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
+ENDIF
+IF_PERM(:system:capability:keep-all)
+CapabilityBoundingSet=~
+AmbientCapabilities=~
+ELSE
 CapabilityBoundingSet=
-#AmbientCapabilities=
+ENDIF
 
 ON_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
 ON_PERM(:partner:real-time, IOSchedulingClass=realtime)
 ON_PERM(:public:display,    SupplementaryGroups=display)
-ON_PERM(:public:syscall:clock, , SystemCallFilter=~@clock)
+ON_PERM(:public:audio,      SupplementaryGroups=audio)
+ON_NOT_PERM(:public:syscall:clock, SystemCallFilter=~@clock)
 %nl
 
-WorkingDirectory=-APP_DATA_DIR/{{:id}}
-ExecStartPre=/bin/mkdir -p APP_DATA_DIR/{{:id}}
 Environment=AFM_ID=TARGET
 Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
-Environment=AFM_WORKDIR=APP_DATA_DIR/{{:id}}
+Environment=AFM_WORKDIR=APP_WORK_DIR
 Environment=AFM_WSAPI_DIR=API_PATH_WS
 Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}/bin
 Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
-Environment=XDG_DATA_HOME=APP_DATA_DIR/{{:id}}
-Environment=XDG_CONFIG_HOME=APP_DATA_DIR/{{:id}}
-Environment=XDG_CACHE_HOME=APP_DATA_DIR/{{:id}}
-Environment=XDG_RUNTIME_DIR=USER_RUN_DIR
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
+Environment=XDG_DATA_HOME=APP_WORK_DIR
+Environment=XDG_CONFIG_HOME=APP_WORK_DIR
+Environment=XDG_CACHE_HOME=APP_WORK_DIR
+Environment=XDG_RUNTIME_DIR=RUN_DIR
 
 IF_AGL_DEVEL
 ; Needed to enable debug
@@ -124,8 +150,13 @@ IF_PERM(:system:run-by-default)
 ; auto start
 ;-------------------------------------------------------------------------------
 [Install]
+IF_PERM(:partner:scope-platform)
+WantedBy=multi-user.target
+%systemd-unit wanted-by multi-user.target
+ELSE
 WantedBy=afm-user-session@.target
 %systemd-unit wanted-by afm-user-session@.target
+ENDIF
 ENDIF
 
 %end systemd-unit
