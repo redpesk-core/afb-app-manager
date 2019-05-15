@@ -69,43 +69,43 @@ static const char _update_[]    = "update";
 static const struct afb_auth
 	auth_perm_widget = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget"
+		.text = FWK_PREFIX"permission:afm:system:widget"
 	},
 	auth_perm_widget_install = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:install"
+		.text = FWK_PREFIX"permission:afm:system:widget:install"
 	},
 	auth_perm_widget_uninstall = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:uninstall"
+		.text = FWK_PREFIX"permission:afm:system:widget:uninstall"
 	},
 	auth_perm_widget_preinstall = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:preinstall"
+		.text = FWK_PREFIX"permission:afm:system:widget:preinstall"
 	},
 	auth_perm_widget_detail = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:detail"
+		.text = FWK_PREFIX"permission:afm:system:widget:detail"
 	},
 	auth_perm_widget_start = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:start"
+		.text = FWK_PREFIX"permission:afm:system:widget:start"
 	},
 	auth_perm_widget_view_all = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:widget:view-all"
+		.text = FWK_PREFIX"permission:afm:system:widget:view-all"
 	},
 	auth_perm_runner = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:runner"
+		.text = FWK_PREFIX"permission:afm:system:runner"
 	},
 	auth_perm_runner_state = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:runner:state"
+		.text = FWK_PREFIX"permission:afm:system:runner:state"
 	},
 	auth_perm_runner_kill = {
 		.type = afb_auth_Permission,
-		.text = "urn:AGL:permission:afm:system:runner:kill"
+		.text = FWK_PREFIX"permission:afm:system:runner:kill"
 	},
 
 	auth_install = {
