@@ -5,4 +5,4 @@ After=systemd-user-sessions.service
 [Service]
 User=%i
 PAMName=afm-user-session
-ExecStart=/usr/bin/afm-user-session
+ExecStart=@afm_libexecdir@/afm-user-session
