@@ -18,15 +18,32 @@
 
 cmake_minimum_required(VERSION 2.8)
 
+find_program(M4EXEC m4)
+mark_as_advanced(M4EXEC)
+
+file(GLOB in_afm_unit_list
+	LIST_DIRECTORIES false
+	RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+	CONFIGURE_DEPENDS
+	afm-unit *.inc
+)
+foreach(f IN LISTS in_afm_unit_list)
+	configure_file(${f} ${f})
+	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${f})
+endforeach(f)
 if(AGL_DEVEL)
-	configure_file(afm-unit-debug.conf.in afm-unit.conf)
-else()
-	configure_file(afm-unit.conf.in afm-unit.conf)
+	set(optm4 -DAGL_DEVEL)
 endif()
+add_custom_command(
+	OUTPUT afm-unit.conf
+	COMMAND ${M4EXEC} ${optm4} -I. afm-unit > afm-unit.conf
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+add_custom_target(unitconf ALL DEPENDS afm-unit.conf)
 
 if(NOT USE_SDK)
 	install(DIRECTORY DESTINATION ${afm_confdir}/unit.env.d)
 	install(DIRECTORY DESTINATION ${afm_confdir}/widget.env.d)
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf             DESTINATION ${afm_confdir})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf DESTINATION ${afm_confdir})
 endif()
 
