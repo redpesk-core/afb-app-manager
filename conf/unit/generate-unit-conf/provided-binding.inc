@@ -1,11 +1,5 @@
 dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 ;-------------------------------------------------------------------------------
-;----        P R O V I D E D   B I N D I N G                                ----
-;-------------------------------------------------------------------------------
-
-{{#provided-binding}}
-
-;-------------------------------------------------------------------------------
 ;----        T H E   S E R V I C E   O F   T H E   B I N D I N G            ----
 ;-------------------------------------------------------------------------------
 %begin systemd-unit
@@ -27,7 +21,5 @@ RemainAfterExit=yes
 ExecStart=/bin/ln -sf {{:#metadata.install-dir}}/{{value}} API_PATH_LINK/{{name}}
 
 %end systemd-unit
-
-{{/provided-binding}}
 
 
