@@ -38,6 +38,8 @@ set(ALLOW_NO_SIGNATURE OFF CACHE BOOL "if set, widgets without signature are acc
 set(SIMULATE_SECMGR OFF CACHE BOOL "if set, the security manager is simulated")
 set(SIMULATE_SMACK  OFF CACHE BOOL "if set, the smack environment is simulated")
 
+set(LEGACY_USER_DAEMON OFF CACHE BOOL "compile and install the legacy afm-user-daemon")
+
 set(afm_name                "afm" CACHE STRING "Name for application framework user")
 set(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}" CACHE STRING "Directory for configuration files")
 set(afm_datadir             "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}" CACHE STRING "Root directory for installions")
