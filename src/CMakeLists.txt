@@ -183,7 +183,7 @@ if(libsystemd_FOUND AND AFB_FOUND)
 	install(TARGETS afm-binding LIBRARY DESTINATION ${afm_libexecdir})
 
 	add_executable(afm-user-session afm-user-session.c)
-	install(TARGETS afm-user-session DESTINATION ${CMAKE_INSTALL_BINDIR}
+	install(TARGETS afm-user-session DESTINATION ${afm_libexecdir}
 			PERMISSIONS SETUID OWNER_READ OWNER_WRITE OWNER_EXECUTE
 					GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 else()

@@ -10,4 +10,4 @@ After=afm-system-daemon.socket
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -s @afm_platform_rundir@/apis/ws/afm-main /run/user/%i/apis/ws/afm-main
+ExecStart=/bin/ln -s @afm_platform_rundir@/apis/ws/afm-main @afm_users_rundir@/%i/apis/ws/afm-main
