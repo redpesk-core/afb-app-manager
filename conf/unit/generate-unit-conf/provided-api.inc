@@ -23,20 +23,15 @@ X-AFM-API-TYPE={{value}}
 Requires=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
 
-{{#value=ws|auto}}
 Requires=UNIT_NAME_API_BASE({{name}})@%i.socket
 After=UNIT_NAME_API_BASE({{name}})@%i.socket
-{{/value=ws|auto}}
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-{{#value=ws|auto}}
 ExecStart=/bin/true
-{{/value=ws|auto}}
 
 %end systemd-unit
-
 
 ;-------------------------------------------------------------------------------
 ;----        T H E   S O C K E T   O F   T H E   A P I                      ----
