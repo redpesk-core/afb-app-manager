@@ -8,3 +8,6 @@ prepare-build.sh
 
 node_modules/
 _book/
+
+oe-logs
+oe-workdir
