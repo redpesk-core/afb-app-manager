@@ -26,7 +26,7 @@ define( `MUSTACH_IF_NOT', `{{^$1}}pushdef(`ELSE',`{{/$1}}{{#$1}}')pushdef(`ENDIF
 
 -----------------------------------------------------------------------
 -- 
-define( `PERM', `urn:AGL:permission:$1')
+define( `PERM', `@afm_prefix@permission:$1')
 define( `REQPERM', `required-permission.PERM($1)')
 
 define( `ON_PERM', `MUSTACH_ON(REQPERM($1),$2,$3)')
