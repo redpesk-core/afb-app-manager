@@ -1,5 +1,5 @@
 ###########################################################################
-# Copyright (C) 2017-2019 IoT.bzh
+# Copyright (C) 2015-2019 IoT.bzh
 #
 # author: José Bollo <jose.bollo@iot.bzh>
 #
@@ -16,8 +16,13 @@
 # limitations under the License.
 ###########################################################################
 
-add_subdirectory(unit)
-add_subdirectory(system)
-add_subdirectory(user)
-add_subdirectory(dbus)
+cmake_minimum_required(VERSION 2.8)
+
+if(NOT USE_SDK)
+	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
+	set(SYSCONFDIR_DBUS_SESSION ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/session.d CACHE STRING "Path to dbus system configuration files")
+
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-permissions-system.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-permissions-session.conf   DESTINATION ${SYSCONFDIR_DBUS_SESSION})
+endif()
 
