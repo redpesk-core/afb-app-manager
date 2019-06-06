@@ -3,18 +3,28 @@
 uid=$1
 udir=/run/user/$uid
 
-dodir() {
+dodir_star() {
 	if ! test -e $1; then
 		mkdir -m 700 $1
 		chown $uid:$uid $1
-		chsmack -a '*' $1
 	fi
+	chsmack -a '*' $1
 }
 
-dodir $udir
-dodir $udir/apis
-dodir $udir/apis/ws
-dodir $udir/apis/link
+dodir_star $udir
+dodir_star $udir/apis
+dodir_star $udir/apis/ws
+dodir_star $udir/apis/link
+
+dodir_usrshr() {
+	if ! test -e $1; then
+		mkdir -m 700 $1
+		chown $uid:$uid $1
+	fi
+	chsmack -a User::App-Shared -t $1
+}
+
+dodir_usrshr $udir/usrshr
 
 doln() {
 	if ! test -e $2; then

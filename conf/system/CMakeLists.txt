@@ -51,6 +51,12 @@ if(NOT USE_SDK)
 			${UNITDIR_SYSTEM}
 	)
 	install(
+		DIRECTORY
+			${CMAKE_CURRENT_SOURCE_DIR}/user-runtime-dir@.service.wants
+		DESTINATION
+			${UNITDIR_SYSTEM}
+	)
+	install(
 		PROGRAMS
 			${CMAKE_CURRENT_BINARY_DIR}/afm-user-setup.sh
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-setup.sh
