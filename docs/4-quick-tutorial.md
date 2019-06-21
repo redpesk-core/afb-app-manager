@@ -3,15 +3,11 @@
 ## Introduction
 
 This document proposes a quick tutorial to demonstrate the major 
-functionalities of the AGL Application Framework.  
+functionalities of the Application Manager of the Application Framework.  
 For more complete information, please refer to the inline documentation 
 available in the main git repository:
 
 [https://github.com/redpesk-core/afb-app-manager]
-[https://github.com/redpesk-core/afb-binder]
-
-For more information on AGL, please visit:  
-[https://www.automotivelinux.org/]
 
 ----------
 
@@ -44,7 +40,6 @@ Connect through SSH on the target board and check for Application Framework daem
 $ ssh root@$BOARDIP
 root@porter:~# ps -ef|grep bin/afm
 afm        409     1  0 13:00 ?        00:00:00 /usr/bin/afm-system-daemon
-root       505   499  0 13:01 ?        00:00:00 /usr/bin/afm-user-daemon
 root       596   550  0 13:22 pts/0    00:00:00 grep afm
 ```
 
@@ -52,9 +47,6 @@ We can see that there are two daemons running:
 
 * **afm-system-daemon** runs with a system user 'afm' and is responsible for
   installing/uninstalling packages
-* **afm-user-daemon** runs as a user daemon (currently as root because it's the
-  only real user on the target board) and is responsible for the whole life 
-  cycle of the applications running inside the user session.
 
 The application framework has a tool running on the
 Command Line Interface (CLI).  
@@ -155,8 +147,8 @@ To illustrate this, we can take a look at the running processes and their respec
 
 ```bash
 root@porter:~# ps -efZ |grep webapps-annex | grep -v grep
-User::App::webapps-annex        root       716   491  0 13:19 ?        00:00:00 /usr/bin/afb-binder --mode=local --readyfd=8 --alias=/icons /usr/share/afm/icons --port=12348 --rootdir=/usr/share/afm/applications/webapps-annex/0.0 --token=7D6D2F16 --sessiondir=/home/root/app-data/webapps-annex/.afb-binder
-User::App::webapps-annex        root       717   491  0 13:19 ?        00:00:00 /usr/bin/qt5/qmlscene http://localhost:12348/index.html?token=7D6D2F16 /usr/bin/web-runtime-webkit.qml
+User::App::webapps-annex        root       716   491  0 13:19 ?        00:00:00 /usr/bin/afb-binder --mode=local --readyfd=8 --alias=/icons /usr/share/afm/icons --port=12348 --rootdir=/usr/share/afm/applications/webapps-annex/0.0 --sessiondir=/home/root/app-data/webapps-annex/.afb-binder
+User::App::webapps-annex        root       717   491  0 13:19 ?        00:00:00 /usr/bin/qt5/qmlscene http://localhost:12348/index.html /usr/bin/web-runtime-webkit.qml
 ```
 
 In the previous result, we see that the application is composed of two processes:
@@ -206,7 +198,7 @@ root@porter:~# afm-util list
 **afm-client** is a HTML5 UI that allows to install/uninstall applications as well as starting/pausing them as already demonstrated with afm-util.
 
 The HTML5 UI is accessible remotely through this URL:  
-<http://[board_ip]:1234/opa?token=132456789>
+`http://[board_ip]:1234/opa`
 
 ### Installing an application
 
@@ -253,11 +245,11 @@ It can be used by developers as a template to start writing real AGL Application
 This application is not available as WGT file yet and it should be started manually without any specific security context:
 
 ```bash
-root@porter:~# /usr/bin/afb-binder --port=1235 --token='' --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons
+root@porter:~# /usr/bin/afb-binder --port=1235 --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons
 ```
 
 Then you can access it from a browser:  
-<http://[board_ip]:1235/opa/?token=132456789>
+`http://[board_ip]:1235/opa/`
 
 afb-client is a simple application to demonstrate the built-in capabilities of the binder daemon (handling sessions and security tokens, testing POSTs uploads...) and was used during the application framework development to validate the proposed features.
 

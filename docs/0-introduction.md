@@ -1,175 +1,78 @@
-# AGL framework overview
+# Application framework of redpesk
 
 ## Foreword
 
-This document describes what we intend to do.
-It may happen that our current implementation and the content of this document differ.
-
-In case of differences, it is assumed that this document is right
-and the implementation is wrong.
-
-## Introduction
-
-During the first works in having the security model of Tizen
-integrated in AGL (Automotive Grade Linux) distribution, it became
-quickly obvious that the count of components specific to Tizen
-to integrate was huge.
-
-Here is a minimal list of what was needed:
-
-- platform/appfw/app-installers
-- platform/core/security/cert-svc
-- platform/core/appfw/ail
-- platform/core/appfw/aul-1
-- platform/core/appfw/libslp-db-util
-- platform/core/appfw/pkgmgr-info
-- platform/core/appfw/slp-pkgmgr
-
-But this list isn't complete because many dependencies are hidden.
-Those hidden dependencies are including some common libraries but also many
-tizen specific sub-components:
-
-- iniparser
-- bundle
-- dlog,
-- libtzplatform-config
-- db-util
-- vconf-buxton
-- ...
-
-This is an issue because AGL is not expected to be Tizen.
-Taking it would either need to patch it for removing unwanted components or to take all of them.
-
-However, a careful study of the core components of the security framework
-of Tizen showed that their dependencies to Tizen are light (and since some
-of our work, there is no more dependency to tizen).
-Those components are :
-
-- **cynagora**
-- **sec-lsm-manager**
-- **D-Bus aware of cynagora**
-
-Luckily, these core security components of Tizen are provided
-by [meta-intel-iot-security][meta-intel], a set of yocto layers.
-These layers were created by Intel to isolate Tizen specific security
-components from the initial port of Tizen to Yocto.
-The 3 layers are providing components for:
-
-- Implementing Smack LSM
-- Implementing Integrity Measurement Architecture
-- Implementing Tizen Security Framework
-
-The figure below shows the history of these layers.
-
-![Security_model_history][Security_model_history]
-
-We took the decision to use these security layers that provide the
-basis of the Tizen security, the security framework.
-
-For the components of the application framework, built top of
-the security framework, instead of pulling the huge set of packages
-from Tizen, we decided to refit it by developing a tiny set of
-components that would implement the same behaviour but without all
-the dependencies and with minor architectural improvements for AGL.
-
-These components are :
-
-- **afm-system-daemon**
-- **afm-user-daemon**
-
-They provides infrastructure for installing, uninstalling,
-launching, terminating, pausing and resuming applications in
-a multi user secure environment.
-
-A third component exists in the framework, the binder **afb-binder**.
-The binder provides the easiest way to provide secured API for
-any tier.
-Currently, the use of the binder is not absolutely mandatory.
-
-This documentation explains the framework created by IoT.bzh
-by rewriting the Tizen Application Framework.
-Be aware of the previous foreword.
-
-<!-- pagebreak -->
+This document describes the application management of the application framework
+of **redpesk**.
+FCS (Fully Conform to Specification) implementation is still under development.  
+It may happen that current implementation somehow diverges with specifications.
 
 ## Overview
 
-The figure below shows the major components of the framework
-and their interactions going through the following scenario:
+The application framework of **redpesk**
+provides components to install and uninstall applications
+as well as to run them in a secured environment.
 
-- APPLICATION installs an other application and then launch it.
+The main functionalities are:
 
-![AppFW-APP_install_sequences][AppFW-APP_install_sequences]{:: style="width:70%;"}
+- install/uninstall applications and services
 
-Let follow the sequence of calls:
+- start/terminate installed applications and services
 
-1. APPLICATION calls its **binder** to install the OTHER application.
+- answer simple queries: what is installed? what runs?
 
-1. The binding **afm-main-binding** of the **binder** calls, through
-   **D-Bus** system, the system daemon to install the OTHER application.
+The application framework fills the gap between the applications
+development model and the effective system implementation.
 
-1. The system **D-Bus** checks wether APPLICATION has the permission
-   or not to install applications by calling **CYNAGORA**.
+In one hand, there is a programming model that includes security
+features through permissions, micro service architecture through
+flexible high level API, and, in the other hand, there is an
+implementation of the security on the system that constrains how
+to implement the programming model.
 
-1. The system **D-Bus** transmits the request to **afm-system-daemon**.
+The framework manages applications and hides them security details.
+To achieves it, the framework is built on top of a secured Linux.
+The current implementation uses Smack and DAC Linux security modules (LSM).
 
-   **afm-system-daemon** checks the application to install, its
-   signatures and rights and install it.
+The programming model and the security are inspired from Tizen 3.
 
-1. **afm-system-daemon** calls **SEC-LSM-MANAGER** for fulfilling
-   security context of the installed application.
+## The programming model
 
-1. **SEC-LSM-MANAGER** calls **CYNAGORA** to install initial permissions
-   for the application.
+The framework ensures that sensitive services, devices or resources
+of the platform are protected. Applications can access these sensitive
+resources only if explicitly permitted to do so.
 
-1. APPLICATION call its binder to start the nearly installed OTHER application.
+Applications are packaged and delivered in a digitally signed container
+named *widget*. A widget contains:
 
-1. The binding **afm-main-binding** of the **binder** calls, through
-   **D-Bus** session, the user daemon to launch the OTHER application.
+- the application and its data
+- a configuration file *config.xml*
+- signature files
 
-1. The session **D-Bus** checks wether APPLICATION has the permission
-   or not to start an application by calling **CYNAGORA**.
+The format of widgets is described by W3C (World Wide Web Consortium)
+technical recommendations:
 
-1. The session **D-Bus** transmits the request to **afm-user-daemon**.
+- [Packaged Web Apps (Widgets)](http://www.w3.org/TR/widgets)
+  (note: now deprecated)
 
-1. **afm-user-daemon** checks wether APPLICATION has the permission
-    or not to start the OTHER application **CYNAGORA**.
+- [XML Digital Signatures for Widgets](http://www.w3.org/TR/widgets-digsig)
 
-1. **afm-user-daemon** uses **SEC-LSM-MANAGER** features to set
-    the security context for the OTHER application.
+The format is enough flexible to include the description of permissions
+and dependencies required or provided by the application.
 
-1. **afm-user-daemon** launches the OTHER application.
+Signature make possible to allow or deny permissions required by the
+application based on certificates of signers.
 
-This scenario does not cover all the features of the frameworks.
-Shortly because details will be revealed in the next chapters,
-the components are:
+A chain of trust in the creation of certificates allows a hierarchical
+structuring of permissions.
 
-- ***SEC-LSM-MANAGER***: in charge of setting Smack contexts and rules,
-  of setting groups, and, of creating initial content of *CYNAGORA* rules
-  for applications.
+It also adds the description of dependency to other service because AGL
+programming model emphasis micro-services architecture design.
 
-- ***CYNAGORA***: in charge of handling API access permissions by users and by
-  applications.
+As today this model allows the distribution of HTML, QML and binary applications
+but it could be extended to any other class of applications.
 
-- ***D-Bus***: in charge of checking security of messaging. The usual D-Bus
-  security rules are enhanced by *CYNAGORA* checking rules.
-
-- ***afm-system-daemon***: in charge of installing and uninstalling applications.
-
-- ***afm-user-daemon***: in charge of listing applications, querying application details,
-  starting, terminating, pausing, resuming applications and their instances
-  for a given user context.
-
-- ***afb-binder***: in charge of serving resources and features through an
-  HTTP interface.
-
-- ***afm-main-binding***: This binding allows applications to use the API
-  of the AGL framework.
-
-## Links between the "Security framework" and the "Application framework"
-
-The security framework refers to the security model used to ensure
-security and to the tools that are provided for implementing that model.
+## The security model
 
 The security model refers to how DAC (Discretionary Access Control),
 MAC (Mandatory Access Control) and Capabilities are used by the system
@@ -177,74 +80,22 @@ to ensure security and privacy.
 It also includes features of reporting using audit features and by managing
 logs and alerts.
 
-The application framework manages the applications:
-
-- installing
-- uninstalling
-- starting
-- pausing
-- listing
-- ...
-
 The application framework uses the security model/framework
 to ensure the security and the privacy of the applications that
 it manages.
 
-The application framework must be compliant with the underlying
-security model/framework.
-But it should hide it to the applications.
-
-## The security framework
-
-The implemented security model is the security model of Tizen 3.
+The implemented security model comes from the security model of Tizen 3.
 This model is described [here][tizen-secu-3].
 
-The security framework then comes from Tizen 3 but through
-the [meta-intel].
-It includes:
+The security framework includes:
 
-- **Sec-lsm-Manager**
-- **cynagora**
-- **D-Bus** compliant to cynagora.
-
-Two patches are applied to the sec-lsm-manager.
-The goal of these patches is to remove specific dependencies with Tizen packages that are not needed by AGL.
-None of these patches adds or removes any behaviour.
+- **sec-lsm-manager**: component that interact with the security module of linux (Smack)
+- **cynagora**: component to manage permissions
+- **D-Bus** compliant to Cynagora: checks the permissions to deliver messages
 
 **In theory, the security framework/model is an implementation details
-that should not impact the layers above the application framework**.
+that should not impact the programming model from a user point of view**.
 
-The security framework of Tizen provides "nice lad" a valuable component to
-scan log files and analyse auditing.
-This component is still in development.
-
-## The application framework
-
-The application framework on top of the security framework
-provides the components to install and uninstall applications
-and to run it in a secured environment.
-
-The goal is to manage applications and to hide the details of
-the security framework to the applications.
-
-For the reasons explained in introduction, we did not used the
-application framework of Tizen as is but used an adaptation of it.
-
-The basis is kept identical:
-
-- The applications are distributed in a digitally signed container that must
-  match the specifications of widgets (web applications).
-
-This is described by the technical recommendations [widgets] and
-[widgets-digsig] of the W3 consortium.
-
-This model allows:
-
-- The distribution of HTML, QML and binary applications.
-- The management of signatures of the widget packages.
-
-This basis is not meant as being rigid and it can be extended in the
-future to include for example incremental delivery.
 
 [meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"
 [widgets]:          http://www.w3.org/TR/widgets                                    "Packaged Web Apps"

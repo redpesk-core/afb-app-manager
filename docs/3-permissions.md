@@ -41,7 +41,7 @@ This field designates the api providing the permission.
 This scheme is used to deduce binding requirements
 from permission requirements.  
 The field `<api>` can be the empty string when the permission
-is defined by the AGL system itself.
+is defined by the system itself.
 
 [PROPOSAL 1] The field `<api>` if starting with the character "@" represents
 a transversal/cross permission not bound to any binding.
@@ -123,7 +123,7 @@ These permissions are available the 21th of May 2019.
   Keep all capabilities for the service. Note that implementing
   that permission is not mandatory or can be adapted for the given
   system.
-- <http://tizen.org/privilege/internal/dbus>
+- `http://tizen.org/privilege/internal/dbus`
   Permission to use D-Bus.
 
 [URN]: https://tools.ietf.org/rfc/rfc2141.txt "RFC 2141: URN Syntax"
