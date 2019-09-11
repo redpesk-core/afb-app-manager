@@ -35,6 +35,7 @@ option(USE_LIBZIP         "Should try to use libzip?" ON)
 option(USE_SIMULATION     "If set simulates security manager and smack" OFF)
 option(USE_SDK            "If set, avoids installating system runtime files" OFF)
 option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
+option(INSTALL_SAMPLE_KEYS "install the sample keys and certificates" OFF)
 
 option(SIMULATE_SECMGR    "If set, the security manager is simulated" OFF)
 option(SIMULATE_SMACK     "If set, the smack environment is simulated"  OFF)
@@ -51,7 +52,9 @@ set(afm_prefix              "urn:AGL:" CACHE STRING "Prefix for uniform resource
 set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for applications")
 set(afm_user_appdir_label   "User::App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
 set(systemd_units_root      "${CMAKE_INSTALL_FULL_LIBDIR}/systemd" CACHE STRING "Place where unit files are to be set")
-set(wgtpkg_trusted_cert_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
+set(wgtpkg_trusted_certs_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
+set(wgtpkg_sample_keys_dir  "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}/keys" CACHE STRING "Path to internal keys")
+set(wgtpkg_sample_certs_dir "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}/certs" CACHE STRING "Path to internal certs")
 set(afm_platform_rundir     "/run/platform" CACHE STRING "Path to location of platform runtime sockets")
 set(afm_users_rundir        "/run/user" CACHE STRING "Path to location of users runtime sockets")
 set(afm_scope_platform_dir  "/var/scope-platform" CACHE STRING "Path to home of scope-platform apps")
@@ -67,7 +70,7 @@ add_definitions(
 	-DFWK_ICON_DIR="${afm_icondir}"
 	-DFWK_APP_DIR="${afm_appdir}"
 	-DFWK_USER_APP_DIR="${afm_user_appdir}"
-	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_cert_dir}"
+	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_certs_dir}"
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
 	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
 	-DFWK_USER_APP_DIR_LABEL="${afm_user_appdir_label}"
@@ -82,6 +85,9 @@ if(DISTINCT_VERSIONS)
 else(DISTINCT_VERSIONS)
 	add_definitions(-DDISTINCT_VERSIONS=0)
 endif(DISTINCT_VERSIONS)
+if(INSTALL_SAMPLE_KEYS)
+	add_definitions(-DWITH_SAMPLE_KEYS=1)
+endif(INSTALL_SAMPLE_KEYS)
 
 add_subdirectory(src)
 add_subdirectory(conf)
@@ -96,6 +102,6 @@ INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/afm-main.pc
     DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-    )
+)
 
 

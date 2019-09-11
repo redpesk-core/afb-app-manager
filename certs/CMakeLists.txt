@@ -16,15 +16,28 @@
 # limitations under the License.
 ###########################################################################
 
-cmake_minimum_required(VERSION 2.8)
+if(NOT USE_SDK)
+	install(DIRECTORY DESTINATION ${wgtpkg_trusted_certs_dir})
+endif()
 
-set(CERTIFICATES
-	developer.cert.pem
-	partner.cert.pem
-	platform.cert.pem
-	public.cert.pem
-	root.cert.pem
-)
+if(INSTALL_SAMPLE_KEYS)
+	if(NOT USE_SDK)
+		#foreach(f root) TODO: install only root certificate
+		foreach(f root developer partner platform public)
+			install(FILES sample/${f}.cert.pem
+			        DESTINATION ${wgtpkg_trusted_certs_dir}
+			        RENAME sample-cert-${f}.pem
+			)
+		endforeach(f)
+	endif()
+	foreach(f developer partner platform public)
+		install(FILES sample/${f}.cert.pem
+		        DESTINATION ${wgtpkg_sample_certs_dir}
+		)
+		install(FILES sample/${f}.key.pem
+		        DESTINATION ${wgtpkg_sample_keys_dir}
+		)
+	endforeach(f)
+endif()
 
-install(FILES ${CERTIFICATES}  DESTINATION ${wgtpkg_trusted_cert_dir})
 

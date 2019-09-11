@@ -5,7 +5,7 @@
 # notice and this notice are preserved.  This file is offered as-is,
 # without any warranty.
 
-ORG="/C=FR/ST=Brittany/L=Vannes/O=IoT.bzh"
+ORG="/C=FR/ST=Brittany/L=Lorient/O=IoT.bzh"
 
 cat > extensions << EOC
 [root]
@@ -57,7 +57,6 @@ then
 fi
 
 }
-
 
 genroot() {
 	local s="$1" n="$2" cn="$3"
