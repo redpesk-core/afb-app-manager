@@ -308,7 +308,7 @@ int verify_digsig(struct filedesc *fdesc)
 	int res, fd;
 
 	assert ((fdesc->flags & flag_signature) != 0);
-	DEBUG("-- checking file %s",fdesc->name);
+	DEBUG("-- checking file %s", fdesc->name);
 
 	/* reset the flags */
 	file_clear_flags();
@@ -343,13 +343,23 @@ int check_all_signatures(int allow_none)
 	struct filedesc *fdesc;
 
 	n = signature_count();
-	if (n == 0 && !allow_none) {
-		ERROR("no signature found");
-		return -1;
+	if (n == 0) {
+		if (!allow_none) {
+			ERROR("no signature found");
+			return -1;
+		}
+		return 0;
 	}
+
+	rc = xmlsec_init();
+	if (rc < 0) {
+		ERROR("can't check signature");
+		return rc;
+	}
+
 	rc = 0;
-	for (i = n ; i-- > 0 ; ) {
-		fdesc = signature_of_index(i);
+	for (i = n ; i ; ) {
+		fdesc = signature_of_index(--i);
 		irc = verify_digsig(fdesc);
 		if (irc < 0)
 			rc = irc;

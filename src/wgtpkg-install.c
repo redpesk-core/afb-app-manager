@@ -567,7 +567,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 	char installdir[PATH_MAX];
-	int err;
+	int err, rc;
 	struct unitconf uconf;
 
 	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
@@ -582,7 +582,12 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (zread(wgtfile, 0))
 		goto error2;
 
-	if (check_all_signatures(DEFAULT_ALLOW_NO_SIGNATURE))
+#if defined(ALLOW_NO_SIGNATURE)
+	rc = check_all_signatures(1);
+#else
+	rc = check_all_signatures(0);
+#endif
+	if (rc)
 		goto error2;
 
 	ifo = wgt_info_createat(workdirfd, NULL, 1, 1, 1);

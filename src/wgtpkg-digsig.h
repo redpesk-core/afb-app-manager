@@ -26,6 +26,3 @@ extern int create_digsig(unsigned int index, const char *key, const char **certs
 /* check the signatures of the current directory */
 extern int check_all_signatures(int allow_none);
 
-#if !defined(DEFAULT_ALLOW_NO_SIGNATURE)
-#define DEFAULT_ALLOW_NO_SIGNATURE 0
-#endif
