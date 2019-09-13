@@ -148,19 +148,19 @@ add_library(afm STATIC
 
 MESSAGE(STATUS "Creating packaging tools")
 
-add_executable(wgtpkg-sign wgtpkg-sign.c)
+add_executable(wgtpkg-sign main-wgtpkg-sign.c)
 target_link_libraries(wgtpkg-sign wgtpkg utils)
 
-add_executable(wgtpkg-pack wgtpkg-pack.c)
+add_executable(wgtpkg-pack main-wgtpkg-pack.c)
 target_link_libraries(wgtpkg-pack wgtpkg utils)
 
-add_executable(wgtpkg-info wgtpkg-info.c)
+add_executable(wgtpkg-info main-wgtpkg-info.c)
 target_link_libraries(wgtpkg-info wgtpkg wgt utils)
 
-add_executable(wgtpkg-installer wgtpkg-installer.c)
-target_link_libraries(wgtpkg-installer wgtpkg wgt secwrp utils)
+add_executable(wgtpkg-install main-wgtpkg-install.c)
+target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
 
-install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ###########################################################################
 # dynamic tool daemons

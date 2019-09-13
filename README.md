@@ -74,7 +74,7 @@ The installed programs are:
 - ***wgtpkg-info***: command line tool to display
   information about a widget file.
 
-- ***wgtpkg-installer***: command line tool to
+- ***wgtpkg-install***: command line tool to
   install a widget file.
 
 - ***wgtpkg-pack***: command line tool to create
@@ -199,7 +199,7 @@ The current version of afm allows to install widgets
 from local files (either pre-installed or downloaded).
 
 To install a widget, you can use either the program
-***wgtpkg-installer*** while being the framework user.
+***wgtpkg-install*** while being the framework user.
 
 TO BE CONTINUED
 

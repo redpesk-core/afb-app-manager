@@ -35,7 +35,7 @@
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
 
-static const char appname[] = "wgtpkg-installer";
+static const char appname[] = "wgtpkg-install";
 static const char *root;
 static int force;
 

@@ -53,13 +53,13 @@ widget package management
 wgtpkg-certs.c
 wgtpkg-digsig.c
 wgtpkg-files.c
-wgtpkg-info.c
+main-wgtpkg-info.c
 wgtpkg-install.c
-wgtpkg-installer.c
+main-wgtpkg-instal.c
 wgtpkg-mustach.c
-wgtpkg-pack.c
+main-wgtpkg-pack.c
 wgtpkg-permissions.c
-wgtpkg-sign.c
+main-wgtpkg-sign.c
 wgtpkg-uninstall.c
 wgtpkg-unit.c
 wgtpkg-workdir.c

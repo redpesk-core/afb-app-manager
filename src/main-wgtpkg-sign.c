@@ -60,6 +60,16 @@ static unsigned int get_number(const char *value)
 	return (unsigned int)val;
 }
 
+static void make_realpath(char **x)
+{
+	char *p = realpath(*x, NULL);
+	if (p == NULL) {
+		ERROR("realpath failed for %s", *x);
+		exit(1);
+	}
+	*x = p;
+}
+
 static void version()
 {
 	printf(
@@ -92,25 +102,27 @@ static void usage()
 	);
 }
 
-static struct option options[] = {
-	{ "key",         required_argument, NULL, 'k' },
+static struct option options_l[] = {
+	{ "author",      no_argument,       NULL, 'a' },
 	{ "certificate", required_argument, NULL, 'c' },
 	{ "distributor", required_argument, NULL, 'd' },
-	{ "author",      no_argument,       NULL, 'a' },
 	{ "force",       no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
+	{ "key",         required_argument, NULL, 'k' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
 };
 
+static const char options_s[] = "ac:d:fhk:qvV";
+
 /* install the widgets of the list */
 int main(int ac, char **av)
 {
 	int i, force, ncert, author;
 	unsigned int number;
-	char *keyfile, *certfiles[MAXCERT+1], *directory, **x;
+	char *keyfile, *certfiles[MAXCERT+1], *directory;
 	struct stat s;
 
 	LOGUSER(appname);
@@ -119,7 +131,7 @@ int main(int ac, char **av)
 	number = UINT_MAX;
 	keyfile = directory = NULL;
 	for (;;) {
-		i = getopt_long(ac, av, "hfqvVak:c:d:", options, NULL);
+		i = getopt_long(ac, av, options_s, options_l, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
@@ -129,13 +141,33 @@ int main(int ac, char **av)
 				return 1;
 			}
 			certfiles[ncert++] = optarg;
-			continue;
-		case 'k': x = &keyfile; break;
-		case 'd': number = get_number(optarg); continue;
-		case 'f': force = 1; continue;
-		case 'a': author = 1; continue;
-		case 'h': usage(); return 0;
-		case 'V': version(); return 0;
+			break;
+		case 'k':
+			if (keyfile) {
+				ERROR("key already set");
+				return 1;
+			}
+			keyfile = optarg;
+			break;
+		case 'd':
+			if (number != UINT_MAX) {
+				ERROR("number already set");
+				return 1;
+			}
+			number = get_number(optarg);
+			break;
+		case 'f':
+			force = 1;
+			break;
+		case 'a':
+			author = 1;
+			break;
+		case 'h':
+			usage();
+			return 0;
+		case 'V':
+			version();
+			return 0;
 		case 'q':
 			if (verbosity)
 				verbosity--;
@@ -150,11 +182,6 @@ int main(int ac, char **av)
 			ERROR("unrecognized option");
 			return 1;
 		}
-		if (*x != NULL) {
-			ERROR("option set twice");
-			return 1;
-		}
-		*x = optarg;
 	}
 
 	/* remaining arguments and final checks */
@@ -187,7 +214,7 @@ int main(int ac, char **av)
 		ERROR("can't access private key %s", keyfile);
 		return 1;
 	}
-	for(i = 0 ; i < ncert ; i++) 
+	for(i = 0 ; i < ncert ; i++)
 		if (access(certfiles[i], R_OK) != 0) {
 			ERROR("can't access certificate %s", certfiles[i]);
 			return 1;
@@ -197,13 +224,10 @@ int main(int ac, char **av)
 	if (xmlsec_init())
 		return 1;
 
-
 	/* compute absolutes paths */
-#define rp(x) do { char *p = realpath(x, NULL); if (p != NULL) x = p; else { ERROR("realpath failed for %s",x); return 1; } } while(0)
-	rp(keyfile);
-	for(i = 0 ; i < ncert ; i++) 
-		rp(certfiles[i]);
-#undef rp
+	make_realpath(&keyfile);
+	for(i = 0 ; i < ncert ; i++)
+		make_realpath(&certfiles[i]);
 
 	/* set and enter the workdir */
 	if (set_workdir(directory, 0))
