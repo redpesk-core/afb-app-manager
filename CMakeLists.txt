@@ -78,7 +78,6 @@ else(ALLOW_NO_SIGNATURE)
 	add_definitions(-DDEFAULT_ALLOW_NO_SIGNATURE=0)
 endif(ALLOW_NO_SIGNATURE)
 
-add_compile_options(-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.)
 
 add_subdirectory(src)
 add_subdirectory(conf)
