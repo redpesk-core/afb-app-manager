@@ -1,4 +1,4 @@
-#!bin/sh
+#!/bin/sh
 
 uid=$1
 udir=/run/user/$uid
