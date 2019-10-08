@@ -1,4 +1,4 @@
-#!bin/sh
+#!/bin/sh
 
 pdir=@afm_platform_rundir@
 
