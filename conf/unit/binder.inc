@@ -46,6 +46,7 @@ ENDIF \
 		ON_VALUE(dbus,		--dbus-server={{name}}) \
 		ON_VALUE(tcp,		--ws-server=tcp:{{name}}) \
 	{{/provided-api}} \
+	ON_PERM(:platform:apis:auto-ws, --auto-api=API_PATH_WS) \
 	ON_CONTENT(text/html,			--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t) \
 	ON_CONTENT(application/vnd.agl.native,	--exec {{:#metadata.install-dir}}/{{content.src}} @p @t)
 %nl
