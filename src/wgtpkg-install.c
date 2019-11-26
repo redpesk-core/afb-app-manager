@@ -67,6 +67,10 @@ static const char key_http_port[] = "http-port";
 
 static uint32_t *port_bits = NULL;
 
+static const char *default_permissions[] = {
+	"urn:AGL:token:valid"
+};
+
 /*
  * normalize unit files: remove comments, remove heading blanks,
  * make single lines
@@ -525,6 +529,16 @@ static int install_security(const struct wgt_desc *desc)
 		if (rc)
 			goto error2;
 		perm = next_usable_permission();
+	}
+
+	/* install default permissions */
+	n = (unsigned int)(sizeof default_permissions / sizeof *default_permissions);
+	for (i = 0 ; i < n ; i++) {
+		perm = default_permissions[i];
+		rc = secmgr_permit(perm);
+		INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
+		if (rc)
+			goto error2;
 	}
 
 	rc = secmgr_install();
