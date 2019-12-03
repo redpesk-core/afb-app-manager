@@ -18,14 +18,12 @@ IF_AGL_DEVEL \
 	--verbose \
 	--monitoring \
 	--port={{:#metatarget.http-port}} \
-	--token=HELLO \
 	--roothttp=ON_CONTENT(application/vnd.agl.service, ., ON_PERM(:public:no-htdocs, ., htdocs)) \
 ELSE \
 	IF_CONTENT(application/vnd.agl.service) \
 		--no-httpd \
 	ELSE \
 		--port={{:#metatarget.http-port}} \
-		--random-token \
 		--roothttp=ON_PERM(:public:no-htdocs, ., htdocs) \
 	ENDIF \
 ENDIF \
