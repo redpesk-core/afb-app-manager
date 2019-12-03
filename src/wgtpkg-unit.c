@@ -375,22 +375,28 @@ int unit_generator_open_template(const char *filename)
 static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 {
 	struct json_object *targets, *targ;
-	char portstr[30];
-	int port, i, n;
+	char portstr[30], afidstr[30];
+	int port, afid, i, n;
 
 	if (json_object_object_get_ex(jdesc, string_targets, &targets)) {
 		n = json_object_array_length(targets);
 		for (i = 0 ; i < n ; i++) {
 			targ = json_object_array_get_idx(targets, i);
-			if (!conf->port)
-				strcpy(portstr, "0");
-			else {
-				port = conf->port ? conf->port() : 0;
-				if (port < 0)
-					return port;
-				sprintf(portstr, "%d", port);
+			if (!conf->new_afid) {
+				afid = 0;
+				port = 0;
+			} else {
+				afid = conf->new_afid();
+				if (afid < 0)
+					return afid;
+				port = conf->base_http_ports + afid;
 			}
-			if (!j_add_string_m(targ, "#metatarget.http-port", portstr))
+			sprintf(afidstr, "%d", afid);
+			sprintf(portstr, "%d", port);
+			if (!j_add_many_strings_m(targ,
+				"#metatarget.http-port", portstr,
+				"#metatarget.afid", afidstr,
+				NULL))
 				return -1;
 		}
 	}

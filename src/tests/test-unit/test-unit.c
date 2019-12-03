@@ -65,9 +65,9 @@ puts(json_object_to_json_string_ext(desc->desc, JSON_C_TO_STRING_PRETTY));
 	return 0;
 }
 
-static int port()
+static int new_afid()
 {
-	static int r = 10000;
+	static int r = 1;
 	return r++;
 }
 
@@ -79,7 +79,8 @@ int main(int ac, char **av)
 
 	conf.installdir = "INSTALL-DIR";
 	conf.icondir = "ICONS-DIR";
-	conf.port = port;
+	conf.new_afid = new_afid;
+	conf.base_http_ports = 20000;
 	rc = unit_generator_open_template(*++av);
 	if (rc < 0)
 		error("can't read template %s: %m",*av);

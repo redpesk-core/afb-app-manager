@@ -44,6 +44,7 @@ define( `IF_NOT_VALUE', `MUSTACH_IF_NOT(value=$1)')
 --  use TARGET={{:id}}--{{:ver}}--{{:#target}}
 --  instead of TARGET={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 --------------------------------------------------------------------------------
+define( `AFID', `{{:#metatarget.afid}}')
 define( `SMACKLABEL', `User::App::{{:id}}')
 define( `TARGET', `{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}')
 define( `NEWTARGET', `{{:id}}--{{:ver}}--{{:#target}}')
@@ -74,6 +75,7 @@ define( `PLATFORM_API_PATH_LINK', `PLATFORM_API_PATH/link')
 define( `USER_API_PATH', `USER_RUN_DIR/apis')
 define( `USER_API_PATH_WS', `USER_API_PATH/ws')
 define( `USER_API_PATH_LINK', `USER_API_PATH/link')
+
 --------------------------------------------------------------------------------
 -- AGL_DEVEL SPECIFIC PARTS
 --------------------------------------------------------------------------------

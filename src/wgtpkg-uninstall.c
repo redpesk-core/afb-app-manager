@@ -72,7 +72,8 @@ int uninstall_widget(const char *idaver, const char *root)
 	}
 	uconf.installdir = path;
 	uconf.icondir = FWK_ICON_DIR;
-	uconf.port = 0;
+	uconf.new_afid = 0;
+	uconf.base_http_ports = 0;
 	unit_uninstall(ifo, &uconf);
 	wgt_info_unref(ifo);
 

@@ -28,7 +28,7 @@ X-AFM-height={{height}}
 {{#icon}}
 X-AFM-icon={{:#metadata.install-dir}}/{{:src}}
 {{/icon}}
-X-AFM--ID={{:id}}
+X-AFM--ID=AFID
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}

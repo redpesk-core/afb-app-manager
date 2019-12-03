@@ -53,19 +53,21 @@ static const char* exec_type_strings[] = {
 };
 
 static const char key_afm_prefix[] = "X-AFM-";
-static const char key_http_port[] = "http-port";
+static const char key_afid[] = "-ID";
 
-#define HTTP_PORT_MIN			31000
-#define HTTP_PORT_MAX			32759
-#define HTTP_PORT_IS_VALID(port)	(HTTP_PORT_MIN <= (port) && (port) <= HTTP_PORT_MAX)
-#define HTTP_PORT_COUNT			(HTTP_PORT_MAX - HTTP_PORT_MIN + 1)
-#define HTTP_PORT_ACNT			((HTTP_PORT_COUNT + 31) >> 5)
-#define HTTP_PORT_ASFT(port)		(((port) - HTTP_PORT_MIN) & 31)
-#define HTTP_PORT_AIDX(port)		(((port) - HTTP_PORT_MIN) >> 5)
-#define HTTP_PORT_TEST(array,port)	((((array)[HTTP_PORT_AIDX(port)]) >> HTTP_PORT_ASFT(port)) & 1)
-#define HTTP_PORT_SET(array,port)	(((array)[HTTP_PORT_AIDX(port)]) |= (((uint32_t)1) << HTTP_PORT_ASFT(port)))
+#define HTTP_PORT_BASE		30000
 
-static uint32_t *port_bits = NULL;
+#define AFID_MIN		1
+#define AFID_MAX		1999
+#define AFID_IS_VALID(afid)	(AFID_MIN <= (afid) && (afid) <= AFID_MAX)
+#define AFID_COUNT		(AFID_MAX - AFID_MIN + 1)
+#define AFID_ACNT		((AFID_COUNT + 31) >> 5)
+#define AFID_ASFT(afid)	(((afid) - AFID_MIN) & 31)
+#define AFID_AIDX(afid)	(((afid) - AFID_MIN) >> 5)
+#define AFID_TEST(array,afid)	((((array)[AFID_AIDX(afid)]) >> AFID_ASFT(afid)) & 1)
+#define AFID_SET(array,afid)	(((array)[AFID_AIDX(afid)]) |= (((uint32_t)1) << AFID_ASFT(afid)))
+
+static uint32_t *afids_array = NULL;
 
 static const char *default_permissions[] = {
 	"urn:AGL:token:valid"
@@ -103,7 +105,7 @@ static void normalize_unit_file(char *content)
 	*write = c;
 }
 
-static int get_port_cb(void *closure, const char *name, const char *path, int isuser)
+static int get_afid_cb(void *closure, const char *name, const char *path, int isuser)
 {
 	char *iter;
 	char *content;
@@ -124,15 +126,15 @@ static int get_port_cb(void *closure, const char *name, const char *path, int is
 		iter += sizeof key_afm_prefix - 1;
 		if (*iter == '-')
 			iter++;
-		if (!strncmp(iter, key_http_port, sizeof key_http_port - 1)) {
-			iter += sizeof key_http_port - 1;
+		if (!strncmp(iter, key_afid, sizeof key_afid - 1)) {
+			iter += sizeof key_afid - 1;
 			while(*iter && *iter != '=' && *iter != '\n')
 				iter++;
 			if (*iter == '=') {
 				while(*++iter == ' ');
 				p = atoi(iter);
-				if (HTTP_PORT_IS_VALID(p))
-					HTTP_PORT_SET((uint32_t*)closure, p);
+				if (AFID_IS_VALID(p))
+					AFID_SET((uint32_t*)closure, p);
 			}
 		}
 		iter = strstr(iter, key_afm_prefix);
@@ -141,53 +143,53 @@ static int get_port_cb(void *closure, const char *name, const char *path, int is
 	return 0;
 }
 
-static int update_portbits(uint32_t *portbits)
+static int update_afids(uint32_t *afids)
 {
 	int rc;
 
-	memset(portbits, 0, HTTP_PORT_ACNT * sizeof(uint32_t));
-	rc = systemd_unit_list(0, get_port_cb, portbits);
+	memset(afids, 0, AFID_ACNT * sizeof(uint32_t));
+	rc = systemd_unit_list(0, get_afid_cb, afids);
 	if (rc >= 0)
-		rc = systemd_unit_list(1, get_port_cb, portbits);
+		rc = systemd_unit_list(1, get_afid_cb, afids);
 	if (rc < 0)
-		ERROR("troubles while updating ports");
+		ERROR("troubles while updating afids");
 	return rc;
 }
 
-static int first_free_port(uint32_t *portbits)
+static int first_free_afid(uint32_t *afids)
 {
-	int port;
+	int afid;
 
-	port = HTTP_PORT_MIN;
-	while (port <= HTTP_PORT_MAX && !~portbits[HTTP_PORT_AIDX(port)])
-		port += 32;
-	while (port <= HTTP_PORT_MAX && HTTP_PORT_TEST(portbits, port))
-		port++;
-	if (port > HTTP_PORT_MAX) {
-		ERROR("Can't compute a valid port");
+	afid = AFID_MIN;
+	while (afid <= AFID_MAX && !~afids[AFID_AIDX(afid)])
+		afid += 32;
+	while (afid <= AFID_MAX && AFID_TEST(afids, afid))
+		afid++;
+	if (afid > AFID_MAX) {
+		ERROR("Can't compute a valid afid");
 		errno = EADDRNOTAVAIL;
-		port = -1;
+		afid = -1;
 	}
-	return port;
+	return afid;
 }
 
-static int get_port()
+static int get_new_afid()
 {
-	int port;
+	int afid;
 
-	/* ensure existing port bitmap */
-	if (port_bits == NULL) {
-		port_bits = malloc(HTTP_PORT_ACNT * sizeof(uint32_t));
-		if (port_bits == NULL || update_portbits(port_bits) < 0)
+	/* ensure existing afid bitmap */
+	if (afids_array == NULL) {
+		afids_array = malloc(AFID_ACNT * sizeof(uint32_t));
+		if (afids_array == NULL || update_afids(afids_array) < 0)
 			return -1;
 	}
 
-	/* allocates the port */
-	port = first_free_port(port_bits);
-	if (port >= 0)
-		HTTP_PORT_SET(port_bits, port);
+	/* allocates the afid */
+	afid = first_free_afid(afids_array);
+	if (afid >= 0)
+		AFID_SET(afids_array, afid);
 
-	return port;
+	return afid;
 }
 
 static int check_defined(const void *data, const char *name)
@@ -612,7 +614,8 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 
 	uconf.installdir = installdir;
 	uconf.icondir = FWK_ICON_DIR;
-	uconf.port = get_port;
+	uconf.new_afid = get_new_afid;
+	uconf.base_http_ports = HTTP_PORT_BASE;
 	if (unit_install(ifo, &uconf))
 		goto error4;
 
