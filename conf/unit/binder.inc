@@ -18,12 +18,14 @@ IF_AGL_DEVEL \
 	--verbose \
 	--monitoring \
 	--port={{:#metatarget.http-port}} \
+	--interface=tcp:LOCALUSERAPP:8080 \
 	--roothttp=ON_CONTENT(application/vnd.agl.service, ., ON_PERM(:public:no-htdocs, ., htdocs)) \
 ELSE \
 	IF_CONTENT(application/vnd.agl.service) \
 		--no-httpd \
 	ELSE \
 		--port={{:#metatarget.http-port}} \
+		--interface=tcp:LOCALUSERAPP:8080 \
 		--roothttp=ON_PERM(:public:no-htdocs, ., htdocs) \
 	ENDIF \
 ENDIF \
@@ -45,6 +47,6 @@ ENDIF \
 		ON_VALUE(tcp,		--ws-server=tcp:{{name}}) \
 	{{/provided-api}} \
 	ON_PERM(:platform:apis:auto-ws, --auto-api=API_PATH_WS) \
-	ON_CONTENT(text/html,			--exec /usr/bin/web-runtime http://localhost:@p/{{content.src}}?token=@t) \
+	ON_CONTENT(text/html,			--exec /usr/bin/web-runtime http://LOCALUSERAPP:8080/{{content.src}}) \
 	ON_CONTENT(application/vnd.agl.native,	--exec {{:#metadata.install-dir}}/{{content.src}} @p @t)
 %nl

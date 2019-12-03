@@ -76,6 +76,7 @@ define( `USER_API_PATH', `USER_RUN_DIR/apis')
 define( `USER_API_PATH_WS', `USER_API_PATH/ws')
 define( `USER_API_PATH_LINK', `USER_API_PATH/link')
 
+define( `LOCALUSERAPP', `ON_PERM(`:partner:scope-platform', `localuser---AFID', `localuser--AFID')')
 --------------------------------------------------------------------------------
 -- AGL_DEVEL SPECIFIC PARTS
 --------------------------------------------------------------------------------
