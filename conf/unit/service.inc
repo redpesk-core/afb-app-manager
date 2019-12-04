@@ -146,6 +146,14 @@ include(binder.inc)
 ExecStart={{:#metadata.install-dir}}/{{content.src}}
 {{/content.type=application/x-executable}}
 
+;-------------------------------------------------------------------------------
+;----                 application/vnd.agl.resource                          ----
+;-------------------------------------------------------------------------------
+{{#content.type=application/vnd.agl.resource}}
+Type=oneshot
+ExecStart=/bin/true
+{{/content.type=application/vnd.agl.resource}}
+
 IF_PERM(:system:run-by-default)
 ;-------------------------------------------------------------------------------
 ; auto start
@@ -161,5 +169,3 @@ ENDIF
 ENDIF
 
 %end systemd-unit
-
-

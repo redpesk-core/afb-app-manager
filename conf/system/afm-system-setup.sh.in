@@ -13,6 +13,7 @@ dodir $pdir
 dodir $pdir/display
 dodir $pdir/apis
 dodir $pdir/apis/ws
+dodir $pdir/apis/link
 @create_platform_debug@
 
 spdir=@afm_scope_platform_dir@
