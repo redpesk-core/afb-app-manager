@@ -1,6 +1,6 @@
 [Unit]
 Description=Application Framework Master, system side
-Requires=afm-system-setup.service
+Requires=afm-system-setup.service cynagoauth.service
 
 [Service]
 #User=afm

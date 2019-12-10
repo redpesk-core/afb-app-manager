@@ -47,6 +47,6 @@ ENDIF \
 		ON_VALUE(tcp,		--ws-server=tcp:{{name}}) \
 	{{/provided-api}} \
 	ON_PERM(:platform:apis:auto-ws, --auto-api=API_PATH_WS) \
-	ON_CONTENT(text/html,			--exec /usr/bin/web-runtime http://LOCALUSERAPP:8080/{{content.src}}) \
+	ON_CONTENT(text/html,			--exec /usr/bin/cynagoauth-launch /usr/bin/web-runtime http://LOCALUSERAPP:8080/{{content.src}}) \
 	ON_CONTENT(application/vnd.agl.native,	--exec {{:#metadata.install-dir}}/{{content.src}} @p @t)
 %nl
