@@ -53,6 +53,7 @@ set(systemd_units_root      "${CMAKE_INSTALL_FULL_LIBDIR}/systemd" CACHE STRING 
 set(wgtpkg_trusted_cert_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
 set(afm_platform_rundir     "/run/platform" CACHE STRING "Path to location of platform runtime sockets")
 set(afm_users_rundir        "/run/user" CACHE STRING "Path to location of users runtime sockets")
+set(afm_scope_platform_dir  "/var/scope-platform" CACHE STRING "Path to home of scope-platform apps")
 
 if(USE_SIMULATION)
     set(SIMULATE_SECMGR ON)
