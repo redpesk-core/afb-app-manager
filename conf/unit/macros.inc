@@ -60,8 +60,8 @@ define( `USER_RUN_DIR', `@afm_users_rundir@/%i')
 define( `DEBUGGING_DIR', `@afm_platform_rundir@/debug')
 define( `PLATFORM_RUN_DIR', `@afm_platform_rundir@')
 
-define( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `/tmp', `/home/%i/app-data')')
-define( `APP_WORK_DIR', `ON_PERM(`:partner:scope-platform', `/tmp', `APP_DATA_DIR/{{:id}}')')
+define( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `@afm_scope_platform_dir@', `/home/%i/app-data')')
+define( `APP_WORK_DIR', `APP_DATA_DIR/{{:id}}')
 define( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
 
 define( `API_PATH', `RUN_DIR/apis')

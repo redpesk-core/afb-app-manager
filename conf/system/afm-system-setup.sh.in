@@ -5,7 +5,7 @@ pdir=@afm_platform_rundir@
 dodir() {
 	if ! test -e $1; then
 		mkdir -m 755  $1
-		chsmack -a '*' $1
+		chsmack -a '*' -T $1
 	fi
 }
 
@@ -14,3 +14,10 @@ dodir $pdir/display
 dodir $pdir/apis
 dodir $pdir/apis/ws
 @create_platform_debug@
+
+spdir=@afm_scope_platform_dir@
+if ! test -e $spdir; then
+	mkdir -m 755 $spdir
+	chsmack -a '*' -T $spdir
+	chown daemon:daemon $spdir
+fi
