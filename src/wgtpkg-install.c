@@ -53,7 +53,7 @@ static const char* exec_type_strings[] = {
 };
 
 static const char key_afm_prefix[] = "X-AFM-";
-static const char key_afid[] = "-ID";
+static const char key_afid[] = "ID";
 
 #define HTTP_PORT_BASE		30000
 
@@ -62,8 +62,8 @@ static const char key_afid[] = "-ID";
 #define AFID_IS_VALID(afid)	(AFID_MIN <= (afid) && (afid) <= AFID_MAX)
 #define AFID_COUNT		(AFID_MAX - AFID_MIN + 1)
 #define AFID_ACNT		((AFID_COUNT + 31) >> 5)
-#define AFID_ASFT(afid)	(((afid) - AFID_MIN) & 31)
-#define AFID_AIDX(afid)	(((afid) - AFID_MIN) >> 5)
+#define AFID_ASFT(afid)		(((afid) - AFID_MIN) & 31)
+#define AFID_AIDX(afid)		(((afid) - AFID_MIN) >> 5)
 #define AFID_TEST(array,afid)	((((array)[AFID_AIDX(afid)]) >> AFID_ASFT(afid)) & 1)
 #define AFID_SET(array,afid)	(((array)[AFID_AIDX(afid)]) |= (((uint32_t)1) << AFID_ASFT(afid)))
 
@@ -186,6 +186,12 @@ static int get_new_afid()
 
 	/* allocates the afid */
 	afid = first_free_afid(afids_array);
+	if (afid < 0 && errno == EADDRNOTAVAIL) {
+		/* no more ids, try to rescan */
+		memset(afids_array, 0, AFID_ACNT * sizeof(uint32_t));
+		if (update_afids(afids_array) >= 0)
+			afid = first_free_afid(afids_array);
+	}
 	if (afid >= 0)
 		AFID_SET(afids_array, afid);
 
