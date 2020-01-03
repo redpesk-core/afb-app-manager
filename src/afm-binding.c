@@ -164,7 +164,7 @@ static const struct afb_auth
 /*
  * default root
  */
-static const char *rootdir = FWK_APP_DIR;
+static const char rootdir[] = FWK_APP_DIR;
 #endif
 
 /*
