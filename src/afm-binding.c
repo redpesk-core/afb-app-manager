@@ -185,6 +185,9 @@ static struct json_object *json_true;
 /* common bad request reply */
 static void bad_request(afb_req_t req)
 {
+	INFO("bad request verb %s: %s",
+		afb_req_get_called_verb(req),
+		json_object_to_json_string(afb_req_json(req)));
 	afb_req_fail(req, _bad_request_, NULL);
 }
 
@@ -244,16 +247,15 @@ static int get_all(afb_req_t req)
 		&& json_object_get_boolean(val);
 }
 
-
 /*
  * retrieves the 'appid' in parameters received with the
- * request 'req' for the 'method'.
+ * request 'req'.
  *
  * Returns 1 in case of success.
  * Otherwise, if the 'appid' can't be retrieved, an error stating
  * the bad request is replied for 'req' and 0 is returned.
  */
-static int onappid(afb_req_t req, const char *method, const char **appid)
+static int onappid(afb_req_t req, const char **appid)
 {
 	struct json_object *json;
 
@@ -264,26 +266,24 @@ static int onappid(afb_req_t req, const char *method, const char **appid)
 	if (!wrap_json_unpack(json, "s", appid)
 	 || !wrap_json_unpack(json, "{ss}", _id_, appid)) {
 		/* found */
-		INFO("method %s called for %s", method, *appid);
+		INFO("method %s called for %s", afb_req_get_called_verb(req), *appid);
 		return 1;
 	}
 
 	/* nothing appropriate */
-	INFO("bad request method %s: %s", method,
-					json_object_to_json_string(json));
 	bad_request(req);
 	return 0;
 }
 
 /*
  * retrieves the 'runid' in parameters received with the
- * request 'req' for the 'method'.
+ * request 'req'.
  *
  * Returns 1 in case of success.
  * Otherwise, if the 'runid' can't be retrieved, an error stating
  * the bad request is replied for 'req' and 0 is returned.
  */
-static int onrunid(afb_req_t req, const char *method, int *runid)
+static int onrunid(afb_req_t req, int *runid)
 {
 	struct json_object *json;
 	const char *appid;
@@ -294,19 +294,19 @@ static int onrunid(afb_req_t req, const char *method, int *runid)
 	/* get the runid if any */
 	if (!wrap_json_unpack(json, "i", runid)
 	 || !wrap_json_unpack(json, "{si}", _runid_, runid)) {
-		INFO("method %s called for %d", method, *runid);
+		INFO("method %s called for %d", afb_req_get_called_verb(req), *runid);
 		return 1;
 	}
 
 	/* get the appid if any */
-	if (!onappid(req, method, &appid))
+	if (!onappid(req, &appid))
 		return 0;
 
 	/* search the runid of the appid */
 	*runid = afm_urun_search_runid(afudb, appid, afb_req_get_uid(req));
 	if (*runid < 0) {
 		/* nothing appropriate */
-		INFO("method %s can't get runid for %s: %m", method,
+		INFO("method %s can't get runid for %s: %m", afb_req_get_called_verb(req),
 							appid);
 		if (errno == ESRCH)
 			not_running(req);
@@ -316,7 +316,7 @@ static int onrunid(afb_req_t req, const char *method, int *runid)
 	}
 
 	/* found */
-	INFO("method %s called for %s -> %d", method, appid, *runid);
+	INFO("method %s called for %s -> %d", afb_req_get_called_verb(req), appid, *runid);
 	return 1;
 }
 
@@ -371,7 +371,7 @@ static void detail(afb_req_t req)
 	struct json_object *resp;
 
 	/* scan the request */
-	if (!onappid(req, _detail_, &appid))
+	if (!onappid(req, &appid))
 		return;
 
 	/* get the language */
@@ -395,7 +395,7 @@ static void start(afb_req_t req)
 	int runid;
 
 	/* scan the request */
-	if (!onappid(req, _start_, &appid))
+	if (!onappid(req, &appid))
 		return;
 
 	/* get the application */
@@ -433,7 +433,7 @@ static void once(afb_req_t req)
 	int runid;
 
 	/* scan the request */
-	if (!onappid(req, _once_, &appid))
+	if (!onappid(req, &appid))
 		return;
 
 	/* get the application */
@@ -461,7 +461,7 @@ static void once(afb_req_t req)
 static void pause(afb_req_t req)
 {
 	int runid, status;
-	if (onrunid(req, "pause", &runid)) {
+	if (onrunid(req, &runid)) {
 		status = afm_urun_pause(runid, afb_req_get_uid(req));
 		reply_status(req, status);
 	}
@@ -473,7 +473,7 @@ static void pause(afb_req_t req)
 static void resume(afb_req_t req)
 {
 	int runid, status;
-	if (onrunid(req, "resume", &runid)) {
+	if (onrunid(req, &runid)) {
 		status = afm_urun_resume(runid, afb_req_get_uid(req));
 		reply_status(req, status);
 	}
@@ -485,7 +485,7 @@ static void resume(afb_req_t req)
 static void terminate(afb_req_t req)
 {
 	int runid, status;
-	if (onrunid(req, "terminate", &runid)) {
+	if (onrunid(req, &runid)) {
 		status = afm_urun_terminate(runid, afb_req_get_uid(req));
 		reply_status(req, status);
 	}
@@ -510,7 +510,7 @@ static void state(afb_req_t req)
 {
 	int runid;
 	struct json_object *resp;
-	if (onrunid(req, "state", &runid)) {
+	if (onrunid(req, &runid)) {
 		resp = afm_urun_state(afudb, runid, afb_req_get_uid(req));
 		reply(req, resp);
 	}
