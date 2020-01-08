@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016-2019 "IoT.bzh"
+ Copyright (C) 2015-2020 "IoT.bzh"
 
  author: José Bollo <jose.bollo@iot.bzh>
 
