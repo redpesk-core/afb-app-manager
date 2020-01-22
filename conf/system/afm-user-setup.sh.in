@@ -1,36 +1,30 @@
 #!/bin/sh
 
-uid=$1
-udir=/run/user/$uid
+uid="$1"
+bdir=/run/user
+udir="$bdir/$uid"
 
-dodir_star() {
-	if ! test -e $1; then
-		mkdir -m 700 $1
-		chown $uid:$uid $1
-	fi
-	chsmack -a '*' $1
+dodir() {
+	local x smackset="$1"
+	shift
+	for x; do
+		test -e "$x" || mkdir -m 700 "$x"
+		chmod 700 "$x"
+		chown "$uid:$uid" "$x"
+		chsmack $smackset "$x"
+	done
 }
 
-dodir_star $udir
-dodir_star $udir/apis
-dodir_star $udir/apis/ws
-dodir_star $udir/apis/link
-
-dodir_usrshr() {
-	if ! test -e $1; then
-		mkdir -m 700 $1
-		chown $uid:$uid $1
-	fi
-	chsmack -a User::App-Shared -t $1
-}
-
-dodir_usrshr $udir/usrshr
+dodir '-T -a User::App-Shared' "$bdir" "$udir"
+dodir '-t -a User::App-Shared'  "$udir/usrshr"
+dodir '-T -a System::Shared' "$udir/apis"
+dodir '-t -a System::Shared' "$udir/apis/ws" "$udir/apis/link"
 
 doln() {
-	if ! test -e $2; then
-		ln -sf $1 $2
-		chown -h $uid:$uid $2
-		chsmack -a '*' $2
+	if ! test -e "$2"; then
+		ln -sf "$1" "$2"
+		chown -h "$uid:$uid" "$2"
+		chsmack -a 'System::Shared' "$2"
 	fi
 }
 
