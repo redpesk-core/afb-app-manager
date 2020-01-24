@@ -398,7 +398,11 @@ static int get_target_directory(char target[PATH_MAX], const char *root, const s
 {
 	int rc;
 
+#if DISTINCT_VERSIONS
 	rc = snprintf(target, PATH_MAX, "%s/%s/%s", root, desc->id, desc->ver);
+#else
+	rc = snprintf(target, PATH_MAX, "%s/%s", root, desc->id);
+#endif
 	if (rc < PATH_MAX)
 		rc = 0;
 	else {

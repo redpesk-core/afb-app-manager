@@ -102,6 +102,7 @@ static char *mkver(char *version)
 
 static char *mkidaver(char *id, char *ver)
 {
+#if DISTINCT_VERSIONS
 	size_t lid, lver;
 	char *r;
 	if (id && ver) {
@@ -117,6 +118,9 @@ static char *mkidaver(char *id, char *ver)
 		}
 	}
 	return NULL;
+#else
+	return strdup(id);
+#endif
 }
 
 static void make_lowercase(char *s)

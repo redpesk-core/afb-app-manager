@@ -36,10 +36,12 @@
 /* uninstall the widget of idaver */
 int uninstall_widget(const char *idaver, const char *root)
 {
+#if DISTINCT_VERSIONS
 	char *id;
 	char *ver;
-	char path[PATH_MAX];
 	const char *at;
+#endif
+	char path[PATH_MAX];
 	int rc, rc2;
 	struct unitconf uconf;
 	struct wgt_info *ifo;
@@ -47,6 +49,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	NOTICE("-- UNINSTALLING widget of id %s from %s --", idaver, root);
 
 	/* find the last '@' of the id */
+#if DISTINCT_VERSIONS
 	at = strrchr(idaver, '@');
 	if (at == NULL) {
 		ERROR("bad widget id '%s', no @", idaver);
@@ -58,6 +61,10 @@ int uninstall_widget(const char *idaver, const char *root)
 
 	/* compute the path */
 	rc = snprintf(path, sizeof path, "%s/%s/%s", root, id, ver);
+#else
+	rc = snprintf(path, sizeof path, "%s/%s", root, idaver);
+#endif
+
 	if (rc >= (int)sizeof path) {
 		ERROR("bad widget id '%s', too long", idaver);
 		errno = EINVAL;
@@ -91,6 +98,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	if (rc < 0 && errno != ENOENT)
 		ERROR("can't remove '%s': %m", path);
 
+#if DISTINCT_VERSIONS
 	/* removes the parent directory if empty */
 	rc2 = snprintf(path, sizeof path, "%s/%s", root, id);
 	assert(rc2 < (int)sizeof path);
@@ -107,6 +115,9 @@ int uninstall_widget(const char *idaver, const char *root)
 	 * uninstall it for the security-manager
 	 */
 	rc2 = secmgr_init(id);
+#else
+	rc2 = secmgr_init(idaver);
+#endif
 	if (rc2) {
 		ERROR("can't init security manager context");
 		return -1;
