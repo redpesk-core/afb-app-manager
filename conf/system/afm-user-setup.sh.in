@@ -15,8 +15,8 @@ dodir() {
 	done
 }
 
-dodir '-T -a User::App-Shared' "$bdir" "$udir"
-dodir '-t -a User::App-Shared'  "$udir/usrshr"
+dodir '-T -a User::App-Shared' "$udir"
+dodir '-t -a User::App-Shared' "$udir/usrshr"
 dodir '-T -a System::Shared' "$udir/apis"
 dodir '-t -a System::Shared' "$udir/apis/ws" "$udir/apis/link"
 
