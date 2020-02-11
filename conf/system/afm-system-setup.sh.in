@@ -10,7 +10,7 @@ dodir() {
 	done
 }
 
-dodir $pdir $pdir/display $pdir/apis $pdir/apis/ws $pdir/apis/link
+dodir /run/user $pdir $pdir/display $pdir/apis $pdir/apis/ws $pdir/apis/link
 
 @create_platform_debug@
 
