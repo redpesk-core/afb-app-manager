@@ -55,14 +55,14 @@ ConditionSecurity=smack
 # Automatic bound to required api
 {{#required-binding}}
 {{#value=extern}}
-BindsTo=UNIT_NAME_BINDING_SERVICE({{name}})
+Requires=UNIT_NAME_BINDING_SERVICE({{name}})
 After=UNIT_NAME_BINDING_SERVICE({{name}})
 {{/value=extern}}
 {{/required-binding}}
 
 {{#required-api}}
 {{#value=auto|ws}}
-BindsTo=UNIT_NAME_API_SERVICE({{name}})
+Requires=UNIT_NAME_API_SERVICE({{name}})
 After=UNIT_NAME_API_SERVICE({{name}})
 {{/value=auto|ws}}
 {{/required-api}}
