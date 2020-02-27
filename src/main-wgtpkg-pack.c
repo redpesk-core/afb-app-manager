@@ -31,6 +31,7 @@
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-zip.h"
+#include "wgtpkg-digsig.h"
 
 const char appname[] = "wgtpkg-pack";
 
@@ -55,7 +56,9 @@ static void usage()
 		"\n"
 		"   -o wgtfile       the output widget file\n"
 		"   -f               force overwriting\n"
+		"   -N               no auto-sign"
 		"   -q               quiet\n"
+		"   -S               auto-sign"
 		"   -v               verbose\n"
 		"   -V               version\n"
 		"\n",
@@ -67,7 +70,9 @@ static struct option options[] = {
 	{ "output",      required_argument, NULL, 'o' },
 	{ "force",       no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
+	{ "no-auto-sign",no_argument,       NULL, 'N' },
 	{ "quiet",       no_argument,       NULL, 'q' },
+	{ "auto-sign",   no_argument,       NULL, 'S' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
@@ -76,12 +81,13 @@ static struct option options[] = {
 /* install the widgets of the list */
 int main(int ac, char **av)
 {
-	int i, force;
+	int i, force, autosign;
 	char *wgtfile, *directory, *x;
 	struct stat s;
 
 	LOGUSER(appname);
 
+	autosign = 1;
 	force = 0;
 	wgtfile = directory = NULL;
 	for (;;) {
@@ -105,9 +111,15 @@ int main(int ac, char **av)
 		case 'h':
 			usage();
 			return 0;
+		case 'N':
+			autosign = 0;
+			break;
 		case 'V':
 			version();
 			return 0;
+		case 'S':
+			autosign = 1;
+			break;
 		case ':':
 			ERROR("missing argument");
 			return 1;
@@ -174,8 +186,10 @@ int main(int ac, char **av)
 	if (set_workdir(".", 0))
 		return 1;
 
-
 	if (fill_files())
+		return 1;
+
+	if (autosign && create_auto_digsig() < 0)
 		return 1;
 
 	return !!zwrite(wgtfile);

@@ -419,4 +419,92 @@ error:
 	return rc;
 }
 
+/* create a digital signature(s) from environment data */
+int create_auto_digsig()
+{
+	static const char envvar_prefix[] = "WGTPKG_AUTOSIGN_";
+	extern char **environ;
+
+	char **enviter;
+	char *var;
+	char *iter;
+	char *equal;
+	unsigned int num;
+	char *keyfile;
+	const char *certfiles[10];
+	int ncert;
+	int rc;
+	int i;
+
+	rc = 0;
+	/* enumerate environment variables */
+	enviter = environ;
+	while  (rc == 0 && (var = *enviter++) != NULL) {
+		/* check the prefix */
+		if (0 != strncmp(var, envvar_prefix, sizeof(envvar_prefix) - 1))
+			continue; /* not an auto sign variable */
+		DEBUG("autosign found %s", var);
+
+		/* check the num */
+		iter = &var[sizeof(envvar_prefix) - 1];
+		if (*iter < '0' || *iter > '9') {
+			ERROR("bad autosign key found: %s", var);
+			rc = -1;
+			continue;
+		}
+
+		/* compute the number */
+		num = (unsigned int)(*iter++ - '0');
+		while (*iter >= '0' && *iter <= '9')
+			num = 10 * num + (unsigned int)(*iter++ - '0');
+
+		/* next char must be = */
+		if (*iter != '=' || !iter[1]) {
+			/* it is not an error to have an empty autosign */
+			WARNING("ignoring autosign key %.*s", (int)(iter - var), var);
+			continue;
+		}
+
+		/* auto signing with num */
+		INFO("autosign key %u found", num);
+
+		/* compute key and certificates */
+		equal = iter++;
+		keyfile = iter;
+		*equal = 0;
+		ncert = 0;
+		while (ncert < (int)((sizeof certfiles / sizeof *certfiles) - 1)
+				&& (iter = strchr(iter, ':')) != NULL) {
+			*iter++ = 0;
+			certfiles[ncert++] = iter;
+		}
+		certfiles[ncert] = NULL;
+
+		/* check the parameters */
+		if (access(keyfile, R_OK) != 0) {
+			ERROR("autosign %u can't access private key %s", num, keyfile);
+			rc = -1;
+		}
+		for(i = 0 ; i < ncert ; i++) {
+			if (access(certfiles[i], R_OK) != 0) {
+				ERROR("autosign %u can't access certificate %s", num, certfiles[i]);
+				rc = -1;
+			}
+		}
+
+		/* sign now */
+		if (rc == 0) {
+			rc = xmlsec_init();
+			if (rc == 0) {
+				rc = create_digsig(num, keyfile, certfiles);
+			}
+		}
+
+		/* restore stolen chars */
+		while(ncert)
+			*(char*)(certfiles[--ncert] - 1) = ':';
+		*equal = '=';
+	}
+	return rc;
+}
 
