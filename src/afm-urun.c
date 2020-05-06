@@ -146,15 +146,18 @@ error:
 
 static const char *wait_state_stable(int isuser, const char *dpath)
 {
-	const char *state;
+	int trial, count;
+	const char *state = NULL;
 
-	for (;;) {
+	count = 10;
+	for (trial = 1 ; trial <= count ; trial++) {
 		state = systemd_unit_state_of_dpath(isuser, dpath);
 		if (state == NULL || state == SysD_State_Active
 		 || state == SysD_State_Failed)
 			return state;
-		/* TODO: sleep */
+		sleep(1);
 	}
+	return state;
 }
 
 /*
