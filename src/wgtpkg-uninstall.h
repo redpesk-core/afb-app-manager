@@ -17,4 +17,4 @@
 */
 
 extern int uninstall_widget(const char *idaver, const char *root);
-
+extern int uninstall_redpesk(const char *installdir);

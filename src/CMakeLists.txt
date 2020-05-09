@@ -197,3 +197,16 @@ endif()
 
 add_subdirectory(tests)
 
+###########################################################################
+# rpm plugin
+
+add_library(redpesk SHARED rpm-redpesk.c)
+set_target_properties(redpesk PROPERTIES PREFIX "")
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(RPM REQUIRED IMPORTED_TARGET rpm)
+pkg_check_modules(PROCPS REQUIRED IMPORTED_TARGET libprocps)
+
+target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS} ${PROCPS_LIBRARY_DIRS})
+target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} ${PROCPS_LIBRARIES} wgtpkg wgt secwrp utils afm)
+install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
