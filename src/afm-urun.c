@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <time.h>
 
 #include <json-c/json.h>
 
@@ -144,18 +145,29 @@ error:
 	return -1;
 }
 
-static const char *wait_state_stable(int isuser, const char *dpath)
+static enum SysD_State wait_state_stable(int isuser, const char *dpath)
 {
-	int trial, count;
-	const char *state = NULL;
+	int trial;
+	enum SysD_State state = SysD_State_INVALID;
+	struct timespec tispec;
+	const int period_ms = 10;
+	const int trial_s = 10;
+	const int trial_count = (trial_s * 1000) / period_ms;
+	const int period_ns = period_ms * 1000000;
 
-	count = 10;
-	for (trial = 1 ; trial <= count ; trial++) {
+	for (trial = 1 ; trial <= trial_count ; trial++) {
 		state = systemd_unit_state_of_dpath(isuser, dpath);
-		if (state == NULL || state == SysD_State_Active
-		 || state == SysD_State_Failed)
+		switch (state) {
+		case SysD_State_Active:
+		case SysD_State_Failed:
+		case SysD_State_Inactive:
 			return state;
-		sleep(1);
+		default:
+			tispec.tv_sec = 0;
+			tispec.tv_nsec = period_ns;
+			nanosleep(&tispec, NULL);
+			break;
+		}
 	}
 	return state;
 }
@@ -169,7 +181,7 @@ static const char *wait_state_stable(int isuser, const char *dpath)
  *
  * Returns the created object or NULL in case of error.
  */
-static json_object *mkstate(const char *id, int runid, int pid, const char *state)
+static json_object *mkstate(const char *id, int runid, int pid, enum SysD_State state)
 {
 	struct json_object *result, *pids;
 
@@ -239,7 +251,8 @@ int afm_urun_start(struct json_object *appli, int uid)
  */
 int afm_urun_once(struct json_object *appli, int uid)
 {
-	const char *udpath, *state, *uscope, *uname;
+	const char *udpath, *uscope, *uname;
+	enum SysD_State state;
 	int rc, isuser;
 
 	/* retrieve basis */
@@ -257,24 +270,28 @@ int afm_urun_once(struct json_object *appli, int uid)
 	}
 
 	state = wait_state_stable(isuser, udpath);
-	if (state == NULL) {
+	switch (state) {
+	case SysD_State_Active:
+	case SysD_State_Inactive:
+		break;
+	case SysD_State_Failed:
+		j_read_string_at(appli, "unit-scope", &uscope);
+		j_read_string_at(appli, "unit-name", &uname);
+		ERROR("start error %s unit %s for uid %d: %s", uscope, uname, uid,
+							systemd_state_name(state));
+		goto error;
+	default:
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
 		ERROR("can't wait %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
-	if (state != SysD_State_Active) {
-		j_read_string_at(appli, "unit-scope", &uscope);
-		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("start error %s unit %s for uid %d: %s", uscope, uname, uid, state);
-		goto error;
-	}
 
 	rc = systemd_unit_pid_of_dpath(isuser, udpath);
-	if (rc <= 0) {
+	if (rc < 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't getpid of %s unit %s for uid %d: %m", uscope, uname, uid);
+		ERROR("can't get pid of %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
 
@@ -334,7 +351,7 @@ struct json_object *afm_urun_list(struct afm_udb *db, int all, int uid)
 	int i, n, isuser, pid;
 	const char *udpath;
 	const char *id;
-	const char *state;
+	enum SysD_State state;
 	struct json_object *desc;
 	struct json_object *appli;
 	struct json_object *apps;
@@ -380,7 +397,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 	char *dpath;
 	const char *udpath;
 	const char *id;
-	const char *state;
+	enum SysD_State state;
 	struct json_object *appli;
 	struct json_object *apps;
 	struct json_object *result;

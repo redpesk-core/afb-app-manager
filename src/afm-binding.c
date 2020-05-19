@@ -402,7 +402,7 @@ static void start(afb_req_t req)
 
 	/* launch the application */
 	runid = afm_urun_start(appli, afb_req_get_uid(req));
-	if (runid <= 0) {
+	if (runid < 0) {
 		cant_start(req);
 		return;
 	}
@@ -412,7 +412,8 @@ static void start(afb_req_t req)
 #if 0
 	wrap_json_pack(&resp, "{si}", _runid_, runid);
 #else
-	wrap_json_pack(&resp, "i", runid);
+	if (runid)
+		wrap_json_pack(&resp, "i", runid);
 #endif
 	afb_req_success(req, resp, NULL);
 }
@@ -439,13 +440,13 @@ static void once(afb_req_t req)
 
 	/* launch the application */
 	runid = afm_urun_once(appli, afb_req_get_uid(req));
-	if (runid <= 0) {
+	if (runid < 0) {
 		cant_start(req);
 		return;
 	}
 
 	/* returns the state */
-	resp = afm_urun_state(afudb, runid, afb_req_get_uid(req));
+	resp = runid ? afm_urun_state(afudb, runid, afb_req_get_uid(req)) : NULL;
 	afb_req_success(req, resp, NULL);
 }
 

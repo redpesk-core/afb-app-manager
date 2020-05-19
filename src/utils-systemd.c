@@ -69,12 +69,15 @@ static const char sdbm_load_unit[] = "LoadUnit";
 static const char sdbp_active_state[] = "ActiveState";
 static const char sdbp_exec_main_pid[] = "ExecMainPID";
 
-const char SysD_State_Inactive[] = "inactive";
-const char SysD_State_Activating[] = "activating";
-const char SysD_State_Active[] = "active";
-const char SysD_State_Deactivating[] = "deactivating";
-const char SysD_State_Reloading[] = "reloading";
-const char SysD_State_Failed[] = "failed";
+static const char *sds_state_names[] = {
+	NULL,
+	"inactive",
+	"activating",
+	"active",
+	"deactivating",
+	"reloading",
+	"failed"
+};
 
 static struct sd_bus *sysbus;
 static struct sd_bus *usrbus;
@@ -257,34 +260,46 @@ static int unit_pid(struct sd_bus *bus, const char *dpath)
 	return rc < 0 ? rc : (int)u;
 }
 
-static const char *unit_state(struct sd_bus *bus, const char *dpath)
+static enum SysD_State unit_state(struct sd_bus *bus, const char *dpath)
 {
 	int rc;
 	char *st;
-	const char *resu;
+	enum SysD_State resu;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
+	resu = SysD_State_INVALID;
 	rc = sd_bus_get_property_string(bus, sdb_destination, dpath, sdbi_unit, sdbp_active_state, &err, &st);
 	if (rc < 0) {
 		errno = -rc;
-		resu = NULL;
 	} else {
-		if (!strcmp(st, SysD_State_Active))
-			resu = SysD_State_Active;
-		else if (!strcmp(st, SysD_State_Reloading))
-			resu = SysD_State_Reloading;
-		else if (!strcmp(st, SysD_State_Inactive))
-			resu = SysD_State_Inactive;
-		else if (!strcmp(st, SysD_State_Failed))
-			resu = SysD_State_Failed;
-		else if (!strcmp(st, SysD_State_Activating))
-			resu = SysD_State_Activating;
-		else if (!strcmp(st, SysD_State_Deactivating))
-			resu = SysD_State_Deactivating;
-		else {
-			errno = EBADMSG;
-			resu = NULL;
+		switch (st[0]) {
+		case 'a':
+			if (!strcmp(st, sds_state_names[SysD_State_Active]))
+				resu = SysD_State_Active;
+			else if (!strcmp(st, sds_state_names[SysD_State_Activating]))
+				resu = SysD_State_Activating;
+			break;
+		case 'd':
+			if (!strcmp(st, sds_state_names[SysD_State_Deactivating]))
+				resu = SysD_State_Deactivating;
+			break;
+		case 'f':
+			if (!strcmp(st, sds_state_names[SysD_State_Failed]))
+				resu = SysD_State_Failed;
+			break;
+		case 'i':
+			if (!strcmp(st, sds_state_names[SysD_State_Inactive]))
+				resu = SysD_State_Inactive;
+			break;
+		case 'r':
+			if (!strcmp(st, sds_state_names[SysD_State_Reloading]))
+				resu = SysD_State_Reloading;
+			break;
+		default:
+			break;
 		}
+		if (resu == NULL)
+			errno = EBADMSG;
 		free(st);
 	}
 	return resu;
@@ -591,12 +606,16 @@ int systemd_unit_pid_of_dpath(int isuser, const char *dpath)
 	return rc < 0 ? rc : unit_pid(bus, dpath);
 }
 
-const char *systemd_unit_state_of_dpath(int isuser, const char *dpath)
+enum SysD_State systemd_unit_state_of_dpath(int isuser, const char *dpath)
 {
 	int rc;
 	struct sd_bus *bus;
 
 	rc = systemd_get_bus(isuser, &bus);
-	return rc < 0 ? NULL : unit_state(bus, dpath);
+	return rc < 0 ? SysD_State_INVALID : unit_state(bus, dpath);
 }
 
+const char *systemd_state_name(enum SysD_State state)
+{
+	return sds_state_names[state];
+}
