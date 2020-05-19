@@ -18,12 +18,15 @@
 
 #pragma once
 
-extern const char SysD_State_Inactive[];
-extern const char SysD_State_Activating[];
-extern const char SysD_State_Active[];
-extern const char SysD_State_Deactivating[];
-extern const char SysD_State_Reloading[];
-extern const char SysD_State_Failed[];
+enum SysD_State {
+    SysD_State_INVALID,
+    SysD_State_Inactive,
+    SysD_State_Activating,
+    SysD_State_Active,
+    SysD_State_Deactivating,
+    SysD_State_Reloading,
+    SysD_State_Failed
+};
 
 struct sd_bus;
 extern int systemd_get_bus(int isuser, struct sd_bus **ret);
@@ -48,8 +51,10 @@ extern int systemd_unit_stop_name(int isuser, const char *name);
 extern int systemd_unit_stop_pid(int isuser, unsigned pid);
 
 extern int systemd_unit_pid_of_dpath(int isuser, const char *dpath);
-extern const char *systemd_unit_state_of_dpath(int isuser, const char *dpath);
+extern enum SysD_State systemd_unit_state_of_dpath(int isuser, const char *dpath);
 
 extern int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 extern int systemd_unit_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
+
+extern const char *systemd_state_name(enum SysD_State state);
 
