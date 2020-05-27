@@ -61,7 +61,7 @@ static int install(const char *dirname)
 	}
 	else {
 		systemd_daemon_reload(0);
-		systemd_unit_restart_name(0, "sockets.target");
+		systemd_unit_restart_name(0, "sockets.target", NULL);
 		sighup_afm_main();
 
 		/* clean-up */
