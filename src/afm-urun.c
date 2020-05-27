@@ -145,7 +145,7 @@ error:
 	return -1;
 }
 
-static enum SysD_State wait_state_stable(int isuser, const char *dpath)
+static enum SysD_State wait_state_stable(int isuser, const char *dpath, char *job)
 {
 	int trial;
 	enum SysD_State state = SysD_State_INVALID;
@@ -156,18 +156,24 @@ static enum SysD_State wait_state_stable(int isuser, const char *dpath)
 	const int period_ns = period_ms * 1000000;
 
 	for (trial = 1 ; trial <= trial_count ; trial++) {
-		state = systemd_unit_state_of_dpath(isuser, dpath);
-		switch (state) {
-		case SysD_State_Active:
-		case SysD_State_Failed:
-		case SysD_State_Inactive:
-			return state;
-		default:
-			tispec.tv_sec = 0;
-			tispec.tv_nsec = period_ns;
-			nanosleep(&tispec, NULL);
-			break;
+		if (job) {
+			if (!systemd_job_is_pending(isuser, job))
+				job = NULL;
 		}
+		if (!job) {
+			state = systemd_unit_state_of_dpath(isuser, dpath);
+			switch (state) {
+			case SysD_State_Active:
+			case SysD_State_Failed:
+			case SysD_State_Inactive:
+				return state;
+			default:
+				break;
+			}
+		}
+		tispec.tv_sec = 0;
+		tispec.tv_nsec = period_ns;
+		nanosleep(&tispec, NULL);
 	}
 	return state;
 }
@@ -254,6 +260,9 @@ int afm_urun_once(struct json_object *appli, int uid)
 	const char *udpath, *uscope, *uname;
 	enum SysD_State state;
 	int rc, isuser;
+	char *job;
+
+	job = NULL;
 
 	/* retrieve basis */
 	rc = get_basis(appli, &isuser, &udpath, uid);
@@ -261,7 +270,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 		goto error;
 
 	/* start the unit */
-	rc = systemd_unit_start_dpath(isuser, udpath);
+	rc = systemd_unit_start_dpath(isuser, udpath, &job);
 	if (rc < 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
@@ -269,7 +278,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 		goto error;
 	}
 
-	state = wait_state_stable(isuser, udpath);
+	state = wait_state_stable(isuser, udpath, job);
 	switch (state) {
 	case SysD_State_Active:
 	case SysD_State_Inactive:
@@ -295,9 +304,11 @@ int afm_urun_once(struct json_object *appli, int uid)
 		goto error;
 	}
 
+	free(job);
 	return rc;
 
 error:
+	free(job);
 	return -1;
 }
 
@@ -315,9 +326,9 @@ static int not_yet_implemented(const char *what)
  */
 int afm_urun_terminate(int runid, int uid)
 {
-	int rc = systemd_unit_stop_pid(1 /* TODO: isuser? */, (unsigned)runid);
+	int rc = systemd_unit_stop_pid(1 /* TODO: isuser? */, (unsigned)runid, NULL);
 	if (rc < 0)
-		rc = systemd_unit_stop_pid(0 /* TODO: isuser? */, (unsigned)runid);
+		rc = systemd_unit_stop_pid(0 /* TODO: isuser? */, (unsigned)runid, NULL);
 	return rc < 0 ? rc : 0;
 }
 

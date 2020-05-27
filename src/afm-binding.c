@@ -174,7 +174,7 @@ static struct json_object *json_true;
 static void do_reloads()
 {
 	systemd_daemon_reload(0);
-	systemd_unit_restart_name(0, "sockets.target");
+	systemd_unit_restart_name(0, "sockets.target", NULL);
 }
 
 /* common bad request reply */
