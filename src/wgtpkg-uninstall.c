@@ -130,3 +130,48 @@ int uninstall_widget(const char *idaver, const char *root)
 	return rc;
 }
 
+/* uninstall the widget of installdir */
+int uninstall_redpesk(const char *installdir)
+{
+	char path[PATH_MAX];
+	int rc, rc2;
+	struct unitconf uconf;
+	struct wgt_info *ifo;
+	const char *idaver = basename(installdir);
+
+	NOTICE("-- UNINSTALLING redpesk agl from %s  --", installdir);
+
+	/* removes the units */
+	ifo = wgt_info_createat(AT_FDCWD, installdir, 1, 1, 1);
+	if (!ifo) {
+		ERROR("can't read widget config in directory '%s': %m", installdir);
+		return -1;
+	}
+	uconf.installdir = installdir;
+	uconf.icondir = FWK_ICON_DIR;
+	uconf.new_afid = 0;
+	uconf.base_http_ports = 0;
+	unit_uninstall(ifo, &uconf);
+	wgt_info_unref(ifo);
+
+	/* let rpm remove app */
+
+	/* removes the icon of the application */
+	rc = snprintf(path, sizeof path, "%s/%s", FWK_ICON_DIR, idaver);
+	assert(rc < (int)sizeof path);
+	rc = unlink(path);
+	if (rc < 0 && errno != ENOENT)
+		ERROR("can't remove '%s': %m", path);
+
+	rc2 = secmgr_init(idaver);
+	if (rc2) {
+		ERROR("can't init security manager context");
+		return -1;
+	}
+	rc2 = secmgr_uninstall();
+	if (rc2) {
+		ERROR("can't uninstall security manager context");
+		return -1;
+	}
+	return rc;
+}

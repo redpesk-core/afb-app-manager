@@ -653,3 +653,65 @@ error1:
 	return NULL;
 }
 
+/* install redpesk from installdir widget directory */
+struct wgt_info *install_redpesk(const char *installdir)
+{
+	struct wgt_info *ifo;
+	const struct wgt_desc *desc;
+	int rc;
+	struct unitconf uconf;
+
+	NOTICE("-- Install redpesk widget from %s --", installdir);
+
+	set_workdir(installdir, 0);
+	fill_files();
+
+#if defined(ALLOW_NO_SIGNATURE)
+	rc = check_all_signatures(1);
+#else
+	rc = check_all_signatures(0);
+#endif
+	if (rc)
+		goto error2;
+
+	ifo = wgt_info_createat(workdirfd, NULL, 1, 1, 1);
+	if (!ifo)
+		goto error2;
+
+	reset_requested_permissions();
+	desc = wgt_info_desc(ifo);
+	if (check_widget(desc))
+		goto error3;
+
+	if (install_icon(desc))
+		goto error3;
+
+	if (install_security(desc))
+		goto error4;
+
+	if (install_exec_flag(desc))
+		goto error4;
+
+	if (install_file_properties(desc))
+		goto error4;
+
+	close(workdirfd);
+
+	uconf.installdir = installdir;
+	uconf.icondir = FWK_ICON_DIR;
+	uconf.new_afid = get_new_afid;
+	uconf.base_http_ports = HTTP_PORT_BASE;
+	if (unit_install(ifo, &uconf))
+		goto error4;
+
+	file_reset();
+	return ifo;
+
+error4:
+	/* TODO: cleanup */
+error3:
+	wgt_info_unref(ifo);
+error2:
+	file_reset();
+	return NULL;
+}
