@@ -1,5 +1,6 @@
 /*
  Copyright (C) 2015-2020 IoT.bzh
+ Copyright (C) 2020 Konsulko Group
 
  author: José Bollo <jose.bollo@iot.bzh>
 
@@ -42,7 +43,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	const char *at;
 #endif
 	char path[PATH_MAX];
-	int rc, rc2;
+	int rc;
 	struct unitconf uconf;
 	struct wgt_info *ifo;
 
@@ -95,14 +96,16 @@ int uninstall_widget(const char *idaver, const char *root)
 	rc = snprintf(path, sizeof path, "%s/%s", FWK_ICON_DIR, idaver);
 	assert(rc < (int)sizeof path);
 	rc = unlink(path);
-	if (rc < 0 && errno != ENOENT)
+	if (rc < 0 && errno != ENOENT) {
 		ERROR("can't remove '%s': %m", path);
+		return -1;
+	}
 
 #if DISTINCT_VERSIONS
 	/* removes the parent directory if empty */
-	rc2 = snprintf(path, sizeof path, "%s/%s", root, id);
-	assert(rc2 < (int)sizeof path);
-	rc2 = rmdir(path);
+	rc = snprintf(path, sizeof path, "%s/%s", root, id);
+	assert(rc < (int)sizeof path);
+	rc = rmdir(path);
 	if (rc < 0 && errno == ENOTEMPTY)
 		return rc;
 	if (rc < 0) {
@@ -114,19 +117,18 @@ int uninstall_widget(const char *idaver, const char *root)
 	 * parent directory removed: last occurrence of the application
 	 * uninstall it for the security-manager
 	 */
-	rc2 = secmgr_init(id);
+	rc = secmgr_init(id);
 #else
-	rc2 = secmgr_init(idaver);
+	rc = secmgr_init(idaver);
 #endif
-	if (rc2) {
+	if (rc) {
 		ERROR("can't init security manager context");
 		return -1;
 	}
-	rc2 = secmgr_uninstall();
-	if (rc2) {
+	rc = secmgr_uninstall();
+	if (rc) {
 		ERROR("can't uninstall security manager context");
 		return -1;
 	}
-	return rc;
+	return 0;
 }
-
