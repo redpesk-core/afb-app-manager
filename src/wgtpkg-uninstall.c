@@ -137,7 +137,7 @@ int uninstall_widget(const char *idaver, const char *root)
 int uninstall_redpesk(const char *installdir)
 {
 	char path[PATH_MAX];
-	int rc, rc2;
+	int rc;
 	struct unitconf uconf;
 	struct wgt_info *ifo;
 	const char *idaver = basename(installdir);
@@ -163,18 +163,20 @@ int uninstall_redpesk(const char *installdir)
 	rc = snprintf(path, sizeof path, "%s/%s", FWK_ICON_DIR, idaver);
 	assert(rc < (int)sizeof path);
 	rc = unlink(path);
-	if (rc < 0 && errno != ENOENT)
+	if (rc < 0 && errno != ENOENT) {
 		ERROR("can't remove '%s': %m", path);
+		return -1;
+	}
 
-	rc2 = secmgr_init(idaver);
-	if (rc2) {
+	rc = secmgr_init(idaver);
+	if (rc) {
 		ERROR("can't init security manager context");
 		return -1;
 	}
-	rc2 = secmgr_uninstall();
-	if (rc2) {
+	rc = secmgr_uninstall();
+	if (rc) {
 		ERROR("can't uninstall security manager context");
 		return -1;
 	}
-	return rc;
+	return 0;
 }
