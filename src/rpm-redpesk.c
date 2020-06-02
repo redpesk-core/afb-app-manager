@@ -20,6 +20,8 @@
 
 static const char *afm_system_daemon = "afm-system-daemon";
 
+static int reinstall = 0;
+
 static int sighup_afm_main()
 {
 	int rc = 0;
@@ -108,7 +110,7 @@ static rpmRC redpesk_psm_pre(rpmPlugin plugin, rpmte te)
 	int rc;
 
 	/* if transaction is not REMOVED, nothing to do */
-	if (rpmteType(te) != TR_REMOVED)
+	if (rpmteType(te) != TR_REMOVED || reinstall)
 		return RPMRC_OK;
 
 	char *dirname = lookingForConfigXml(te);
@@ -140,6 +142,9 @@ static rpmRC redpesk_psm_post(rpmPlugin plugin, rpmte te, int res)
 	/* if not found, nothing to do */
 	if (!dirname)
 		return RPMRC_OK;
+
+	/* needed if it is a reinstall process, in this case do not uninstall redpesk*/
+	reinstall = 1;
 
 	/* try to install redpesk */
 	if (install(dirname)) {
