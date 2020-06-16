@@ -48,6 +48,11 @@ ENDIF
 
 After=Network.target
 
+IF_PERM(:public:display)
+BindsTo=weston@display.service
+After=weston@display.service
+ENDIF
+
 # Adds check to smack
 ConditionSecurity=smack
 %nl
