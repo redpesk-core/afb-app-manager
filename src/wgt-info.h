@@ -47,6 +47,7 @@ struct wgt_desc_preference {
 struct wgt_desc {
 	int refcount;
 	char *id;
+	char *id_underscore;
 	char *version;
 	char *ver;
 	char *idaver;

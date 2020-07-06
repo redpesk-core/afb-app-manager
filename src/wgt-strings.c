@@ -28,6 +28,7 @@ const char string_height[] = "height";
 const char string_href[] = "href";
 const char string_icon[] = "icon";
 const char string_id[] = "id";
+const char string_id_underscore[] = "id-underscore";
 const char string_license[] = "license";
 const char string_name[] = "name";
 const char string_param[] = "param";

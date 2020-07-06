@@ -133,6 +133,18 @@ static void make_lowercase(char *s)
 	}
 }
 
+static void dash_to_underscore(char *s)
+{
+	if (s) {
+		while(*s) {
+			if(*s == '-') {
+				*s = '_';
+			}
+			s++;
+		}
+	}
+}
+
 static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, int want_preferences)
 {
 	xmlNodePtr node, pnode;
@@ -149,6 +161,9 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	}
 	desc->id = xmlGetProp(node, string_id);
 	make_lowercase(desc->id);
+	desc->id_underscore = strdup(desc->id);
+	dash_to_underscore(desc->id_underscore);
+
 	desc->version = xmlGetProp(node, string_version);
 	desc->ver = mkver(desc->version);
 	make_lowercase(desc->ver);
@@ -298,6 +313,7 @@ static void free_desc(struct wgt_desc *desc)
 	struct wgt_desc_param *param;
 
 	xmlFree(desc->id);
+	free(desc->id_underscore);
 	xmlFree(desc->version);
 	free(desc->ver);
 	free(desc->idaver);
@@ -353,6 +369,7 @@ static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
 	struct wgt_desc_param *param;
 
 	if (desc->id) fprintf(f, "%sid: %s\n", prefix, desc->id);
+	if (desc->id_underscore) fprintf(f, "%sid-underscore: %s\n", prefix, desc->id_underscore);
 	if (desc->version) fprintf(f, "%sversion: %s\n", prefix, desc->version);
 	if (desc->ver) fprintf(f, "%sver: %s\n", prefix, desc->ver);
 	if (desc->idaver) fprintf(f, "%sidaver: %s\n", prefix, desc->idaver);
