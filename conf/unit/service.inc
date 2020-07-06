@@ -86,6 +86,7 @@ After=UNIT_NAME_API_SOCKET({{name}})
 EnvironmentFile=-@afm_confdir@/unit.env.d/*
 EnvironmentFile=-@afm_confdir@/widget.env.d/{{:id}}/*
 SmackProcessLabel=SMACKLABEL
+SELinuxContext=SELINUXLABEL
 SuccessExitStatus=0 SIGKILL
 UMask=0077
 
