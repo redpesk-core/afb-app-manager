@@ -485,21 +485,59 @@ static int install_file_properties(const struct wgt_desc *desc)
 	return rc;
 }
 
+static int is_path_public(const char *path, const struct wgt_desc *desc)
+{
+	const struct wgt_desc_icon *icon;
+	const struct wgt_desc_feature *feat;
+	const struct wgt_desc_param *param;
+	size_t len;
+
+	/* icons are public */
+	icon = desc->icons;
+	while (icon != NULL) {
+		len = strlen(icon->src);
+		if (!memcmp(path, icon->src, len) && (path[len] == 0 || path[len] == '/'))
+			return 1;
+		icon = icon->next;
+	}
+
+	/* provided bindings are public */
+	feat = desc->features;
+	while (feat != NULL) {
+		if (strcasecmp(feat->name, "urn:AGL:widget:provided-binding") == 0
+		 || strcasecmp(feat->name, "urn:AGL:widget:public-files") == 0) {
+			param = feat->params;
+			while(param != NULL) {
+				if (strcmp(param->value, path) == 0)
+					return 1;
+				param = param->next;
+			}
+		}
+		feat = feat->next;
+	}
+
+	/* otherwise no */
+	return 0;
+}
+
 static int install_security(const struct wgt_desc *desc)
 {
 	char path[PATH_MAX], *head;
-	const char *icon, *perm;
-	int rc;
-	unsigned int i, n, len, lic, lf;
+	const char *perm;
+	int rc, public;
+	unsigned int i, n, len, lf, j;
 	struct filedesc *f;
+	struct pathent {
+		struct pathent *next;
+		unsigned int len;
+		int public;
+		char name[];
+	} *pe0, *pe2, *ppe;
 
+	pe0 = NULL;
 	rc = secmgr_init(desc->id);
 	if (rc)
 		goto error;
-
-	rc = secmgr_path_public_read_only(workdir);
-	if (rc)
-		goto error2;
 
 	/* instal the files */
 	head = stpcpy(path, workdir);
@@ -512,23 +550,78 @@ static int install_security(const struct wgt_desc *desc)
 	}
 	len--;
 	*head++ = '/';
-	icon = desc->icons ? desc->icons->src : NULL;
-	lic = (unsigned)(icon ? strlen(icon) : 0);
+
+	/* build root entry */
+	pe0 = malloc(1 + sizeof *pe0);
+	if (pe0 == NULL)
+		goto error2;
+	pe0->next = NULL;
+	pe0->len = 0;
+	pe0->public = 0;
+	pe0->name[0] = 0;
+
+	/* build list of entries */
 	n = file_count();
-	i = 0;
-	while(i < n) {
-		f = file_of_index(i++);
-		lf = (unsigned)strlen(f->name);
-		if (lf >= len) {
-			ERROR("path too long in install_security");
-			errno = ENAMETOOLONG;
-			goto error2;
+	for (i = 0 ; i < n ; i++) {
+		f = file_of_index(i);
+		public = is_path_public(f->name, desc);
+		pe0->public |= public;
+		lf = j = 0;
+		while(f->name[j] == '/')
+			j++;
+		while (f->name[j] != 0) {
+			/* copy next entry of the path */
+			while(f->name[j] && f->name[j] != '/') {
+				if (lf + 1 >= len) {
+					ERROR("path too long in install_security");
+					errno = ENAMETOOLONG;
+					goto error2;
+				}
+				head[lf++] = f->name[j++];
+			}
+			head[lf] = 0;
+
+			/* search if it already exists */
+			ppe = pe0;
+			pe2 = pe0->next;
+			while (pe2 != NULL && pe2->len < lf) {
+				ppe = pe2;
+				pe2 = pe2->next;
+			}
+			while (pe2 != NULL && pe2->len == lf && strcmp(head, pe2->name)) {
+				ppe = pe2;
+				pe2 = pe2->next;
+			}
+
+			if (pe2 != NULL && pe2->len == lf)
+				/* existing, update public status */
+				pe2->public |= public;
+			else {
+				/* not existing, create it */
+				pe2 = malloc(lf + 1 + sizeof *pe2);
+				if (pe2 == NULL)
+					goto error2;
+				pe2->next = ppe->next;
+				pe2->len = lf;
+				pe2->public = public;
+				memcpy(pe2->name, head, 1 + lf);
+				ppe->next = pe2;
+			}
+
+			/* prepare next path entry */
+			head[lf++] = '/';	
+			while(f->name[j] == '/')
+				j++;
 		}
-		strcpy(head, f->name);
-		if (lf <= lic && icon && !memcmp(f->name, icon, lf) && (!f->name[lf] || f->name[lf] == '/'))
+	}
+
+	/* set the path entries */
+	for (pe2 = pe0 ; pe2 != NULL ; pe2 = pe2->next) {
+		strcpy(head, pe2->name);
+		if (pe2->public)
 			rc = secmgr_path_public_read_only(path);
 		else
-			rc = secmgr_path_read_only(path);
+			rc = secmgr_path_private(path);
 		if (rc)
 			goto error2;
 	}
@@ -554,11 +647,19 @@ static int install_security(const struct wgt_desc *desc)
 	}
 
 	rc = secmgr_install();
-	return rc;
+	goto end;
 error2:
 	secmgr_cancel();
 error:
-	return -1;
+	rc = -1;
+end:
+	/* free memory of path entries */
+	while (pe0 != NULL) {
+		ppe = pe0;
+		pe0 = pe0->next;
+		free(ppe);
+	}
+	return rc;
 }
 
 /* install the widget of the file */

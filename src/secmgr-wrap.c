@@ -117,7 +117,7 @@ static int addpath(const char *pathname, enum app_install_path_type type)
 
 int secmgr_path_public_read_only(const char *pathname)
 {
-	return addpath(pathname, SECURITY_MANAGER_PATH_RO);
+	return addpath(pathname, SECURITY_MANAGER_PATH_PUBLIC_RO);
 }
 
 int secmgr_path_read_only(const char *pathname)
@@ -128,6 +128,11 @@ int secmgr_path_read_only(const char *pathname)
 int secmgr_path_read_write(const char *pathname)
 {
 	return addpath(pathname, SECURITY_MANAGER_PATH_RW);
+}
+
+int secmgr_path_private(const char *pathname)
+{
+	return addpath(pathname, SECURITY_MANAGER_PATH_PRIVATE);
 }
 
 int secmgr_prepare_exec(const char *appid)

@@ -24,5 +24,6 @@ extern int secmgr_permit(const char *permission);
 extern int secmgr_path_public_read_only(const char *pathname);
 extern int secmgr_path_read_only(const char *pathname);
 extern int secmgr_path_read_write(const char *pathname);
+extern int secmgr_path_private(const char *pathname);
 
 extern int secmgr_prepare_exec(const char *appid);
