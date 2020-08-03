@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 #include "verbose.h"
 #include "utils-dir.h"
@@ -140,6 +141,7 @@ int uninstall_redpesk(const char *installdir)
 	int rc;
 	struct unitconf uconf;
 	struct wgt_info *ifo;
+	char *id = NULL;
 	const char *idaver = basename(installdir);
 
 	NOTICE("-- UNINSTALLING redpesk agl from %s  --", installdir);
@@ -150,6 +152,18 @@ int uninstall_redpesk(const char *installdir)
 		ERROR("can't read widget config in directory '%s': %m", installdir);
 		return -1;
 	}
+
+	if(!(wgt_info_desc(ifo)->id)) {
+		ERROR("can't get id");
+		return -1;
+	}
+
+	id = strdup(wgt_info_desc(ifo)->id);
+	if(!id) {
+		ERROR("can't alloc id");
+		return -1;
+	}
+
 	uconf.installdir = installdir;
 	uconf.icondir = FWK_ICON_DIR;
 	uconf.new_afid = 0;
@@ -165,10 +179,14 @@ int uninstall_redpesk(const char *installdir)
 	rc = unlink(path);
 	if (rc < 0 && errno != ENOENT) {
 		ERROR("can't remove '%s': %m", path);
+		free(id);
+		id = NULL;
 		return -1;
 	}
 
-	rc = secmgr_init(idaver);
+	rc = secmgr_init(id);
+	free(id);
+	id = NULL;
 	if (rc) {
 		ERROR("can't init security manager context");
 		return -1;
