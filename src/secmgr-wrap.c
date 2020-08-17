@@ -20,123 +20,128 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "verbose.h"
+#include "secmgr-wrap.h"
+
 #if SIMULATE_SECURITY_MANAGER
 #include "simulation/security-manager.h"
 #else
 #include <security-manager.h>
 #endif
 
-#include "verbose.h"
-#include "secmgr-wrap.h"
+static security_manager_handle_t *sm_handle = NULL;
 
-static app_inst_req *request = NULL;
-
-static int retcode(enum lib_retcode rc)
+static int retcode(int rc)
 {
-	switch (rc) {
-	case SECURITY_MANAGER_SUCCESS: return 0;
-	case SECURITY_MANAGER_ERROR_INPUT_PARAM: errno = EINVAL; break;
-	case SECURITY_MANAGER_ERROR_MEMORY: errno = ENOMEM; break;
-	case SECURITY_MANAGER_ERROR_REQ_NOT_COMPLETE: errno = EBADMSG; break;
-	case SECURITY_MANAGER_ERROR_AUTHENTICATION_FAILED: errno = EPERM; break;
-	case SECURITY_MANAGER_ERROR_ACCESS_DENIED: errno = EACCES; break;
-	default: errno = ECANCELED; break;
+	if(rc < 0) {
+		errno = -rc;
+		return -1;
 	}
-	return -1;
+	return 0;
 }
 
 int secmgr_init(const char *id)
 {
 	int rc;
-	assert(request == NULL);
-	rc = security_manager_app_inst_req_new(&request);
-	if (rc != SECURITY_MANAGER_SUCCESS)
-		ERROR("security_manager_app_inst_req_new failed");
-	else {
-		rc = security_manager_app_inst_req_set_pkg_id(request, id);
-		if (rc != SECURITY_MANAGER_SUCCESS)
-			ERROR("security_manager_app_inst_req_set_pkg_id failed");
-		else {
-			rc = security_manager_app_inst_req_set_app_id(request, id);
-			if (rc != SECURITY_MANAGER_SUCCESS)
-				ERROR("security_manager_app_inst_req_set_app_id failed");
-		}
+	assert(sm_handle == NULL);
+
+	rc = security_manager_create(&sm_handle, NULL);
+
+	if(rc < 0) {
+		ERROR("security_manager_create failed");
+		goto ret;
 	}
-	if (rc != SECURITY_MANAGER_SUCCESS)
-		secmgr_cancel();
+
+	rc = security_manager_set_id(sm_handle, id);
+
+	if(rc < 0) {
+		ERROR("security_manager_set_id failed");
+		goto error;
+	}
+
+	goto ret;
+
+error:
+	secmgr_cancel();
+ret:
 	return retcode(rc);
 }
 
 void secmgr_cancel()
 {
-	security_manager_app_inst_req_free(request);
-	request = NULL;
+	security_manager_destroy(sm_handle);
+	sm_handle = NULL;
 }
 
 int secmgr_install()
 {
 	int rc;
-	assert(request != NULL);
-	rc = security_manager_app_install(request);
-	if (rc != SECURITY_MANAGER_SUCCESS)
-		ERROR("security_manager_app_install failed");
-	secmgr_cancel();
+	assert(sm_handle != NULL);
+	rc = security_manager_install(sm_handle);
+	if (rc < 0)
+		ERROR("security_manager_install failed %d %s", -rc, strerror(-rc));
 	return retcode(rc);
 }
 
 int secmgr_uninstall()
 {
 	int rc;
-	assert(request != NULL);
-	rc = security_manager_app_uninstall(request);
-	if (rc != SECURITY_MANAGER_SUCCESS)
-		ERROR("security_manager_app_uninstall failed");
-	secmgr_cancel();
+	assert(sm_handle != NULL);
+	rc = security_manager_uninstall(sm_handle);
+	if (rc < 0)
+		ERROR("security_manager_uninstall failed");
 	return retcode(rc);
 }
 
 int secmgr_permit(const char *permission)
 {
 	int rc;
-	assert(request != NULL);
-	rc = security_manager_app_inst_req_add_privilege(request, permission);
-	if (rc != SECURITY_MANAGER_SUCCESS)
-		ERROR("security_manager_app_inst_add_privilege %s failed", permission);
+	assert(sm_handle != NULL);
+	rc = security_manager_add_permission(sm_handle, permission);
+	if (rc < 0)
+		ERROR("security_manager_add_permission %s failed", permission);
 	return retcode(rc);
 }
 
-static int addpath(const char *pathname, enum app_install_path_type type)
+static int addpath(const char *pathname, const char *path_type)
 {
 	int rc;
-	assert(request != NULL);
-	rc = security_manager_app_inst_req_add_path(request, pathname, type);
-	if (rc != SECURITY_MANAGER_SUCCESS)
-		ERROR("security_manager_app_inst_add_path %s failed", pathname);
+	assert(sm_handle != NULL);
+	rc = security_manager_add_path(sm_handle, pathname, path_type);
+	if (rc < 0)
+		ERROR("security_manager_add_path %s failed", pathname);
 	return retcode(rc);
 }
 
-int secmgr_path_public_read_only(const char *pathname)
-{
-	return addpath(pathname, SECURITY_MANAGER_PATH_PUBLIC_RO);
+int secmgr_path_conf(const char *pathname){
+	return addpath(pathname, "conf");
 }
 
-int secmgr_path_read_only(const char *pathname)
-{
-	return addpath(pathname, SECURITY_MANAGER_PATH_RO);
+int secmgr_path_data(const char *pathname){
+	return addpath(pathname, "data");
 }
 
-int secmgr_path_read_write(const char *pathname)
-{
-	return addpath(pathname, SECURITY_MANAGER_PATH_RW);
+int secmgr_path_exec(const char *pathname){
+	return addpath(pathname, "exec");
 }
 
-int secmgr_path_private(const char *pathname)
-{
-	return addpath(pathname, SECURITY_MANAGER_PATH_PRIVATE);
+int secmgr_path_http(const char *pathname){
+	return addpath(pathname, "http");
 }
 
-int secmgr_prepare_exec(const char *appid)
-{
-	return retcode(security_manager_prepare_app(appid));
+int secmgr_path_icon(const char *pathname){
+	return addpath(pathname, "icon");
+}
+
+int secmgr_path_lib(const char *pathname){
+	return addpath(pathname, "lib");
+}
+
+int secmgr_path_public(const char *pathname){
+	return addpath(pathname, "public");
+}
+
+int secmgr_path_id(const char *pathname){
+	return addpath(pathname, "id");
 }
 

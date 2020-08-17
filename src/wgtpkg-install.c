@@ -485,7 +485,47 @@ static int install_file_properties(const struct wgt_desc *desc)
 	return rc;
 }
 
-static int is_path_public(const char *path, const struct wgt_desc *desc)
+enum path_type {
+    type_none,
+    type_conf,
+    type_data,
+    type_exec,
+    type_http,
+    type_icon,
+    type_id,
+    type_lib,
+    type_public,
+    number_path_type
+};
+
+struct pathent {
+		struct pathent *next;
+		unsigned int len;
+		enum path_type pathtype;
+		char name[];
+};
+
+
+static int search_param(const struct wgt_desc_param *param, const char *path)
+{
+	while(param != NULL) {
+		if (!strcmp(param->value, path))
+		{
+			return 1;
+		}
+		param = param->next;
+	}
+	return 0;
+}
+
+static int strpos(const char *string, const char *search)
+{
+	char *p = strstr(string, search);
+	if(!p) return -1;
+	return (int) (p - string);
+}
+
+static int set_pathtype(const char *path, const struct wgt_desc *desc, enum path_type *pathtype)
 {
 	const struct wgt_desc_icon *icon;
 	const struct wgt_desc_feature *feat;
@@ -497,47 +537,82 @@ static int is_path_public(const char *path, const struct wgt_desc *desc)
 	while (icon != NULL) {
 		len = strlen(icon->src);
 		if (!memcmp(path, icon->src, len) && (path[len] == 0 || path[len] == '/'))
-			return 1;
+		{
+			*pathtype = type_icon;
+			return 0;
+		}
 		icon = icon->next;
 	}
 
-	/* provided bindings are public */
+	// browse through features
 	feat = desc->features;
 	while (feat != NULL) {
-		if (strcasecmp(feat->name, "urn:AGL:widget:provided-binding") == 0
-		 || strcasecmp(feat->name, "urn:AGL:widget:public-files") == 0) {
-			param = feat->params;
-			while(param != NULL) {
-				if (strcmp(param->value, path) == 0)
-					return 1;
-				param = param->next;
-			}
+		param = feat->params;
+
+		if (!strcasecmp(feat->name, "urn:AGL:widget:provided-binding") /* provided bindings are public */
+			|| !strcasecmp(feat->name, "urn:AGL:widget:public-files")) {
+			*pathtype = search_param(param, path) ? type_public : type_none;
+		} else if (strcasecmp(feat->name, "urn:AGL:widget:lib-files")) {
+			*pathtype = search_param(param, path) ? type_lib : type_none;
+		} else if (strcasecmp(feat->name, "urn:AGL:widget:conf-files")) {
+			*pathtype = search_param(param, path) ? type_conf: type_none;
+		} else if (strcasecmp(feat->name, "urn:AGL:widget:exec-files")) {
+			*pathtype = search_param(param, path) ? type_exec : type_none;
+		} else if (strcasecmp(feat->name, "urn:AGL:widget:data-files")) {
+			*pathtype = search_param(param, path) ? type_data: type_none;
+		} else if (strcasecmp(feat->name, "urn:AGL:widget:http-files")) {
+			*pathtype = search_param(param, path) ? type_http : type_none;
 		}
+
+		if(*pathtype != type_none)
+		{
+			return 0;
+		}
+
 		feat = feat->next;
 	}
 
-	/* otherwise no */
-	return 0;
+	if(!strpos(path, "bin")) {
+		*pathtype = type_exec;
+	} else if(!strpos(path, "etc")) {
+		*pathtype = type_conf;
+	} else if(!strpos(path, "conf")) {
+		*pathtype = type_conf;
+	} else if(!strpos(path, "lib")) {
+		*pathtype = type_lib;
+	} else if(!strpos(path, "var")) {
+		*pathtype = type_data;
+	} else if(!strpos(path, "htdocs")) {
+		*pathtype = type_http;
+	} else if(!strpos(path, "public")) {
+		*pathtype = type_public;
+	}
+
+	if(*pathtype != type_none)
+	{
+		return 0;
+	}
+
+	return -1;
 }
 
 static int install_security(const struct wgt_desc *desc)
 {
 	char path[PATH_MAX], *head;
 	const char *perm;
-	int rc, public;
+	int rc;
+	enum path_type pathtype;
 	unsigned int i, n, len, lf, j;
 	struct filedesc *f;
-	struct pathent {
-		struct pathent *next;
-		unsigned int len;
-		int public;
-		char name[];
-	} *pe0, *pe2, *ppe;
+	struct pathent *pe0, *pe2, *ppe;
 
 	pe0 = NULL;
 	rc = secmgr_init(desc->id);
 	if (rc)
-		goto error;
+	{
+		rc = -1;
+		goto end;
+	}
 
 	/* instal the files */
 	head = stpcpy(path, workdir);
@@ -546,7 +621,7 @@ static int install_security(const struct wgt_desc *desc)
 	if (!len) {
 		ERROR("root path too long in install_security");
 		errno = ENAMETOOLONG;
-		goto error2;
+		goto error;
 	}
 	len--;
 	*head++ = '/';
@@ -554,18 +629,27 @@ static int install_security(const struct wgt_desc *desc)
 	/* build root entry */
 	pe0 = malloc(1 + sizeof *pe0);
 	if (pe0 == NULL)
-		goto error2;
+		goto error;
 	pe0->next = NULL;
 	pe0->len = 0;
-	pe0->public = 0;
+	pe0->pathtype = type_id;
 	pe0->name[0] = 0;
 
 	/* build list of entries */
 	n = file_count();
 	for (i = 0 ; i < n ; i++) {
 		f = file_of_index(i);
-		public = is_path_public(f->name, desc);
-		pe0->public |= public;
+		rc = set_pathtype(f->name, desc, &pathtype);
+
+		if(rc < 0) {
+			ERROR("invalid pathtype for %s", f->name);
+			goto error;
+		}
+
+		// if one soon path is public root path is public
+		if(pathtype == type_public)
+			pe0->pathtype = type_public;
+
 		lf = j = 0;
 		while(f->name[j] == '/')
 			j++;
@@ -575,7 +659,7 @@ static int install_security(const struct wgt_desc *desc)
 				if (lf + 1 >= len) {
 					ERROR("path too long in install_security");
 					errno = ENAMETOOLONG;
-					goto error2;
+					goto error;
 				}
 				head[lf++] = f->name[j++];
 			}
@@ -593,17 +677,19 @@ static int install_security(const struct wgt_desc *desc)
 				pe2 = pe2->next;
 			}
 
-			if (pe2 != NULL && pe2->len == lf)
-				/* existing, update public status */
-				pe2->public |= public;
+			if (pe2 != NULL && pe2->len == lf) {
+				/* existing, update pathtype */
+				if(pe2->pathtype != type_public)
+					pe2->pathtype = pathtype;
+			}
 			else {
 				/* not existing, create it */
 				pe2 = malloc(lf + 1 + sizeof *pe2);
 				if (pe2 == NULL)
-					goto error2;
+					goto error;
 				pe2->next = ppe->next;
 				pe2->len = lf;
-				pe2->public = public;
+				pe2->pathtype = pathtype;
 				memcpy(pe2->name, head, 1 + lf);
 				ppe->next = pe2;
 			}
@@ -618,12 +704,41 @@ static int install_security(const struct wgt_desc *desc)
 	/* set the path entries */
 	for (pe2 = pe0 ; pe2 != NULL ; pe2 = pe2->next) {
 		strcpy(head, pe2->name);
-		if (pe2->public)
-			rc = secmgr_path_public_read_only(path);
-		else
-			rc = secmgr_path_private(path);
+
+		switch (pe2->pathtype)
+		{
+		case type_public:
+			rc = secmgr_path_public(path);
+			break;
+		case type_id:
+			rc = secmgr_path_id(path);
+			break;
+		case type_lib:
+			rc = secmgr_path_lib(path);
+			break;
+		case type_conf:
+			rc = secmgr_path_conf(path);
+			break;
+		case type_exec:
+			rc = secmgr_path_exec(path);
+			break;
+		case type_icon:
+			rc = secmgr_path_icon(path);
+			break;
+		case type_data:
+			rc = secmgr_path_data(path);
+			break;
+		case type_http:
+			rc = secmgr_path_http(path);
+			break;
+		default:
+			ERROR("unknow path : %s", path);
+			rc = -1;
+			break;
+		}
+
 		if (rc)
-			goto error2;
+			goto error;
 	}
 
 	/* install the permissions */
@@ -632,7 +747,7 @@ static int install_security(const struct wgt_desc *desc)
 		rc = secmgr_permit(perm);
 		INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
 		if (rc)
-			goto error2;
+			goto error;
 		perm = next_usable_permission();
 	}
 
@@ -643,15 +758,16 @@ static int install_security(const struct wgt_desc *desc)
 		rc = secmgr_permit(perm);
 		INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
 		if (rc)
-			goto error2;
+			goto error;
 	}
 
 	rc = secmgr_install();
-	goto end;
-error2:
-	secmgr_cancel();
+	goto end2;
+
 error:
 	rc = -1;
+end2:
+	secmgr_cancel();
 end:
 	/* free memory of path entries */
 	while (pe0 != NULL) {

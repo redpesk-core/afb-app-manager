@@ -127,6 +127,7 @@ int uninstall_widget(const char *idaver, const char *root)
 		return -1;
 	}
 	rc = secmgr_uninstall();
+	secmgr_cancel();
 	if (rc) {
 		ERROR("can't uninstall security manager context");
 		return -1;
@@ -192,6 +193,7 @@ int uninstall_redpesk(const char *installdir)
 		return -1;
 	}
 	rc = secmgr_uninstall();
+	secmgr_cancel();
 	if (rc) {
 		ERROR("can't uninstall security manager context");
 		return -1;

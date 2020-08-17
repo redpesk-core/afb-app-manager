@@ -120,7 +120,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 		ERROR("calloc failed in get_filedesc");
 		return NULL;
 	}
-
+	memset(result, 0, sizeof(struct filedesc) + strlen(name));
 	/* initialisation */
 	result->type = type_unset;
 	result->flags = sig == 0 ? 0 : sig == UINT_MAX ? flag_author_signature : flag_distributor_signature;
