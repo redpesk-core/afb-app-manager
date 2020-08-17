@@ -15,16 +15,16 @@ dodir() {
 	done
 }
 
-dodir '-T -a User::App-Shared' "$udir"
-dodir '-t -a User::App-Shared' "$udir/usrshr"
-dodir '-T -a System::Shared' "$udir/apis"
-dodir '-t -a System::Shared' "$udir/apis/ws" "$udir/apis/link"
+dodir '-T -a User:App-Shared' "$udir"
+dodir '-t -a User:App-Shared' "$udir/usrshr"
+dodir '-T -a System:Shared' "$udir/apis"
+dodir '-t -a System:Shared' "$udir/apis/ws" "$udir/apis/link"
 
 doln() {
 	if ! test -e "$2"; then
 		ln -sf "$1" "$2"
 		chown -h "$uid:$uid" "$2"
-		chsmack -a 'System::Shared' "$2"
+		chsmack -a 'System:Shared' "$2"
 	fi
 }
 

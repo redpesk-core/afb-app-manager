@@ -6,7 +6,7 @@ dodir() {
 	for x; do
 		test -e "$x" || mkdir -m 755  "$x"
 		chmod 755 "$x"
-		chsmack -T -a 'System::Shared' "$x"
+		chsmack -T -a 'System:Shared' "$x"
 	done
 }
 
@@ -17,6 +17,6 @@ dodir /run/user $pdir $pdir/display $pdir/apis $pdir/apis/ws $pdir/apis/link
 spdir=@afm_scope_platform_dir@
 if ! test -e $spdir; then
 	mkdir -m 755 $spdir
-	chsmack -T -a 'User::App-Shared' $spdir
+	chsmack -T -a 'User:App-Shared' $spdir
 	chown daemon:daemon $spdir
 fi

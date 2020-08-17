@@ -45,7 +45,7 @@ define( `IF_NOT_VALUE', `MUSTACH_IF_NOT(value=$1)')
 --  instead of TARGET={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 --------------------------------------------------------------------------------
 define( `AFID', `{{:#metatarget.afid}}')
-define( `SMACKLABEL', `User::App::{{:id}}')
+define( `SMACKLABEL', `App:{{:id}}')
 define( `SELINUXLABEL', `system_u:system_r:{{:id-underscore}}_t:s0')
 define( `TARGET', `{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}')
 define( `NEWTARGET', `{{:id}}--{{:ver}}--{{:#target}}')

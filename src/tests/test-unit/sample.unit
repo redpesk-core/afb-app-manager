@@ -28,7 +28,7 @@ After=afm-api-{{name}}
 %nl
 
 [Service]
-SmackProcessLabel=User::App::{{id}}
+SmackProcessLabel=App:{{id}}
 
 {{#required-permission.dict}}
   {{#urn:AGL:permission::platform:no-oom}}      OOMScoreAdjust=-500             {{/urn:AGL:permission::platform:no-oom}}

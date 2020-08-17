@@ -50,7 +50,7 @@ set(afm_appdir              "${afm_datadir}/applications" CACHE STRING "Director
 set(afm_icondir             "${afm_datadir}/icons" CACHE STRING "Directory for installing icons")
 set(afm_prefix              "urn:AGL:" CACHE STRING "Prefix for uniform resource name")
 set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for applications")
-set(afm_user_appdir_label   "User::App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
+set(afm_user_appdir_label   "User:App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
 set(systemd_units_root      "${CMAKE_INSTALL_FULL_LIBDIR}/systemd" CACHE STRING "Place where unit files are to be set")
 set(wgtpkg_trusted_certs_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
 set(wgtpkg_sample_keys_dir  "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}/keys" CACHE STRING "Path to internal keys")
