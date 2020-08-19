@@ -56,6 +56,7 @@ static const char sdb_destination[] = "org.freedesktop.systemd1";
 static const char sdbi_manager[] = "org.freedesktop.systemd1.Manager";
 static const char sdbi_unit[] = "org.freedesktop.systemd1.Unit";
 static const char sdbi_service[] = "org.freedesktop.systemd1.Service";
+static const char sdbi_job[] = "org.freedesktop.systemd1.Job";
 static const char sdbm_reload[] = "Reload";
 static const char sdbm_start_unit[] = "StartUnit";
 static const char sdbm_restart_unit[] = "RestartUnit";
@@ -68,6 +69,7 @@ static const char sdbm_get_unit_by_pid[] = "GetUnitByPID";
 static const char sdbm_load_unit[] = "LoadUnit";
 static const char sdbp_active_state[] = "ActiveState";
 static const char sdbp_exec_main_pid[] = "ExecMainPID";
+static const char sdbp_state[] = "State";
 
 static const char *sds_state_names[] = {
 	NULL,
@@ -298,77 +300,123 @@ static enum SysD_State unit_state(struct sd_bus *bus, const char *dpath)
 		default:
 			break;
 		}
-		if (resu == NULL)
+		if (resu == SysD_State_INVALID)
 			errno = EBADMSG;
 		free(st);
 	}
 	return resu;
 }
 
-static int unit_start(struct sd_bus *bus, const char *dpath)
+static int get_job_from_reply(struct sd_bus_message *reply, char **job)
+{
+	int rc;
+	char *obj;
+
+	rc = sd_bus_message_read_basic(reply, 'o', &obj);
+	if (!job)
+		rc = 0;
+	else {
+		if (rc < 0)
+			obj = NULL;
+		else {
+			obj = strdup(obj);
+			if (obj == NULL)
+				rc = -ENOMEM;
+		}
+		*job = obj;
+	}
+	return rc;
+}
+
+static int unit_start(struct sd_bus *bus, const char *dpath, char **job)
 {
 	int rc;
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, dpath, sdbi_unit, sdbm_start, &err, &ret, "s", "replace");
+	if (rc >= 0)
+		rc = get_job_from_reply(ret, job);
 	sd_bus_message_unref(ret);
 	return rc;
 }
 
-static int unit_restart(struct sd_bus *bus, const char *dpath)
+static int unit_restart(struct sd_bus *bus, const char *dpath, char **job)
 {
 	int rc;
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, dpath, sdbi_unit, sdbm_restart, &err, &ret, "s", "replace");
+	if (rc >= 0)
+		rc = get_job_from_reply(ret, job);
 	sd_bus_message_unref(ret);
 	return rc;
 }
 
-static int unit_stop(struct sd_bus *bus, const char *dpath)
+static int unit_stop(struct sd_bus *bus, const char *dpath, char **job)
 {
 	int rc;
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, dpath, sdbi_unit, sdbm_stop, &err, &ret, "s", "replace");
+	if (rc >= 0)
+		rc = get_job_from_reply(ret, job);
 	sd_bus_message_unref(ret);
 	return rc;
 }
 
-static int unit_start_name(struct sd_bus *bus, const char *name)
+static int unit_start_name(struct sd_bus *bus, const char *name, char **job)
 {
 	int rc;
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_start_unit, &err, &ret, "ss", name, "replace");
+	if (rc >= 0)
+		rc = get_job_from_reply(ret, job);
 	sd_bus_message_unref(ret);
 	return rc;
 }
 
-static int unit_restart_name(struct sd_bus *bus, const char *name)
+static int unit_restart_name(struct sd_bus *bus, const char *name, char **job)
 {
 	int rc;
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_restart_unit, &err, &ret, "ss", name, "replace");
+	if (rc >= 0)
+		rc = get_job_from_reply(ret, job);
 	sd_bus_message_unref(ret);
 	return rc;
 }
 
-static int unit_stop_name(struct sd_bus *bus, const char *name)
+static int unit_stop_name(struct sd_bus *bus, const char *name, char **job)
 {
 	int rc;
 	struct sd_bus_message *ret = NULL;
 	sd_bus_error err = SD_BUS_ERROR_NULL;
 
 	rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_stop_unit, &err, &ret, "ss", name, "replace");
+	if (rc >= 0)
+		rc = get_job_from_reply(ret, job);
 	sd_bus_message_unref(ret);
 	return rc;
+}
+
+static int job_is_pending(struct sd_bus *bus, const char *job)
+{
+	int rc;
+	char *st;
+	sd_bus_error err = SD_BUS_ERROR_NULL;
+
+	rc = sd_bus_get_property_string(bus, sdb_destination, job, sdbi_job, sdbp_state, &err, &st);
+	if (rc < 0)
+		return 0;
+	free(st);
+	return 1;
 }
 
 /********************************************************************
@@ -518,67 +566,67 @@ char *systemd_unit_dpath_by_pid(int isuser, unsigned pid)
 	return systemd_get_bus(isuser, &bus) < 0 ? NULL : get_unit_dpath_by_pid(bus, pid);
 }
 
-int systemd_unit_start_dpath(int isuser, const char *dpath)
+int systemd_unit_start_dpath(int isuser, const char *dpath, char **job)
 {
 	int rc;
 	struct sd_bus *bus;
 
 	rc = systemd_get_bus(isuser, &bus);
-	return rc < 0 ? rc : unit_start(bus, dpath);
+	return rc < 0 ? rc : unit_start(bus, dpath, job);
 }
 
-int systemd_unit_restart_dpath(int isuser, const char *dpath)
+int systemd_unit_restart_dpath(int isuser, const char *dpath, char **job)
 {
 	int rc;
 	struct sd_bus *bus;
 
 	rc = systemd_get_bus(isuser, &bus);
-	return rc < 0 ? rc : unit_restart(bus, dpath);
+	return rc < 0 ? rc : unit_restart(bus, dpath, job);
 }
 
-int systemd_unit_stop_dpath(int isuser, const char *dpath)
+int systemd_unit_stop_dpath(int isuser, const char *dpath, char **job)
 {
 	int rc;
 	struct sd_bus *bus;
 
 	rc = systemd_get_bus(isuser, &bus);
-	return rc < 0 ? rc : unit_stop(bus, dpath);
+	return rc < 0 ? rc : unit_stop(bus, dpath, job);
 }
 
-int systemd_unit_start_name(int isuser, const char *name)
-{
-	int rc;
-	struct sd_bus *bus;
-
-	rc = systemd_get_bus(isuser, &bus);
-	if (rc >= 0)
-		rc = unit_start_name(bus, name);
-	return rc;
-}
-
-int systemd_unit_restart_name(int isuser, const char *name)
+int systemd_unit_start_name(int isuser, const char *name, char **job)
 {
 	int rc;
 	struct sd_bus *bus;
 
 	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0)
-		rc = unit_restart_name(bus, name);
+		rc = unit_start_name(bus, name, job);
 	return rc;
 }
 
-int systemd_unit_stop_name(int isuser, const char *name)
+int systemd_unit_restart_name(int isuser, const char *name, char **job)
 {
 	int rc;
 	struct sd_bus *bus;
 
 	rc = systemd_get_bus(isuser, &bus);
 	if (rc >= 0)
-		rc = unit_stop_name(bus, name);
+		rc = unit_restart_name(bus, name, job);
 	return rc;
 }
 
-int systemd_unit_stop_pid(int isuser, unsigned pid)
+int systemd_unit_stop_name(int isuser, const char *name, char **job)
+{
+	int rc;
+	struct sd_bus *bus;
+
+	rc = systemd_get_bus(isuser, &bus);
+	if (rc >= 0)
+		rc = unit_stop_name(bus, name, job);
+	return rc;
+}
+
+int systemd_unit_stop_pid(int isuser, unsigned pid, char **job)
 {
 	int rc;
 	struct sd_bus *bus;
@@ -590,7 +638,7 @@ int systemd_unit_stop_pid(int isuser, unsigned pid)
 		if (!dpath)
 			rc = -1;
 		else {
-			rc = unit_stop(bus, dpath);
+			rc = unit_stop(bus, dpath, job);
 			free(dpath);
 		}
 	}
@@ -618,4 +666,15 @@ enum SysD_State systemd_unit_state_of_dpath(int isuser, const char *dpath)
 const char *systemd_state_name(enum SysD_State state)
 {
 	return sds_state_names[state];
+}
+
+int systemd_job_is_pending(int isuser, const char *job)
+{
+	int rc;
+	struct sd_bus *bus;
+
+	rc = systemd_get_bus(isuser, &bus);
+	if (rc >= 0)
+		rc = job_is_pending(bus, job);
+	return rc;
 }

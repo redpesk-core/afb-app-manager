@@ -17,3 +17,4 @@
 */
 
 extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+extern struct wgt_info *install_redpesk(const char *wgtpath);
