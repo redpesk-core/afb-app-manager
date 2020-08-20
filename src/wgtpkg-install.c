@@ -531,6 +531,7 @@ static int set_pathtype(const char *path, const struct wgt_desc *desc, enum path
 	const struct wgt_desc_feature *feat;
 	const struct wgt_desc_param *param;
 	size_t len;
+	*pathtype = type_none;
 
 	/* icons are public */
 	icon = desc->icons;
@@ -601,7 +602,7 @@ static int install_security(const struct wgt_desc *desc)
 	char path[PATH_MAX], *head;
 	const char *perm;
 	int rc;
-	enum path_type pathtype;
+	enum path_type pathtype = type_none;
 	unsigned int i, n, len, lf, j;
 	struct filedesc *f;
 	struct pathent *pe0, *pe2, *ppe;
