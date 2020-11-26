@@ -7,8 +7,8 @@ functionalities of the AGL Application Framework.
 For more complete information, please refer to the inline documentation 
 available in the main git repository:
 
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main]
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]
+[https://github.com/redpesk-core/afb-app-manager]
+[https://github.com/redpesk-core/afb-binder]
 
 For more information on AGL, please visit:  
 [https://www.automotivelinux.org/]
@@ -263,5 +263,5 @@ afb-client is a simple application to demonstrate the built-in capabilities of t
 
 [https://github.com/iotbzh/afm-widget-examples]: https://github.com/iotbzh/afm-widget-examples
 [https://www.automotivelinux.org/]: https://www.automotivelinux.org/
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-binder
-[https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main]: https://gerrit.automotivelinux.org/gerrit/#/admin/projects/src/app-framework-main
+[https://github.com/redpesk-core/afb-binder]: https://github.com/redpesk-core/afb-binder
+[https://github.com/redpesk-core/afb-app-manager]: https://github.com/redpesk-core/afb-app-manager

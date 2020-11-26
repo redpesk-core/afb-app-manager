@@ -18,7 +18,7 @@
 
 cmake_minimum_required(VERSION 3.4.3)
 
-project(afm-main C)
+project(afb-app-manager C)
 
 include(GNUInstallDirs)
 include(CTest)
@@ -26,9 +26,8 @@ include(CTest)
 set(PROJECT_NAME "AFM Main")
 set(PROJECT_PRETTY_NAME "Application Framework Main")
 set(PROJECT_DESCRIPTION "Secured Application framework for Automotive Grade Linux")
-set(AGLVERSION "8.0.0" CACHE STRING "Version of AGL")
-set(PROJECT_VERSION ${AGLVERSION} CACHE STRING "Version of the project can override AGLVERSION")
-set(PROJECT_URL "https://gerrit.automotivelinux.org/gerrit/gitweb?p=src/app-framework-main.git;a=summary")
+set(PROJECT_VERSION 4.0 CACHE STRING "Version of the project can override AGLVERSION")
+set(PROJECT_URL "https://github.com/redpesk-core/afb-app-manager")
 
 option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
 option(USE_LIBZIP         "Should try to use libzip?" ON)

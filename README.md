@@ -1,8 +1,8 @@
-# afm-main
+# afb-app-manager
 
 ## Overview
 
-This repository is named **afm-main** because
+This repository is named **afb-app-manager** because
 it stands for **AGL Framework Master - Main**.
 
 It contains programs and services to create widgets,
@@ -87,7 +87,7 @@ The installed programs are:
 
 ### Actors
 
-The framework defined by afm-main is defining several actors:
+The framework defined by afb-app-manager is defining several actors:
 the platform designer, the application developer, the distributor,
 the user, the hacker.
 
@@ -161,7 +161,7 @@ is made of few steps:
 
 The framework will provide facilities to package applications.
 
-Parts of the job can be done with tools provided by afm-main:
+Parts of the job can be done with tools provided by afb-app-manager:
 
 - ***wgtpkg-sign*** is used to add signatures at root of the package
 - ***wgtpkg-pack*** is used to create the package file (with wgt extension).
