@@ -47,6 +47,13 @@ After=user@%i.service
 ENDIF
 
 After=Network.target
+IF_PERM(:public:network)
+Wants=network.target
+ENDIF
+IF_PERM(:public:bluetooth)
+Wants=bluetooth.target
+After=bluetooth.target
+ENDIF
 
 IF_PERM(:public:display)
 BindsTo=weston@display.service
