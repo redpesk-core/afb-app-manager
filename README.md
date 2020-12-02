@@ -22,7 +22,7 @@ This package requires the following libraries or modules:
 - ***xmlsec1-openssl***
 - ***json-c***
 - ***dbus-1***
-- ***security-manager***
+- ***sec-lsm-manager***
 
 This package also requires either ***libzip*** (version >= 0.11)
 or the binaries ***zip*** and ***unzip***. By default, it will
@@ -287,5 +287,5 @@ the following Tizen packages:
 - [D-Bus](http://www.freedesktop.org/wiki/Software/dbus)
 - [libzip](http://www.nih.at/libzip)
 - [CMake](https://cmake.org)
-- [Security-Manager](https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager)
+- [Sec-lsm-Manager](https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager)
 - [Web App Manifest](http://www.w3.org/TR/appmanifest)

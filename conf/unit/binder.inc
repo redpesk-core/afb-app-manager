@@ -9,7 +9,7 @@ ENDIF
 ENDIF
 
 Type=notify
-ExecStart=/usr/bin/afb-daemon \
+ExecStart=/usr/bin/afb-binder \
 	--name afbd-TARGET \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir=APP_WORK_DIR \

@@ -45,9 +45,9 @@ of Tizen showed that their dependencies to Tizen are light (and since some
 of our work, there is no more dependency to tizen).
 Those components are :
 
-- **cynara**
-- **security-manager**
-- **D-Bus aware of cynara**
+- **cynagora**
+- **sec-lsm-manager**
+- **D-Bus aware of cynagora**
 
 Luckily, these core security components of Tizen are provided
 by [meta-intel-iot-security][meta-intel], a set of yocto layers.
@@ -81,7 +81,7 @@ They provides infrastructure for installing, uninstalling,
 launching, terminating, pausing and resuming applications in
 a multi user secure environment.
 
-A third component exists in the framework, the binder **afb-daemon**.
+A third component exists in the framework, the binder **afb-binder**.
 The binder provides the easiest way to provide secured API for
 any tier.
 Currently, the use of the binder is not absolutely mandatory.
@@ -109,17 +109,17 @@ Let follow the sequence of calls:
    **D-Bus** system, the system daemon to install the OTHER application.
 
 1. The system **D-Bus** checks wether APPLICATION has the permission
-   or not to install applications by calling **CYNARA**.
+   or not to install applications by calling **CYNAGORA**.
 
 1. The system **D-Bus** transmits the request to **afm-system-daemon**.
 
    **afm-system-daemon** checks the application to install, its
    signatures and rights and install it.
 
-1. **afm-system-daemon** calls **SECURITY-MANAGER** for fulfilling
+1. **afm-system-daemon** calls **SEC-LSM-MANAGER** for fulfilling
    security context of the installed application.
 
-1. **SECURITY-MANAGER** calls **CYNARA** to install initial permissions
+1. **SEC-LSM-MANAGER** calls **CYNAGORA** to install initial permissions
    for the application.
 
 1. APPLICATION call its binder to start the nearly installed OTHER application.
@@ -128,14 +128,14 @@ Let follow the sequence of calls:
    **D-Bus** session, the user daemon to launch the OTHER application.
 
 1. The session **D-Bus** checks wether APPLICATION has the permission
-   or not to start an application by calling **CYNARA**.
+   or not to start an application by calling **CYNAGORA**.
 
 1. The session **D-Bus** transmits the request to **afm-user-daemon**.
 
 1. **afm-user-daemon** checks wether APPLICATION has the permission
-    or not to start the OTHER application **CYNARA**.
+    or not to start the OTHER application **CYNAGORA**.
 
-1. **afm-user-daemon** uses **SECURITY-MANAGER** features to set
+1. **afm-user-daemon** uses **SEC-LSM-MANAGER** features to set
     the security context for the OTHER application.
 
 1. **afm-user-daemon** launches the OTHER application.
@@ -144,15 +144,15 @@ This scenario does not cover all the features of the frameworks.
 Shortly because details will be revealed in the next chapters,
 the components are:
 
-- ***SECURITY-MANAGER***: in charge of setting Smack contexts and rules,
-  of setting groups, and, of creating initial content of *CYNARA* rules
+- ***SEC-LSM-MANAGER***: in charge of setting Smack contexts and rules,
+  of setting groups, and, of creating initial content of *CYNAGORA* rules
   for applications.
 
-- ***CYNARA***: in charge of handling API access permissions by users and by
+- ***CYNAGORA***: in charge of handling API access permissions by users and by
   applications.
 
 - ***D-Bus***: in charge of checking security of messaging. The usual D-Bus
-  security rules are enhanced by *CYNARA* checking rules.
+  security rules are enhanced by *CYNAGORA* checking rules.
 
 - ***afm-system-daemon***: in charge of installing and uninstalling applications.
 
@@ -203,11 +203,11 @@ The security framework then comes from Tizen 3 but through
 the [meta-intel].
 It includes:
 
-- **Security-Manager**
-- **Cynara**
-- **D-Bus** compliant to Cynara.
+- **Sec-lsm-Manager**
+- **cynagora**
+- **D-Bus** compliant to cynagora.
 
-Two patches are applied to the security-manager.
+Two patches are applied to the sec-lsm-manager.
 The goal of these patches is to remove specific dependencies with Tizen packages that are not needed by AGL.
 None of these patches adds or removes any behaviour.
 
@@ -256,7 +256,7 @@ future to include for example incremental delivery.
 [d-bus]:            http://www.freedesktop.org/wiki/Software/dbus                   "D-Bus"
 [libzip]:           http://www.nih.at/libzip                                        "libzip"
 [cmake]:            https://cmake.org                                               "CMake"
-[security-manager]: https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager "Security-Manager"
+[sec-lsm-manager]: https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager "Sec-lsm-Manager"
 [app-manifest]:     http://www.w3.org/TR/appmanifest                                "Web App Manifest"
 [tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
 [tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"

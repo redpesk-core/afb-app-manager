@@ -7,7 +7,7 @@ Requires=afm-system-setup.service cynagoauth.service
 #Group=afm
 SyslogIdentifier=afm-system-daemon
 SELinuxContext=system_u:system_r:afm_t:s0
-ExecStart=/usr/bin/afb-daemon --name=afm-system-daemon --no-httpd --no-ldpaths --binding=@afm_libexecdir@/afm-binding.so --ws-server=sd:afm-main
+ExecStart=/usr/bin/afb-binder --name=afm-system-daemon --no-httpd --binding=@afm_libexecdir@/afm-binding.so --ws-server=sd:afm-main
 Restart=on-failure
 RestartSec=5
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_MAC_OVERRIDE

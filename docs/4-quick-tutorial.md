@@ -155,13 +155,13 @@ To illustrate this, we can take a look at the running processes and their respec
 
 ```bash
 root@porter:~# ps -efZ |grep webapps-annex | grep -v grep
-User::App::webapps-annex        root       716   491  0 13:19 ?        00:00:00 /usr/bin/afb-daemon --mode=local --readyfd=8 --alias=/icons /usr/share/afm/icons --port=12348 --rootdir=/usr/share/afm/applications/webapps-annex/0.0 --token=7D6D2F16 --sessiondir=/home/root/app-data/webapps-annex/.afb-daemon
+User::App::webapps-annex        root       716   491  0 13:19 ?        00:00:00 /usr/bin/afb-binder --mode=local --readyfd=8 --alias=/icons /usr/share/afm/icons --port=12348 --rootdir=/usr/share/afm/applications/webapps-annex/0.0 --token=7D6D2F16 --sessiondir=/home/root/app-data/webapps-annex/.afb-binder
 User::App::webapps-annex        root       717   491  0 13:19 ?        00:00:00 /usr/bin/qt5/qmlscene http://localhost:12348/index.html?token=7D6D2F16 /usr/bin/web-runtime-webkit.qml
 ```
 
 In the previous result, we see that the application is composed of two processes:
 
-* the application binder (afb-daemon)
+* the application binder (afb-binder)
 * the application UI (qmlscene ...)
 
 While most system processes run with the label 'System', we see that the 
@@ -253,7 +253,7 @@ It can be used by developers as a template to start writing real AGL Application
 This application is not available as WGT file yet and it should be started manually without any specific security context:
 
 ```bash
-root@porter:~# /usr/bin/afb-daemon --port=1235 --token='' --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons
+root@porter:~# /usr/bin/afb-binder --port=1235 --token='' --sessiondir=/home/root/.afm-daemon --rootdir=/usr/share/agl/afb-client --alias=/icons:/usr/share/afm/icons
 ```
 
 Then you can access it from a browser:  

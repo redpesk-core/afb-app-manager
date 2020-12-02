@@ -48,7 +48,7 @@ WorkingDirectory={{widget-app-data-dir}}
 
 %systemd-unit service afm-appli-{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 
-ExecStart=/usr/bin/afb-daemon --port=%P --random-token \
+ExecStart=/usr/bin/afb-binder --port=%P --random-token \
 	--rootdir={{widget-install-dir}} \
 	--workdir={{{widget-app-data-dir}}} \
 	--roothttp=htdocs \
@@ -67,7 +67,7 @@ ExecStart=/usr/bin/afb-daemon --port=%P --random-token \
 %systemd-unit user
 %systemd-unit service afm-api-{{:#target}}
 
-ExecStart=/usr/bin/afb-daemon \
+ExecStart=/usr/bin/afb-binder \
 	--rootdir={{widget-install-dir}} \
 	--workdir={{{widget-app-data-dir}}} \
 	--no-httpd \

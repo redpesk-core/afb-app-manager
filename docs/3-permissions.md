@@ -81,7 +81,7 @@ Currently, the framework allows it for permissions linked to
 systemd.  
 But this not currently used.
 
-Conversely, permissions linked to cynara can't carry data
+Conversely, permissions linked to cynagora can't carry data
 except in their name.
 
 Thus to have a simple and cleaner model, it is better to forbid

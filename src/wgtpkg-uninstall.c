@@ -122,7 +122,7 @@ int uninstall_widget(const char *idaver, const char *root)
 
 	/*
 	 * parent directory removed: last occurrence of the application
-	 * uninstall it for the security-manager
+	 * uninstall it for the sec-lsm-manager
 	 */
 	rc = secmgr_init(id);
 #else

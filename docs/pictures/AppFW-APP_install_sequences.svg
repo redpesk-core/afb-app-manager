@@ -175,7 +175,7 @@
        <path fill="none" stroke="rgb(52,101,164)" d="M 71867,22463 C 71739,22463 71612,22590 71612,22718 L 71612,23742 C 71612,23870 71739,23998 71867,23998 L 76785,23998 C 76913,23998 77041,23870 77041,23742 L 77041,22718 C 77041,22590 76913,22463 76785,22463 L 71867,22463 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 71612,22463 L 71612,22463 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 77041,23998 L 77041,23998 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="73005" y="23451"><tspan fill="rgb(0,0,0)" stroke="none">CYNARA</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="73005" y="23451"><tspan fill="rgb(0,0,0)" stroke="none">CYNAGORA</tspan></tspan></tspan></text>
       </g>
      </g>
      <g class="com.sun.star.drawing.CustomShape">
@@ -233,7 +233,7 @@
         <path fill="none" stroke="rgb(52,101,164)" d="M 63612,9370 C 63484,9370 63356,9498 63356,9626 L 63356,10650 C 63356,10778 63484,10906 63612,10906 L 71936,10906 C 72064,10906 72192,10778 72192,10650 L 72192,9626 C 72192,9498 72064,9370 71936,9370 L 63612,9370 Z"/>
         <path fill="none" stroke="rgb(52,101,164)" d="M 63356,9370 L 63356,9370 Z"/>
         <path fill="none" stroke="rgb(52,101,164)" d="M 72192,10906 L 72192,10906 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="65117" y="10358"><tspan fill="rgb(0,0,0)" stroke="none">binder afb-daemon</tspan></tspan></tspan></text>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="65117" y="10358"><tspan fill="rgb(0,0,0)" stroke="none">binder afb-binder</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
