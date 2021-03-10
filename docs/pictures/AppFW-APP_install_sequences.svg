@@ -155,7 +155,7 @@
        <path fill="none" stroke="rgb(52,101,164)" d="M 72126,26237 C 71998,26237 71870,26365 71870,26493 L 71870,27517 C 71870,27645 71998,27773 72126,27773 L 79166,27773 C 79294,27773 79422,27645 79422,27517 L 79422,26493 C 79422,26365 79294,26237 79166,26237 L 72126,26237 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 71870,26237 L 71870,26237 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 79422,27773 L 79422,27773 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="72354" y="27225"><tspan fill="rgb(0,0,0)" stroke="none">SECURITY MANAGER</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Sans, sans-serif" font-size="635px" font-weight="400"><tspan class="TextPosition" x="72354" y="27225"><tspan fill="rgb(0,0,0)" stroke="none">SEC LSM MANAGER</tspan></tspan></tspan></text>
       </g>
      </g>
      <g class="com.sun.star.drawing.CustomShape">

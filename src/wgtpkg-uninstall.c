@@ -129,13 +129,13 @@ int uninstall_widget(const char *idaver, const char *root)
 	rc = secmgr_init(idaver);
 #endif
 	if (rc) {
-		ERROR("can't init security manager context");
+		ERROR("can't init sec lsm manager context");
 		return -1;
 	}
 	rc = secmgr_uninstall();
 	secmgr_cancel();
 	if (rc) {
-		ERROR("can't uninstall security manager context");
+		ERROR("can't uninstall sec lsm manager context");
 		return -1;
 	}
 	return 0;
@@ -195,13 +195,13 @@ int uninstall_redpesk(const char *installdir)
 	free(id);
 	id = NULL;
 	if (rc) {
-		ERROR("can't init security manager context");
+		ERROR("can't init sec lsm manager context");
 		return -1;
 	}
 	rc = secmgr_uninstall();
 	secmgr_cancel();
 	if (rc) {
-		ERROR("can't uninstall security manager context");
+		ERROR("can't uninstall sec lsm manager context");
 		return -1;
 	}
 	return 0;

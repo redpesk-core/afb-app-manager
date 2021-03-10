@@ -85,14 +85,14 @@ endif()
 ###########################################################################
 
 if(SIMULATE_SECMGR)
-	add_definitions(-DSIMULATE_SECURITY_MANAGER=1)
+	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=1)
 else(SIMULATE_SECMGR)
 	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager)
 	add_compile_options(${SECMGR_CFLAGS})
 	include_directories(${SECMGR_INCLUDE_DIRS})
 	link_libraries(${SECMGR_LIBRARIES})
 	link_directories(${SECMGR_LIBRARY_DIRS})
-	add_definitions(-DSIMULATE_SECURITY_MANAGER=0)
+	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=0)
 endif(SIMULATE_SECMGR)
 
 if(SIMULATE_SMACK)

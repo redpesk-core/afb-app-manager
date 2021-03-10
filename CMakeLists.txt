@@ -37,12 +37,12 @@ set(PROJECT_URL "https://github.com/redpesk-core/afb-app-manager")
 
 option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
 option(USE_LIBZIP         "Should try to use libzip?" ON)
-option(USE_SIMULATION     "If set simulates security manager and smack" OFF)
+option(USE_SIMULATION     "If set simulates sec lsm manager and smack" OFF)
 option(USE_SDK            "If set, avoids installating system runtime files" OFF)
 option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "install the sample keys and certificates" OFF)
 
-option(SIMULATE_SECMGR    "If set, the security manager is simulated" OFF)
+option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 option(SIMULATE_SMACK     "If set, the smack environment is simulated"  OFF)
 
 option(LEGACY_USER_DAEMON "compile and install the legacy afm-user-daemon" OFF)
