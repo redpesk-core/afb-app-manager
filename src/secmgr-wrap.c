@@ -35,7 +35,7 @@
 #include <sec-lsm-manager.h>
 #endif
 
-static sec_lsm_manager_handle_t *sm_handle = NULL;
+static sec_lsm_manager_t *sm_handle = NULL;
 
 static int retcode(int rc)
 {

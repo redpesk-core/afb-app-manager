@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 typedef struct sec_lsm_manager sec_lsm_manager_t;
-typedef struct sec_lsm_manager_handle sec_lsm_manager_handle_t;
 
 enum path_type
 {
