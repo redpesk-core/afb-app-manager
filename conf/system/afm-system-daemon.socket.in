@@ -1,7 +1,6 @@
 
 [Socket]
 SmackLabel=*
-SELinuxContextFromNet=true
 ListenStream=@afm_platform_rundir@/apis/ws/afm-main
 FileDescriptorName=afm-main
 

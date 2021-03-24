@@ -78,7 +78,6 @@ DefaultDependencies=no
 SmackLabel=*
 SmackLabelIPIn=System
 SmackLabelIPOut=System
-SELinuxContextFromNet=true
 ListenStream=PLATFORM_API_PATH_WS/{{name}}
 FileDescriptorName={{name}}
 Service=UNIT_NAME_BASE.service
