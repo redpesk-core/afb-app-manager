@@ -95,17 +95,6 @@ else(SIMULATE_SECMGR)
 	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=0)
 endif(SIMULATE_SECMGR)
 
-if(SIMULATE_SMACK)
-	add_definitions(-DSIMULATE_LIBSMACK=1)
-else(SIMULATE_SMACK)
-	pkg_check_modules(SMACK REQUIRED libsmack)
-	add_compile_options(${SMACK_CFLAGS})
-	include_directories(${SMACK_INCLUDE_DIRS})
-	link_libraries(${SMACK_LIBRARIES})
-	link_directories(${SMACK_LIBRARY_DIRS})
-	add_definitions(-DSIMULATE_LIBSMACK=0)
-endif(SIMULATE_SMACK)
-
 ###########################################################################
 
 add_library(wgtpkg STATIC

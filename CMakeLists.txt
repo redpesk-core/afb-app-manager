@@ -37,13 +37,12 @@ set(PROJECT_URL "https://github.com/redpesk-core/afb-app-manager")
 
 option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
 option(USE_LIBZIP         "Should try to use libzip?" ON)
-option(USE_SIMULATION     "If set simulates sec lsm manager and smack" OFF)
+option(USE_SIMULATION     "If set simulates sec lsm manager" OFF)
 option(USE_SDK            "If set, avoids installating system runtime files" OFF)
 option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "install the sample keys and certificates" OFF)
 
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
-option(SIMULATE_SMACK     "If set, the smack environment is simulated"  OFF)
 
 option(LEGACY_USER_DAEMON "compile and install the legacy afm-user-daemon" OFF)
 
@@ -54,8 +53,6 @@ set(afm_libexecdir          "${CMAKE_INSTALL_FULL_LIBEXECDIR}/${afm_name}" CACHE
 set(afm_appdir              "${afm_datadir}/applications" CACHE STRING "Directory for installing applications")
 set(afm_icondir             "${afm_datadir}/icons" CACHE STRING "Directory for installing icons")
 set(afm_prefix              "urn:AGL:" CACHE STRING "Prefix for uniform resource name")
-set(afm_user_appdir         "app-data" CACHE STRING "User subdirectory for applications")
-set(afm_user_appdir_label   "User:App-Shared" CACHE STRING "Smack label of the user subdirectory for applications")
 set(systemd_units_root      "${CMAKE_INSTALL_FULL_LIBDIR}/systemd" CACHE STRING "Place where unit files are to be set")
 set(wgtpkg_trusted_certs_dir "${afm_confdir}/certs" CACHE STRING "Path to internal certificates")
 set(wgtpkg_sample_keys_dir  "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}/keys" CACHE STRING "Path to internal keys")
@@ -67,7 +64,6 @@ set(rpm_plugin_dir          "/usr/lib/rpm-plugins" CACHE STRING "Path to rpm plu
 
 if(USE_SIMULATION)
     set(SIMULATE_SECMGR ON)
-    set(SIMULATE_SMACK  ON)
 endif(USE_SIMULATION)
 
 add_definitions(
@@ -75,11 +71,9 @@ add_definitions(
 	-DFWK_PREFIX="${afm_prefix}"
 	-DFWK_ICON_DIR="${afm_icondir}"
 	-DFWK_APP_DIR="${afm_appdir}"
-	-DFWK_USER_APP_DIR="${afm_user_appdir}"
 	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_certs_dir}"
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
 	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
-	-DFWK_USER_APP_DIR_LABEL="${afm_user_appdir_label}"
 	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
 	-DAFM_VERSION="${PROJECT_VERSION}"
 )
