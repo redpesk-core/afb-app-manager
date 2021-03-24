@@ -60,8 +60,9 @@ BindsTo=weston@display.service
 After=weston@display.service
 ENDIF
 
-# Adds check to smack
-ConditionSecurity=smack
+# Adds check to smack or selinux
+ConditionSecurity=|smack
+ConditionSecurity=|selinux
 %nl
 
 # Automatic bound to required api

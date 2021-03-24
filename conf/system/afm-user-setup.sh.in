@@ -4,6 +4,16 @@ uid="$1"
 bdir=/run/user
 udir="$bdir/$uid"
 
+dochsmack() {
+	if [ -d "/sys/fs/smackfs" ]
+	then
+		if [ -f "/usr/bin/chsmack"]
+		then
+			chsmack "$@"
+		fi
+	fi
+}
+
 dodir() {
 	local x smackset="$1"
 	shift
@@ -11,7 +21,7 @@ dodir() {
 		test -e "$x" || mkdir -m 700 "$x"
 		chmod 700 "$x"
 		chown "$uid:$uid" "$x"
-		chsmack $smackset "$x"
+		dochsmack $smackset "$x"
 	done
 }
 
@@ -24,7 +34,7 @@ doln() {
 	if ! test -e "$2"; then
 		ln -sf "$1" "$2"
 		chown -h "$uid:$uid" "$2"
-		chsmack -a 'System:Shared' "$2"
+		dochsmack -a 'System:Shared' "$2"
 	fi
 }
 
