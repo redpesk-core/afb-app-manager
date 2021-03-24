@@ -121,7 +121,7 @@ static rpmRC redpesk_psm_pre(rpmPlugin plugin, rpmte te)
 	rc = uninstall(dirname);
 	free(dirname);
 	if(rc)
-		return RPMRC_FAIL;
+		rpmlog(RPMRC_WARNING, "issue uninstall lsm context: carry on removing package anyway");
 
 	return RPMRC_OK;
 }
