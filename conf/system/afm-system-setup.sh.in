@@ -4,13 +4,7 @@ pdir=@afm_platform_rundir@
 
 
 dochsmack() {
-	if [ -d "/sys/fs/smackfs" ]
-	then
-		if [ -f "/usr/bin/chsmack"]
-		then
-			chsmack "$@"
-		fi
-	fi
+	test -d "/sys/fs/smackfs" -a -x "/usr/bin/chsmack" && /usr/bin/chsmack "$@"
 }
 
 
