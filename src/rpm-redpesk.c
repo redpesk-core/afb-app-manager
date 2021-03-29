@@ -40,7 +40,7 @@ static int sighup_afm_main()
 			continue;
 
 		if(strstr(*proc_info.cmdline, afm_system_daemon)) {
-			rpmlog(RPMLOG_INFO, "Found %s, pid = %d, sending SIGHUP", afm_system_daemon, proc_info.tid);
+			rpmlog(RPMLOG_INFO, "Found %s, pid = %d, sending SIGHUP\n", afm_system_daemon, proc_info.tid);
 			kill(proc_info.tid, SIGHUP);
 			goto done;
 		}
@@ -58,7 +58,7 @@ static int install(const char *dirname)
 
 	ifo = install_redpesk(dirname);
 	if (!ifo) {
-		rpmlog(RPMLOG_ERR, "Fail to install %s", dirname);
+		rpmlog(RPMLOG_ERR, "Fail to install %s\n", dirname);
 		return -1;
 	}
 	else {
@@ -78,7 +78,7 @@ static int uninstall(const char *dirname)
 	/* uninstall the widget */
 	rc = uninstall_redpesk(dirname);
 	if(rc)
-		rpmlog(RPMLOG_ERR, "Fail to uninstall %s", dirname);
+		rpmlog(RPMLOG_ERR, "Fail to uninstall %s\n", dirname);
 	else
 		sighup_afm_main();
 	return rc;
@@ -121,7 +121,7 @@ static rpmRC redpesk_psm_pre(rpmPlugin plugin, rpmte te)
 	rc = uninstall(dirname);
 	free(dirname);
 	if(rc)
-		rpmlog(RPMLOG_WARNING, "issue uninstall lsm context: carry on removing package anyway");
+		rpmlog(RPMLOG_WARNING, "issue uninstall lsm context: carry on removing package anyway\n");
 
 	return RPMRC_OK;
 }
