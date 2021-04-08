@@ -12,7 +12,7 @@ dodir() {
 	local x smackset="$1"
 	shift
 	for x; do
-		test -e "$x" || mkdir -m 700 "$x"
+		test -e "$x" || mkdir -Z -m 700 "$x"
 		chmod 700 "$x"
 		chown "$uid:$uid" "$x"
 		dochsmack $smackset "$x"
