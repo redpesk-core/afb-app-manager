@@ -3,7 +3,7 @@
 ## Overview
 
 This repository is named **afb-app-manager** because
-it stands for **AGL Framework Master - Main**.
+it stands for **AFB Application Manager**.
 
 It contains programs and services to create widgets,
 to install widgets, to run widgets.
@@ -52,10 +52,6 @@ use of programs ***zip*** and ***unzip***, type:
 
 > cmake -DUSE_LIBZIP=0 .
 
-### Evaluation on AGL using yocto
-
-TO BE CONTINUED
-
 ## Content
 
 This package content source files for several programs.
@@ -65,11 +61,6 @@ The installed programs are:
   uninstall, list the widgets.
 
   It runs on the system bus.
-
-- ***afm-user-daemon***: D-Bus daemon to list
-  available widgets, to start, pause, resume, stop it.
-
-  It runs on the user session bus.
 
 - ***wgtpkg-info***: command line tool to display
   information about a widget file.
@@ -108,7 +99,6 @@ The user is either the driver or a passenger of the car.
 The application, libraries, services are available on the
 platform. Some of them are in direct interaction with users.
 Some others, like services, are used indirectly.
-
 
 ### Scenarii
 
@@ -201,22 +191,6 @@ from local files (either pre-installed or downloaded).
 To install a widget, you can use either the program
 ***wgtpkg-install*** while being the framework user.
 
-TO BE CONTINUED
-
-#### Launching application
-
-TO BE CONTINUED
-
-
-## Writing the config.xml <a id="writing-config"/>
-
-TO BE CONTINUED
-
-For permissions: ***urn:agl:perm:...***
-
-For plugins: ***urn:agl:plugin:...***
-
-
 ## Cryptography
 
 The widgets are currently signed and checked using the library
@@ -260,19 +234,6 @@ The file ***config.xml*** may:
 
 - either, contain a root different that *widget*
 - or, not exist, being replaced with something else.
-
-## Comparison with Tizen framework
-
-This package is providing few less behaviour than
-the following Tizen packages:
-
-- platform/appfw/app-installers
-- platform/core/security/cert-svc
-- platform/core/appfw/ail
-- platform/core/appfw/aul-1
-- platform/core/appfw/libslp-db-util
-- platform/core/appfw/pkgmgr-info
-- platform/core/appfw/slp-pkgmgr
 
 
 
