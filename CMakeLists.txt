@@ -42,6 +42,7 @@ option(USE_SDK            "If set, avoids installating system runtime files" OFF
 option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
+option(WITH_TOOLS         "Compile and install the tools" ON)
 
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 

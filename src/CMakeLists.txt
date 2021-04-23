@@ -141,21 +141,27 @@ add_library(afm STATIC
 ###########################################################################
 # off line tools tools
 
-MESSAGE(STATUS "Creating packaging tools")
+if(WITH_TOOLS)
+	MESSAGE(STATUS "Creating packaging tools")
 
-add_executable(wgtpkg-sign main-wgtpkg-sign.c)
-target_link_libraries(wgtpkg-sign wgtpkg utils)
+	add_executable(wgtpkg-sign main-wgtpkg-sign.c)
+	target_link_libraries(wgtpkg-sign wgtpkg utils)
+	install(TARGETS wgtpkg-sign DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(wgtpkg-pack main-wgtpkg-pack.c)
-target_link_libraries(wgtpkg-pack wgtpkg utils)
+	add_executable(wgtpkg-pack main-wgtpkg-pack.c)
+	target_link_libraries(wgtpkg-pack wgtpkg utils)
+	install(TARGETS wgtpkg-pack DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(wgtpkg-info main-wgtpkg-info.c)
-target_link_libraries(wgtpkg-info wgtpkg wgt utils)
+	add_executable(wgtpkg-info main-wgtpkg-info.c)
+	target_link_libraries(wgtpkg-info wgtpkg wgt utils)
+	install(TARGETS wgtpkg-info DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(wgtpkg-install main-wgtpkg-install.c)
-target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
-
-install(TARGETS wgtpkg-sign wgtpkg-pack wgtpkg-info wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_executable(wgtpkg-install main-wgtpkg-install.c)
+	target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
+	install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
+else()
+	MESSAGE(STATUS "Not creating packaging tools")
+endif()
 
 ###########################################################################
 # dynamic tool daemons
