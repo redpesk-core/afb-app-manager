@@ -919,8 +919,6 @@ struct wgt_info *install_redpesk(const char *installdir)
 	if (install_file_properties(desc))
 		goto error4;
 
-	close(workdirfd);
-
 	uconf.installdir = installdir;
 	uconf.icondir = FWK_ICON_DIR;
 	uconf.new_afid = get_new_afid;
