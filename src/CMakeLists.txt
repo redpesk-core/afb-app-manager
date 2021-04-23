@@ -45,7 +45,7 @@ set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
 
 ###########################################################################
 
-include(FindPkgConfig)
+find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c)
 add_compile_options(${EXTRAS_CFLAGS})
@@ -195,13 +195,18 @@ add_subdirectory(tests)
 ###########################################################################
 # rpm plugin
 
-add_library(redpesk SHARED rpm-redpesk.c)
-set_target_properties(redpesk PROPERTIES PREFIX "")
+if(WITH_RPM_REDPESK_PLUGIN)
+	MESSAGE(STATUS "Creating rpm plugin for redpesk")
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(RPM REQUIRED IMPORTED_TARGET rpm)
-pkg_check_modules(PROCPS REQUIRED IMPORTED_TARGET libprocps)
+	pkg_check_modules(RPM REQUIRED IMPORTED_TARGET rpm)
+	pkg_check_modules(PROCPS REQUIRED IMPORTED_TARGET libprocps)
 
-target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS} ${PROCPS_LIBRARY_DIRS})
-target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} ${PROCPS_LIBRARIES} wgtpkg wgt secwrp utils afm)
-install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
+	add_library(redpesk SHARED rpm-redpesk.c)
+	set_target_properties(redpesk PROPERTIES PREFIX "")
+
+	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS} ${PROCPS_LIBRARY_DIRS})
+	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} ${PROCPS_LIBRARIES} wgtpkg wgt secwrp utils afm)
+	install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
+else()
+	MESSAGE(STATUS "Not creating rpm plugin for redpesk")
+endif()
