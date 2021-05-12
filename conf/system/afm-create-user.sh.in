@@ -37,6 +37,10 @@ else
 fi
 
 mkdir -pZ "/home/$user_id/app-data"
+chmod 700 "/home/$user_id" "/home/$user_id/app-data"
+
+user_name=$(id -un "$user_id")
+chown "$user_name":"$group" "/home/$user_id" "/home/$user_id/app-data"
 
 # set smack label
 if test -x "/usr/bin/chsmack"; then
