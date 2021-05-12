@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# SMACK
+# User:Home => /home/user_id
+# User:App-Shared => /home/user_id/app-data
+##
+# SELinux
+# user_home_dir_t => /home/user_id
+# afm_user_home_t => /home/user_id/app-data
+# => defined in the policy
+
+user_id=${1:-$user_id}
+user_name=${2:-user-$user_id}
+group=${3:-users}
+
+# check valid user_id (only number)
+if [[ ! "$user_id" =~ ^[0-9]+$ ]] ; then
+    echo "Usage : $0 user_id [user_name] [group_id, group_name]"
+    echo "user_id need to be an integer"
+    exit 1
+fi
+
+# check valid groups
+if ! getent group "$group" > /dev/null; then
+    echo "Invalid group : $group"
+    exit 1
+fi
+
+if getent passwd "$user_name" > /dev/null || getent passwd "$user_id" > /dev/null; then
+    echo "user or id already exist"
+else
+    echo "Create user [$user_name] with id [$user_id] and group [$group]"
+    if ! useradd -g "$group" -u "$user_id" -o -d "/home/$user_id"  -m -K PASS_MAX_DAYS=-1 "$user_name"; then
+        echo "error create user"
+        exit 1
+    fi
+fi
+
+mkdir -pZ "/home/$user_id/app-data"
+
+# set smack label
+if test -x "/usr/bin/chsmack"; then
+    /usr/bin/chsmack -a "User:Home" "/home/$user_id"
+    /usr/bin/chsmack -T -a "User:App-Shared" "/home/$user_id/app-data"
+fi
+
+exit 0

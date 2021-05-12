@@ -33,6 +33,7 @@ configure_file(afm-system-daemon.socket.in  afm-system-daemon.socket)
 configure_file(afm-system-setup.service.in  afm-system-setup.service)
 configure_file(afm-system-setup.sh.in       afm-system-setup.sh)
 configure_file(afm-api-afm-main@.service.in afm-api-afm-main@.service)
+configure_file(afm-create-user.sh.in        afm-create-user.sh @ONLY)
 configure_file(afm-user-session@.service.in afm-user-session@.service)
 configure_file(afm-user-setup@.service.in   afm-user-setup@.service)
 configure_file(afm-user-setup.sh.in         afm-user-setup.sh)
@@ -64,6 +65,7 @@ if(NOT USE_SDK)
 	)
 	install(
 		PROGRAMS
+			${CMAKE_CURRENT_BINARY_DIR}/afm-create-user.sh
 			${CMAKE_CURRENT_BINARY_DIR}/afm-user-setup.sh
 			${CMAKE_CURRENT_BINARY_DIR}/afm-system-setup.sh
 		DESTINATION
