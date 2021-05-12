@@ -34,7 +34,7 @@ file(GLOB in_afm_unit_list
 	afm-unit *.inc
 )
 foreach(f IN LISTS in_afm_unit_list)
-	configure_file(${f} ${f})
+	configure_file(${f} ${f} @ONLY)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${f})
 endforeach(f)
 if(AGL_DEVEL)
