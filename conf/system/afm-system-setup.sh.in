@@ -1,28 +1,42 @@
 #!/bin/sh
 
-pdir=@afm_platform_rundir@
-
+#####################
+##### FUNCTIONS #####
+#####################
 
 dochsmack() {
-	test -d "/sys/fs/smackfs" -a -x "/usr/bin/chsmack" && /usr/bin/chsmack "$@"
+	test -x "/usr/bin/chsmack" && /usr/bin/chsmack "$@"
 }
 
+dorestorecon() {
+	test -d "/sys/fs/selinux" -a -x "/usr/sbin/restorecon" && /usr/sbin/restorecon "$@"
+}
 
 dodir() {
-	for x; do
-		test -e "$x" || mkdir -Z -m 755  "$x"
-		chmod 755 "$x"
-		dochsmack -T -a 'System:Shared' "$x"
+	local dir
+	local label="$1"
+	shift 1
+	for dir in "$@"; do
+		test -d "$dir" || mkdir -Z -m 775 "$dir"
+		chmod 755 "$dir"
+		dochsmack -T -a "$label" "$dir"
+		dorestorecon -RF "$dir"
 	done
 }
 
-dodir /run/user $pdir $pdir/display $pdir/apis $pdir/apis/ws $pdir/apis/link
+#####################
+###### RUNTIME ######
+#####################
 
-@create_platform_debug@
-
+pdir=@afm_platform_rundir@
 spdir=@afm_scope_platform_dir@
-if ! test -e $spdir; then
-	mkdir -Z -m 755 $spdir
-	dochsmack -T -a 'User:App-Shared' $spdir
-	chown daemon:daemon $spdir
-fi
+
+# Create /run/* directories
+dodir "System:Shared" "/run/user" "$pdir" "$pdir/display" "$pdir/apis" "$pdir/apis/ws" "$pdir/apis/link"
+
+# Create debug directory
+test -z "@create_platform_debug@" || dodir "System:Shared" "$pdir/debug"
+
+# Create /var/score-platform directory
+dodir "User:App-Shared" "$spdir"
+chown daemon:daemon "$spdir"

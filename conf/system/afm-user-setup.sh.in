@@ -1,36 +1,51 @@
 #!/bin/sh
 
-uid="$1"
-bdir=/run/user
-udir="$bdir/$uid"
+#####################
+##### FUNCTIONS #####
+#####################
 
 dochsmack() {
-	test -d "/sys/fs/smackfs" -a -x "/usr/bin/chsmack" && /usr/bin/chsmack "$@"
+	test -x "/usr/bin/chsmack" && /usr/bin/chsmack "$@"
+}
+
+dorestorecon() {
+	test -d "/sys/fs/selinux" -a -x "/usr/sbin/restorecon" && /usr/sbin/restorecon "$@"
 }
 
 dodir() {
-	local x smackset="$1"
-	shift
-	for x; do
-		test -e "$x" || mkdir -Z -m 700 "$x"
-		chmod 700 "$x"
-		chown "$uid:$uid" "$x"
-		dochsmack $smackset "$x"
+	local dir
+	local smack_options="$1"
+	shift 1
+	for dir in "$@"; do
+		test -d "$dir" || mkdir -Z -m 700 "$dir"
+		chmod 700 "$dir"
+		chown "$uid:$group" "$dir"
+		dochsmack $smack_options "$dir"
+		dorestorecon -RF "$dir"
 	done
 }
 
-dodir '-T -a User:App-Shared' "$udir"
-dodir '-t -a User:App-Shared' "$udir/usrshr"
-dodir '-T -a System:Shared' "$udir/apis"
-dodir '-t -a System:Shared' "$udir/apis/ws" "$udir/apis/link"
-
 doln() {
-	if ! test -e "$2"; then
-		ln -sf "$1" "$2"
-		chown -h "$uid:$uid" "$2"
-		dochsmack -a 'System:Shared' "$2"
-	fi
+	test -L "$2" || ln -sf "$1" "$2"
+	chown -h "$uid:$group" "$2"
+	dochsmack -a "System:Shared" "$2"
+	dorestorecon -F "$2"
 }
 
-doln @afm_platform_rundir@/display/wayland-0 $udir/wayland-0
+#####################
+###### RUNTIME ######
+#####################
 
+uid="$1"
+group="users"
+bdir="/run/user"
+udir="$bdir/$uid"
+
+# Create /run/user/* directories
+dodir "-T -a User:App-Shared" "$udir"
+dodir "-t -a User:App-Shared" "$udir/usrshr"
+dodir "-T -a System:Shared" "$udir/apis"
+dodir "-t -a System:Shared" "$udir/apis/ws" "$udir/apis/link"
+
+# Create link /run/user/$uid/wayland-0 => /run/plaform/display/wayland-0
+doln '@afm_platform_rundir@/display/wayland-0' "$udir/wayland-0"

@@ -25,7 +25,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 if(AGL_DEVEL)
-  set(create_platform_debug "dodir ${afm_platform_rundir}/debug")
+  set(create_platform_debug "true")
 endif()
 
 configure_file(afm-system-daemon.service.in afm-system-daemon.service  @ONLY)
