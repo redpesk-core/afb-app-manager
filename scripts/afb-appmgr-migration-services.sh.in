@@ -1,0 +1,46 @@
+#!/bin/sh
+# script for migration from version 9 to version 10
+# it removes the version part in services, taking care
+# of references to this services
+# Example:
+#   the service   afm-appli-helloworld-binding--1.0--main@.service
+#   becomes       afm-appli-helloworld-binding--main@.service
+#
+
+LANG=
+base="$1"
+test -z "$base" && base=@systemd_units_root@
+
+# retrieve files to be changed and names to be updated
+files=$(find "$base" -name 'afm-*--*--*.service' 2>/dev/null | sort)
+test -z "$files" && exit
+names=$(echo "$files" | sed 's:.*/\(afm-[^@]*\)@*.service:\1:' | sort -u)
+
+# rename the files
+for of in $files
+do
+	nf=$(echo -n "$of" | sed 's:^\(.*/.*--\).*--\(.*\)$:\1\2:')
+	mv "$of" "$nf"
+done
+
+# rename in the files
+for on in $names
+do
+	nn=$(echo -n "$on" | sed 's:--.*--:--:')
+	lf=$(grep -rl "$on" "$base")
+	sed -i "s/$on/$nn/g" $lf
+done
+
+# update daemon database
+systemctl daemon-reload
+systemctl kill --signal=SIGHUP afm-system-daemon
+
+# respawn pending services
+zombies=$(systemctl --property Id --state not-found --value show afm-*.service)
+echo $zombies
+systemctl stop $zombies
+systemctl reset-failed # $(systemctl --property Id --state not-found --value show afm-*.service)
+reborns=$(echo "$zombies" | sed 's:^ *\(.*--\).*--\(.*\) *$:\1\2:')
+echo $reborns
+systemctl start $reborns
+
