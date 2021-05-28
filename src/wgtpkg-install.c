@@ -785,6 +785,72 @@ end:
 	return rc;
 }
 
+#if defined(ALLOW_NO_SIGNATURE)
+# define DEFAULT_ALLOW_NO_SIGNATURE 1
+#else
+# define DEFAULT_ALLOW_NO_SIGNATURE 0
+#endif
+
+static int info_desc_check(struct wgt_info **pifo, const struct wgt_desc **pdesc, int allow_no_signature)
+{
+	int rc;
+	struct wgt_info *ifo;
+	const struct wgt_desc *desc;
+
+	/* info and check */
+	rc = check_all_signatures(allow_no_signature);
+	if (rc)
+		goto error;
+
+	ifo = wgt_info_createat(workdirfd, NULL, 1, 1, 1);
+	if (!ifo)
+		goto error;
+
+	reset_requested_permissions();
+	desc = wgt_info_desc(ifo);
+	if (check_widget(desc))
+		goto error2;
+
+	*pifo = ifo;
+	*pdesc = desc;
+	return 0;
+
+error2:
+	wgt_info_unref(ifo);
+error:
+	*pifo = NULL;
+	*pdesc = NULL;
+	return -1;
+}
+
+static int setup_files_and_security(const struct wgt_desc *desc)
+{
+	int rc;
+
+	/* apply properties */
+	rc = install_icon(desc);
+	if (rc == 0)
+		rc = install_security(desc);
+	if (rc == 0)
+		rc = install_exec_flag(desc);
+	if (rc == 0)
+		rc = install_file_properties(desc);
+
+	return rc;
+}
+
+static int setup_units(struct wgt_info *ifo, const char *installdir)
+{
+	struct unitconf uconf;
+
+	/* generate and install units */
+	uconf.installdir = installdir;
+	uconf.icondir = FWK_ICON_DIR;
+	uconf.new_afid = get_new_afid;
+	uconf.base_http_ports = HTTP_PORT_BASE;
+	return unit_install(ifo, &uconf);
+}
+
 /* install the widget of the file */
 struct wgt_info *install_widget(const char *wgtfile, const char *root, int force)
 {
@@ -796,7 +862,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 
 	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
 
-	/* workdir */
+	/* extraction */
 	create_directory(root, 0755, 1);
 	if (make_workdir(root, "TMP", 0)) {
 		ERROR("failed to create a working directory");
@@ -806,23 +872,13 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (zread(wgtfile, 0))
 		goto error2;
 
-#if defined(ALLOW_NO_SIGNATURE)
-	rc = check_all_signatures(1);
-#else
-	rc = check_all_signatures(0);
-#endif
+
+	/* info and check */
+	rc = info_desc_check(&ifo, &desc, DEFAULT_ALLOW_NO_SIGNATURE);
 	if (rc)
 		goto error2;
 
-	ifo = wgt_info_createat(workdirfd, NULL, 1, 1, 1);
-	if (!ifo)
-		goto error2;
-
-	reset_requested_permissions();
-	desc = wgt_info_desc(ifo);
-	if (check_widget(desc))
-		goto error3;
-
+	/* uninstall previous and move */
 	if (get_target_directory(installdir, root, desc))
 		goto error3;
 
@@ -839,30 +895,18 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	if (move_widget_to(installdir, force))
 		goto error3;
 
-	if (install_icon(desc))
+	/* install files and security */
+	rc = setup_files_and_security(desc);
+	if (rc)
 		goto error3;
 
-	if (install_security(desc))
-		goto error4;
-
-	if (install_exec_flag(desc))
-		goto error4;
-
-	if (install_file_properties(desc))
-		goto error4;
-
-	uconf.installdir = installdir;
-	uconf.icondir = FWK_ICON_DIR;
-	uconf.new_afid = get_new_afid;
-	uconf.base_http_ports = HTTP_PORT_BASE;
-	if (unit_install(ifo, &uconf))
-		goto error4;
+	/* generate and install units */
+	rc = setup_units(ifo, installdir);
+	if (rc)
+		goto error3;
 
 	file_reset();
 	return ifo;
-
-error4:
-	/* TODO: cleanup */
 
 error3:
 	wgt_info_unref(ifo);
@@ -887,50 +931,29 @@ struct wgt_info *install_redpesk(const char *installdir)
 
 	NOTICE("-- Install redpesk widget from %s --", installdir);
 
+	/* prepare workdir */
 	set_workdir(installdir, 0);
 	fill_files();
 
-#if defined(ALLOW_NO_SIGNATURE)
-	rc = check_all_signatures(1);
-#else
-	rc = check_all_signatures(0);
-#endif
+	/* info and check */
+	rc = info_desc_check(&ifo, &desc, DEFAULT_ALLOW_NO_SIGNATURE);
 	if (rc)
 		goto error2;
 
-	ifo = wgt_info_createat(workdirfd, NULL, 1, 1, 1);
-	if (!ifo)
-		goto error2;
-
-	reset_requested_permissions();
-	desc = wgt_info_desc(ifo);
-	if (check_widget(desc))
+	/* install files and security */
+	rc = setup_files_and_security(desc);
+	if (rc)
 		goto error3;
 
-	if (install_icon(desc))
+
+	/* generate and install units */
+	rc = setup_units(ifo, installdir);
+	if (rc)
 		goto error3;
-
-	if (install_security(desc))
-		goto error4;
-
-	if (install_exec_flag(desc))
-		goto error4;
-
-	if (install_file_properties(desc))
-		goto error4;
-
-	uconf.installdir = installdir;
-	uconf.icondir = FWK_ICON_DIR;
-	uconf.new_afid = get_new_afid;
-	uconf.base_http_ports = HTTP_PORT_BASE;
-	if (unit_install(ifo, &uconf))
-		goto error4;
 
 	file_reset();
 	return ifo;
 
-error4:
-	/* TODO: cleanup */
 error3:
 	wgt_info_unref(ifo);
 error2:
