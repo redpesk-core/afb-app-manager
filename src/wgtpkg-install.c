@@ -42,7 +42,9 @@
 #include "wgt-strings.h"
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
-#include "wgtpkg-zip.h"
+#if WITH_WIDGETS
+# include "wgtpkg-zip.h"
+#endif
 #include "wgtpkg-permissions.h"
 #include "wgtpkg-digsig.h"
 #include "wgtpkg-install.h"
@@ -851,6 +853,7 @@ static int setup_units(struct wgt_info *ifo, const char *installdir)
 	return unit_install(ifo, &uconf);
 }
 
+#if WITH_WIDGETS
 /* install the widget of the file */
 struct wgt_info *install_widget(const char *wgtfile, const char *root, int force)
 {
@@ -920,6 +923,7 @@ error1:
 	file_reset();
 	return NULL;
 }
+#endif
 
 /* install redpesk from installdir widget directory */
 struct wgt_info *install_redpesk(const char *installdir)

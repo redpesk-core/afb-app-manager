@@ -43,6 +43,7 @@ option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
+option(ALLOW_WIDGETS      "Allow widgets even if WITH_RPM_REDPESK_PLUGIN is ON" OFF)
 
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 
@@ -67,6 +68,15 @@ set(rpm_plugin_dir          "/usr/lib/rpm-plugins" CACHE STRING "Path to rpm plu
 if(USE_SIMULATION)
     set(SIMULATE_SECMGR ON)
 endif(USE_SIMULATION)
+
+if(WITH_RPM_REDPESK_PLUGIN AND NOT ALLOW_WIDGETS)
+    set(WITH_TOOLS OFF)
+    set(WITH_WIDGETS OFF)
+    add_definitions(-DWITH_WIDGETS=0)
+else(WITH_RPM_REDPESK_PLUGIN AND NOT ALLOW_WIDGETS)
+    set(WITH_WIDGETS ON)
+    add_definitions(-DWITH_WIDGETS=1)
+endif(WITH_RPM_REDPESK_PLUGIN AND NOT ALLOW_WIDGETS)
 
 add_definitions(
 	-DFWK_CONFIG_DIR="${afm_confdir}"

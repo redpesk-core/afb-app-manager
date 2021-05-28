@@ -22,5 +22,7 @@
  $RP_END_LICENSE$
 */
 
+#if WITH_WIDGETS
 extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
+#endif
 extern struct wgt_info *install_redpesk(const char *wgtpath);

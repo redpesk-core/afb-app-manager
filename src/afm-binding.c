@@ -46,14 +46,12 @@
 /*
  * constant strings
  */
-static const char _added_[]     = "added";
 static const char _all_[]       = "all";
 static const char _a_l_c_[]     = "application-list-changed";
 static const char _bad_request_[] = "bad-request";
 static const char _cannot_start_[] = "cannot-start";
 static const char _detail_[]    = "detail";
 static const char _id_[]        = "id";
-static const char _install_[]   = "install";
 static const char _lang_[]      = "lang";
 static const char _not_found_[] = "not-found";
 static const char _not_running_[] = "not-running";
@@ -66,7 +64,6 @@ static const char _runners_[]   = "runners";
 static const char _start_[]     = "start";
 static const char _state_[]     = "state";
 static const char _terminate_[] = "terminate";
-static const char _uninstall_[] = "uninstall";
 static const char _update_[]    = "update";
 
 /*
@@ -76,18 +73,6 @@ static const struct afb_auth
 	auth_perm_widget = {
 		.type = afb_auth_Permission,
 		.text = FWK_PREFIX"permission:afm:system:widget"
-	},
-	auth_perm_widget_install = {
-		.type = afb_auth_Permission,
-		.text = FWK_PREFIX"permission:afm:system:widget:install"
-	},
-	auth_perm_widget_uninstall = {
-		.type = afb_auth_Permission,
-		.text = FWK_PREFIX"permission:afm:system:widget:uninstall"
-	},
-	auth_perm_widget_preinstall = {
-		.type = afb_auth_Permission,
-		.text = FWK_PREFIX"permission:afm:system:widget:preinstall"
 	},
 	auth_perm_widget_detail = {
 		.type = afb_auth_Permission,
@@ -114,21 +99,6 @@ static const struct afb_auth
 		.text = FWK_PREFIX"permission:afm:system:runner:kill"
 	},
 
-	auth_install = {
-		.type = afb_auth_Or,
-		.first = &auth_perm_widget,
-		.next = &auth_perm_widget_install
-	},
-	auth_uninstall = {
-		.type = afb_auth_Or,
-		.first = &auth_perm_widget,
-		.next = &auth_perm_widget_uninstall
-	},
-	auth_preinstall = {
-		.type = afb_auth_Or,
-		.first = &auth_perm_widget,
-		.next = &auth_perm_widget_preinstall
-	},
 	auth_detail = {
 		.type = afb_auth_Or,
 		.first = &auth_perm_widget,
@@ -156,10 +126,46 @@ static const struct afb_auth
 	}
 ;
 
+#if WITH_WIDGETS
+static const char _added_[]     = "added";
+static const char _install_[]   = "install";
+static const char _uninstall_[] = "uninstall";
+
+
+static const struct afb_auth
+	auth_perm_widget_install = {
+		.type = afb_auth_Permission,
+		.text = FWK_PREFIX"permission:afm:system:widget:install"
+	},
+	auth_perm_widget_uninstall = {
+		.type = afb_auth_Permission,
+		.text = FWK_PREFIX"permission:afm:system:widget:uninstall"
+	},
+	auth_perm_widget_preinstall = {
+		.type = afb_auth_Permission,
+		.text = FWK_PREFIX"permission:afm:system:widget:preinstall"
+	},
+	auth_install = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_install
+	},
+	auth_uninstall = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_uninstall
+	},
+	auth_preinstall = {
+		.type = afb_auth_Or,
+		.first = &auth_perm_widget,
+		.next = &auth_perm_widget_preinstall
+	};
+
 /*
  * default root
  */
 static const char *rootdir = FWK_APP_DIR;
+#endif
 
 /*
  * the internal application database
@@ -175,13 +181,6 @@ static afb_event_t applist_changed_event;
  * the preallocated true json_object
  */
 static struct json_object *json_true;
-
-/* enforce daemon reload */
-static void do_reloads()
-{
-	systemd_daemon_reload(0);
-	systemd_unit_restart_name(0, "sockets.target", NULL);
-}
 
 /* common bad request reply */
 static void bad_request(afb_req_t req)
@@ -517,6 +516,14 @@ static void state(afb_req_t req)
 	}
 }
 
+#if WITH_WIDGETS
+/* enforce daemon reload */
+static void do_reloads()
+{
+	systemd_daemon_reload(0);
+	systemd_unit_restart_name(0, "sockets.target", NULL);
+}
+
 /*
  * On querying installation of widget(s)
  */
@@ -598,6 +605,7 @@ static void uninstall(afb_req_t req)
 		application_list_changed(_uninstall_, idaver);
 	}
 }
+#endif
 
 static void onsighup(int signal)
 {
@@ -635,8 +643,10 @@ static const afb_verb_t verbs[] =
 	{.verb=_resume_   , .callback=resume,    .auth=&auth_kill,      .info="Resume a paused application",                .session=AFB_SESSION_CHECK },
 	{.verb=_runners_  , .callback=runners,   .auth=&auth_state,     .info="Get the list of running applications",       .session=AFB_SESSION_CHECK },
 	{.verb=_state_    , .callback=state,     .auth=&auth_state,     .info="Get the state of a running application",     .session=AFB_SESSION_CHECK },
+#if WITH_WIDGETS
 	{.verb=_install_  , .callback=install,   .auth=&auth_install,   .info="Install an application using a widget file", .session=AFB_SESSION_CHECK },
 	{.verb=_uninstall_, .callback=uninstall, .auth=&auth_uninstall, .info="Uninstall an application",                   .session=AFB_SESSION_CHECK },
+#endif
 	{.verb=NULL }
 };
 

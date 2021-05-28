@@ -53,16 +53,21 @@ include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
 link_directories(${EXTRAS_LIBRARY_DIRS})
 
-pkg_check_modules(libzip libzip>=0.11)
-if(libzip_FOUND AND USE_LIBZIP)
-	add_compile_options(${libzip_CFLAGS})
-	include_directories(${libzip_INCLUDE_DIRS})
-	link_libraries(${libzip_LIBRARIES})
-	link_directories(${libzip_LIBRARY_DIRS})
-	add_definitions(-DUSE_LIBZIP=1)
-else()
+if(WITH_WIDGETS)
+	pkg_check_modules(libzip libzip>=0.11)
+	if(libzip_FOUND AND USE_LIBZIP)
+		add_compile_options(${libzip_CFLAGS})
+		include_directories(${libzip_INCLUDE_DIRS})
+		link_libraries(${libzip_LIBRARIES})
+		link_directories(${libzip_LIBRARY_DIRS})
+		add_definitions(-DUSE_LIBZIP=1)
+	else()
+		add_definitions(-DUSE_LIBZIP=0)
+	endif()
+else(WITH_WIDGETS)
+	set(USE_LIBZIP OFF)
 	add_definitions(-DUSE_LIBZIP=0)
-endif()
+endif(WITH_WIDGETS)
 
 pkg_check_modules(libsystemd libsystemd>=222)
 if(libsystemd_FOUND)
@@ -97,7 +102,7 @@ endif(SIMULATE_SECMGR)
 
 ###########################################################################
 
-add_library(wgtpkg STATIC
+set(wgtpkg_sources
 	wgtpkg-base64.c
 	wgtpkg-certs.c
 	wgtpkg-digsig.c
@@ -109,8 +114,13 @@ add_library(wgtpkg STATIC
 	wgtpkg-unit.c
 	wgtpkg-workdir.c
 	wgtpkg-xmlsec.c
-	wgtpkg-zip.c
 	)
+
+if(WITH_WIDGETS)
+	set(wgtpkg_sources ${wgtpkg_sources} wgtpkg-zip.c)
+endif(WITH_WIDGETS)
+
+add_library(wgtpkg STATIC ${wgtpkg_sources})
 
 add_library(utils STATIC
 	mustach.c
@@ -121,6 +131,7 @@ add_library(utils STATIC
 	verbose.c
 	)
 
+# library for handling the content of the widgets
 add_library(wgt STATIC
 	wgt-config.c
 	wgt-info.c

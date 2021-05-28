@@ -22,5 +22,7 @@
  $RP_END_LICENSE$
 */
 
+#if WITH_WIDGETS
 extern int uninstall_widget(const char *idaver, const char *root);
+#endif
 extern int uninstall_redpesk(const char *installdir);
