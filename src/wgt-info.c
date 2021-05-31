@@ -165,12 +165,23 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 		errno = EINVAL;
 		return -1;
 	}
+
 	desc->id = xmlGetProp(node, string_id);
+	if (desc->id == NULL) {
+		WARNING("no id");
+		errno = EINVAL;
+		return -1;
+	}
 	make_lowercase(desc->id);
 	desc->id_underscore = strdup(desc->id);
 	dash_to_underscore(desc->id_underscore);
 
 	desc->version = xmlGetProp(node, string_version);
+	if (desc->version == NULL) {
+		WARNING("no version");
+		errno = EINVAL;
+		return -1;
+	}
 	desc->ver = mkver(desc->version);
 	make_lowercase(desc->ver);
 	desc->idaver = mkidaver(desc->id, desc->ver);
