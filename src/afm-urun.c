@@ -293,7 +293,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
 		ERROR("start error %s unit %s for uid %d: %s", uscope, uname, uid,
-							systemd_state_name(state));
+							systemd_name_of_state(state));
 		goto error;
 	default:
 		j_read_string_at(appli, "unit-scope", &uscope);

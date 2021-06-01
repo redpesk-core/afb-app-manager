@@ -62,7 +62,8 @@ extern enum SysD_State systemd_unit_state_of_dpath(int isuser, const char *dpath
 extern int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 extern int systemd_unit_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 
-extern const char *systemd_state_name(enum SysD_State state);
+extern const char *systemd_name_of_state(enum SysD_State state);
+extern enum SysD_State systemd_state_of_name(const char *name);
 
 extern int systemd_job_is_pending(int isuser, const char *job);
 

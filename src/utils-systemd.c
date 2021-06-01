@@ -280,32 +280,7 @@ static enum SysD_State unit_state(struct sd_bus *bus, const char *dpath)
 	if (rc < 0) {
 		errno = -rc;
 	} else {
-		switch (st[0]) {
-		case 'a':
-			if (!strcmp(st, sds_state_names[SysD_State_Active]))
-				resu = SysD_State_Active;
-			else if (!strcmp(st, sds_state_names[SysD_State_Activating]))
-				resu = SysD_State_Activating;
-			break;
-		case 'd':
-			if (!strcmp(st, sds_state_names[SysD_State_Deactivating]))
-				resu = SysD_State_Deactivating;
-			break;
-		case 'f':
-			if (!strcmp(st, sds_state_names[SysD_State_Failed]))
-				resu = SysD_State_Failed;
-			break;
-		case 'i':
-			if (!strcmp(st, sds_state_names[SysD_State_Inactive]))
-				resu = SysD_State_Inactive;
-			break;
-		case 'r':
-			if (!strcmp(st, sds_state_names[SysD_State_Reloading]))
-				resu = SysD_State_Reloading;
-			break;
-		default:
-			break;
-		}
+		resu = systemd_state_of_name(st);
 		if (resu == SysD_State_INVALID)
 			errno = EBADMSG;
 		free(st);
@@ -669,9 +644,41 @@ enum SysD_State systemd_unit_state_of_dpath(int isuser, const char *dpath)
 	return rc < 0 ? SysD_State_INVALID : unit_state(bus, dpath);
 }
 
-const char *systemd_state_name(enum SysD_State state)
+const char *systemd_name_of_state(enum SysD_State state)
 {
-	return sds_state_names[state];
+	return sds_state_names[state >= 0 && state < sizeof sds_state_names / sizeof *sds_state_names ? state : SysD_State_INVALID];
+}
+
+enum SysD_State systemd_state_of_name(const char *name)
+{
+	enum SysD_State resu = SysD_State_INVALID;
+	switch (name[0]) {
+	case 'a':
+		if (!strcmp(name, sds_state_names[SysD_State_Active]))
+			resu = SysD_State_Active;
+		else if (!strcmp(name, sds_state_names[SysD_State_Activating]))
+			resu = SysD_State_Activating;
+		break;
+	case 'd':
+		if (!strcmp(name, sds_state_names[SysD_State_Deactivating]))
+			resu = SysD_State_Deactivating;
+		break;
+	case 'f':
+		if (!strcmp(name, sds_state_names[SysD_State_Failed]))
+			resu = SysD_State_Failed;
+		break;
+	case 'i':
+		if (!strcmp(name, sds_state_names[SysD_State_Inactive]))
+			resu = SysD_State_Inactive;
+		break;
+	case 'r':
+		if (!strcmp(name, sds_state_names[SysD_State_Reloading]))
+			resu = SysD_State_Reloading;
+		break;
+	default:
+		break;
+	}
+	return resu;
 }
 
 int systemd_job_is_pending(int isuser, const char *job)
