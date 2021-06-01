@@ -57,25 +57,28 @@
 # define SYSTEMD_UNITS_ROOT "/usr/local/lib/systemd"
 #endif
 
-static const char sdb_path[] = "/org/freedesktop/systemd1";
 static const char sdb_destination[] = "org.freedesktop.systemd1";
+static const char sdb_path[]        = "/org/freedesktop/systemd1";
+
+static const char sdbi_job[]     = "org.freedesktop.systemd1.Job";
 static const char sdbi_manager[] = "org.freedesktop.systemd1.Manager";
-static const char sdbi_unit[] = "org.freedesktop.systemd1.Unit";
 static const char sdbi_service[] = "org.freedesktop.systemd1.Service";
-static const char sdbi_job[] = "org.freedesktop.systemd1.Job";
-static const char sdbm_reload[] = "Reload";
-static const char sdbm_start_unit[] = "StartUnit";
-static const char sdbm_restart_unit[] = "RestartUnit";
-static const char sdbm_stop_unit[] = "StopUnit";
-static const char sdbm_start[] = "Start";
-static const char sdbm_restart[] = "Restart";
-static const char sdbm_stop[] = "Stop";
-static const char sdbm_get_unit[] = "GetUnit";
-static const char sdbm_get_unit_by_pid[] = "GetUnitByPID";
-static const char sdbm_load_unit[] = "LoadUnit";
-static const char sdbp_active_state[] = "ActiveState";
+static const char sdbi_unit[]    = "org.freedesktop.systemd1.Unit";
+
+static const char sdbp_active_state[]  = "ActiveState";
 static const char sdbp_exec_main_pid[] = "ExecMainPID";
-static const char sdbp_state[] = "State";
+
+static const char sdbm_get_unit[]          = "GetUnit";
+static const char sdbm_get_unit_by_pid[]   = "GetUnitByPID";
+static const char sdbm_load_unit[]         = "LoadUnit";
+static const char sdbm_reload[]            = "Reload";
+static const char sdbm_restart[]           = "Restart";
+static const char sdbm_restart_unit[]      = "RestartUnit";
+static const char sdbp_state[]             = "State";
+static const char sdbm_start[]             = "Start";
+static const char sdbm_start_unit[]        = "StartUnit";
+static const char sdbm_stop[]              = "Stop";
+static const char sdbm_stop_unit[]         = "StopUnit";
 
 static const char *sds_state_names[] = {
 	NULL,
