@@ -447,6 +447,14 @@ int unit_generator_process(struct json_object *jdesc, const struct unitconf *con
 
 /**************** SPECIALIZED PART *****************************/
 
+/**
+ * check the unit: verify that scope, type and name are set
+ *
+ * @param desc  unit description
+ * @param tells output errors if existing
+ *
+ * @return 0 if the unit is valid or else -1
+ */
 static int check_unit_desc(const struct unitdesc *desc, int tells)
 {
 	if (desc->scope != unitscope_unknown && desc->type != unittype_unknown && desc->name != NULL)
@@ -500,6 +508,47 @@ static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *d
 	return rc;
 }
 
+static void stop_that_unit_cb(void *closure, struct SysD_ListUnitItem *lui)
+{
+	int rc, isuser;
+
+	switch (systemd_state_of_name(lui->active_state)) {
+	case SysD_State_Activating:
+	case SysD_State_Active:
+	case SysD_State_Reloading:
+		isuser = (int)(intptr_t)closure;
+		rc = systemd_unit_stop_dpath(isuser, lui->opath, 0);
+		if (rc < 0)
+			ERROR("can't stop %s", lui->name);
+		break;
+	case SysD_State_INVALID:
+	case SysD_State_Inactive:
+	case SysD_State_Deactivating:
+	case SysD_State_Failed:
+	default:
+		break;
+	}
+}
+
+static int stop_unit(char *buffer, size_t buflen, const struct unitdesc *desc)
+{
+	int rc;
+	int isuser = desc->scope == unitscope_user;
+	char star[2] = { '*', 0 };
+
+	rc = (int)strnlen(desc->name, buflen);
+	rc = snprintf(buffer, buflen, "%s%s.%s",
+		desc->name , &star[rc <= 0 || desc->name[rc - 1] != '@'],
+		desc->type == unittype_socket ? "socket" : "service");
+
+	rc = systemd_list_unit_pattern(isuser, buffer, stop_that_unit_cb, (void*)(intptr_t)isuser);
+	if (rc < 0)
+		ERROR("can't get the unit path for %s", desc->name);
+
+	return rc;
+}
+
+
 static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 {
 	int rc, rc2;
@@ -512,6 +561,7 @@ static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 		u = &desc->units[i];
 		rc2 = check_unit_desc(u, 0);
 		if (rc2 == 0) {
+			stop_unit(path, sizeof path, u);
 			rc2 = get_unit_path(path, sizeof path, u);
 			if (rc2 >= 0) {
 				rc2 = unlink(path);
