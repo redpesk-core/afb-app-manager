@@ -34,6 +34,42 @@ enum SysD_State {
     SysD_State_Failed
 };
 
+/**
+ * Structure for listing units, passed to callbacks
+ */
+struct SysD_ListUnitItem
+{
+	/** The primary unit name as string */
+	const char *name;
+
+	/** The human readable description string */
+	const char *description;
+
+	/** The load state (i.e. whether the unit file has been loaded successfully) */
+	const char *load_state;
+
+	/** The active state (i.e. whether the unit is currently started or not) */
+	const char *active_state;
+
+	/** The sub state (a more fine-grained version of the active state that is specific to the unit type, which the active state is not) */
+	const char *sub_state;
+
+	/** A unit that is being followed in its state by this unit, if there is any, otherwise the empty string. */
+	const char *ignored;
+
+	/** The unit object path */
+	const char *opath;
+
+	/** If there is a job queued for the job unit, the numeric job id, 0 otherwise */
+	unsigned job_id;
+
+	/** The job type as string */
+	const char *job_type;
+
+	/** The job object path */
+	const char *job_opath;
+};
+
 struct sd_bus;
 extern int systemd_get_bus(int isuser, struct sd_bus **ret);
 extern void systemd_set_bus(int isuser, struct sd_bus *bus);
@@ -67,3 +103,14 @@ extern enum SysD_State systemd_state_of_name(const char *name);
 
 extern int systemd_job_is_pending(int isuser, const char *job);
 
+/**
+ * Retrieves the units of the given pattern and activates the callback for each of them.
+ *
+ * @param isuser   is units of systemd user (not zero) or system (zero)?
+ * @param pattern  pattern of the units to find, see systemctl manual
+ * @param callback function to be called for each unit found
+ * @param closure  closure to give to the callback
+ *
+ * @return the count of unit found on success or if error -1
+ */
+extern int systemd_list_unit_pattern(int isuser, const char *pattern, void (*callback)(void*,struct SysD_ListUnitItem*), void *closure);

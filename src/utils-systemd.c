@@ -70,6 +70,7 @@ static const char sdbp_exec_main_pid[] = "ExecMainPID";
 
 static const char sdbm_get_unit[]          = "GetUnit";
 static const char sdbm_get_unit_by_pid[]   = "GetUnitByPID";
+static const char sdbm_list_unit_pattern[] = "ListUnitsByPatterns";
 static const char sdbm_load_unit[]         = "LoadUnit";
 static const char sdbm_reload[]            = "Reload";
 static const char sdbm_restart[]           = "Restart";
@@ -693,4 +694,52 @@ int systemd_job_is_pending(int isuser, const char *job)
 	if (rc >= 0)
 		rc = job_is_pending(bus, job);
 	return rc;
+}
+
+int systemd_list_unit_pattern(int isuser, const char *pattern, void (*callback)(void*,struct SysD_ListUnitItem*), void *closure)
+{
+	int rc, count;
+	struct sd_bus *bus;
+	struct sd_bus_message *ret = NULL;
+	sd_bus_error err = SD_BUS_ERROR_NULL;
+	struct SysD_ListUnitItem lui;
+
+	/* connect to the bus */
+	count = 0;
+	rc = systemd_get_bus(isuser, &bus);
+	if (rc >= 0) {
+		/* call the method ListUnitsByPatterns */
+		rc = sd_bus_call_method(bus, sdb_destination, sdb_path, sdbi_manager, sdbm_list_unit_pattern, &err, &ret,
+						"asas", (unsigned)0, (unsigned)1, pattern);
+		if (rc >= 0) {
+			/* got a valid result, iterate items of the array of result */
+			rc = sd_bus_message_enter_container(ret, SD_BUS_TYPE_ARRAY, "(ssssssouso)");
+			while(rc >= 0 && !sd_bus_message_at_end(ret, 0)) {
+				/* read the item */
+				rc = sd_bus_message_enter_container(ret, SD_BUS_TYPE_STRUCT, "ssssssouso");
+				if (rc >= 0) {
+					rc = sd_bus_message_read(ret, "ssssssouso",
+						&lui.name,
+						&lui.description,
+						&lui.load_state,
+						&lui.active_state,
+						&lui.sub_state,
+						&lui.ignored,
+						&lui.opath,
+						&lui.job_id,
+						&lui.job_type,
+						&lui.job_opath
+						);
+					/* activate callback for the item */
+					if (rc >= 0) {
+						callback(closure, &lui);
+						count++;
+					}
+					sd_bus_message_exit_container(ret);
+				}
+			}
+		}
+		sd_bus_message_unref(ret);
+	}
+	return rc < 0 ? rc : count;
 }
