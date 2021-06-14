@@ -81,7 +81,6 @@ static const char * typestring(rpmte te)
 	switch (rpmteType(te)) {
 		case TR_ADDED: return "RPMTYPE TR_ADDED";
 		case TR_REMOVED: return "RPMTYPE TR_REMOVED";
-		case TR_RPMDB: return "RPMTYPE TR_RPMDB";
 		default: return "RPMTYPE UNKNOWN";
 	}
 }
