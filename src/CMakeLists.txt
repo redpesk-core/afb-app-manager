@@ -189,7 +189,7 @@ if(libsystemd_FOUND AND AFB_FOUND)
 	endif()
 
 	add_library(afm-binding MODULE afm-binding.c)
-	target_link_libraries(afm-binding wgtpkg wgt secwrp utils afm)
+	target_link_libraries(afm-binding wgtpkg wgt secwrp afm utils)
 	set_target_properties(afm-binding PROPERTIES
 		PREFIX ""
 		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-binding.export-map"
