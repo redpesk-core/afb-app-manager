@@ -52,20 +52,25 @@ static const char _bad_request_[] = "bad-request";
 static const char _cannot_start_[] = "cannot-start";
 static const char _detail_[]    = "detail";
 static const char _forbidden_[] = "forbidden";
-static const char _id_[]        = "id";
+static const char _force_[]     = "force";
+static const char _id_[]	= "id";
 static const char _lang_[]      = "lang";
 static const char _not_found_[] = "not-found";
 static const char _not_running_[] = "not-running";
 static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
+static const char _reload_[]    = "reload";
 static const char _resume_[]    = "resume";
+static const char _root_[]      = "root";
 static const char _runid_[]     = "runid";
 static const char _runnables_[] = "runnables";
 static const char _runners_[]   = "runners";
 static const char _start_[]     = "start";
 static const char _state_[]     = "state";
 static const char _terminate_[] = "terminate";
+static const char _uid_[]       = "uid";
 static const char _update_[]    = "update";
+static const char _wgt_[]       = "wgt";
 
 /*
  * the permissions
@@ -98,6 +103,10 @@ static const struct afb_auth
 	auth_perm_runner_kill = {
 		.type = afb_auth_Permission,
 		.text = FWK_PREFIX"permission:afm:system:runner:kill"
+	},
+	auth_perm_set_uid = {
+		.type = afb_auth_Permission,
+		.text = FWK_PREFIX"permission:afm:system:set-uid"
 	},
 	auth_detail = {
 		.type = afb_auth_Or,
@@ -157,6 +166,51 @@ static const struct afb_auth
  */
 static const char rootdir[] = FWK_APP_DIR;
 #endif
+
+/**
+ * Enumerate the possible arguments
+ * This is intended to be used as a mask of bits
+ * telling what parameter is expected, optional,
+ * and, finally, set.
+ */
+enum {
+	Param_Lang   = 1,
+	Param_All    = 2,
+	Param_Force  = 4,
+	Param_Reload = 8,
+	Param_Id     = 16,
+	Param_RunId  = 32,
+	Param_WGT    = 64,
+	Param_Root   = 128
+};
+
+/**
+ * Records the parameters of verb queries
+ */
+struct params {
+	/** bit mask of the given param */
+	unsigned found;
+	/** value of param 'all' if set */
+	int all;
+	/** value of param 'force' if set */
+	int force;
+	/** value of param 'reload' if set */
+	int reload;
+	/** value of param 'uid' if set */
+	int uid;
+	/** value of param 'runid' if set */
+	int runid;
+	/** value of param 'lang' if set */
+	const char *lang;
+	/** value of param 'id' if set */
+	const char *id;
+	/** value of param 'wgt' if set */
+	const char *wgt;
+	/** value of param 'root' if set */
+	const char *root;
+	/** object value of parameters */
+	struct json_object *args;
+};
 
 /*
  * the internal application database
@@ -240,6 +294,176 @@ static void application_list_changed(const char *operation, const char *data)
 	struct json_object *e = NULL;
 	wrap_json_pack(&e, "{ss ss}", "operation", operation, "data", data);
 	afb_event_broadcast(applist_changed_event, e);
+}
+
+/**
+ * common routine for getting parameters
+ */
+static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, struct params *params)
+{
+	enum {
+		no_error = 0,
+		error_bad_request = 1,
+		error_not_found = 2,
+		error_not_running = 3,
+		error_forbidden = 4
+	};
+
+	int id, error;
+	struct json_object *args, *obj;
+	unsigned found, expected;
+
+	/* init */
+	expected = optional|mandatory;
+	memset(params, 0, sizeof *params);
+	error = no_error;
+	found = 0;
+	params->uid = afb_req_get_uid(req);
+	args = afb_req_json(req);
+
+	/* args is a numeric value: a run id */
+	if (json_object_is_type(args, json_type_int)) {
+		if (expected & Param_RunId) {
+			params->runid = json_object_get_int(args);
+			found |= Param_RunId;
+		}
+	}
+
+	/* args is a string value: either an ID or a widget path */
+	else if (json_object_is_type(args, json_type_string)) {
+		if (expected & (Param_Id | Param_RunId)) {
+			params->id = json_object_get_string(args);
+			found |= Param_Id;
+		}
+		else if (expected & Param_WGT) {
+			params->wgt = json_object_get_string(args);
+			found |= Param_WGT;
+		}
+	}
+
+	/* args is a object value: inspect it */
+	else if (json_object_is_type(args, json_type_object)) {
+		/* get UID */
+		if (json_object_object_get_ex(args, _uid_, &obj)) {
+			if (!json_object_is_type(obj, json_type_int))
+				error = 1;
+			else {
+				id = json_object_get_int(obj);
+				if (id < 0)
+					error = error_bad_request;
+				else if (params->uid != id) {
+					if (!afb_req_has_permission(req, auth_perm_set_uid.text))
+						error = error_forbidden;
+					else {
+						params->uid = id;
+					}
+				}
+			}
+		}
+
+		/* get all */
+		if ((expected & Param_All)
+		&& json_object_object_get_ex(args, _all_, &obj)) {
+			params->all = json_object_get_boolean(obj);
+			if (params->all && !has_auth(req, &auth_view_all))
+				error = error_forbidden;
+			else
+				found |= Param_All;
+		}
+
+		/* get force */
+		if ((expected & Param_Force)
+		&& json_object_object_get_ex(args, _force_, &obj)) {
+			params->force = json_object_get_boolean(obj);
+			found |= Param_Force;
+		}
+
+		/* get reload */
+		if ((expected & Param_Reload)
+		&& json_object_object_get_ex(args, _reload_, &obj)) {
+			params->reload = json_object_get_boolean(obj);
+			found |= Param_Reload;
+		}
+
+		/* get languages */
+		if ((expected & Param_Lang)
+		&& json_object_object_get_ex(args, _lang_, &obj)) {
+			params->lang = json_object_get_string(obj);
+			found |= Param_Lang;
+		}
+
+		/* get root */
+		if ((expected & Param_Root)
+		&& json_object_object_get_ex(args, _root_, &obj)) {
+			params->root = json_object_get_string(obj);
+			found |= Param_Root;
+		}
+
+		/* get WGT */
+		if (expected & Param_WGT) {
+			if (json_object_object_get_ex(args, _wgt_, &obj)) {
+				params->wgt = json_object_get_string(obj);
+				found |= Param_WGT;
+			}
+		}
+
+		/* get appid */
+		if (expected & (Param_Id | Param_RunId)) {
+			if (json_object_object_get_ex(args, _id_, &obj)) {
+				params->id = json_object_get_string(obj);
+				found |= Param_Id;
+			}
+		}
+
+		/* get runid */
+		if (expected & Param_RunId) {
+			if (json_object_object_get_ex(args, _runid_, &obj)) {
+				if (json_object_is_type(obj, json_type_int))
+					error = error_bad_request;
+				else {
+					params->runid = json_object_get_int(obj);
+					found |= Param_RunId;
+				}
+			}
+		}
+	}
+
+	/* deduce the runid from the uid on need */
+	if ((mandatory & Param_RunId) && !(found & Param_RunId) && (found & Param_Id)) {
+		id = afm_urun_search_runid(afudb, params->id, params->uid);
+		if (id > 0) {
+			params->runid = id;
+			found |= Param_RunId;
+		}
+		else if (errno == ESRCH)
+			error = error_not_running;
+		else
+			error = error_not_found;
+	}
+
+	/* check all mandatory are here */
+	if (error != no_error || (mandatory & found) != mandatory) {
+		switch(error) {
+		case error_not_found:
+			not_found(req);
+			break;
+		case error_not_running:
+			not_running(req);
+			break;
+		case error_forbidden:
+			forbidden_request(req);
+			break;
+		case error_bad_request:
+		default:
+			bad_request(req);
+			break;
+		}
+		return 0;
+	}
+
+	params->args = args;
+	params->found = found;
+	return 1;
 }
 
 /*
