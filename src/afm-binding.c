@@ -51,6 +51,7 @@ static const char _a_l_c_[]     = "application-list-changed";
 static const char _bad_request_[] = "bad-request";
 static const char _cannot_start_[] = "cannot-start";
 static const char _detail_[]    = "detail";
+static const char _forbidden_[] = "forbidden";
 static const char _id_[]        = "id";
 static const char _lang_[]      = "lang";
 static const char _not_found_[] = "not-found";
@@ -179,6 +180,15 @@ static void bad_request(afb_req_t req)
 		afb_req_get_called_verb(req),
 		json_object_to_json_string(afb_req_json(req)));
 	afb_req_fail(req, _bad_request_, NULL);
+}
+
+/* forbidden request reply */
+static void forbidden_request(afb_req_t req)
+{
+	INFO("forbidden request verb %s: %s",
+		afb_req_get_called_verb(req),
+		json_object_to_json_string(afb_req_json(req)));
+	afb_req_fail(req, _forbidden_, NULL);
 }
 
 /* common not found reply */
