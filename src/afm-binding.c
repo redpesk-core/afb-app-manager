@@ -98,7 +98,6 @@ static const struct afb_auth
 		.type = afb_auth_Permission,
 		.text = FWK_PREFIX"permission:afm:system:runner:kill"
 	},
-
 	auth_detail = {
 		.type = afb_auth_Or,
 		.first = &auth_perm_widget,
@@ -141,10 +140,6 @@ static const struct afb_auth
 		.type = afb_auth_Permission,
 		.text = FWK_PREFIX"permission:afm:system:widget:uninstall"
 	},
-	auth_perm_widget_preinstall = {
-		.type = afb_auth_Permission,
-		.text = FWK_PREFIX"permission:afm:system:widget:preinstall"
-	},
 	auth_install = {
 		.type = afb_auth_Or,
 		.first = &auth_perm_widget,
@@ -154,11 +149,6 @@ static const struct afb_auth
 		.type = afb_auth_Or,
 		.first = &auth_perm_widget,
 		.next = &auth_perm_widget_uninstall
-	},
-	auth_preinstall = {
-		.type = afb_auth_Or,
-		.first = &auth_perm_widget,
-		.next = &auth_perm_widget_preinstall
 	};
 
 /*
