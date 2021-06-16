@@ -209,6 +209,28 @@ static void cant_start(afb_req_t req)
 	afb_req_fail(req, _cannot_start_, NULL);
 }
 
+/* emulate missing function */
+static int has_auth(afb_req_t req, const struct afb_auth *auth)
+{
+	switch (auth->type) {
+	case afb_auth_Permission:
+		return afb_req_has_permission(req, auth->text);
+	case afb_auth_Or:
+		return has_auth(req, auth->first) || has_auth(req, auth->next);
+	case afb_auth_And:
+		return has_auth(req, auth->first) && has_auth(req, auth->next);
+	case afb_auth_Not:
+		return !has_auth(req, auth->first);
+	case afb_auth_Yes:
+		return 1;
+	case afb_auth_No:
+	case afb_auth_Token:
+	case afb_auth_LOA:
+	default:
+		return 0;
+	}
+}
+
 /*
  * Broadcast the event "application-list-changed".
  * This event is sent was the event "changed" is received from dbus.
