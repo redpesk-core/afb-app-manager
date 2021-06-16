@@ -1,28 +1,40 @@
 #!/bin/bash
 
 send() {
-	afb-client -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$1" "$2" |
-	awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
+  local verb="$1"
+  afb-client -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$verb" "$2" |
+  awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
 }
 
-getall() {
+all=false
+force=false
+uid="$UID"
+help=false
+
+set -- $(getopt -l all,force,help,uid: -s afhu: -n afm-util -- "$@")
+while :
+do
   case "$1" in
-    -a|--all) echo -n '{"all":true}';;
-    *) echo -n true;;
+  -a|--all) all=true; shift;;
+  -f|--force) force=true; shift;;
+  -h|--help) help=true; shift;;
+  -u|--uid) uid="$2"; shift 2;;
+  --) shift; break;;
+  *) help=true; break;;
   esac
-}
+done
 
 case "$1" in
 
   list|runnables)
-    send runnables $(getall $2)
+    send runnables "{\"all\":$all,\"uid\":$uid}"
     ;;
 
   add|install)
     f=$(realpath $2)
     r=true
     if [[ "$(basename $0)" = "afm-install" ]]; then r=false; fi
-    send install '{"wgt":"'"$f"'","force":true,"reload":'"$r"'}'
+    send install "{\"wgt\":\"$f\",\"force\":$force,\"reload\":$r}"
     ;;
 
   remove|uninstall)
@@ -32,36 +44,31 @@ case "$1" in
 
   info|detail)
     i=$2
-    send detail "\"$i\""
+    send detail "{\"id\":$i,\"uid\":$uid}"
     ;;
 
   ps|runners)
-    send runners  $(getall $2)
+    send runners  "{\"all\":$all,\"uid\":$uid}"
     ;;
 
   run|start)
     i=$2
-    send start "\"$i\""
-    ;;
-
-  run-remote|start-remote)
-    i=$2
-    send start '{"id":"'"$i"'","mode":"remote"}'
+    send start "{\"id\":$i,\"uid\":$uid}"
     ;;
 
   once)
     i=$2
-    send once "\"$i\""
+    send once "{\"id\":$i,\"uid\":$uid}"
     ;;
 
   terminate|kill)
     i=$2
-    send terminate "$i"
+    send terminate  "{\"runid\":$i,\"uid\":$uid}"
     ;;
 
   state|status)
     i=$2
-    send state "$i"
+    send state  "{\"runid\":$i,\"uid\":$uid}"
     ;;
 
   -h|--help|help)

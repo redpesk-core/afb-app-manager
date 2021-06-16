@@ -467,106 +467,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 }
 
 /*
- * Retrieve the required language from 'req'.
- */
-static const char *get_lang(afb_req_t req)
-{
-	const char *lang;
-
-	/* get the optional language */
-	lang = afb_req_value(req, _lang_);
-
-	/* TODO use the req to get the lang of the session (if any) */
-
-	return lang;
-}
-
-/*
- * Retrieve whether all is required from 'req'.
- */
-static int get_all(afb_req_t req)
-{
-	struct json_object *val;
-
-	/* get the optional language */
-	return json_object_object_get_ex(afb_req_json(req), _all_, &val)
-		&& json_object_get_boolean(val);
-}
-
-/*
- * retrieves the 'appid' in parameters received with the
- * request 'req'.
- *
- * Returns 1 in case of success.
- * Otherwise, if the 'appid' can't be retrieved, an error stating
- * the bad request is replied for 'req' and 0 is returned.
- */
-static int onappid(afb_req_t req, const char **appid)
-{
-	struct json_object *json;
-
-	/* get the paramaters of the request */
-	json = afb_req_json(req);
-
-	/* get the appid if any */
-	if (!wrap_json_unpack(json, "s", appid)
-	 || !wrap_json_unpack(json, "{ss}", _id_, appid)) {
-		/* found */
-		INFO("method %s called for %s", afb_req_get_called_verb(req), *appid);
-		return 1;
-	}
-
-	/* nothing appropriate */
-	bad_request(req);
-	return 0;
-}
-
-/*
- * retrieves the 'runid' in parameters received with the
- * request 'req'.
- *
- * Returns 1 in case of success.
- * Otherwise, if the 'runid' can't be retrieved, an error stating
- * the bad request is replied for 'req' and 0 is returned.
- */
-static int onrunid(afb_req_t req, int *runid)
-{
-	struct json_object *json;
-	const char *appid;
-
-	/* get the paramaters of the request */
-	json = afb_req_json(req);
-
-	/* get the runid if any */
-	if (!wrap_json_unpack(json, "i", runid)
-	 || !wrap_json_unpack(json, "{si}", _runid_, runid)) {
-		INFO("method %s called for %d", afb_req_get_called_verb(req), *runid);
-		return 1;
-	}
-
-	/* get the appid if any */
-	if (!onappid(req, &appid))
-		return 0;
-
-	/* search the runid of the appid */
-	*runid = afm_urun_search_runid(afudb, appid, afb_req_get_uid(req));
-	if (*runid < 0) {
-		/* nothing appropriate */
-		INFO("method %s can't get runid for %s: %m", afb_req_get_called_verb(req),
-							appid);
-		if (errno == ESRCH)
-			not_running(req);
-		else
-			not_found(req);
-		return 0;
-	}
-
-	/* found */
-	INFO("method %s called for %s -> %d", afb_req_get_called_verb(req), appid, *runid);
-	return 1;
-}
-
-/*
  * Sends the reply 'resp' to the request 'req' if 'resp' is not NULLzero.
  * Otherwise, when 'resp' is NULL replies the error string 'errstr'.
  */
@@ -592,18 +492,15 @@ static void reply_status(afb_req_t req, int status)
  */
 static void runnables(afb_req_t req)
 {
-	int all;
-	const char *lang;
+	struct params params;
 	struct json_object *resp;
 
-	/* get the language */
-	lang = get_lang(req);
+	/* scan the request */
+	if (!get_params(req, 0, Param_Lang|Param_All, &params))
+		return;
 
-	/* get the all */
-	all = get_all(req);
-
-	/* get the details */
-	resp = afm_udb_applications_public(afudb, all, afb_req_get_uid(req), lang);
+	/* get the applications */
+	resp = afm_udb_applications_public(afudb, params.all, params.uid, params.lang);
 	afb_req_success(req, resp, NULL);
 }
 
@@ -612,19 +509,15 @@ static void runnables(afb_req_t req)
  */
 static void detail(afb_req_t req)
 {
-	const char *lang;
-	const char *appid;
+	struct params params;
 	struct json_object *resp;
 
 	/* scan the request */
-	if (!onappid(req, &appid))
+	if (!get_params(req, Param_Id, Param_Lang, &params))
 		return;
 
-	/* get the language */
-	lang = get_lang(req);
-
-	/* wants details for appid */
-	resp = afm_udb_get_application_public(afudb, appid, afb_req_get_uid(req), lang);
+	/* get the details */
+	resp = afm_udb_get_application_public(afudb, params.id, params.uid, params.lang);
 	if (resp)
 		afb_req_success(req, resp, NULL);
 	else
@@ -636,23 +529,23 @@ static void detail(afb_req_t req)
  */
 static void start(afb_req_t req)
 {
-	const char *appid;
+	struct params params;
 	struct json_object *appli, *resp;
 	int runid;
 
 	/* scan the request */
-	if (!onappid(req, &appid))
+	if (!get_params(req, Param_Id, 0, &params))
 		return;
 
 	/* get the application */
-	appli = afm_udb_get_application_private(afudb, appid, afb_req_get_uid(req));
+	appli = afm_udb_get_application_private(afudb, params.id, params.uid);
 	if (appli == NULL) {
 		not_found(req);
 		return;
 	}
 
 	/* launch the application */
-	runid = afm_urun_start(appli, afb_req_get_uid(req));
+	runid = afm_urun_start(appli, params.uid);
 	if (runid < 0) {
 		cant_start(req);
 		return;
@@ -674,23 +567,23 @@ static void start(afb_req_t req)
  */
 static void once(afb_req_t req)
 {
-	const char *appid;
+	struct params params;
 	struct json_object *appli, *resp;
 	int runid;
 
 	/* scan the request */
-	if (!onappid(req, &appid))
+	if (!get_params(req, Param_Id, 0, &params))
 		return;
 
 	/* get the application */
-	appli = afm_udb_get_application_private(afudb, appid, afb_req_get_uid(req));
+	appli = afm_udb_get_application_private(afudb, params.id, params.uid);
 	if (appli == NULL) {
 		not_found(req);
 		return;
 	}
 
 	/* launch the application */
-	runid = afm_urun_once(appli, afb_req_get_uid(req));
+	runid = afm_urun_once(appli, params.uid);
 	if (runid < 0) {
 		cant_start(req);
 		return;
@@ -706,9 +599,12 @@ static void once(afb_req_t req)
  */
 static void pause(afb_req_t req)
 {
-	int runid, status;
-	if (onrunid(req, &runid)) {
-		status = afm_urun_pause(runid, afb_req_get_uid(req));
+	struct params params;
+	int status;
+
+	/* scan the request */
+	if (get_params(req, Param_RunId, 0, &params)) {
+		status = afm_urun_pause(params.runid, params.uid);
 		reply_status(req, status);
 	}
 }
@@ -718,9 +614,12 @@ static void pause(afb_req_t req)
  */
 static void resume(afb_req_t req)
 {
-	int runid, status;
-	if (onrunid(req, &runid)) {
-		status = afm_urun_resume(runid, afb_req_get_uid(req));
+	struct params params;
+	int status;
+
+	/* scan the request */
+	if (get_params(req, Param_RunId, 0, &params)) {
+		status = afm_urun_resume(params.runid, params.uid);
 		reply_status(req, status);
 	}
 }
@@ -730,9 +629,12 @@ static void resume(afb_req_t req)
  */
 static void terminate(afb_req_t req)
 {
-	int runid, status;
-	if (onrunid(req, &runid)) {
-		status = afm_urun_terminate(runid, afb_req_get_uid(req));
+	struct params params;
+	int status;
+
+	/* scan the request */
+	if (get_params(req, Param_RunId, 0, &params)) {
+		status = afm_urun_terminate(params.runid, params.uid);
 		reply_status(req, status);
 	}
 }
@@ -742,10 +644,14 @@ static void terminate(afb_req_t req)
  */
 static void runners(afb_req_t req)
 {
-	int all;
+	struct params params;
 	struct json_object *resp;
-	all = get_all(req);
-	resp = afm_urun_list(afudb, all, afb_req_get_uid(req));
+
+	/* scan the request */
+	if (!get_params(req, 0, Param_All, &params))
+		return;
+
+	resp = afm_urun_list(afudb, params.all, params.uid);
 	afb_req_success(req, resp, NULL);
 }
 
@@ -754,10 +660,12 @@ static void runners(afb_req_t req)
  */
 static void state(afb_req_t req)
 {
-	int runid;
+	struct params params;
 	struct json_object *resp;
-	if (onrunid(req, &runid)) {
-		resp = afm_urun_state(afudb, runid, afb_req_get_uid(req));
+
+	/* scan the request */
+	if (get_params(req, Param_RunId, 0, &params)) {
+		resp = afm_urun_state(afudb, params.runid, params.uid);
 		reply(req, resp);
 	}
 }
@@ -775,38 +683,36 @@ static void do_reloads()
  */
 static void install(afb_req_t req)
 {
-	const char *wgtfile;
-	const char *root;
-	int force;
-	int reload;
+	struct params params;
 	struct wgt_info *ifo;
-	struct json_object *json;
 	struct json_object *resp;
 
-	/* default settings */
-	root = rootdir;
-	force = 0;
-	reload = 1;
-
 	/* scan the request */
-	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "s", &wgtfile)
-		&& wrap_json_unpack(json, "{ss s?s s?b s?b}",
-				"wgt", &wgtfile,
-				"root", &root,
-				"force", &force,
-				"reload", &reload)) {
-		return bad_request(req);
+	if (!get_params(req, Param_WGT, Param_Root|Param_Force|Param_Reload, &params))
+		return;
+
+	/* check if force is allowed */
+	if (params.force) {
+		if (!has_auth(req, &auth_uninstall)) {
+			forbidden_request(req);
+			return;
+		 }
 	}
 
+	/* supply default values */
+	if (!(params.found & Param_Reload))
+		params.reload = 1;
+	if (!(params.found & Param_Root))
+		params.root = rootdir;
+
 	/* install the widget */
-	ifo = install_widget(wgtfile, root, force);
+	ifo = install_widget(params.wgt, params.root, params.force);
 	if (ifo == NULL)
 		afb_req_fail_f(req, "failed", "installation failed: %m");
 	else {
 		afm_udb_update(afudb);
 		/* reload if needed */
-		if (reload)
+		if (params.reload)
 			do_reloads();
 
 		/* build the response */
@@ -824,31 +730,25 @@ static void install(afb_req_t req)
  */
 static void uninstall(afb_req_t req)
 {
-	const char *idaver;
-	const char *root;
-	struct json_object *json;
+	struct params params;
 	int rc;
 
-	/* default settings */
-	root = rootdir;
-
 	/* scan the request */
-	json = afb_req_json(req);
-	if (wrap_json_unpack(json, "s", &idaver)
-		&& wrap_json_unpack(json, "{ss s?s}",
-				_id_, &idaver,
-				"root", &root)) {
-		return bad_request(req);
-	}
+	if (!get_params(req, Param_Id, Param_Root|Param_Reload, &params))
+		return;
+	if (!(params.found & Param_Reload))
+		params.reload = 1;
+	if (!(params.found & Param_Root))
+		params.root = rootdir;
 
 	/* install the widget */
-	rc = uninstall_widget(idaver, root);
+	rc = uninstall_widget(params.id, params.root);
 	if (rc)
 		afb_req_fail_f(req, "failed", "uninstallation failed: %m");
 	else {
 		afm_udb_update(afudb);
 		afb_req_success(req, NULL, NULL);
-		application_list_changed(_uninstall_, idaver);
+		application_list_changed(_uninstall_, params.id);
 	}
 }
 #endif
