@@ -1,12 +1,5 @@
 # Application framework of redpesk
 
-## Foreword
-
-This document describes the application management of the application framework
-of **redpesk**.
-FCS (Fully Conform to Specification) implementation is still under development.  
-It may happen that current implementation somehow diverges with specifications.
-
 ## Overview
 
 The application framework of **redpesk**
@@ -90,7 +83,7 @@ This model is described [here][tizen-secu-3].
 The security framework includes:
 
 - **sec-lsm-manager**: component that interact with the security module of linux (Smack)
-- **cynagora**: component to manage permissions
+- **sec-cynagora**: component to manage permissions
 - **D-Bus** compliant to Cynagora: checks the permissions to deliver messages
 
 **In theory, the security framework/model is an implementation details
@@ -107,7 +100,7 @@ that should not impact the programming model from a user point of view**.
 [d-bus]:            http://www.freedesktop.org/wiki/Software/dbus                   "D-Bus"
 [libzip]:           http://www.nih.at/libzip                                        "libzip"
 [cmake]:            https://cmake.org                                               "CMake"
-[sec-lsm-manager]: https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager "Sec-lsm-Manager"
+[sec-lsm-manager]: https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager  "Sec-lsm-Manager"
 [app-manifest]:     http://www.w3.org/TR/appmanifest                                "Web App Manifest"
 [tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
 [tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"
