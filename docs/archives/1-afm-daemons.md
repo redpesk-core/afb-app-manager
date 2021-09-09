@@ -14,7 +14,7 @@ Understand that they will manage operations that mainly are:
 In addition, they ensure that operations use the security framework as needed
 and that applications are executed in the correct context.
 
-The daemon ***afm-system-daemon*** is accessible through redpesk
+The daemon ***afm-system-daemon*** is accessible through AGL
 micro-service architecture using either the binder ***afb-binder*** or
 the client library ***libafbwsc***.
 
@@ -24,7 +24,7 @@ the client library ***libafbwsc***.
 Normally, service files are located in the directory
 */lib/systemd/system/afm-system-daemon.service*.
 
-Internally, the daemon is built as a binding served by afb-binder.
+Internally, the daemon is built as a binding served by afb-daemon.
 
 ## Tasks of **afm-system-daemon**
 
@@ -35,7 +35,7 @@ applications and load in memory a list of available applications
 accessible by current user.
 
 When **afm-system-daemon** installs or removes an application,
-on success it sends the signal.
+on success it sends the signal **.
 When receiving such a signal, **afm-system-daemon** rebuilds its
 applications list.
 
@@ -71,3 +71,5 @@ It can also terminate a given application.
 If the client own the right permissions,
 **afm-system-daemon** delegates that task
 to **afm-system-daemon**.
+
+[afm-daemons]: pictures/afm-daemons.svg

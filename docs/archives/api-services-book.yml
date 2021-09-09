@@ -10,12 +10,12 @@ books:
     chapters:
         - url: "0-introduction.md"
           name: Introduction
-        - url: "1-afm-daemons.md"
-          name: afm-system-daemon
-        - url: 2-afm-util.md
+        - url: "2-widgets.md"
+          name: Widgets
+        - url: 8-afm-util.md
           name: afm-util tool
-        - url: "3-config.xml.md"
-          name: Configuration
-        - url: "4-permissions.md"
+        - url: "2.2-config.xml.md"
+          name: Widget configuration file
+        - url: "3-permissions.md"
           name: Permissions
 

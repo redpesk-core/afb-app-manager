@@ -25,9 +25,7 @@ to implement the programming model.
 
 The framework manages applications and hides them security details.
 To achieves it, the framework is built on top of a secured Linux.
-
-The current implementation uses either Smack or SELinux
-Linux security modules (LSM) on top of ordinary DAC.
+The current implementation uses Smack and DAC Linux security modules (LSM).
 
 The programming model and the security are inspired from Tizen 3.
 
@@ -37,11 +35,23 @@ The framework ensures that sensitive services, devices or resources
 of the platform are protected. Applications can access these sensitive
 resources only if explicitly permitted to do so.
 
-Applications are packaged and delivered in a digitally signed RPM that contains:
+Applications are packaged and delivered in a digitally signed container
+named *widget*. A widget contains:
 
 - the application and its data
 - a configuration file *config.xml*
-- some signature files
+- signature files
+
+The format of widgets is described by W3C (World Wide Web Consortium)
+technical recommendations:
+
+- [Packaged Web Apps (Widgets)](http://www.w3.org/TR/widgets)
+  (note: now deprecated)
+
+- [XML Digital Signatures for Widgets](http://www.w3.org/TR/widgets-digsig)
+
+The format is enough flexible to include the description of permissions
+and dependencies required or provided by the application.
 
 Signature make possible to allow or deny permissions required by the
 application based on certificates of signers.
@@ -49,7 +59,7 @@ application based on certificates of signers.
 A chain of trust in the creation of certificates allows a hierarchical
 structuring of permissions.
 
-It also adds the description of dependency to other service because redpesk
+It also adds the description of dependency to other service because AGL
 programming model emphasis micro-services architecture design.
 
 As today this model allows the distribution of HTML, QML and binary applications
@@ -80,6 +90,10 @@ The security framework includes:
 that should not impact the programming model from a user point of view**.
 
 
+[meta-intel]:       https://github.com/01org/meta-intel-iot-security                "A collection of layers providing security technologies"
+[widgets]:          http://www.w3.org/TR/widgets                                    "Packaged Web Apps"
+[widgets-digsig]:   http://www.w3.org/TR/widgets-digsig                             "XML Digital Signatures for Widgets"
+[libxml2]:          http://xmlsoft.org/html/index.html                              "libxml2"
 [openssl]:          https://www.openssl.org                                         "OpenSSL"
 [xmlsec]:           https://www.aleksey.com/xmlsec                                  "XMLSec"
 [json-c]:           https://github.com/json-c/json-c                                "JSON-c"
@@ -90,3 +104,5 @@ that should not impact the programming model from a user point of view**.
 [app-manifest]:     http://www.w3.org/TR/appmanifest                                "Web App Manifest"
 [tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
 [tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"
+[AppFW-APP_install_sequences]: pictures/AppFW-APP_install_sequences.svg
+[Security_model_history]: pictures/Security_model_history.svg
