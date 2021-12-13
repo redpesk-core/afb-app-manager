@@ -14,12 +14,12 @@ dorestorecon() {
 
 dodir() {
 	local dir
-	local label="$1"
+	local smack_options="$1"
 	shift 1
 	for dir in "$@"; do
 		test -d "$dir" || mkdir -Z -m 775 "$dir"
 		chmod 755 "$dir"
-		dochsmack -T -a "$label" "$dir"
+		dochsmack $smack_options "$dir"
 		dorestorecon -RF "$dir"
 	done
 }
@@ -32,11 +32,12 @@ pdir=@afm_platform_rundir@
 spdir=@afm_scope_platform_dir@
 
 # Create /run/* directories
-dodir "System:Shared" "/run/user" "$pdir" "$pdir/display" "$pdir/apis" "$pdir/apis/ws" "$pdir/apis/link"
+dodir "-T -a System:Shared" "/run/user" "$pdir" "$pdir/display" "$pdir/apis" "$pdir/apis/ws" "$pdir/apis/link"
 
 # Create debug directory
-test -z "@create_platform_debug@" || dodir "System:Shared" "$pdir/debug"
+test -z "@create_platform_debug@" || dodir "-T -a System:Shared" "$pdir/debug"
 
 # Create /var/score-platform directory
-dodir "User:App-Shared" "$spdir"
-chown daemon:daemon "$spdir"
+dodir "-T -a User:App-Shared" "$spdir"
+dodir "-t -a System:Shared" "$spdir/share"
+chown -R daemon:daemon "$spdir"
