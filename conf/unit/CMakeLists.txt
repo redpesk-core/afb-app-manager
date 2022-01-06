@@ -22,7 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 find_program(M4EXEC m4)
 mark_as_advanced(M4EXEC)

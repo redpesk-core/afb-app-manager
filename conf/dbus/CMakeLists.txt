@@ -22,7 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 if(NOT USE_SDK)
 	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
