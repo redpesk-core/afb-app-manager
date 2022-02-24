@@ -219,3 +219,8 @@ if(WITH_RPM_REDPESK_PLUGIN)
 else()
 	MESSAGE(STATUS "Not creating rpm plugin for redpesk")
 endif()
+
+###########################################################################
+# certification tools
+
+add_subdirectory(cert)
