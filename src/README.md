@@ -22,12 +22,6 @@ afm-binding.c
 The binding that implements afm-system-daemon: the service
 that installs, uninstalls, runs, list applications and services.
 
-afm-user-daemon.[ch]
---------------------
-
-Legacy daemon that at the moment just bridge DBUS calls to
-the true API. To be removed for FF (Funky Flounder).
-
 widget configuration
 --------------------
 (wgt.c wgt-config.c wgt-info.c wgt-json.c wgt-strings.c)
@@ -41,11 +35,9 @@ Locale management to be changed for FF (Funky Flounder).
 
 utilities
 ---------
-(mustach.c secmgr-wrap.c utils-dir.c utils-file.c utils-jbus.c utils-json.c utils-systemd.c verbose.c wrap-json.c)
+(mustach.c secmgr-wrap.c utils-dir.c utils-file.c utils-json.c utils-systemd.c verbose.c wrap-json.c)
 
 These files provide utility features.
-
-utils-jbus is only used by afm-user-daemon. It should be removed for FF.
 
 widget package management
 -------------------------

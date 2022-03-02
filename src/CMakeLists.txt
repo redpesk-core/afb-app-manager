@@ -180,14 +180,6 @@ endif()
 if(libsystemd_FOUND AND AFB_FOUND)
 	MESSAGE(STATUS "Creating daemons")
 
-	add_library(jbus STATIC utils-jbus.c)
-
-	if(LEGACY_USER_DAEMON)
-		add_executable(afm-user-daemon afm-user-daemon.c)
-		target_link_libraries(afm-user-daemon jbus utils)
-		install(TARGETS afm-user-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
-	endif()
-
 	add_library(afm-binding MODULE afm-binding.c)
 	target_link_libraries(afm-binding wgtpkg wgt secwrp afm utils)
 	set_target_properties(afm-binding PROPERTIES

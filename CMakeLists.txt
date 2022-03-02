@@ -47,8 +47,6 @@ option(ALLOW_WIDGETS      "Allow widgets even if WITH_RPM_REDPESK_PLUGIN is ON" 
 
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 
-option(LEGACY_USER_DAEMON "compile and install the legacy afm-user-daemon" OFF)
-
 set(afm_name                "afm" CACHE STRING "Name for application framework user")
 set(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}" CACHE STRING "Directory for configuration files")
 set(afm_datadir             "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}" CACHE STRING "Root directory for installions")
