@@ -1,3 +1,4 @@
+
 List of things to do
 - Implement CRL and OCSP parts of x509
 - Implement permissions grant based on certificates
@@ -7,3 +8,28 @@ List of things to do
 - remove the link to the icon on failure or create it lately
 - improves safety on power failure
 - make application ids (idaver) NOT CASE SENSITIVE
+
+
+
+The current status of the framework evolves
+The need is to:
+
+- split the RPM plugin in 2 parts:
+  * the part remaining as RPM plugin:
+    + browses the list of files
+    + establishes rednode properties (prefixes ...)
+    + contact the second and trusted part to install the files
+  * the part extracted is the installer
+    + scans the installed files
+    + checks the security (permission, signatures, ...)
+    + deduce the security rules
+    + installs the files (using security-manager)
+    + setup the launchers
+
+- afm-system-daemon becomes a client of the installer daemon described above
+
+- the configuration file must be changed to allow installation of plugins and extensions
+
+- the sharing has to be taken into account in security
+
+- drop of xmlsec!
