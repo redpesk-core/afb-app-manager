@@ -37,6 +37,7 @@ make_sub_certificate() {
 		--load-ca-certificate=$CERTS/$auth.pem \
 		--no-text \
 		--outfile=$CERTS/$name.pem
+	cat $CERTS/$name.pem $CERTS/$auth.pem > $CERTS/$name.list.pem
 }
 #-----------------------------
 make_end_certificate() {
@@ -54,6 +55,7 @@ make_end_certificate() {
 		--load-ca-certificate=$CERTS/$auth.pem \
 		--no-text \
 		--outfile=$CERTS/$name.pem
+	cat $CERTS/$name.pem $CERTS/$auth.list.pem > $CERTS/$name.list.pem
 }
 #-----------------------------
 ACTION=$1
@@ -63,5 +65,3 @@ case $ACTION in
   mksub) make_sub_certificate "$@";;
   mkend) make_end_certificate "$@";;
 esac
-
-
