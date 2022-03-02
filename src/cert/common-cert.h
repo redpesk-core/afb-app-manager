@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <stdio.h>
 #include <stdbool.h>
 
 #include <gnutls/x509.h>
@@ -36,6 +37,32 @@
 #define OID_EXT_DOMAIN_SPEC   "1.3.9.812.383.370.36.1"
 
 /**
+ * structure for verifying chain of certificates
+ */
+typedef
+struct
+{
+	/** array of certificates for the chain */
+	gnutls_x509_crt_t *certs;
+
+	/** count of certificates in the array */
+	int nrcerts;
+
+	/** array of trusted certificates */
+	gnutls_x509_crt_t *trusteds;
+
+	/** count of trusted certificates in the array */
+	int nrtrusteds;
+
+	/** TODO */
+	gnutls_x509_crl_t *crls;
+
+	/** TODO */
+	int nrcrls;
+}
+check_crt_t;
+
+/**
  * This routine check if issuer certificate issued cert.
  * If verify, the signature of the certificate is checked,
  * otherwise, if not verify, only the issuer name is checked.
@@ -45,6 +72,7 @@
  * @param verify if true, signature is checked
  * @result true if issuer certificate issued cert
  */
+extern
 bool
 is_issuer(
 	gnutls_x509_crt_t cert,
@@ -59,32 +87,12 @@ is_issuer(
  * @param spec the spec to retrieve (must be empty)
  * @return 
  */
+extern
 int
 get_domain_spec_of_cert(
 	gnutls_x509_crt_t cert,
 	domain_spec_t *spec
 );
-
-/**
- * structure for verifying chain of certificates
- */
-typedef  
-struct
-{
-	/** array of certificates for the chain */
-	gnutls_x509_crt_t *certs;
-	/** count of certificates in the array */
-	int nrcerts;
-	/** array of trusted certificates */
-	gnutls_x509_crt_t *trusteds;
-	/** count of trusted certificates in the array */
-	int nrtrusteds;
-	/** TODO */
-	gnutls_x509_crl_t *crls;
-	/** TODO */
-	int nrcrls;
-}
-check_crt_t;
 
 /**
  * Check the chain of trust
@@ -94,9 +102,49 @@ check_crt_t;
  * @param spec if not NULL, check the domain capabilities and return those of target
  * @return 0 in case of success or a negative number otherwise
  */
+extern
 int
 check_crt_chain(
 	check_crt_t *ckcrt,
 	int targetidx,
 	domain_spec_t *spec
 );
+
+/**
+ * sort the chain of trust, put issuers in first
+ *
+ * @param certs the array of certificates to be sorted
+ * @param nrcerts count of the certificates in the array
+ * @param verify if true, signature is checked
+ */
+extern
+void
+sort_certs(
+	gnutls_x509_crt_t *certs,
+	int nrcerts,
+	bool verify
+);
+
+/**
+ * @brief create and read the pkcs7 file
+ * 
+ * @param file the filename to read
+ * @param pkcs7 the pkcs7 struct to create
+ * @return 0 in case of success or a negative number otherwise
+ */
+extern
+int read_pkcs7(const char *file, gnutls_pkcs7_t *pkcs7);
+
+/**
+ * @brief create and read an array of certificates
+ * 
+ * @param file the filename to read
+ * @param certs the array of certificates to be created
+ * @param maxnr the count of certificate that can be stored
+ * @return the count of certificates read in case of success or a negative number otherwise
+ */
+extern
+int read_certificates(const char *file, gnutls_x509_crt_t *certs, int maxnr);
+
+extern
+int read_private_key(const char *file, gnutls_privkey_t *key);

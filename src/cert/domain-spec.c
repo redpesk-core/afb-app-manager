@@ -92,6 +92,42 @@ add_domain(domain_spec_t *spec, domain_permission_t perm, const char *domain)
 	return add_domain_len(spec, perm, domain, strlen(domain));
 }
 
+int
+domain_spec_set_len(domain_spec_t *spec, domain_permission_t perm, const char *domain, size_t length)
+{
+	domain_t *dom, **prv;
+
+	/* validate permission */
+	if (!is_domain_permission_valid(perm))
+		return -EINVAL;
+
+	/* search the domain */
+	prv = &spec->head;
+	while((dom = *prv) != NULL && (0 != memcmp(dom->name, domain, length) || dom->name[length] != 0))
+		prv = &dom->next;
+
+	if (perm == domain_permission_none) {
+		if (dom != NULL) {
+			*prv = dom->next;
+			free(dom);
+		}
+		return 0;
+	}
+
+	if (dom != NULL) {
+		dom->permission = perm;
+		return 0;
+	}
+
+	return add_domain(spec, perm, domain);
+}
+
+int
+domain_spec_set(domain_spec_t *spec, domain_permission_t perm, const char *domain)
+{
+	return domain_spec_set_len(spec, perm, domain, strlen(domain));
+}
+
 bool is_domain_spec_granting(const domain_spec_t *spec, const char *domain)
 {
 	const domain_t *dom = get_domain(spec, domain);

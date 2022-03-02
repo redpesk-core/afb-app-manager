@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "check-signature.h"
+#include "common-cert.h"
 
 enum {
 	ID_CMD_help,
@@ -60,69 +61,6 @@ void help(const char *name, bool bad)
 	exit(EXIT_SUCCESS);
 }
 
-void read_file(const char *file, unsigned char **pointer, unsigned *size)
-{
-	size_t sread, sz, len = 0;
-	unsigned char *ptr, *buffer = NULL;
-	FILE *f;
-
-	f = fopen(file, "rb");
-	if (f != NULL) {
-		for (;;) {
-			sz = len + 32768;
-			ptr = realloc(buffer, sz);
-			if (ptr == NULL)
-				break;
-			buffer = ptr;
-			sread = fread(&buffer[len], 1, sz - len, f);
-			if (sread == 0) {
-				ptr = realloc(buffer, len);
-				if (ptr == NULL)
-					break;
-				*pointer = ptr;
-				*size = (unsigned)len;
-				fclose(f);
-				return;
-			}
-			len += (size_t)sread;
-		}
-		fclose(f);
-	}
-	fprintf(stderr, "Can't read file %s\n", file);
-	exit(EXIT_FAILURE);
-}
-
-void read_pkcs7(const char *file, gnutls_pkcs7_t *pkcs7)
-{
-	int rc;
-	gnutls_datum_t datum;
-	gnutls_pkcs7_init(pkcs7);
-	read_file(file, &datum.data, &datum.size);
-	rc = gnutls_pkcs7_import(*pkcs7, &datum, GNUTLS_X509_FMT_PEM);
-	if (rc < 0) {
-		fprintf(stderr, "Not a pkcs7 PEM encoded file %s\n", file);
-		exit(EXIT_FAILURE);
-	}
-	free(datum.data);
-}
-
-int read_certificates(const char *file, gnutls_x509_crt_t *certs, int maxnr)
-{
-	int rc;
-	gnutls_datum_t datum;
-	unsigned count;
-
-	read_file(file, &datum.data, &datum.size);
-	count = (unsigned)maxnr;
-	rc = gnutls_x509_crt_list_import(certs, &count, &datum, GNUTLS_X509_FMT_PEM, 0);
-	if (rc < 0) {
-		fprintf(stderr, "Can't import CA certificates PEM encoded file %s\n", file);
-		exit(EXIT_FAILURE);
-	}
-	free(datum.data);
-	return (int)count;
-}
-
 void print_granteds(const char *name, domain_permission_t perm, void *closure)
 {
 	if (perm == domain_permission_grants)
@@ -133,7 +71,6 @@ void print_domains(const domain_spec_t *spec)
 {
 	domain_spec_enum(spec, print_granteds, NULL);
 }
-		
 
 int main(int ac, char **av)
 {
@@ -165,11 +102,21 @@ int main(int ac, char **av)
 		if (ac > 4)
 			help(av[0], true);
 
-		read_pkcs7(av[2], &pkcs7);
+		rc = read_pkcs7(av[2], &pkcs7);
+		if (rc < 0) {
+			fprintf(stderr, "Can't read %s: \n", av[2], strerror(-rc));
+			exit(EXIT_FAILURE);
+		}
 		if (ac < 4)
 			nca = 0;
-		else
-			nca = read_certificates(av[3], roots, (int)(sizeof roots / sizeof roots[0]));
+		else {
+			rc = read_certificates(av[3], roots, (int)(sizeof roots / sizeof roots[0]));
+			if (rc < 0) {
+				fprintf(stderr, "Can't read %s: \n", av[3], strerror(-rc));
+				exit(EXIT_FAILURE);
+			}
+			nca = rc;
+		}
 		rc = check_signature(pkcs7, &spec, roots, nca);
 		if (rc < 0) {
 			fprintf(stderr, "Signature file %s can't be used\n", av[2]);

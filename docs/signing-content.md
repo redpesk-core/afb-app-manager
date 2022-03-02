@@ -1,3 +1,15 @@
+
+## signing the content
+
+The tool **signed-digest-tool** allows to:
+
+- make a signature (author or distributor)
+- check a signature
+- check all the signature and report allowed domains
+
+
+## ANNEX
+
 The content must be signed using a PKCS7 file.
 
 Given the list of content in a file: CONTENT.LIST

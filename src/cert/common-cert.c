@@ -22,14 +22,14 @@
  $RP_END_LICENSE$
 */
 
-//#include <stdio.h>
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
+#include <gnutls/abstract.h>
 
 #include "common-cert.h"
 
@@ -122,3 +122,136 @@ check_crt_chain(
 	return -ENOENT;
 }
 
+void
+sort_certs(
+	gnutls_x509_crt_t *certs,
+	int nrcerts,
+	bool verify
+) {
+	int cnt, idx;
+	gnutls_x509_crt_t tmp;
+
+	for (cnt = 0 ; cnt < nrcerts ; cnt++) {
+		idx = cnt + 1;
+		while (idx < nrcerts) {
+			if (!is_issuer(certs[cnt], certs[idx], verify))
+				idx++;
+			else {
+				tmp = certs[cnt];
+				certs[cnt] = certs[idx];
+				certs[idx] = tmp;
+				idx = cnt + 1;
+			}
+		}
+	}
+}
+
+static
+int read_file(const char *file, unsigned char **pointer, size_t *size)
+{
+	size_t sread, sz, len = 0;
+	unsigned char *ptr, *buffer = NULL;
+	FILE *f;
+
+	f = fopen(file, "rb");
+	if (f == NULL)
+		return -errno;
+	for (;;) {
+		sz = len + 32768;
+		ptr = realloc(buffer, sz);
+		if (ptr == NULL)
+			break;
+		buffer = ptr;
+		sread = fread(&buffer[len], 1, sz - len, f);
+		if (sread == 0) {
+			ptr = realloc(buffer, len);
+			if (ptr == NULL)
+				break;
+			*pointer = ptr;
+			*size = len;
+			fclose(f);
+			return 0;
+		}
+		len += (size_t)sread;
+	}
+	fclose(f);
+	return -ENOMEM;
+}
+
+int read_pkcs7(const char *file, gnutls_pkcs7_t *pkcs7)
+{
+	int rc;
+	size_t size;
+	gnutls_datum_t datum;
+
+	rc = read_file(file, &datum.data, &size);
+	if (rc < 0)
+		return rc;
+
+	datum.size = (unsigned)size;
+	gnutls_pkcs7_init(pkcs7);
+	rc = gnutls_pkcs7_import(*pkcs7, &datum, GNUTLS_X509_FMT_PEM);
+	free(datum.data);
+	if (rc != GNUTLS_E_SUCCESS) {
+		gnutls_pkcs7_deinit(*pkcs7);
+		*pkcs7 = NULL;
+		return -EINVAL;
+	}
+	return 0;
+}
+
+int read_certificates(const char *file, gnutls_x509_crt_t *certs, int maxnr)
+{
+	int rc;
+	size_t size;
+	gnutls_datum_t datum;
+	unsigned count;
+
+	rc = read_file(file, &datum.data, &size);
+	if (rc < 0)
+		return rc;
+
+	datum.size = (unsigned)size;
+	count = (unsigned)maxnr;
+	rc = gnutls_x509_crt_list_import(certs, &count, &datum, GNUTLS_X509_FMT_PEM, 0);
+	free(datum.data);
+	return rc < 0 ? -EINVAL : (int)count;
+}
+
+int read_private_key(const char *file, gnutls_privkey_t *key)
+{
+	int rc;
+	size_t size;
+	gnutls_datum_t datum;
+	unsigned count;
+	gnutls_x509_privkey_t xkey;
+
+	*key = NULL;
+	rc = read_file(file, &datum.data, &size);
+	if (rc < 0)
+		return rc;
+
+	rc = gnutls_x509_privkey_init(&xkey);
+	if (rc != GNUTLS_E_SUCCESS) {
+		free(datum.data);
+		return -ENOMEM;
+	}
+
+	datum.size = (unsigned)size;
+	rc = gnutls_x509_privkey_import(xkey, &datum, GNUTLS_X509_FMT_PEM);
+	free(datum.data);
+	if (rc != GNUTLS_E_SUCCESS) {
+		gnutls_x509_privkey_deinit(xkey);
+		return -EINVAL;
+	}
+
+	rc = gnutls_privkey_init(key);
+	if (rc == GNUTLS_E_SUCCESS) {
+		rc = gnutls_privkey_import_x509(*key, xkey, GNUTLS_PRIVKEY_IMPORT_AUTO_RELEASE);
+		if (rc == GNUTLS_E_SUCCESS)
+			return 0;
+	}
+	*key = NULL;
+	gnutls_x509_privkey_deinit(xkey);
+	return -ENOMEM;
+}

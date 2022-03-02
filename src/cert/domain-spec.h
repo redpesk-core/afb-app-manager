@@ -146,7 +146,7 @@ bool is_domain_spec_able_to_sign(const domain_spec_t *auth, const domain_spec_t 
  * 
  * @param to the spec to update
  * @param from the spec to add
- * @return int 0 on success or -EINVAL if the string isn't good or -ENOMEM on out of memory
+ * @return 0 on success or -EINVAL if the string isn't good or -ENOMEM on out of memory
  */
 extern
 int domain_spec_add_grantings(domain_spec_t *to, const domain_spec_t *from);
@@ -161,3 +161,28 @@ int domain_spec_add_grantings(domain_spec_t *to, const domain_spec_t *from);
  */
 extern
 void domain_spec_enum(const domain_spec_t *spec, void (*func)(const char*, domain_permission_t, void*), void *closure);
+
+/**
+ * @brief set the permission of a domain
+ * 
+ * @param spec the spec to change
+ * @param perm the permission to set to the domain
+ * @param domain the modified domain
+ * @param length length of the domain
+ * @return 0 on success or -EINVAL if the string isn't good or -ENOMEM on out of memory
+ */
+extern
+int
+domain_spec_set_len(domain_spec_t *spec, domain_permission_t perm, const char *domain, size_t length);
+
+/**
+ * @brief set the permission of a domain
+ * 
+ * @param spec the spec to change
+ * @param perm the permission to set to the domain
+ * @param domain the modified domain
+ * @return 0 on success or -EINVAL if the string isn't good or -ENOMEM on out of memory
+ */
+extern
+int
+domain_spec_set(domain_spec_t *spec, domain_permission_t perm, const char *domain);
