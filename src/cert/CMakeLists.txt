@@ -27,3 +27,16 @@ add_executable(
 	domain-spec-tool
 		domain-spec-tool.c
 		domain-spec.c)
+
+pkg_check_modules(gnutls gnutls)
+if(${gnutls_FOUND})
+	add_executable(
+		check-signature-tool
+			check-signature-tool.c
+			domain-spec.c
+			check-signature.c
+			common-cert.c)
+	target_link_libraries(
+		check-signature-tool
+			${gnutls_LINK_LIBRARIES})
+endif()
