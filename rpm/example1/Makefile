@@ -34,7 +34,7 @@ example1-1.spec: example1.spec
 	sed 's/Version:.*/Version: 1/' $< > $@
 
 example1-2.spec: example1.spec
-	sed 's/Version:.*/Version: 2/' $< > $@
+	sed 's/Version:.*/Version: 2/;s/f[123]/f&/g' $< > $@
 
 ########################################
 # Build PLUGINs
@@ -46,7 +46,7 @@ plugins:
 	mkdir plugins
 
 plugins/test_plugin.so: test-plugin.c plugins
-	$(CC) -o $@ $< -lrpm -I../../external-includes -shared -fPIC
+	$(CC) -o $@ $< -lrpm -I../../external-includes -shared -fPIC -g
 
 ########################################
 # Testing
