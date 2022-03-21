@@ -54,6 +54,7 @@
 #include "wgtpkg-unit.h"
 #include "utils-systemd.h"
 #include "utils-file.h"
+#include "normalize-unit-file.h"
 
 static const char* exec_type_strings[] = {
 	"application/x-executable",
@@ -80,38 +81,6 @@ static uint32_t *afids_array = NULL;
 static const char *default_permissions[] = {
 	"urn:AGL:token:valid"
 };
-
-/*
- * normalize unit files: remove comments, remove heading blanks,
- * make single lines
- */
-static void normalize_unit_file(char *content)
-{
-	char *read, *write, c;
-
-	read = write = content;
-	c = *read++;
-	while (c) {
-		switch (c) {
-		case '\n':
-		case ' ':
-		case '\t':
-			c = *read++;
-			break;
-		case '#':
-		case ';':
-			do { c = *read++; } while(c && c != '\n');
-			break;
-		default:
-			*write++ = c;
-			do { *write++ = c = *read++; } while(c && c != '\n');
-			if (write - content >= 2 && write[-2] == '\\')
-				(--write)[-1] = ' ';
-			break;
-		}
-	}
-	*write = c;
-}
 
 static int get_afid_cb(void *closure, const char *name, const char *path, int isuser)
 {

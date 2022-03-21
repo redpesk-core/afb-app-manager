@@ -129,6 +129,7 @@ add_library(utils STATIC
 	utils-json.c
 	utils-systemd.c
 	verbose.c
+	normalize-unit-file.c
 	)
 
 # library for handling the content of the widgets
