@@ -34,7 +34,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "utils-dir.h"
 #include "secmgr-wrap.h"
 #include "wgtpkg-unit.h"
@@ -63,7 +63,7 @@ static int setdown_files_and_security(const struct wgt_desc *desc)
 	assert(rc < (int)sizeof path);
 	rc = unlink(path);
 	if (rc < 0 && errno != ENOENT) {
-		ERROR("can't remove '%s': %m", path);
+		RP_ERROR("can't remove '%s': %m", path);
 		return -1;
 	}
 
@@ -73,13 +73,13 @@ static int setdown_files_and_security(const struct wgt_desc *desc)
 	rc = secmgr_init(desc->idaver);
 #endif
 	if (rc) {
-		ERROR("can't init sec lsm manager context");
+		RP_ERROR("can't init sec lsm manager context");
 		return -1;
 	}
 	rc = secmgr_uninstall();
 	secmgr_cancel();
 	if (rc) {
-		ERROR("can't uninstall sec lsm manager context");
+		RP_ERROR("can't uninstall sec lsm manager context");
 		return -1;
 	}
 	return 0;
@@ -92,7 +92,7 @@ static int uninstall_at(const char *installdir)
 	/* removes the units */
 	ifo = wgt_info_createat(AT_FDCWD, installdir, 1, 1, 1);
 	if (!ifo) {
-		ERROR("can't read widget config in directory '%s': %m", installdir);
+		RP_ERROR("can't read widget config in directory '%s': %m", installdir);
 		return -1;
 	}
 
@@ -109,7 +109,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	char path[PATH_MAX];
 	int rc;
 
-	NOTICE("-- UNINSTALLING widget of id %s from %s --", idaver, root);
+	RP_NOTICE("-- UNINSTALLING widget of id %s from %s --", idaver, root);
 
 	/* find the last '@' of the id */
 #if DISTINCT_VERSIONS
@@ -118,7 +118,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	const char *at;
 	at = strrchr(idaver, '@');
 	if (at == NULL) {
-		ERROR("bad widget id '%s', no @", idaver);
+		RP_ERROR("bad widget id '%s', no @", idaver);
 		errno = EINVAL;
 		return -1;
 	}
@@ -131,7 +131,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	rc = snprintf(path, sizeof path, "%s/%s", root, idaver);
 #endif
 	if (rc >= (int)sizeof path) {
-		ERROR("bad widget id '%s', too long", idaver);
+		RP_ERROR("bad widget id '%s', too long", idaver);
 		errno = EINVAL;
 		return -1;
 	}
@@ -142,7 +142,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	/* removes the directory of the application */
 	rc = remove_directory(path, 1);
 	if (rc < 0) {
-		ERROR("while removing directory '%s': %m", path);
+		RP_ERROR("while removing directory '%s': %m", path);
 		return -1;
 	}
 
@@ -154,7 +154,7 @@ int uninstall_widget(const char *idaver, const char *root)
 	if (rc < 0 && errno == ENOTEMPTY)
 		return rc;
 	if (rc < 0) {
-		ERROR("while removing directory '%s': %m", path);
+		RP_ERROR("while removing directory '%s': %m", path);
 		return -1;
 	}
 #endif
@@ -166,6 +166,6 @@ int uninstall_widget(const char *idaver, const char *root)
 /* uninstall the widget of installdir */
 int uninstall_redpesk(const char *installdir)
 {
-	NOTICE("-- UNINSTALLING redpesk agl from %s  --", installdir);
+	RP_NOTICE("-- UNINSTALLING redpesk agl from %s  --", installdir);
 	return uninstall_at(installdir);
 }

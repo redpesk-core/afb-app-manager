@@ -31,7 +31,7 @@
 #include <libxml/tree.h>
 #include <libxml/uri.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgt.h"
 #include "wgt-config.h"
 #include "wgt-strings.h"
@@ -98,13 +98,13 @@ int wgt_config_open(struct wgt *wgt)
 	assert(!configxml);
 	fd = wgt_open_read(wgt, string_config_dot_xml);
 	if (fd < 0) {
-		ERROR("can't open config file %s", string_config_dot_xml);
+		RP_ERROR("can't open config file %s", string_config_dot_xml);
 		return fd;
 	}
 	configxml = xmlReadFd(fd, string_config_dot_xml, NULL, 0);
 	close(fd);
 	if (configxml == NULL) {
-		ERROR("xml parse of config file %s failed", string_config_dot_xml);
+		RP_ERROR("xml parse of config file %s failed", string_config_dot_xml);
 		return -1;
 	}
 	assert(xmlDocGetRootElement(configxml));

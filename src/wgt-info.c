@@ -30,7 +30,7 @@
 
 #include <libxml/tree.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgt.h"
 #include "wgt-config.h"
 #include "wgt-strings.h"
@@ -161,14 +161,14 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 
 	node = wgt_config_widget();
 	if (!node) {
-		WARNING("no widget");
+		RP_WARNING("no widget");
 		errno = EINVAL;
 		return -1;
 	}
 
 	desc->id = xmlGetProp(node, string_id);
 	if (desc->id == NULL) {
-		WARNING("no id");
+		RP_WARNING("no id");
 		errno = EINVAL;
 		return -1;
 	}
@@ -178,7 +178,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 
 	desc->version = xmlGetProp(node, string_version);
 	if (desc->version == NULL) {
-		WARNING("no version");
+		RP_WARNING("no version");
 		errno = EINVAL;
 		return -1;
 	}
@@ -209,7 +209,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	node = wgt_config_content();
 	desc->content_src = optprop(node, string_src);
 	if (node && desc->content_src == NULL) {
-		WARNING("content without src");
+		RP_WARNING("content without src");
 		errno = EINVAL;
 		return -1;
 	}
@@ -233,7 +233,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 			*icontail = icon;
 
 			if (icon->src == NULL) {
-				WARNING("icon without src");
+				RP_WARNING("icon without src");
 				errno = EINVAL;
 				return -1;
 			}
@@ -259,7 +259,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 			*featuretail = feature;
 
 			if (feature->name == NULL) {
-				WARNING("feature without name");
+				RP_WARNING("feature without name");
 				errno = EINVAL;
 				return -1;
 			}
@@ -279,7 +279,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				*paramtail = param;
 
 				if (param->name == NULL || param->value == NULL) {
-					WARNING("param without name or value");
+					RP_WARNING("param without name or value");
 					errno = EINVAL;
 					return -1;
 				}
@@ -310,7 +310,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 			preference->next = NULL;
 
 			if (preference->name == NULL) {
-				WARNING("preference without name");
+				RP_WARNING("preference without name");
 				errno = EINVAL;
 				return -1;
 			}
@@ -518,7 +518,7 @@ void wgt_info_dump(struct wgt_info *ifo, int fd, const char *prefix)
 	assert(ifo);
 	f = fdopen(fd, "w");
 	if (f == NULL)
-		WARNING("can't fdopen in wgt_info_dump");
+		RP_WARNING("can't fdopen in wgt_info_dump");
 	else {
 		dump_desc(&ifo->desc, f, prefix);
 		fclose(f);

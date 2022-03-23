@@ -34,7 +34,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-zip.h"
@@ -91,7 +91,7 @@ static int create_directory(char *file, mode_t mode)
 		}
 	}
 	if (rc)
-		ERROR("can't create directory %s", file);
+		RP_ERROR("can't create directory %s", file);
 	if (last != NULL)
 		*last = '/';
 	return rc;
@@ -105,7 +105,7 @@ static int create_file(char *file, int fmode, mode_t dmode)
 			fd = openat(workdirfd, file, O_CREAT|O_WRONLY|O_TRUNC, fmode);
 	}
 	if (fd < 0)
-		ERROR("can't create file %s", file);
+		RP_ERROR("can't create file %s", file);
 	return fd;
 }
 
@@ -128,13 +128,13 @@ int zread(const char *zipfile, unsigned long long maxsize)
 	/* open the zip file */
 	zip = zip_open(zipfile, ZIP_CHECKCONS, &err);
 	if (!zip) {
-		ERROR("Can't connect to file %s", zipfile);
+		RP_ERROR("Can't connect to file %s", zipfile);
 		return -1;
 	}
 
 	z64 = zip_get_num_entries(zip, 0);
 	if (z64 < 0 || z64 > UINT_MAX) {
-		ERROR("too many entries in %s", zipfile);
+		RP_ERROR("too many entries in %s", zipfile);
 		goto error;
 	}
 	count = (unsigned int)z64;
@@ -146,16 +146,16 @@ int zread(const char *zipfile, unsigned long long maxsize)
 		err = zip_stat_index(zip, index, ZIP_FL_ENC_GUESS, &zstat);
 		/* check the file name */
 		if (!is_valid_filename(zstat.name)) {
-			ERROR("invalid entry %s found in %s", zstat.name, zipfile);
+			RP_ERROR("invalid entry %s found in %s", zstat.name, zipfile);
 			goto error;
 		}
 		if (zstat.name[0] == '/') {
-			ERROR("absolute entry %s found in %s", zstat.name, zipfile);
+			RP_ERROR("absolute entry %s found in %s", zstat.name, zipfile);
 			goto error;
 		}
 		len = strlen(zstat.name);
 		if (len == 0) {
-			ERROR("empty entry found in %s", zipfile);
+			RP_ERROR("empty entry found in %s", zipfile);
 			goto error;
 		}
 		if (zstat.name[len - 1] == '/')
@@ -174,7 +174,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 
 	/* check the size */
 	if (maxsize && esize > maxsize) {
-		ERROR("extracted size %zu greater than allowed size %llu", esize, maxsize);
+		RP_ERROR("extracted size %zu greater than allowed size %llu", esize, maxsize);
 		goto error;
 	}
 
@@ -196,7 +196,7 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			/* file name */
 			zfile = zip_fopen_index(zip, fdesc->zindex, 0);
 			if (!zfile) {
-				ERROR("Can't open %s in %s", zstat.name, zipfile);
+				RP_ERROR("Can't open %s in %s", zstat.name, zipfile);
 				goto error;
 			}
 			fd = create_file((char*)zstat.name, MODE_OF_FILE_CREATION, MODE_OF_DIRECTORY_CREATION);
@@ -207,12 +207,12 @@ int zread(const char *zipfile, unsigned long long maxsize)
 			while (uz64) {
 				sizr = (ssize_t)zip_fread(zfile, buffer, sizeof buffer);
 				if (sizr < 0) {
-					ERROR("error while reading %s in %s", zstat.name, zipfile);
+					RP_ERROR("error while reading %s in %s", zstat.name, zipfile);
 					goto errorzf;
 				}
 				sizw = write(fd, buffer, (size_t)sizr);
 				if (sizw < 0) {
-					ERROR("error while writing %s", zstat.name);
+					RP_ERROR("error while writing %s", zstat.name);
 					goto errorzf;
 				}
 				uz64 -= (size_t)sizw;
@@ -253,13 +253,13 @@ static int zwr(struct zws *zws, size_t offset)
 
 	fd = openat(workdirfd, offset ? zws->name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
-		ERROR("opendir %.*s failed in zwr", (int)offset, zws->name);
+		RP_ERROR("opendir %.*s failed in zwr", (int)offset, zws->name);
 		return -1;
 	}
 	dir = fdopendir(fd);
 	if (!dir) {
 		close(fd);
-		ERROR("opendir %.*s failed in zwr", (int)offset, zws->name);
+		RP_ERROR("opendir %.*s failed in zwr", (int)offset, zws->name);
 		return -1;
 	}
 
@@ -273,13 +273,13 @@ static int zwr(struct zws *zws, size_t offset)
 			(ent->d_name[1] == '.' && len == 2)))
 			;
 		else if (offset + len >= sizeof(zws->name)) {
-			ERROR("name too long in zwr");
+			RP_ERROR("name too long in zwr");
 			errno = ENAMETOOLONG;
 			goto error;
 		} else {
 			memcpy(zws->name + offset, ent->d_name, 1+len);
 			if (!is_valid_filename(ent->d_name)) {
-				ERROR("invalid name %s", zws->name);
+				RP_ERROR("invalid name %s", zws->name);
 				goto error;
 			}
 			if (ent->d_type == DT_UNKNOWN) {
@@ -293,7 +293,7 @@ static int zwr(struct zws *zws, size_t offset)
 			case DT_DIR:
 				z64 = zip_dir_add(zws->zip, zws->name, ZIP_FL_ENC_UTF_8);
 				if (z64 < 0) {
-					ERROR("zip_dir_add of %s failed", zws->name);
+					RP_ERROR("zip_dir_add of %s failed", zws->name);
 					goto error;
 				}
 				err = zwr(zws, offset + len);
@@ -303,24 +303,24 @@ static int zwr(struct zws *zws, size_t offset)
 			case DT_REG:
 				fd = openat(workdirfd, zws->name, O_RDONLY);
 				if (fd < 0) {
-					ERROR("openat of %s failed", zws->name);
+					RP_ERROR("openat of %s failed", zws->name);
 					goto error;
 				}
 				fp = fdopen(fd, "r");
 				if (fp == NULL) {
-					ERROR("fdopen of %s failed", zws->name);
+					RP_ERROR("fdopen of %s failed", zws->name);
 					close(fd);
 					goto error;
 				}
 				zsrc = zip_source_filep(zws->zip, fp, 0, 0);
 				if (zsrc == NULL) {
-					ERROR("zip_source_file of %s failed", zws->name);
+					RP_ERROR("zip_source_file of %s failed", zws->name);
 					fclose(fp);
 					goto error;
 				}
 				z64 = zip_file_add(zws->zip, zws->name, zsrc, ZIP_FL_ENC_UTF_8);
 				if (z64 < 0) {
-					ERROR("zip_file_add of %s failed", zws->name);
+					RP_ERROR("zip_file_add of %s failed", zws->name);
 					zip_source_free(zsrc);
 					goto error;
 				}
@@ -347,7 +347,7 @@ int zwrite(const char *zipfile)
 
 	zws.zip = zip_open(zipfile, ZIP_CREATE|ZIP_TRUNCATE, &err);
 	if (!zws.zip) {
-		ERROR("Can't open %s for write", zipfile);
+		RP_ERROR("Can't open %s for write", zipfile);
 		return -1;
 	}
 
@@ -396,14 +396,14 @@ static int zrun(const char *name, const char *args[])
 
 	binary = getbin(name);
 	if (binary == NULL) {
-		ERROR("error while forking in zrun: can't find %s", name);
+		RP_ERROR("error while forking in zrun: can't find %s", name);
 		return -1;
 	}
 
 	rc = fork();
 	if (rc == 0) {
 		rc = execve(binary, (char * const*)args, environ);
-		ERROR("can't execute %s in zrun: %m", args[0]);
+		RP_ERROR("can't execute %s in zrun: %m", args[0]);
 		_exit(1);
 		return rc;
 	}
@@ -411,18 +411,18 @@ static int zrun(const char *name, const char *args[])
 	free(binary);
 	if (rc < 0) {
 		/* can't fork */
-		ERROR("error while forking in zrun: %m");
+		RP_ERROR("error while forking in zrun: %m");
 		return rc;
 	}
 
 	/* wait termination of the child */
 	rc = waitid(P_PID, (id_t)rc, &si, WEXITED);
 	if (rc)
-		ERROR("unexpected wait status in zrun of %s: %m", args[0]);
+		RP_ERROR("unexpected wait status in zrun of %s: %m", args[0]);
 	else if (si.si_code != CLD_EXITED)
-		ERROR("unexpected termination status of %s in zrun", args[0]);
+		RP_ERROR("unexpected termination status of %s in zrun", args[0]);
 	else if (si.si_status != 0)
-		ERROR("child for %s terminated with error code %d in zwrite", args[0], si.si_status);
+		RP_ERROR("child for %s terminated with error code %d in zwrite", args[0], si.si_status);
 	else
 		return 0;
 	return -1;

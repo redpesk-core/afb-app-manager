@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-zip.h"
@@ -91,8 +91,6 @@ int main(int ac, char **av)
 	char *wgtfile, *directory, *x;
 	struct stat s;
 
-	LOGUSER(appname);
-
 	autosign = 1;
 	force = 0;
 	wgtfile = directory = NULL;
@@ -105,11 +103,10 @@ int main(int ac, char **av)
 			wgtfile = optarg;
 			break;
 		case 'q':
-			if (verbosity)
-				verbosity--;
+			rp_verbose_dec();
 			break;
 		case 'v':
-			verbosity++;
+			rp_verbose_inc();
 			break;
 		case 'f':
 			force = 1;
@@ -127,51 +124,51 @@ int main(int ac, char **av)
 			autosign = 1;
 			break;
 		case ':':
-			ERROR("missing argument");
+			RP_ERROR("missing argument");
 			return 1;
 		default:
-			ERROR("unrecognized option");
+			RP_ERROR("unrecognized option");
 			return 1;
 		}
 	}
 
 	/* remaining arguments and final checks */
 	if (optind >= ac) {
-		ERROR("no directory set");
+		RP_ERROR("no directory set");
 		return 1;
 	}
 	directory = av[optind++];
 	if (optind < ac) {
-		ERROR("extra parameters found");
+		RP_ERROR("extra parameters found");
 		return 1;
 	}
 
 	/* set default values */
 	if (wgtfile == NULL && 0 > asprintf(&wgtfile, "%s.wgt", directory)) {
-		ERROR("asprintf failed");
+		RP_ERROR("asprintf failed");
 		return 1;
 	}
 
 	/* check values */
 	if (stat(directory, &s)) {
-		ERROR("can't find directory %s", directory);
+		RP_ERROR("can't find directory %s", directory);
 		return 1;
 	}
 	if (!S_ISDIR(s.st_mode)) {
-		ERROR("%s isn't a directory", directory);
+		RP_ERROR("%s isn't a directory", directory);
 		return 1;
 	}
 	if (access(wgtfile, F_OK) == 0 && force == 0) {
-		ERROR("can't overwrite existing %s", wgtfile);
+		RP_ERROR("can't overwrite existing %s", wgtfile);
 		return 1;
 	}
 
-	NOTICE("-- PACKING widget %s from directory %s", wgtfile, directory);
+	RP_NOTICE("-- PACKING widget %s from directory %s", wgtfile, directory);
 
 	/* creates an existing widget (for realpath it must exist) */
 	i = open(wgtfile, O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0644);
 	if (i < 0) {
-		ERROR("can't write widget %s", wgtfile);
+		RP_ERROR("can't write widget %s", wgtfile);
 		return 1;
 	}
 	close(i);
@@ -179,14 +176,14 @@ int main(int ac, char **av)
 	/* compute absolutes paths */
 	x = realpath(wgtfile, NULL);
 	if (x == NULL) {
-		ERROR("realpath failed for %s", wgtfile);
+		RP_ERROR("realpath failed for %s", wgtfile);
 		return 1;
 	}
 	wgtfile = x;
 
 	/* set and enter the workdir */
 	if (chdir(directory)) {
-		ERROR("failed to enter directory %s", directory);
+		RP_ERROR("failed to enter directory %s", directory);
 		return 1;
 	}
 	if (set_workdir(".", 0))

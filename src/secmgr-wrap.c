@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "secmgr-wrap.h"
 
 #if SIMULATE_SEC_LSM_MANAGER
@@ -54,14 +54,14 @@ int secmgr_init(const char *id)
 	rc = sec_lsm_manager_create(&sm_handle, NULL);
 
 	if (rc < 0) {
-		ERROR("sec_lsm_manager_create failed");
+		RP_ERROR("sec_lsm_manager_create failed");
 		goto ret;
 	}
 
 	rc = sec_lsm_manager_set_id(sm_handle, id);
 
 	if (rc < 0) {
-		ERROR("sec_lsm_manager_set_id failed");
+		RP_ERROR("sec_lsm_manager_set_id failed");
 		goto error;
 	}
 
@@ -85,7 +85,7 @@ int secmgr_install()
 	assert(sm_handle != NULL);
 	rc = sec_lsm_manager_install(sm_handle);
 	if (rc < 0)
-		ERROR("sec_lsm_manager_install failed %d %s", -rc, strerror(-rc));
+		RP_ERROR("sec_lsm_manager_install failed %d %s", -rc, strerror(-rc));
 	return retcode(rc);
 }
 
@@ -95,7 +95,7 @@ int secmgr_uninstall()
 	assert(sm_handle != NULL);
 	rc = sec_lsm_manager_uninstall(sm_handle);
 	if (rc < 0)
-		ERROR("sec_lsm_manager_uninstall failed");
+		RP_ERROR("sec_lsm_manager_uninstall failed");
 	return retcode(rc);
 }
 
@@ -105,7 +105,7 @@ int secmgr_permit(const char *permission)
 	assert(sm_handle != NULL);
 	rc = sec_lsm_manager_add_permission(sm_handle, permission);
 	if (rc < 0)
-		ERROR("sec_lsm_manager_add_permission %s failed", permission);
+		RP_ERROR("sec_lsm_manager_add_permission %s failed", permission);
 	return retcode(rc);
 }
 
@@ -115,7 +115,7 @@ static int addpath(const char *pathname, const char *path_type)
 	assert(sm_handle != NULL);
 	rc = sec_lsm_manager_add_path(sm_handle, pathname, path_type);
 	if (rc < 0)
-		ERROR("sec_lsm_manager_add_path %s failed", pathname);
+		RP_ERROR("sec_lsm_manager_add_path %s failed", pathname);
 	return retcode(rc);
 }
 

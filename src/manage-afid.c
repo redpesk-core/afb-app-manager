@@ -36,7 +36,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgt.h"
 #include "wgt-info.h"
 #include "wgt-strings.h"
@@ -118,7 +118,7 @@ static int update_afids(uint32_t *afids)
 	if (rc >= 0)
 		rc = systemd_unit_list(1, get_afid_cb, afids);
 	if (rc < 0)
-		ERROR("troubles while updating afids");
+		RP_ERROR("troubles while updating afids");
 	return rc;
 }
 
@@ -132,7 +132,7 @@ static int first_free_afid(uint32_t *afids)
 	while (afid <= AFID_MAX && AFID_TEST(afids, afid))
 		afid++;
 	if (afid > AFID_MAX) {
-		ERROR("Can't compute a valid afid");
+		RP_ERROR("Can't compute a valid afid");
 		errno = EADDRNOTAVAIL;
 		afid = -1;
 	}

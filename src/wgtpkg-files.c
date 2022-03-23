@@ -34,7 +34,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-files.h"
 
@@ -66,7 +66,7 @@ static unsigned int what_signature(const char *name)
 	while ('0' <= name[len] && name[len] <= '9') {
 		nid = 10 * id + (unsigned int)(name[len++] - '0');
 		if (nid < id || nid == UINT_MAX) {
-			WARNING("number too big for %s", name);
+			RP_WARNING("number too big for %s", name);
 			return 0;
 		}
 		id = nid;
@@ -107,7 +107,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 	/* allocations */
 	grow = realloc(allfiles.files, (allfiles.count + 1) * sizeof(struct filedesc *));
 	if (grow == NULL) {
-		ERROR("realloc failed in get_filedesc");
+		RP_ERROR("realloc failed in get_filedesc");
 		return NULL;
 	}
 	allfiles.files = grow;
@@ -115,7 +115,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 	if (sig) {
 		grow = realloc(allsignatures.files, (allsignatures.count + 1) * sizeof(struct filedesc *));
 		if (grow == NULL) {
-			ERROR("second realloc failed in get_filedesc");
+			RP_ERROR("second realloc failed in get_filedesc");
 			return NULL;
 		}
 		allsignatures.files = grow;
@@ -123,7 +123,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 
 	result = malloc(sizeof(struct filedesc) + strlen(name));
 	if (!result) {
-		ERROR("calloc failed in get_filedesc");
+		RP_ERROR("calloc failed in get_filedesc");
 		return NULL;
 	}
 	memset(result, 0, sizeof(struct filedesc) + strlen(name));
@@ -161,7 +161,7 @@ static struct filedesc *file_add(const char *name, enum entrytype type)
 	else if (desc->type == type_unset)
 		desc->type = type;
 	else {
-		ERROR("redeclaration of %s in file_add", name);
+		RP_ERROR("redeclaration of %s in file_add", name);
 		errno = EEXIST;
 		desc = NULL;
 	}
@@ -240,7 +240,7 @@ struct filedesc *create_signature(unsigned int number)
 		len = asprintf(&name, "%s%u%s", distributor_file_prefix, number, distributor_file_suffix);
 
 	if (len < 0)
-		ERROR("asprintf failed in create_signature");
+		RP_ERROR("asprintf failed in create_signature");
 	else {
 		assert(len > 0);
 		result = file_of_name(name);
@@ -270,12 +270,12 @@ static int fill_files_rec(char name[PATH_MAX], unsigned offset)
 
 	fd = openat(workdirfd, offset ? name : ".", O_DIRECTORY|O_RDONLY);
 	if (fd < 0) {
-		ERROR("openat %.*s failed in fill_files_rec", offset, name);
+		RP_ERROR("openat %.*s failed in fill_files_rec", offset, name);
 		return -1;
 	}
 	dir = fdopendir(fd);
 	if (!dir) {
-		ERROR("opendir %.*s failed in fill_files_rec", offset, name);
+		RP_ERROR("opendir %.*s failed in fill_files_rec", offset, name);
 		close(fd);
 		return -1;
 	}
@@ -290,7 +290,7 @@ static int fill_files_rec(char name[PATH_MAX], unsigned offset)
 			;
 		else if (offset + len >= PATH_MAX) {
 			closedir(dir);
-			ERROR("name too long in fill_files_rec");
+			RP_ERROR("name too long in fill_files_rec");
 			errno = ENAMETOOLONG;
 			return -1;
 		} else {

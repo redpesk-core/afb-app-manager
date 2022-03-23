@@ -35,7 +35,7 @@
 
 #include <json-c/json.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "utils-file.h"
 
 #include "wgtpkg-mustach.h"
@@ -276,26 +276,26 @@ static int process_all_units(char *corpus, const struct unitconf *conf, int (*pr
 		if (!befbeg) {
 			if (end) {
 				/* %end detected without %begin */
-				ERROR("unexpected %%end at end");
+				RP_ERROR("unexpected %%end at end");
 				rc = rc ? :-EINVAL;
 			}
 			break;
 		}
 		if (!end) {
 			/* unterminated unit !! */
-			ERROR("unterminated unit description!!");
+			RP_ERROR("unterminated unit description!!");
 			corpus = beg;
 			rc2 = -EINVAL;
 		} else if (end < befbeg) {
 			/* sequence %end ... %begin detected !! */
-			ERROR("unexpected %%end before %%begin");
+			RP_ERROR("unexpected %%end before %%begin");
 			corpus = aftend;
 			rc2 = -EINVAL;
 		} else {
 			befbeg =  offset(beg, "%begin ", NULL);
 			if (befbeg && befbeg < end) {
 				/* sequence %begin ... %begin ... %end detected !! */
-				ERROR("unexpected %%begin after %%begin");
+				RP_ERROR("unexpected %%begin after %%begin");
 				corpus = beg;
 				rc2 = -EINVAL;
 			} else {
@@ -304,7 +304,7 @@ static int process_all_units(char *corpus, const struct unitconf *conf, int (*pr
 				if (matches("systemd-unit\n", beg, &beg)) {
 					if (!matches("systemd-unit\n", aftend, &corpus)) {
 						/* end doesnt match */
-						ERROR("unmatched %%begin systemd-unit (matching end mismatch)");
+						RP_ERROR("unmatched %%begin systemd-unit (matching end mismatch)");
 						rc2 = -EINVAL;
 					} else {
 						/* allocates a descriptor for the unit */
@@ -322,7 +322,7 @@ static int process_all_units(char *corpus, const struct unitconf *conf, int (*pr
 						}
 					}
 				} else {
-					ERROR("unexpected %%begin name");
+					RP_ERROR("unexpected %%begin name");
 					rc2 = -EINVAL;
 				}
 			}
@@ -431,7 +431,7 @@ int unit_generator_process(struct json_object *jdesc, const struct unitconf *con
 
 	rc = add_metadata(jdesc, conf);
 	if (rc)
-		ERROR("can't set the metadata. %m");
+		RP_ERROR("can't set the metadata. %m");
 	else {
 		rc = template ? 0 : unit_generator_open_template(NULL);
 		if (!rc) {
@@ -462,11 +462,11 @@ static int check_unit_desc(const struct unitdesc *desc, int tells)
 
 	if (tells) {
 		if (desc->scope == unitscope_unknown)
-			ERROR("unit of unknown scope");
+			RP_ERROR("unit of unknown scope");
 		if (desc->type == unittype_unknown)
-			ERROR("unit of unknown type");
+			RP_ERROR("unit of unknown type");
 		if (desc->name == NULL)
-			ERROR("unit of unknown name");
+			RP_ERROR("unit of unknown name");
 	}
 	errno = EINVAL;
 	return -1;
@@ -479,7 +479,7 @@ static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
 	if (rc < 0)
-		ERROR("can't get the unit path for %s", desc->name);
+		RP_ERROR("can't get the unit path for %s", desc->name);
 
 	return rc;
 }
@@ -491,7 +491,7 @@ static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *des
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
 	if (rc < 0)
-		ERROR("can't get the wants path for %s and %s", desc->name, desc->wanted_by);
+		RP_ERROR("can't get the wants path for %s and %s", desc->name, desc->wanted_by);
 
 	return rc;
 }
@@ -503,7 +503,7 @@ static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *d
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
 	if (rc < 0)
-		ERROR("can't get the wants target for %s", desc->name);
+		RP_ERROR("can't get the wants target for %s", desc->name);
 
 	return rc;
 }
@@ -519,7 +519,7 @@ static void stop_that_unit_cb(void *closure, struct SysD_ListUnitItem *lui)
 		isuser = (int)(intptr_t)closure;
 		rc = systemd_unit_stop_dpath(isuser, lui->opath, 0);
 		if (rc < 0)
-			ERROR("can't stop %s", lui->name);
+			RP_ERROR("can't stop %s", lui->name);
 		break;
 	case SysD_State_INVALID:
 	case SysD_State_Inactive:
@@ -543,7 +543,7 @@ static int stop_unit(char *buffer, size_t buflen, const struct unitdesc *desc)
 
 	rc = systemd_list_unit_pattern(isuser, buffer, stop_that_unit_cb, (void*)(intptr_t)isuser);
 	if (rc < 0)
-		ERROR("can't get the unit path for %s", desc->name);
+		RP_ERROR("can't get the unit path for %s", desc->name);
 
 	return rc;
 }

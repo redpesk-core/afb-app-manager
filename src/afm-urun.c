@@ -36,7 +36,7 @@
 
 #include <json-c/json.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "utils-dir.h"
 #include "utils-json.h"
 #include "utils-systemd.h"
@@ -57,7 +57,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 
 	/* get the scope */
 	if (!j_read_string_at(appli, "unit-scope", &uscope)) {
-		ERROR("'unit-scope' missing in appli description %s", json_object_get_string(appli));
+		RP_ERROR("'unit-scope' missing in appli description %s", json_object_get_string(appli));
 		goto inval;
 	}
 	*isuser = strcmp(uscope, "system") != 0;
@@ -73,7 +73,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		assert(json_object_get_type(odp) == json_type_object);
 		/* get userid */
 		if (uid < 0) {
-			ERROR("unexpected uid %d", uid);
+			RP_ERROR("unexpected uid %d", uid);
 			goto inval;
 		}
 		rc = snprintf(userid, sizeof userid, "%d", uid);
@@ -85,7 +85,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 
 	/* get uname */
 	if (!j_read_string_at(appli, "unit-name", &uname)) {
-		ERROR("'unit-name' missing in appli description %s", json_object_get_string(appli));
+		RP_ERROR("'unit-name' missing in appli description %s", json_object_get_string(appli));
 		goto inval;
 	}
 
@@ -95,7 +95,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		if (!odp) {
 			/* get userid */
 			if (uid < 0) {
-				ERROR("unexpected uid %d", uid);
+				RP_ERROR("unexpected uid %d", uid);
 				goto inval;
 			}
 			rc = snprintf(userid, sizeof userid, "%d", uid);
@@ -113,7 +113,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		stpcpy(stpcpy(stpncpy(nun, uname, (size_t)(arodot - uname)), userid), arodot);
 		dp = systemd_unit_dpath_by_name(*isuser, nun, 1);
 		if (dp == NULL) {
-			ERROR("Can't load unit of name %s for %s: %m", nun, uscope);
+			RP_ERROR("Can't load unit of name %s for %s: %m", nun, uscope);
 			goto error;
 		}
 		/* record the dpath */
@@ -127,7 +127,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 		/* get dpath */
 		dp = systemd_unit_dpath_by_name(*isuser, uname, 1);
 		if (dp == NULL) {
-			ERROR("Can't load unit of name %s for %s: %m", uname, uscope);
+			RP_ERROR("Can't load unit of name %s for %s: %m", uname, uscope);
 			goto error;
 		}
 		/* record the dpath */
@@ -141,7 +141,7 @@ static int get_basis(struct json_object *appli, int *isuser, const char **dpath,
 	return 0;
 
 nomem:
-	ERROR("out of memory");
+	RP_ERROR("out of memory");
 	errno = ENOMEM;
 	goto error;
 
@@ -280,7 +280,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 	if (rc < 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't start %s unit %s for uid %d", uscope, uname, uid);
+		RP_ERROR("can't start %s unit %s for uid %d", uscope, uname, uid);
 		goto error;
 	}
 
@@ -292,13 +292,13 @@ int afm_urun_once(struct json_object *appli, int uid)
 	case SysD_State_Failed:
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("start error %s unit %s for uid %d: %s", uscope, uname, uid,
+		RP_ERROR("start error %s unit %s for uid %d: %s", uscope, uname, uid,
 							systemd_name_of_state(state));
 		goto error;
 	default:
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't wait %s unit %s for uid %d: %m", uscope, uname, uid);
+		RP_ERROR("can't wait %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
 
@@ -306,7 +306,7 @@ int afm_urun_once(struct json_object *appli, int uid)
 	if (rc < 0) {
 		j_read_string_at(appli, "unit-scope", &uscope);
 		j_read_string_at(appli, "unit-name", &uname);
-		ERROR("can't get pid of %s unit %s for uid %d: %m", uscope, uname, uid);
+		RP_ERROR("can't get pid of %s unit %s for uid %d: %m", uscope, uname, uid);
 		goto error;
 	}
 
@@ -320,7 +320,7 @@ error:
 
 static int not_yet_implemented(const char *what)
 {
-	ERROR("%s isn't yet implemented", what);
+	RP_ERROR("%s isn't yet implemented", what);
 	errno = ENOTSUP;
 	return -1;
 }
@@ -390,7 +390,7 @@ struct json_object *afm_urun_list(struct afm_udb *db, int all, int uid)
 				if (state == SysD_State_Active) {
 					desc = mkstate(id, pid, pid, state);
 					if (desc && json_object_array_add(result, desc) == -1) {
-						ERROR("can't add desc %s to result", json_object_get_string(desc));
+						RP_ERROR("can't add desc %s to result", json_object_get_string(desc));
 						json_object_put(desc);
 					}
 				}
@@ -427,7 +427,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 		dpath = systemd_unit_dpath_by_pid(wasuser = 0, (unsigned)runid);
 	if (!dpath) {
 		errno = EINVAL;
-		WARNING("searched runid %d not found", runid);
+		RP_WARNING("searched runid %d not found", runid);
 	} else {
 		/* search in the base */
 		apps = afm_udb_applications_private(db, 1, uid);
@@ -446,7 +446,7 @@ struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 			}
 		}
 		errno = ENOENT;
-		WARNING("searched runid %d of dpath %s isn't an applications", runid, dpath);
+		RP_WARNING("searched runid %d of dpath %s isn't an applications", runid, dpath);
 end:
 		json_object_put(apps);
 		free(dpath);
@@ -467,7 +467,7 @@ int afm_urun_search_runid(struct afm_udb *db, const char *id, int uid)
 
 	appli = afm_udb_get_application_private(db, id, uid);
 	if (!appli) {
-		NOTICE("Unknown appid %s", id);
+		RP_NOTICE("Unknown appid %s", id);
 		errno = ENOENT;
 		pid = -1;
 	} else if (get_basis(appli, &isuser, &udpath, uid) < 0) {

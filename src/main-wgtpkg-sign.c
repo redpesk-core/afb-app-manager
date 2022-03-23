@@ -35,7 +35,7 @@
 
 #include <libxml/tree.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-digsig.h"
@@ -60,7 +60,7 @@ static unsigned int get_number(const char *value)
 
 	val = strtoul(value, &end, 10);
 	if (*end || 0 == val || val >= UINT_MAX || *value == '-') {
-		ERROR("bad number value %s", value);
+		RP_ERROR("bad number value %s", value);
 		exit(1);
 	}
 	return (unsigned int)val;
@@ -70,7 +70,7 @@ static void make_realpath(char **x)
 {
 	char *p = realpath(*x, NULL);
 	if (p == NULL) {
-		ERROR("realpath failed for %s", *x);
+		RP_ERROR("realpath failed for %s", *x);
 		exit(1);
 	}
 	*x = p;
@@ -131,8 +131,6 @@ int main(int ac, char **av)
 	char *keyfile, *certfiles[MAXCERT+1], *directory;
 	struct stat s;
 
-	LOGUSER(appname);
-
 	force = ncert = author = 0;
 	number = UINT_MAX;
 	keyfile = directory = NULL;
@@ -143,21 +141,21 @@ int main(int ac, char **av)
 		switch (i) {
 		case 'c':
 			if (ncert == MAXCERT) {
-				ERROR("maximum count of certificates reached");
+				RP_ERROR("maximum count of certificates reached");
 				return 1;
 			}
 			certfiles[ncert++] = optarg;
 			break;
 		case 'k':
 			if (keyfile) {
-				ERROR("key already set");
+				RP_ERROR("key already set");
 				return 1;
 			}
 			keyfile = optarg;
 			break;
 		case 'd':
 			if (number != UINT_MAX) {
-				ERROR("number already set");
+				RP_ERROR("number already set");
 				return 1;
 			}
 			number = get_number(optarg);
@@ -175,29 +173,28 @@ int main(int ac, char **av)
 			version();
 			return 0;
 		case 'q':
-			if (verbosity)
-				verbosity--;
+			rp_verbose_dec();
 			break;
 		case 'v':
-			verbosity++;
+			rp_verbose_inc();
 			break;
 		case ':':
-			ERROR("missing argument");
+			RP_ERROR("missing argument");
 			return 1;
 		default:
-			ERROR("unrecognized option");
+			RP_ERROR("unrecognized option");
 			return 1;
 		}
 	}
 
 	/* remaining arguments and final checks */
 	if (optind >= ac) {
-		ERROR("no directory set");
+		RP_ERROR("no directory set");
 		return 1;
 	}
 	directory = av[optind++];
 	if (optind < ac) {
-		ERROR("extra parameters found");
+		RP_ERROR("extra parameters found");
 		return 1;
 	}
 
@@ -209,20 +206,20 @@ int main(int ac, char **av)
 
 	/* check values */
 	if (stat(directory, &s)) {
-		ERROR("can't find directory %s", directory);
+		RP_ERROR("can't find directory %s", directory);
 		return 1;
 	}
 	if (!S_ISDIR(s.st_mode)) {
-		ERROR("%s isn't a directory", directory);
+		RP_ERROR("%s isn't a directory", directory);
 		return 1;
 	}
 	if (access(keyfile, R_OK) != 0) {
-		ERROR("can't access private key %s", keyfile);
+		RP_ERROR("can't access private key %s", keyfile);
 		return 1;
 	}
 	for(i = 0 ; i < ncert ; i++)
 		if (access(certfiles[i], R_OK) != 0) {
-			ERROR("can't access certificate %s", certfiles[i]);
+			RP_ERROR("can't access certificate %s", certfiles[i]);
 			return 1;
 		}
 
@@ -248,11 +245,11 @@ int main(int ac, char **av)
 		for (number = 1; get_signature(number) != NULL ; number++);
 
 	if (!force && get_signature(number) != NULL) {
-		ERROR("can't overwrite existing signature %s", get_signature(number)->name);
+		RP_ERROR("can't overwrite existing signature %s", get_signature(number)->name);
 		return 1;
 	}
 
-	NOTICE("-- SIGNING content of directory %s for number %u", directory, number);
+	RP_NOTICE("-- SIGNING content of directory %s for number %u", directory, number);
 
 	certfiles[ncert] = NULL;
 	return !!create_digsig(number, keyfile, (const char**)certfiles);

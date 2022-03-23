@@ -35,7 +35,7 @@
 
 #include <libxml/tree.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-permissions.h"
 #include "wgtpkg-xmlsec.h"
 #include "wgt-info.h"
@@ -91,8 +91,6 @@ int main(int ac, char **av)
 	int i, rc;
 	struct wgt_info *ifo;
 
-	LOGAUTH(appname);
-
 	xmlsec_init();
 
 	force = 0;
@@ -108,11 +106,10 @@ int main(int ac, char **av)
 			usage();
 			return 0;
 		case 'q':
-			if (verbosity)
-				verbosity--;
+			rp_verbose_dec();
 			break;
 		case 'v':
-			verbosity++;
+			rp_verbose_inc();
 			break;
 		case 'V':
 			version();
@@ -120,22 +117,22 @@ int main(int ac, char **av)
 		case 'p':
 			rc = grant_permission_list(optarg);
 			if (rc < 0) {
-				ERROR("Can't set granted permission list");
+				RP_ERROR("Can't set granted permission list");
 				exit(1);
 			}
 			break;
 		case ':':
-			ERROR("missing argument value");
+			RP_ERROR("missing argument value");
 			return 1;
 		default:
-			ERROR("unrecognized option");
+			RP_ERROR("unrecognized option");
 			return 1;
 		}
 	}
 
 	ac -= optind;
 	if (ac < 2) {
-		ERROR("arguments are missing");
+		RP_ERROR("arguments are missing");
 		return 1;
 	}
 

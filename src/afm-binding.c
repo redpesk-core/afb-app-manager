@@ -34,14 +34,15 @@
 #define AFB_BINDING_VERSION 3
 #include <afb/afb-binding.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-jsonc.h>
+
 #include "utils-systemd.h"
 #include "afm-udb.h"
 #include "afm-urun.h"
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
 #include "wgtpkg-uninstall.h"
-#include "wrap-json.h"
 
 /*
  * constant strings
@@ -230,7 +231,7 @@ static struct json_object *json_true;
 /* common bad request reply */
 static void bad_request(afb_req_t req)
 {
-	INFO("bad request verb %s: %s",
+	RP_INFO("bad request verb %s: %s",
 		afb_req_get_called_verb(req),
 		json_object_to_json_string(afb_req_json(req)));
 	afb_req_fail(req, _bad_request_, NULL);
@@ -239,7 +240,7 @@ static void bad_request(afb_req_t req)
 /* forbidden request reply */
 static void forbidden_request(afb_req_t req)
 {
-	INFO("forbidden request verb %s: %s",
+	RP_INFO("forbidden request verb %s: %s",
 		afb_req_get_called_verb(req),
 		json_object_to_json_string(afb_req_json(req)));
 	afb_req_fail(req, _forbidden_, NULL);
@@ -292,7 +293,7 @@ static int has_auth(afb_req_t req, const struct afb_auth *auth)
 static void application_list_changed(const char *operation, const char *data)
 {
 	struct json_object *e = NULL;
-	wrap_json_pack(&e, "{ss ss}", "operation", operation, "data", data);
+	rp_jsonc_pack(&e, "{ss ss}", "operation", operation, "data", data);
 	afb_event_broadcast(applist_changed_event, e);
 }
 
@@ -554,10 +555,10 @@ static void start(afb_req_t req)
 	/* returns */
 	resp = NULL;
 #if 0
-	wrap_json_pack(&resp, "{si}", _runid_, runid);
+	rp_jsonc_pack(&resp, "{si}", _runid_, runid);
 #else
 	if (runid)
-		wrap_json_pack(&resp, "i", runid);
+		rp_jsonc_pack(&resp, "i", runid);
 #endif
 	afb_req_success(req, resp, NULL);
 }
@@ -716,7 +717,7 @@ static void install(afb_req_t req)
 			do_reloads();
 
 		/* build the response */
-		wrap_json_pack(&resp, "{ss}", _added_, wgt_info_desc(ifo)->idaver);
+		rp_jsonc_pack(&resp, "{ss}", _added_, wgt_info_desc(ifo)->idaver);
 		afb_req_success(req, resp, NULL);
 		application_list_changed(_install_, wgt_info_desc(ifo)->idaver);
 
@@ -767,7 +768,7 @@ static int init(afb_api_t api)
 	/* init database */
 	afudb = afm_udb_create(1, 0, "afm-");
 	if (!afudb) {
-		ERROR("afm_udb_create failed");
+		RP_ERROR("afm_udb_create failed");
 		return -1;
 	}
 

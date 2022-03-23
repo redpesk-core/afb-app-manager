@@ -47,7 +47,7 @@ set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
 
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c)
+pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c librp-utils)
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})
@@ -103,7 +103,6 @@ endif(SIMULATE_SECMGR)
 ###########################################################################
 
 set(wgtpkg_sources
-	wgtpkg-base64.c
 	wgtpkg-certs.c
 	wgtpkg-digsig.c
 	wgtpkg-files.c
@@ -128,7 +127,6 @@ add_library(utils STATIC
 	utils-file.c
 	utils-json.c
 	utils-systemd.c
-	verbose.c
 	normalize-unit-file.c
 	manage-afid.c
 	)

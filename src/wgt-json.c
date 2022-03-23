@@ -39,7 +39,7 @@
 #include "wgt-info.h"
 #include "wgt-json.h"
 #include "wgt-strings.h"
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 
 /*
  * This describes an action to be performed for a parameter of name.
@@ -173,14 +173,14 @@ static int get_target(struct json_object **result, struct json_object *targets, 
 		if (!create)
 			rc = 0;
 		else {
-			ERROR("duplicated target name: %s", name);
+			RP_ERROR("duplicated target name: %s", name);
 			t = NULL;
 			rc = -EEXIST;
 		}
 	} else {
 		/* not found */
 		if (!create) {
-			ERROR("target name not found: %s", name);
+			RP_ERROR("target name not found: %s", name);
 			rc = -ENOENT;
 		} else {
 			/* create a new value */
@@ -207,7 +207,7 @@ static int create_target(struct json_object *targets, const struct wgt_desc_feat
 	/* search within the feature the parameter naming the target */
 	id = get_target_name(feat, NULL);
 	if (id == NULL) {
-		ERROR("target of feature %s is %s", feat->name, get_target_name(feat, feat->name) ? "repeated" : "missing");
+		RP_ERROR("target of feature %s is %s", feat->name, get_target_name(feat, feat->name) ? "repeated" : "missing");
 		return -EINVAL;
 	}
 
@@ -459,7 +459,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 		featname = feat->name;
 		if (!memcmp(featname, string_AGL_widget_prefix, prefixlen)) {
 			if (!feat->required) {
-				ERROR("feature %s can't be optional", featname);
+				RP_ERROR("feature %s can't be optional", featname);
 				if (!rc)
 					rc = -EINVAL;
 			}

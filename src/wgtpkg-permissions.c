@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-permissions.h"
 
 struct permission {

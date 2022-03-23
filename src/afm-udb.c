@@ -429,7 +429,7 @@ static int update_cb(void *closure, const char *name, const char *path, int isus
 	/* process the file */
 	rc = addunit(&updt->applications, isuser, path, name, content, length);
 	/* TODO: if (rc < 0)
-		ERROR("Ignored boggus unit %s (error: %m)", path); */
+		RP_ERROR("Ignored boggus unit %s (error: %m)", path); */
 	free(content);
 	return 0;
 }

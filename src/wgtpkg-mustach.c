@@ -32,7 +32,7 @@
 #include <json-c/json.h>
 
 #include "mustach.h"
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 
 #define MAX_DEPTH 256
 
@@ -347,7 +347,7 @@ int apply_mustach(const char *template, struct json_object *root, char **result,
 		};
 
 		rc = -(rc + 1);
-		ERROR("mustach error found: MUSTACH_ERROR_%s",
+		RP_ERROR("mustach error found: MUSTACH_ERROR_%s",
 			rc < 0 || rc >= (int)(sizeof msgs / sizeof * msgs) ? "???" : msgs[rc]);
 		rc = -1;
 		errno = EINVAL;

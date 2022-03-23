@@ -22,12 +22,13 @@
  $RP_END_LICENSE$
 */
 
-
+#include <string.h>
 #include <openssl/x509.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-base64.h>
+
 #include "wgtpkg-certs.h"
-#include "wgtpkg-base64.h"
 
 struct x509l {
 	unsigned count;
@@ -41,7 +42,7 @@ static int add_certificate_x509(X509 *x)
 	X509 **p = realloc(certificates.certs,
 			(certificates.count + 1) * sizeof(X509*));
 	if (!p) {
-		ERROR("reallocation failed for certificate");
+		RP_ERROR("reallocation failed for certificate");
 		return -1;
 	}
 	certificates.certs = p;
@@ -49,7 +50,7 @@ static int add_certificate_x509(X509 *x)
 	return 0;
 }
 
-static int add_certificate_bin(const char *bin, size_t len)
+static int add_certificate_bin(const unsigned char *bin, size_t len)
 {
 	int rc;
 	const char *b, *e;
@@ -58,7 +59,7 @@ static int add_certificate_bin(const char *bin, size_t len)
 	while (b < e) {
 		X509 *x =  d2i_X509(NULL, (const unsigned char **)&b, e-b);
 		if (x == NULL) {
-			ERROR("d2i_X509 failed");
+			RP_ERROR("d2i_X509 failed");
 			return -1;
 		}
 		rc = add_certificate_x509(x);
@@ -72,13 +73,15 @@ static int add_certificate_bin(const char *bin, size_t len)
 
 int add_certificate_b64(const char *b64)
 {
-	char *d;
-	ssize_t l = base64dec(b64, &d);
+	unsigned char *d;
+	size_t l;
 	int rc;
-	if (l < 0)
+	
+	rc = rp_base64_decode(b64, strlen(b64), &d, &l, 0);
+	if (rc != rp_base64_ok)
 		rc = -1;
 	else {
-		rc = add_certificate_bin(d, (size_t)l);
+		rc = add_certificate_bin(d, l);
 		free(d);
 	}
 	return rc;

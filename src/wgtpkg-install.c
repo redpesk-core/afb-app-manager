@@ -36,7 +36,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgt.h"
 #include "wgt-info.h"
 #include "wgt-strings.h"
@@ -72,7 +72,7 @@ static int check_defined(const void *data, const char *name)
 {
 	if (data)
 		return 0;
-	ERROR("widget has no defined '%s' (temporary constraints)", name);
+	RP_ERROR("widget has no defined '%s' (temporary constraints)", name);
 	errno = EINVAL;
 	return -1;
 }
@@ -87,13 +87,13 @@ static int check_valid_string(const char *value, const char *name)
 	pos = 0;
 	c = value[pos];
 	if (c == 0) {
-		ERROR("empty string forbidden in '%s' (temporary constraints)", name);
+		RP_ERROR("empty string forbidden in '%s' (temporary constraints)", name);
 		errno = EINVAL;
 		return -1;
 	}
 	do {
 		if (!isalnum(c) && !strchr(".-_", c)) {
-			ERROR("forbidden char %c in '%s' -> '%s' (temporary constraints)", c, name, value);
+			RP_ERROR("forbidden char %c in '%s' -> '%s' (temporary constraints)", c, name, value);
 			errno = EINVAL;
 			return -1;
 		}
@@ -116,7 +116,7 @@ static int check_temporary_constraints(const struct wgt_desc *desc)
 		return result;
 
 	if (desc->icons && desc->icons->next) {
-		ERROR("widget has more than one icon defined (temporary constraints)");
+		RP_ERROR("widget has more than one icon defined (temporary constraints)");
 		errno = EINVAL;
 		result = -1;
 	}
@@ -138,17 +138,17 @@ static int set_required_permissions(struct wgt_desc_param *params, int required)
 			else if (!strcmp(params->value, string_optional))
 				optional = 1;
 			else {
-				ERROR("unexpected parameter value: %s found for %s", params->value, params->name);
+				RP_ERROR("unexpected parameter value: %s found for %s", params->value, params->name);
 				errno = EPERM;
 				return -1;
 			}
 			/* set the permission */
 			if (request_permission(params->name)) {
-				DEBUG("granted permission: %s", params->name);
+				RP_DEBUG("granted permission: %s", params->name);
 			} else if (optional) {
-				INFO("optional permission ungranted: %s", params->name);
+				RP_INFO("optional permission ungranted: %s", params->name);
 			} else {
-				ERROR("ungranted permission required: %s", params->name);
+				RP_ERROR("ungranted permission required: %s", params->name);
 				errno = EPERM;
 				return -1;
 			}
@@ -204,7 +204,7 @@ static int set_exec_flag(const char *src, const char *type)
 			if (!strcasecmp(type, exec_type_strings[--i])) {
 				rc = fchmodat(workdirfd, src, 0755, 0);
 				if (rc < 0)
-					ERROR("can't make executable the file %s", src);
+					RP_ERROR("can't make executable the file %s", src);
 				return rc;
 			}
 		}
@@ -219,7 +219,7 @@ static int check_one_content(const char *src, const char *type)
 	int fhtdocs, serr;
 
 	if (!src) {
-		ERROR("a content src is missing");
+		RP_ERROR("a content src is missing");
 		errno = EINVAL;
 		rc = -1;
 	} else {
@@ -237,9 +237,9 @@ static int check_one_content(const char *src, const char *type)
 			errno = serr;
 		}
 		if (rc < 0)
-			ERROR("can't get info on content %s: %m", src);
+			RP_ERROR("can't get info on content %s: %m", src);
 		else if (!S_ISREG(s.st_mode)) {
-			ERROR("content %s isn't a regular file", src);
+			RP_ERROR("content %s isn't a regular file", src);
 			errno = EINVAL;
 			rc = -1;
 		}
@@ -276,7 +276,7 @@ static int get_target_directory(char target[PATH_MAX], const char *root, const s
 	if (rc < PATH_MAX)
 		rc = 0;
 	else {
-		ERROR("path too long");
+		RP_ERROR("path too long");
 		errno = EINVAL;
 		rc = -1;
 	}
@@ -300,14 +300,14 @@ static int install_icon(const struct wgt_desc *desc)
 	create_directory(FWK_ICON_DIR, 0755, 1);
 	rc = snprintf(link, sizeof link, "%s/%s", FWK_ICON_DIR, desc->idaver);
 	if (rc >= (int)sizeof link) {
-		ERROR("link too long in install_icon");
+		RP_ERROR("link too long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
 
 	rc = snprintf(target, sizeof target, "%s/%s", workdir, desc->icons->src);
 	if (rc >= (int)sizeof target) {
-		ERROR("target too long in install_icon");
+		RP_ERROR("target too long in install_icon");
 		errno = EINVAL;
 		return -1;
 	}
@@ -315,7 +315,7 @@ static int install_icon(const struct wgt_desc *desc)
 	unlink(link);
 	rc = symlink(target, link);
 	if (rc)
-		ERROR("can't create link %s -> %s", link, target);
+		RP_ERROR("can't create link %s -> %s", link, target);
 	return rc;
 }
 
@@ -339,9 +339,9 @@ static int install_file_properties(const struct wgt_desc *desc)
 				if (!strcmp(param->value, "executable")) {
 					rc2 = fchmodat(workdirfd, param->name, 0755, 0);
 					if (rc2 < 0)
-						ERROR("can't make executable the file %s: %m", param->name);
+						RP_ERROR("can't make executable the file %s: %m", param->name);
 				} else {
-					ERROR("unknown file property %s for %s", param->value, param->name);
+					RP_ERROR("unknown file property %s for %s", param->value, param->name);
 					errno = EINVAL;
 					rc2 = -1;
 				}
@@ -490,7 +490,7 @@ static int install_security(const struct wgt_desc *desc)
 	assert(head < path + sizeof path);
 	len = (unsigned)((path + sizeof path) - head);
 	if (!len) {
-		ERROR("root path too long in install_security");
+		RP_ERROR("root path too long in install_security");
 		errno = ENAMETOOLONG;
 		goto error;
 	}
@@ -513,7 +513,7 @@ static int install_security(const struct wgt_desc *desc)
 		rc = set_pathtype(f->name, desc, &pathtype);
 
 		if(rc < 0) {
-			ERROR("invalid pathtype for %s", f->name);
+			RP_ERROR("invalid pathtype for %s", f->name);
 			goto error;
 		}
 
@@ -528,7 +528,7 @@ static int install_security(const struct wgt_desc *desc)
 			/* copy next entry of the path */
 			while(f->name[j] && f->name[j] != '/') {
 				if (lf + 1 >= len) {
-					ERROR("path too long in install_security");
+					RP_ERROR("path too long in install_security");
 					errno = ENAMETOOLONG;
 					goto error;
 				}
@@ -603,7 +603,7 @@ static int install_security(const struct wgt_desc *desc)
 			rc = secmgr_path_http(path);
 			break;
 		default:
-			ERROR("unknow path : %s", path);
+			RP_ERROR("unknow path : %s", path);
 			rc = -1;
 			break;
 		}
@@ -616,7 +616,7 @@ static int install_security(const struct wgt_desc *desc)
 	perm = first_usable_permission();
 	while(perm) {
 		rc = secmgr_permit(perm);
-		INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
+		RP_INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
 		if (rc)
 			goto error;
 		perm = next_usable_permission();
@@ -627,7 +627,7 @@ static int install_security(const struct wgt_desc *desc)
 	for (i = 0 ; i < n ; i++) {
 		perm = default_permissions[i];
 		rc = secmgr_permit(perm);
-		INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
+		RP_INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
 		if (rc)
 			goto error;
 	}
@@ -725,12 +725,12 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	int err, rc;
 	struct unitconf uconf;
 
-	NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
+	RP_NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
 
 	/* extraction */
 	create_directory(root, 0755, 1);
 	if (make_workdir(root, "TMP", 0)) {
-		ERROR("failed to create a working directory");
+		RP_ERROR("failed to create a working directory");
 		goto error1;
 	}
 
@@ -749,7 +749,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 
 	if (access(installdir, F_OK) == 0) {
 		if (!force) {
-			ERROR("widget already installed");
+			RP_ERROR("widget already installed");
 			errno = EEXIST;
 			goto error3;
 		}
@@ -795,7 +795,7 @@ struct wgt_info *install_redpesk(const char *installdir)
 	int rc;
 	struct unitconf uconf;
 
-	NOTICE("-- Install redpesk widget from %s --", installdir);
+	RP_NOTICE("-- Install redpesk widget from %s --", installdir);
 
 	/* prepare workdir */
 	set_workdir(installdir, 0);

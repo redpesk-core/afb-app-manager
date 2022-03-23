@@ -34,7 +34,7 @@
 #include <libxml/xmlsave.h>
 
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-files.h"
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-certs.h"
@@ -94,7 +94,7 @@ static xmlNodePtr search_for(const char *attrname, const char *value)
 		val = xmlGetProp(iter, attrname);
 		if (val != NULL && !strcmp(val, value)) {
 			if (result != NULL) {
-				ERROR("duplicated %s %s", attrname, value);
+				RP_ERROR("duplicated %s %s", attrname, value);
 				free(val);
 				return NULL;
 			}
@@ -116,7 +116,7 @@ static xmlNodePtr search_for(const char *attrname, const char *value)
 		iter = next;
 	}
 	if (result == NULL)
-		ERROR("node of %s '%s' not found", attrname, value);
+		RP_ERROR("node of %s '%s' not found", attrname, value);
 	return result;
 }
 
@@ -141,30 +141,30 @@ static int check_one_reference(xmlNodePtr ref)
 	/* get the uri */
 	uri = xmlGetProp(ref, "URI");
 	if (uri == NULL) {
-		ERROR("attribute URI of element <Reference> not found");
+		RP_ERROR("attribute URI of element <Reference> not found");
 		goto error;
 	}
 
 	/* parse the uri */
 	u = xmlParseURI(uri);
 	if (!u) {
-		ERROR("error while parsing URI %s", uri);
+		RP_ERROR("error while parsing URI %s", uri);
 		goto error2;
 	}
 
 	/* check that unexpected parts are not there */
 	if (u->scheme || u->opaque || u->authority || u->server || u->user || u->query) {
-		ERROR("unexpected uri component in %s", uri);
+		RP_ERROR("unexpected uri component in %s", uri);
 		goto error3;
 	}
 
 	/* check path and fragment */
 	if (!u->path && !u->fragment) {
-		ERROR("invalid uri %s", uri);
+		RP_ERROR("invalid uri %s", uri);
 		goto error3;
 	}
 	if (u->path && u->fragment) {
-		ERROR("not allowed to sign foreign fragment in %s", uri);
+		RP_ERROR("not allowed to sign foreign fragment in %s", uri);
 		goto error3;
 	}
 
@@ -172,15 +172,15 @@ static int check_one_reference(xmlNodePtr ref)
 		/* check that the path is valid */
 		fdesc = file_of_name(u->path);
 		if (fdesc == NULL) {
-			ERROR("reference to unknown file %s", u->path);
+			RP_ERROR("reference to unknown file %s", u->path);
 			goto error3;
 		}
 		if (fdesc->type != type_file) {
-			ERROR("reference to directory %s", u->path);
+			RP_ERROR("reference to directory %s", u->path);
 			goto error3;
 		}
 		if ((fdesc->flags & flag_distributor_signature) != 0) {
-			ERROR("reference to signature %s", u->path);
+			RP_ERROR("reference to signature %s", u->path);
 			goto error3;
 		}
 		fdesc->flags |= flag_referenced;
@@ -220,7 +220,7 @@ static int check_references(xmlNodePtr sinfo)
 		if (f->type == type_file) {
 			flags = f->flags;
 			if (!(flags & (flag_signature | flag_referenced))) {
-				ERROR("file not referenced in signature: %s", f->name);
+				RP_ERROR("file not referenced in signature: %s", f->name);
 				result = -1;
 			}
 		}
@@ -244,7 +244,7 @@ static int get_certificates(xmlNodePtr kinfo)
 				if (is_element(n2, "X509Certificate")) {
 					b = xmlNodeGetContent(n2);
 					if (b == NULL) {
-						ERROR("xmlNodeGetContent of X509Certificate failed");
+						RP_ERROR("xmlNodeGetContent of X509Certificate failed");
 						return -1;
 					}
 					rc = add_certificate_b64(b);
@@ -270,19 +270,19 @@ static int checkdocument()
 
 	rootsig = xmlDocGetRootElement(document);
 	if (!is_node(rootsig, "Signature")) {
-		ERROR("root element <Signature> not found");
+		RP_ERROR("root element <Signature> not found");
 		goto error;
 	}
 
 	sinfo = next_element(rootsig->children);
 	if (!is_node(sinfo, "SignedInfo")) {
-		ERROR("element <SignedInfo> not found");
+		RP_ERROR("element <SignedInfo> not found");
 		goto error;
 	}
 
 	svalue = next_element(sinfo->next);
 	if (!is_node(svalue, "SignatureValue")) {
-		ERROR("element <SignatureValue> not found");
+		RP_ERROR("element <SignatureValue> not found");
 		goto error;
 	}
 
@@ -314,7 +314,7 @@ int verify_digsig(struct filedesc *fdesc)
 	int res, fd;
 
 	assert ((fdesc->flags & flag_signature) != 0);
-	DEBUG("-- checking file %s", fdesc->name);
+	RP_DEBUG("-- checking file %s", fdesc->name);
 
 	/* reset the flags */
 	file_clear_flags();
@@ -323,19 +323,19 @@ int verify_digsig(struct filedesc *fdesc)
 	/* reads and xml parses the signature file */
 	fd = openat(workdirfd, fdesc->name, O_RDONLY);
 	if (fd < 0) {
-		ERROR("cant't open file %s", fdesc->name);
+		RP_ERROR("cant't open file %s", fdesc->name);
 		return -1;
 	}
 	document = xmlReadFd(fd, fdesc->name, NULL, 0);
 	close(fd);
 	if (document == NULL) {
-		ERROR("xml parse of file %s failed", fdesc->name);
+		RP_ERROR("xml parse of file %s failed", fdesc->name);
 		return -1;
 	}
 
 	res = checkdocument();
 	if (res)
-		ERROR("previous error was during check of file %s", fdesc->name);
+		RP_ERROR("previous error was during check of file %s", fdesc->name);
 
 	xmlFreeDoc(document);
 	return res;
@@ -351,7 +351,7 @@ int check_all_signatures(int allow_none)
 	n = signature_count();
 	if (n == 0) {
 		if (!allow_none) {
-			ERROR("no signature found");
+			RP_ERROR("no signature found");
 			return -1;
 		}
 		return 0;
@@ -359,7 +359,7 @@ int check_all_signatures(int allow_none)
 
 	rc = xmlsec_init();
 	if (rc < 0) {
-		ERROR("can't check signature");
+		RP_ERROR("can't check signature");
 		return rc;
 	}
 
@@ -400,17 +400,17 @@ int create_digsig(unsigned int index, const char *key, const char **certs)
 	/* save the doc as file */
 	fd = openat(workdirfd, fdesc->name, O_WRONLY|O_CREAT|O_TRUNC, 0644);
 	if (fd < 0) {
-		ERROR("cant open %s for write", fdesc->name);
+		RP_ERROR("cant open %s for write", fdesc->name);
 		goto error2;
 	}
 	ctx = xmlSaveToFd(fd, NULL, XML_SAVE_FORMAT);
 	if (!ctx) {
-		ERROR("xmlSaveToFd failed for %s", fdesc->name);
+		RP_ERROR("xmlSaveToFd failed for %s", fdesc->name);
 		goto error3;
 	}
 	len = xmlSaveDoc(ctx, doc);
 	if (len < 0) {
-		ERROR("xmlSaveDoc to %s failed", fdesc->name);
+		RP_ERROR("xmlSaveDoc to %s failed", fdesc->name);
 		goto error4;
 	}
 
@@ -449,12 +449,12 @@ int create_auto_digsig()
 		/* check the prefix */
 		if (0 != strncmp(var, envvar_prefix, sizeof(envvar_prefix) - 1))
 			continue; /* not an auto sign variable */
-		DEBUG("autosign found %s", var);
+		RP_DEBUG("autosign found %s", var);
 
 		/* check the num */
 		iter = &var[sizeof(envvar_prefix) - 1];
 		if (*iter < '0' || *iter > '9') {
-			ERROR("bad autosign key found: %s", var);
+			RP_ERROR("bad autosign key found: %s", var);
 			rc = -1;
 			continue;
 		}
@@ -467,12 +467,12 @@ int create_auto_digsig()
 		/* next char must be = */
 		if (*iter != '=' || !iter[1]) {
 			/* it is not an error to have an empty autosign */
-			WARNING("ignoring autosign key %.*s", (int)(iter - var), var);
+			RP_WARNING("ignoring autosign key %.*s", (int)(iter - var), var);
 			continue;
 		}
 
 		/* auto signing with num */
-		INFO("autosign key %u found", num);
+		RP_INFO("autosign key %u found", num);
 
 		/* compute key and certificates */
 		equal = iter++;
@@ -488,12 +488,12 @@ int create_auto_digsig()
 
 		/* check the parameters */
 		if (access(keyfile, R_OK) != 0) {
-			ERROR("autosign %u can't access private key %s", num, keyfile);
+			RP_ERROR("autosign %u can't access private key %s", num, keyfile);
 			rc = -1;
 		}
 		for(i = 0 ; i < ncert ; i++) {
 			if (access(certfiles[i], R_OK) != 0) {
-				ERROR("autosign %u can't access certificate %s", num, certfiles[i]);
+				RP_ERROR("autosign %u can't access certificate %s", num, certfiles[i]);
 				rc = -1;
 			}
 		}

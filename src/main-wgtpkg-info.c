@@ -32,7 +32,7 @@
 
 #include <libxml/tree.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-workdir.h"
 #include "wgtpkg-files.h"
 #include "wgtpkg-zip.h"
@@ -86,8 +86,6 @@ int main(int ac, char **av)
 	int i;
 	char *wpath;
 
-	LOGUSER(appname);
-
 	xmlsec_init();
 
 	for (;;) {
@@ -99,20 +97,19 @@ int main(int ac, char **av)
 			usage();
 			return 0;
 		case 'q':
-			if (verbosity)
-				verbosity--;
+			rp_verbose_dec();
 			break;
 		case 'v':
-			verbosity++;
+			rp_verbose_inc();
 			break;
 		case 'V':
 			version();
 			return 0;
 		case ':':
-			ERROR("missing argument value");
+			RP_ERROR("missing argument value");
 			return 1;
 		default:
-			ERROR("unrecognized option");
+			RP_ERROR("unrecognized option");
 			return 1;
 		}
 	}
@@ -122,7 +119,7 @@ int main(int ac, char **av)
 	for (i = 0 ; av[i] != NULL ; i++) {
 		wpath = realpath(av[i], NULL);
 		if (wpath == NULL) {
-			ERROR("error while getting realpath of %dth widget: %s", i+1, av[i]);
+			RP_ERROR("error while getting realpath of %dth widget: %s", i+1, av[i]);
 			return 1;
 		}
 		av[i] = wpath;
@@ -150,11 +147,11 @@ static int check_and_show()
 /* install the widget of the file */
 static void show(const char *wgtfile)
 {
-	NOTICE("-- INFO for widget %s --", wgtfile);
+	RP_NOTICE("-- RP_INFO for widget %s --", wgtfile);
 
 	/* workdir */
 	if (make_workdir("/tmp", "UNPACK", 0)) {
-		ERROR("failed to create a working directory");
+		RP_ERROR("failed to create a working directory");
 		return;
 	}
 

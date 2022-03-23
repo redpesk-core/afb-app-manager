@@ -36,7 +36,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 
-#include "verbose.h"
+#include <rp-utils/rp-verbose.h>
 #include "wgtpkg-workdir.h"
 #include "utils-dir.h"
 
@@ -82,7 +82,7 @@ int set_workdir(const char *name, int create)
 	/* check the length */
 	length = strlen(name);
 	if (length >= sizeof workdir) {
-		ERROR("workdir name too long");
+		RP_ERROR("workdir name too long");
 		errno = EINVAL;
 		return -1;
 	}
@@ -97,21 +97,21 @@ int set_workdir(const char *name, int create)
 	dirfd = openat(AT_FDCWD, name, O_PATH|O_DIRECTORY|O_RDONLY);
 	if (dirfd < 0) {
 		if (errno != ENOENT) {
-			ERROR("error while opening workdir %s: %m", name);
+			RP_ERROR("error while opening workdir %s: %m", name);
 			return -1;
 		}
 		if (!create) {
-			ERROR("workdir %s doesn't exist", name);
+			RP_ERROR("workdir %s doesn't exist", name);
 			return -1;
 		}
 		rc = mkdirat(AT_FDCWD, name, dirmode);
 		if (rc) {
-			ERROR("can't create workdir %s", name);
+			RP_ERROR("can't create workdir %s", name);
 			return -1;
 		}
 		dirfd = openat(AT_FDCWD, name, O_PATH|O_DIRECTORY|O_RDONLY);
 		if (dirfd < 0) {
-			ERROR("can't open workdir %s", name);
+			RP_ERROR("can't open workdir %s", name);
 			return -1;
 		}
 	}
@@ -129,7 +129,7 @@ int make_workdir(const char *root, const char *prefix, int reuse)
 
 	n = snprintf(workdir, sizeof workdir, "%s/%s", root, prefix);
 	if (n >= (int)sizeof workdir) {
-		ERROR("workdir prefix too long");
+		RP_ERROR("workdir prefix too long");
 		errno = EINVAL;
 		return -1;
 	}
@@ -138,19 +138,19 @@ int make_workdir(const char *root, const char *prefix, int reuse)
 	/* create a temporary directory */
 	for (i = 0 ; ; i++) {
 		if (i == INT_MAX) {
-			ERROR("exhaustion of workdirs");
+			RP_ERROR("exhaustion of workdirs");
 			return -1;
 		}
 		l = snprintf(workdir + n, (unsigned)r, "%d", i);
 		if (l >= r) {
-			ERROR("computed workdir too long");
+			RP_ERROR("computed workdir too long");
 			errno = EINVAL;
 			return -1;
 		}
 		if (!mkdirat(AT_FDCWD, workdir, dirmode))
 			break;
 		if (errno != EEXIST) {
-			ERROR("error in creation of workdir %s: %m", workdir);
+			RP_ERROR("error in creation of workdir %s: %m", workdir);
 			return -1;
 		}
 		if (reuse)
@@ -158,7 +158,7 @@ int make_workdir(const char *root, const char *prefix, int reuse)
 	}
 	workdirfd = openat(AT_FDCWD, workdir, O_RDONLY|O_DIRECTORY);
 	if (workdirfd < 0) {
-		ERROR("error in onnection to workdir %s: %m", workdir);
+		RP_ERROR("error in onnection to workdir %s: %m", workdir);
 		rmdir(workdir);
 		return -1;
 	}
@@ -176,7 +176,7 @@ int move_workdir(const char *dest, int parents, int force)
 
 	/* check length */
 	if (strlen(dest) >= sizeof workdir) {
-		ERROR("destination dirname too long");
+		RP_ERROR("destination dirname too long");
 		errno = EINVAL;
 		return -1;
 	}
@@ -185,23 +185,23 @@ int move_workdir(const char *dest, int parents, int force)
 	rc = stat(dest, &s);
 	if (rc == 0) {
 		if (!S_ISDIR(s.st_mode)) {
-			ERROR("in move_workdir, can't overwrite regular file %s", dest);
+			RP_ERROR("in move_workdir, can't overwrite regular file %s", dest);
 			errno = EEXIST;
 			return -1;
 		}
 		if (!force) {
-			ERROR("in move_workdir, can't overwrite regular file %s", dest);
+			RP_ERROR("in move_workdir, can't overwrite regular file %s", dest);
 			errno = EEXIST;
 			return -1;
 		}
 		rc = remove_directory_content(dest);
 		if (rc) {
-			ERROR("in move_workdir, can't clean dir %s", dest);
+			RP_ERROR("in move_workdir, can't clean dir %s", dest);
 			return rc;
 		}
 		rc = rmdir(dest);
 		if (rc) {
-			ERROR("in move_workdir, can't remove dir %s", dest);
+			RP_ERROR("in move_workdir, can't remove dir %s", dest);
 			return rc;
 		}
 	} else {
@@ -215,16 +215,16 @@ int move_workdir(const char *dest, int parents, int force)
 			if (!rc) {
 				/* found an entry */
 				if (!S_ISDIR(s.st_mode)) {
-					ERROR("in move_workdir, '%s' isn't a directory", copy);
+					RP_ERROR("in move_workdir, '%s' isn't a directory", copy);
 					errno = ENOTDIR;
 					return -1;
 				}
 			} else if (!parents) {
 				/* parent entry not found but not allowed to create it */
-				ERROR("in move_workdir, parent directory '%s' not found: %m", copy);
+				RP_ERROR("in move_workdir, parent directory '%s' not found: %m", copy);
 				return -1;
 			} else if (create_directory(copy, dirmode, 1)) {
-				ERROR("in move_workdir, creation of directory %s failed: %m", copy);
+				RP_ERROR("in move_workdir, creation of directory %s failed: %m", copy);
 				return -1;
 			}
 		}
@@ -235,7 +235,7 @@ int move_workdir(const char *dest, int parents, int force)
 	workdirfd = -1;
 	rc = renameat(AT_FDCWD, workdir, AT_FDCWD, dest);
 	if (rc) {
-		ERROR("in move_workdir, renameat failed %s -> %s: %m", workdir, dest);
+		RP_ERROR("in move_workdir, renameat failed %s -> %s: %m", workdir, dest);
 		return -1;
 	}
 
