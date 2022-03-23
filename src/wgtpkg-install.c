@@ -55,125 +55,18 @@
 #include "utils-systemd.h"
 #include "utils-file.h"
 #include "normalize-unit-file.h"
+#include "manage-afid.h"
 
 static const char* exec_type_strings[] = {
 	"application/x-executable",
 	"application/vnd.agl.native"
 };
 
-static const char key_afm_prefix[] = "X-AFM-";
-static const char key_afid[] = "ID";
-
 #define HTTP_PORT_BASE		30000
-
-#define AFID_MIN		1
-#define AFID_MAX		1999
-#define AFID_IS_VALID(afid)	(AFID_MIN <= (afid) && (afid) <= AFID_MAX)
-#define AFID_COUNT		(AFID_MAX - AFID_MIN + 1)
-#define AFID_ACNT		((AFID_COUNT + 31) >> 5)
-#define AFID_ASFT(afid)		(((afid) - AFID_MIN) & 31)
-#define AFID_AIDX(afid)		(((afid) - AFID_MIN) >> 5)
-#define AFID_TEST(array,afid)	((((array)[AFID_AIDX(afid)]) >> AFID_ASFT(afid)) & 1)
-#define AFID_SET(array,afid)	(((array)[AFID_AIDX(afid)]) |= (((uint32_t)1) << AFID_ASFT(afid)))
-
-static uint32_t *afids_array = NULL;
 
 static const char *default_permissions[] = {
 	"urn:AGL:token:valid"
 };
-
-static int get_afid_cb(void *closure, const char *name, const char *path, int isuser)
-{
-	char *iter;
-	char *content;
-	size_t length;
-	int rc, p;
-
-	/* reads the file */
-	rc = getfile(path, &content, &length);
-	if (rc < 0)
-		return rc;
-
-	/* normalize the unit file */
-	normalize_unit_file(content);
-
-	/* process the file */
-	iter = strstr(content, key_afm_prefix);
-	while (iter) {
-		iter += sizeof key_afm_prefix - 1;
-		if (*iter == '-')
-			iter++;
-		if (!strncmp(iter, key_afid, sizeof key_afid - 1)) {
-			iter += sizeof key_afid - 1;
-			while(*iter && *iter != '=' && *iter != '\n')
-				iter++;
-			if (*iter == '=') {
-				while(*++iter == ' ');
-				p = atoi(iter);
-				if (AFID_IS_VALID(p))
-					AFID_SET((uint32_t*)closure, p);
-			}
-		}
-		iter = strstr(iter, key_afm_prefix);
-	}
-	free(content);
-	return 0;
-}
-
-static int update_afids(uint32_t *afids)
-{
-	int rc;
-
-	memset(afids, 0, AFID_ACNT * sizeof(uint32_t));
-	rc = systemd_unit_list(0, get_afid_cb, afids);
-	if (rc >= 0)
-		rc = systemd_unit_list(1, get_afid_cb, afids);
-	if (rc < 0)
-		ERROR("troubles while updating afids");
-	return rc;
-}
-
-static int first_free_afid(uint32_t *afids)
-{
-	int afid;
-
-	afid = AFID_MIN;
-	while (afid <= AFID_MAX && !~afids[AFID_AIDX(afid)])
-		afid += 32;
-	while (afid <= AFID_MAX && AFID_TEST(afids, afid))
-		afid++;
-	if (afid > AFID_MAX) {
-		ERROR("Can't compute a valid afid");
-		errno = EADDRNOTAVAIL;
-		afid = -1;
-	}
-	return afid;
-}
-
-static int get_new_afid()
-{
-	int afid;
-
-	/* ensure existing afid bitmap */
-	if (afids_array == NULL) {
-		afids_array = malloc(AFID_ACNT * sizeof(uint32_t));
-		if (afids_array == NULL || update_afids(afids_array) < 0)
-			return -1;
-	}
-
-	/* allocates the afid */
-	afid = first_free_afid(afids_array);
-	if (afid < 0 && errno == EADDRNOTAVAIL) {
-		/* no more ids, try to rescan */
-		memset(afids_array, 0, AFID_ACNT * sizeof(uint32_t));
-		if (update_afids(afids_array) >= 0)
-			afid = first_free_afid(afids_array);
-	}
-	if (afid >= 0)
-		AFID_SET(afids_array, afid);
-
-	return afid;
-}
 
 static int check_defined(const void *data, const char *name)
 {

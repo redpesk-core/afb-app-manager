@@ -130,6 +130,7 @@ add_library(utils STATIC
 	utils-systemd.c
 	verbose.c
 	normalize-unit-file.c
+	manage-afid.c
 	)
 
 # library for handling the content of the widgets
