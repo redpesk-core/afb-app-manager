@@ -223,7 +223,6 @@ int read_private_key(const char *file, gnutls_privkey_t *key)
 	int rc;
 	size_t size;
 	gnutls_datum_t datum;
-	unsigned count;
 	gnutls_x509_privkey_t xkey;
 
 	*key = NULL;

@@ -104,7 +104,7 @@ int main(int ac, char **av)
 
 		rc = read_pkcs7(av[2], &pkcs7);
 		if (rc < 0) {
-			fprintf(stderr, "Can't read %s: \n", av[2], strerror(-rc));
+			fprintf(stderr, "Can't read %s: %s\n", av[2], strerror(-rc));
 			exit(EXIT_FAILURE);
 		}
 		if (ac < 4)
@@ -112,7 +112,7 @@ int main(int ac, char **av)
 		else {
 			rc = read_certificates(av[3], roots, (int)(sizeof roots / sizeof roots[0]));
 			if (rc < 0) {
-				fprintf(stderr, "Can't read %s: \n", av[3], strerror(-rc));
+				fprintf(stderr, "Can't read %s: %s\n", av[3], strerror(-rc));
 				exit(EXIT_FAILURE);
 			}
 			nca = rc;
