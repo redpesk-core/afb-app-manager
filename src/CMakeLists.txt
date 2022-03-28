@@ -47,7 +47,13 @@ set(CMAKE_C_FLAGS_CCOV         "-g -O2 --coverage")
 
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(EXTRAS REQUIRED libxml-2.0 openssl xmlsec1 xmlsec1-openssl json-c librp-utils)
+if(WITH_OPENSSL)
+	set(xsec openssl xmlsec1-openssl)
+else(WITH_OPENSSL)
+	set(xsec gnutls xmlsec1-gnutls)
+endif(WITH_OPENSSL)
+
+pkg_check_modules(EXTRAS REQUIRED libxml-2.0 ${xsec} json-c librp-utils)
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})

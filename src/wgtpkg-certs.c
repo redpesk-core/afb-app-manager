@@ -23,24 +23,74 @@
 */
 
 #include <string.h>
-#include <openssl/x509.h>
 
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-base64.h>
 
 #include "wgtpkg-certs.h"
 
+
+#if WITH_OPENSSL
+
+#include <openssl/x509.h>
+typedef X509 *cert_t;
+
+static void cert_destroy(cert_t cert)
+{
+	X509_free(cert);
+}
+
+static int cert_import(cert_t *certs, int maxcount, const unsigned char *bin, size_t len)
+{
+	X509 *x;
+	int rc, nr = 0;
+	const char *b, *e;
+	b = bin;
+	e = bin + len;
+	while (b < e) {
+		x = nr < maxcount ? d2i_X509(NULL, (const unsigned char **)&b, e-b) : NULL;
+		if (x == NULL) {
+			RP_ERROR("import failed");
+			while(nr)
+				cert_destroy(certs[--nr]);
+			return -1;
+		}
+		certs[nr++] = x;
+	}
+	return nr;
+}
+
+#else
+
+#include <gnutls/x509.h>
+typedef gnutls_x509_crt_t cert_t;
+
+static void cert_destroy(cert_t cert)
+{
+	gnutls_x509_crt_deinit(cert);
+}
+
+static int cert_import(cert_t *certs, int maxcount, const unsigned char *bin, size_t len)
+{
+	unsigned count = (unsigned)maxcount;
+	gnutls_datum_t data = { .data = (void*)bin, .size = (unsigned)len };
+	int rc = gnutls_x509_crt_list_import(certs, &count, &data, GNUTLS_X509_FMT_PEM, GNUTLS_X509_CRT_LIST_IMPORT_FAIL_IF_EXCEED);
+	return rc;
+}
+
+#endif
+
 struct x509l {
 	unsigned count;
-	X509 **certs;
+	cert_t *certs;
 };
 
 static struct x509l certificates = { .count = 0, .certs = NULL };
 
-static int add_certificate_x509(X509 *x)
+static int add_certificate_x509(cert_t x)
 {
-	X509 **p = realloc(certificates.certs,
-			(certificates.count + 1) * sizeof(X509*));
+	cert_t *p = realloc(certificates.certs,
+			(certificates.count + 1) * sizeof *p);
 	if (!p) {
 		RP_ERROR("reallocation failed for certificate");
 		return -1;
@@ -52,23 +102,18 @@ static int add_certificate_x509(X509 *x)
 
 static int add_certificate_bin(const unsigned char *bin, size_t len)
 {
-	int rc;
-	const char *b, *e;
-	b = bin;
-	e = bin + len;
-	while (b < e) {
-		X509 *x =  d2i_X509(NULL, (const unsigned char **)&b, e-b);
-		if (x == NULL) {
-			RP_ERROR("d2i_X509 failed");
-			return -1;
+	int rc, idx, nr;
+	cert_t certs[10];
+
+	rc = cert_import(certs, sizeof certs / sizeof *certs, bin, len);
+	if (rc >= 0)
+		for (idx = 0, nr = rc ; idx < nr ; idx++) {
+			if (rc >= 0)
+				rc = add_certificate_x509(certs[idx]);
+			if (rc < 0)
+				cert_destroy(certs[idx]);
 		}
-		rc = add_certificate_x509(x);
-		if (rc) {
-			X509_free(x);
-			return rc;
-		}
-	}
-	return 0;
+	return rc;
 }
 
 int add_certificate_b64(const char *b64)
@@ -90,7 +135,7 @@ int add_certificate_b64(const char *b64)
 void clear_certificates()
 {
 	while(certificates.count)
-		X509_free(certificates.certs[--certificates.count]);
+		cert_destroy(certificates.certs[--certificates.count]);
+	free(certificates.certs);
+	certificates.certs = NULL;
 }
-
-

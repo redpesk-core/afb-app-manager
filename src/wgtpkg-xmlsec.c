@@ -30,15 +30,12 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#include <libxml/tree.h>
-#include <xmlsec/xmlsec.h>
-#include <xmlsec/xmltree.h>
-#include <xmlsec/xmldsig.h>
-#include <xmlsec/crypto.h>
+#define XMLSEC_CRYPTO_DYNAMIC_LOADING
+#include <xmlsec/app.h>
 #include <xmlsec/templates.h>
 #include <xmlsec/errors.h>
 #include <xmlsec/io.h>
-
+#include <xmlsec/xmldsig.h>
 
 #include <rp-utils/rp-verbose.h>
 #include "wgtpkg-files.h"

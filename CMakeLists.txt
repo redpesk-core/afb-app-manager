@@ -44,6 +44,7 @@ option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
 option(ALLOW_WIDGETS      "Allow widgets even if WITH_RPM_REDPESK_PLUGIN is ON" OFF)
+option(WITH_OPENSSL       "Use openssl instead of gnutls" ON)
 
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 
@@ -98,6 +99,10 @@ endif(DISTINCT_VERSIONS)
 if(INSTALL_SAMPLE_KEYS)
 	add_definitions(-DWITH_SAMPLE_KEYS=1)
 endif(INSTALL_SAMPLE_KEYS)
+if(WITH_OPENSSL)
+	add_definitions(-DWITH_OPENSSL=1)
+endif(WITH_OPENSSL)
+
 
 add_subdirectory(src)
 add_subdirectory(conf)
