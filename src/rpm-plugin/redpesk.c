@@ -11,6 +11,12 @@
 #include <rpm/rpmts.h>
 #include <rpm/rpmte.h>
 #include <rpm-plugins/rpmplugin.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
+
+#include "../afmpkg-common.h"
+#include "../detect-packtype.h"
 
 /***************************************************
 * RPM plugins MUST have a NAME following C naming
@@ -378,40 +384,15 @@ static int number_adds(record_t *record, void *closure)
  */
 static int should_tell_framework(rpmfiles files, const char *packname)
 {
-	/* the path terminated with "/PACKNAME/ONE-OF-THE-SUFFIX-BELOW"
-	 * are assumed to need framework action
-	 * the list below is a LINEFEED separated list of knwon suffixes
-	 */
-	static const char names[] =
-		"config.xml\n"
-		"author-signature.xml\n"
-		".rpconfig/manifest.yml\n"
-		".rpconfig/signature-author.p7\n";
-
 	const char *filename;
-	size_t idx, nlen, fdx, flen, plen;
+	size_t flen, plen = strlen(packname);
 	int answer = 0;
-	rpmfi fi;
-
-	/* iterate over the files until end of match found */
-	answer = 0;
-	plen = strlen(packname);
-	fi = rpmfilesIter(files, RPMFI_ITER_FWD);
+	rpmfi fi = rpmfilesIter(files, RPMFI_ITER_FWD);
 	while (!answer && rpmfiNext(fi) >= 0) {
-		/* get the current filename to be checked */
+		/* check the current filename */
 		filename = rpmfiFN(fi);
 		flen = strlen(filename);
-		/* iterate over the suffix names */
-		for (idx = 0 ; !answer && names[idx] ; idx += nlen + 1) {
-			/* compute length of the current suffix */
-			for (nlen = 0 ; names[idx + nlen] != '\n' ; nlen++);
-			/* check if file matches the suffix and its containing directory */
-			answer = nlen + plen + 2 <= flen
-				&& filename[flen - nlen - plen - 2] == '/'
-				&& !memcmp(packname, &filename[flen - nlen - plen - 1], plen)
-				&& filename[flen - nlen - 1] == '/'
-				&& !memcmp(&names[idx], &filename[flen - nlen], nlen);
-		}
+		answer = detect_packtype(packname, plen, filename, flen) != packtype_Unknown;
 	}
 	rpmfiFree(fi);
 	return answer;

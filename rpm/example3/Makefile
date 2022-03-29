@@ -47,7 +47,7 @@ plugins:
 	mkdir plugins
 
 plugins/redpesk.so: redpesk.c plugins
-	$(CC) -o $@ $< -lrpm -I../../external-includes -shared -fPIC -g
+	$(CC) -o $@ $< ../../src/detect-packtype.c -lrpm -I../../external-includes -I../../src/rpm-plugin -shared -fPIC -g
 
 ########################################
 # Testing

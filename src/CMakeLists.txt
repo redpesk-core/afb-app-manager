@@ -128,6 +128,10 @@ endif(WITH_WIDGETS)
 add_library(wgtpkg STATIC ${wgtpkg_sources})
 
 add_library(utils STATIC
+	detect-packtype.c
+	normalize-unit-file.c
+	manage-afid.c
+	mime-type.c
 	mustach.c
 	utils-dir.c
 	utils-file.c
