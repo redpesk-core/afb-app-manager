@@ -133,12 +133,11 @@ add_library(utils STATIC
 	manage-afid.c
 	mime-type.c
 	mustach.c
+	sighup-framework.c
 	utils-dir.c
 	utils-file.c
 	utils-json.c
 	utils-systemd.c
-	normalize-unit-file.c
-	manage-afid.c
 	)
 
 # library for handling the content of the widgets
@@ -218,13 +217,12 @@ if(WITH_RPM_REDPESK_PLUGIN)
 	MESSAGE(STATUS "Creating rpm plugin for redpesk")
 
 	pkg_check_modules(RPM REQUIRED IMPORTED_TARGET rpm)
-	pkg_check_modules(PROCPS REQUIRED IMPORTED_TARGET libprocps)
 
 	add_library(redpesk SHARED rpm-redpesk.c)
 	set_target_properties(redpesk PROPERTIES PREFIX "")
 
-	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS} ${PROCPS_LIBRARY_DIRS})
-	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} ${PROCPS_LIBRARIES} wgtpkg wgt secwrp utils afm)
+	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS})
+	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} wgtpkg wgt secwrp utils afm)
 	install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
 else()
 	MESSAGE(STATUS "Not creating rpm plugin for redpesk")

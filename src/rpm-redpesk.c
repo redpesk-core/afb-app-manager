@@ -1,10 +1,33 @@
+/*
+ Copyright (C) 2015-2022 IoT.bzh Company
+
+ Author: Clément Bénier <clement.benier@iot.bzh>
+
+ $RP_BEGIN_LICENSE$
+ Commercial License Usage
+  Licensees holding valid commercial IoT.bzh licenses may use this file in
+  accordance with the commercial license agreement provided with the
+  Software or, alternatively, in accordance with the terms contained in
+  a written agreement between you and The IoT.bzh Company. For licensing terms
+  and conditions see https://www.iot.bzh/terms-conditions. For further
+  information use the contact form at https://www.iot.bzh/contact.
+
+ GNU General Public License Usage
+  Alternatively, this file may be used under the terms of the GNU General
+  Public license version 3. This license is as published by the Free Software
+  Foundation and appearing in the file LICENSE.GPLv3 included in the packaging
+  of this file. Please review the following information to ensure the GNU
+  General Public License requirements will be met
+  https://www.gnu.org/licenses/gpl-3.0.html.
+ $RP_END_LICENSE$
+*/
+
 #include <stdio.h>
 #include <libgen.h>
 #include <linux/limits.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <proc/readproc.h>
 #include <string.h>
 #include <signal.h>
 
@@ -15,7 +38,7 @@
 #include "wgtpkg-install.h"
 #include "wgtpkg-uninstall.h"
 #include "afm-udb.h"
-#include "utils-systemd.h"
+#include "sighup-framework.h"
 #include "wgt-info.h"
 
 /***************************************************
@@ -61,7 +84,6 @@
 	tsm_post(APPLY)
 
  */
-static const char *afm_system_daemon = "afm-system-daemon";
 
 struct redpesk_pkgs {
 	char *name; //package name
@@ -85,36 +107,6 @@ static const char * typestring(rpmte te)
 	}
 }
 
-static int sighup_afm_main()
-{
-	int rc = 0;
-	PROCTAB* proc;
-	proc_t proc_info;
-	memset(&proc_info, 0, sizeof(proc_info));
-
-	/* get processes: flag to fill cmdline */
-	proc = openproc(PROC_FILLCOM);
-	if(!proc)
-		return -1;
-
-	/* looking for cmdline with afm-system-daemon */
-	while (readproc(proc, &proc_info)) {
-		if(!proc_info.cmdline)
-			continue;
-
-		if(strstr(*proc_info.cmdline, afm_system_daemon)) {
-			rpmlog(RPMLOG_INFO, "Found %s, pid = %d, sending SIGHUP\n", afm_system_daemon, proc_info.tid);
-			kill(proc_info.tid, SIGHUP);
-			goto done;
-		}
-	}
-	rc = -2;
-
-done:
-	closeproc(proc);
-	return rc;
-}
-
 static int install(const char *dirname)
 {
 	struct wgt_info *ifo;
@@ -126,10 +118,7 @@ static int install(const char *dirname)
 		return -1;
 	}
 	else {
-		systemd_daemon_reload(0);
-		systemd_unit_restart_name(0, "sockets.target", NULL);
-		sighup_afm_main();
-
+		sighup_all();
 		/* clean-up */
 		wgt_info_unref(ifo);
 	}
