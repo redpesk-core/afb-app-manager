@@ -39,11 +39,10 @@ enum signature_type
 	/** the author signature */
 	Signature_Author,
 
-	/** a distrubutor signature */
+	/** a distributor signature */
 	Signature_distributor
 }
 	signature_type_t;
-
 
 /**
  * @brief Get the signature type of path/name
