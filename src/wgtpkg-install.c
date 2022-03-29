@@ -57,11 +57,7 @@
 #include "utils-systemd.h"
 #include "normalize-unit-file.h"
 #include "manage-afid.h"
-
-static const char* exec_type_strings[] = {
-	"application/x-executable",
-	"application/vnd.agl.native"
-};
+#include "mime-type.h"
 
 #define HTTP_PORT_BASE		30000
 
@@ -197,18 +193,13 @@ static int for_all_content(const struct wgt_desc *desc, int (*action)(const char
 
 static int set_exec_flag(const char *src, const char *type)
 {
-	int i, rc;
+	int rc;
 
-	if (src && type) {
-		i = sizeof exec_type_strings / sizeof *exec_type_strings;
-		while (i) {
-			if (!strcasecmp(type, exec_type_strings[--i])) {
-				rc = fchmodat(workdirfd, src, 0755, 0);
-				if (rc < 0)
-					RP_ERROR("can't make executable the file %s", src);
-				return rc;
-			}
-		}
+	if (src && type && mime_type_is_executable(type)) {
+		rc = fchmodat(workdirfd, src, 0755, 0);
+		if (rc < 0)
+			RP_ERROR("can't make executable the file %s", src);
+		return rc;
 	}
 	return 0;
 }
