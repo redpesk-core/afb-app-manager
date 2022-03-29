@@ -24,13 +24,37 @@
 
 #pragma once
 
+/**
+ * detected type of a package
+ */
 typedef enum packtype_e {
+	/** unknown */
 	packtype_Unknown,
+	/** type AfmPkg */
 	packtype_AfmPkg,
+	/** type widget (legacy) */
 	packtype_Widget
 } packtype_t;
 
+/**
+ * @brief Inspect the filename to detect if it represents
+ * a filename of a specific packaging file and if yes of
+ * what kind.
+ *
+ * @param packname package name (can be NULL when plen == 0)
+ * @param plen length of the package name (can be 0)
+ * @param filename name of the file
+ * @param flen length of file name
+ * @param blen if not null receive the length of the base name
+ *
+ * @return the detected type
+ */
 extern
 packtype_t
-detect_packtype(const char *packname, size_t plen, const char *filename, size_t flen);
+detect_packtype(
+	const char *packname,
+	size_t plen,
+	const char *filename,
+	size_t flen,
+	size_t *blen);
 

@@ -30,7 +30,7 @@
 /**
  * Checks if the content has to be communicated to the framework
  */
-packtype_t detect_packtype(const char *packname, size_t plen, const char *filename, size_t flen)
+packtype_t detect_packtype(const char *packname, size_t plen, const char *filename, size_t flen, size_t *blen)
 {
 	/* the path terminated with "/PACKNAME/ONE-OF-THE-SUFFIX-BELOW"
 	 * are assumed to need framework action
@@ -38,14 +38,10 @@ packtype_t detect_packtype(const char *packname, size_t plen, const char *filena
 	 */
 	static const char names[] =
 		"config.xml\n"
-		"author-signature.xml\n"
-		".rpconfig/manifest.yml\n"
-		".rpconfig/signature-author.p7\n";
+		".rpconfig/manifest.yml\n";
 
 	static packtype_t types[] = {
 		packtype_Widget,
-		packtype_Widget,
-		packtype_AfmPkg,
 		packtype_AfmPkg
 	};
 
@@ -56,13 +52,16 @@ packtype_t detect_packtype(const char *packname, size_t plen, const char *filena
 		/* compute length of the current suffix */
 		for (nlen = 0 ; names[idx + nlen] != '\n' ; nlen++);
 		/* check if file matches the suffix and its containing directory */
-		if (nlen + plen + 2 <= flen
-			&& filename[flen - nlen - plen - 2] == '/'
-			&& !memcmp(packname, &filename[flen - nlen - plen - 1], plen)
-			&& filename[flen - nlen - 1] == '/'
-			&& !memcmp(&names[idx], &filename[flen - nlen], nlen))
+		if (nlen + 1 <= flen
+		 && (plen == 0 || (nlen + plen + 2 <= flen
+				  && filename[flen - nlen - plen - 2] == '/'
+				  && !memcmp(packname, &filename[flen - nlen - plen - 1], plen)))
+		 && filename[flen - nlen - 1] == '/'
+		 && !memcmp(&names[idx], &filename[flen - nlen], nlen)) {
+			if (blen)
+				*blen = flen - nlen - 1;
 			return types[tdx];
+		}
 	}
 	return packtype_Unknown;
 }
-

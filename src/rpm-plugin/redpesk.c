@@ -392,7 +392,7 @@ static int should_tell_framework(rpmfiles files, const char *packname)
 		/* check the current filename */
 		filename = rpmfiFN(fi);
 		flen = strlen(filename);
-		answer = detect_packtype(packname, plen, filename, flen) != packtype_Unknown;
+		answer = detect_packtype(packname, plen, filename, flen, NULL) != packtype_Unknown;
 	}
 	rpmfiFree(fi);
 	return answer;
