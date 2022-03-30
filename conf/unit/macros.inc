@@ -41,7 +41,7 @@ define( `IF_NOT_VALUE', `MUSTACH_IF_NOT(value=$1)')
 --------------------------------------------------------------------------------
 -- NOTE:
 --  when home screen will use real ids
---  use TARGET={{:id}}--{{:ver}}--{{:#target}}
+--  use TARGET={{:id}}--{{:#target}}
 --  instead of TARGET={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
 --------------------------------------------------------------------------------
 define( `AFID', `{{:#metatarget.afid}}')
