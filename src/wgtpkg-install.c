@@ -723,7 +723,6 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 	const struct wgt_desc *desc;
 	char installdir[PATH_MAX];
 	int err, rc;
-	struct unitconf uconf;
 
 	RP_NOTICE("-- INSTALLING widget %s to %s --", wgtfile, root);
 
@@ -793,7 +792,6 @@ struct wgt_info *install_redpesk(const char *installdir)
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 	int rc;
-	struct unitconf uconf;
 
 	RP_NOTICE("-- Install redpesk widget from %s --", installdir);
 
