@@ -14,7 +14,7 @@ clean:
 ########################################
 # Build RPMs
 ########################################
-RPM_CONTENT = README.md
+RPM_CONTENT = README.md manifest.yml
 
 RPMSUFFIX = -1.fc34.noarch.rpm
 
