@@ -68,21 +68,19 @@ static int setdown_files_and_security(const struct wgt_desc *desc)
 	}
 
 #if DISTINCT_VERSIONS
-	rc = secmgr_init(desc->id);
+	rc = secmgr_begin(desc->id);
 #else
-	rc = secmgr_init(desc->idaver);
+	rc = secmgr_begin(desc->idaver);
 #endif
-	if (rc) {
+	if (rc < 0) {
 		RP_ERROR("can't init sec lsm manager context");
-		return -1;
+		return rc;
 	}
 	rc = secmgr_uninstall();
-	secmgr_cancel();
-	if (rc) {
+	secmgr_end();
+	if (rc < 0)
 		RP_ERROR("can't uninstall sec lsm manager context");
-		return -1;
-	}
-	return 0;
+	return rc;
 }
 
 static int uninstall_at(const char *installdir)

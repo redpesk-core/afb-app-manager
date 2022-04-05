@@ -478,12 +478,9 @@ static int install_security(const struct wgt_desc *desc)
 	struct pathent *pe0, *pe2, *ppe;
 
 	pe0 = NULL;
-	rc = secmgr_init(desc->id);
-	if (rc)
-	{
-		rc = -1;
+	rc = secmgr_begin(desc->id);
+	if (rc < 0)
 		goto end;
-	}
 
 	/* instal the files */
 	head = stpcpy(path, workdir);
@@ -608,7 +605,7 @@ static int install_security(const struct wgt_desc *desc)
 			break;
 		}
 
-		if (rc)
+		if (rc < 0)
 			goto error;
 	}
 
@@ -638,7 +635,7 @@ static int install_security(const struct wgt_desc *desc)
 error:
 	rc = -1;
 end2:
-	secmgr_cancel();
+	secmgr_end();
 end:
 	/* free memory of path entries */
 	while (pe0 != NULL) {

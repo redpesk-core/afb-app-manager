@@ -39,17 +39,17 @@ static sec_lsm_manager_t *sm_handle = NULL;
 
 static int retcode(int rc)
 {
-	if (rc < 0) {
+	if (rc < 0)
 		errno = -rc;
-		return -1;
-	}
-	return 0;
+	return rc;
 }
 
-int secmgr_init(const char *id)
+int secmgr_begin(const char *id)
 {
 	int rc;
-	assert(sm_handle == NULL);
+
+	if (sm_handle != NULL)
+		return -EBUSY;
 
 	rc = sec_lsm_manager_create(&sm_handle, NULL);
 
@@ -68,15 +68,17 @@ int secmgr_init(const char *id)
 	goto ret;
 
 error:
-	secmgr_cancel();
+	secmgr_end();
 ret:
 	return retcode(rc);
 }
 
-void secmgr_cancel()
+void secmgr_end()
 {
-	sec_lsm_manager_destroy(sm_handle);
-	sm_handle = NULL;
+	if (sm_handle != NULL) {
+		sec_lsm_manager_destroy(sm_handle);
+		sm_handle = NULL;
+	}
 }
 
 int secmgr_install()
