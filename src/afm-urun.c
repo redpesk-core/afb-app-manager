@@ -37,6 +37,8 @@
 #include <json-c/json.h>
 
 #include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-jsonc.h>
+
 #include "utils-dir.h"
 #include "utils-json.h"
 #include "utils-systemd.h"
@@ -365,7 +367,8 @@ int afm_urun_resume(int runid, int uid)
  */
 struct json_object *afm_urun_list(struct afm_udb *db, int all, int uid)
 {
-	int i, n, isuser, pid;
+	rp_jsonc_index_t i, n;
+	int isuser, pid;
 	const char *udpath;
 	const char *id;
 	enum SysD_State state;
@@ -410,7 +413,8 @@ error:
  */
 struct json_object *afm_urun_state(struct afm_udb *db, int runid, int uid)
 {
-	int i, n, isuser, pid, wasuser;
+	rp_jsonc_index_t i, n;
+	int isuser, pid, wasuser;
 	char *dpath;
 	const char *udpath;
 	const char *id;

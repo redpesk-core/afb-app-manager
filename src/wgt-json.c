@@ -39,7 +39,9 @@
 #include "wgt-info.h"
 #include "wgt-json.h"
 #include "wgt-strings.h"
+
 #include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-jsonc.h>
 
 /*
  * This describes an action to be performed for a parameter of name.
@@ -143,7 +145,7 @@ static const char *get_target_name(const struct wgt_desc_feature *feat, const ch
 static struct json_object *get_array_item_by_key(struct json_object *array, const char *key, const char *val)
 {
 	struct json_object *result, *k;
-	int i, n;
+	rp_jsonc_index_t i, n;
 
 	n = json_object_array_length(array);
 	for (i = 0 ; i < n ; i++) {

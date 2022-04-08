@@ -37,6 +37,7 @@
 
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-file.h>
+#include <rp-utils/rp-jsonc.h>
 
 #include "wgtpkg-mustach.h"
 #include "utils-json.h"
@@ -382,7 +383,8 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 {
 	struct json_object *targets, *targ;
 	char portstr[30], afidstr[30];
-	int port, afid, i, n;
+	int port, afid;
+	rp_jsonc_index_t i, n;
 
 	if (json_object_object_get_ex(jdesc, string_targets, &targets)) {
 		n = json_object_array_length(targets);

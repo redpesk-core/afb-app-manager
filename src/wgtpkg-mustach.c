@@ -33,6 +33,7 @@
 
 #include "mustach.h"
 #include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-jsonc.h>
 
 #define MAX_DEPTH 256
 
@@ -45,7 +46,7 @@ struct expl {
 	struct {
 		struct json_object *cont;
 		struct json_object *obj;
-		int index, count;
+		rp_jsonc_index_t index, count;
 	} stack[MAX_DEPTH];
 };
 

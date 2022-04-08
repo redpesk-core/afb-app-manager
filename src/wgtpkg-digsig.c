@@ -42,11 +42,11 @@
 #include "wgtpkg-digsig.h"
 
 
-
+/*
 static const char uri_role_author[] = "http://www.w3.org/ns/widgets-digsig#role-author";
 static const char uri_role_distributor[] = "http://www.w3.org/ns/widgets-digsig#role-distributor";
 static const char uri_profile[] = "http://www.w3.org/ns/widgets-digsig#profile";
-
+*/
 
 /* global data */
 static xmlDocPtr document;  /* the document */
@@ -264,7 +264,7 @@ static int get_certificates(xmlNodePtr kinfo)
 static int checkdocument()
 {
 	int rc;
-	xmlNodePtr sinfo, svalue, kinfo, objs, rootsig;
+	xmlNodePtr sinfo, svalue, kinfo, rootsig;
 
 	rc = -1;
 
@@ -287,12 +287,8 @@ static int checkdocument()
 	}
 
 	kinfo = next_element(svalue->next);
-	if (is_node(kinfo, "KeyInfo")) {
-		objs = kinfo->next;
-	} else {
-		objs = kinfo;
+	if (!is_node(kinfo, "KeyInfo"))
 		kinfo = NULL;
-	}
 
 	rc = check_references(sinfo);
 	if (rc)

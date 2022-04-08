@@ -108,10 +108,12 @@ static int sderr2errno(int rc)
 	return rc < 0 ? seterrno(-rc) : rc;
 }
 
+/*
 static int errno2sderr(int rc)
 {
 	return rc < 0 ? -errno : rc;
 }
+*/
 
 /*
  * Returns in 'ret' either the system bus (if isuser==0)
