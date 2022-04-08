@@ -36,7 +36,7 @@
 #include <json-c/json.h>
 
 #include <rp-utils/rp-verbose.h>
-#include "utils-file.h"
+#include <rp-utils/rp-file.h>
 
 #include "wgtpkg-mustach.h"
 #include "utils-json.h"
@@ -368,7 +368,7 @@ int unit_generator_open_template(const char *filename)
 	int rc;
 
 	unit_generator_close_template();
-	rc = getfile(filename ? : FWK_UNIT_CONF, &template, NULL);
+	rc = rp_file_get(filename ? : FWK_UNIT_CONF, &template, NULL);
 	if (!rc) {
 		size = pack(template, ';');
 		tmp = realloc(template, 1 + size);
@@ -594,7 +594,7 @@ static int do_install_units(void *closure, const struct generatedesc *desc)
 		if (!rc) {
 			rc = get_unit_path(path, sizeof path, u);
 			if (rc >= 0) {
-				rc = putfile(path, u->content, u->content_length);
+				rc = rp_file_put(path, u->content, u->content_length);
 				if (rc >= 0 && u->wanted_by != NULL) {
 					rc = get_wants_path(path, sizeof path, u);
 					if (rc >= 0) {

@@ -135,7 +135,6 @@ add_library(utils STATIC
 	mustach.c
 	sighup-framework.c
 	utils-dir.c
-	utils-file.c
 	utils-json.c
 	utils-systemd.c
 	)

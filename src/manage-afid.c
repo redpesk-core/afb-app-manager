@@ -24,37 +24,16 @@
 
 #define _GNU_SOURCE
 
-#include <limits.h>
-#include <errno.h>
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 #include <rp-utils/rp-verbose.h>
-#include "wgt.h"
-#include "wgt-info.h"
-#include "wgt-strings.h"
-#include "wgtpkg-files.h"
-#include "wgtpkg-workdir.h"
-#if WITH_WIDGETS
-# include "wgtpkg-zip.h"
-#endif
-#include "wgtpkg-permissions.h"
-#include "wgtpkg-digsig.h"
-#include "wgtpkg-install.h"
-#include "wgtpkg-uninstall.h"
-#include "secmgr-wrap.h"
-#include "utils-dir.h"
-#include "wgtpkg-unit.h"
-#include "utils-systemd.h"
-#include "utils-file.h"
+#include <rp-utils/rp-file.h>
+
 #include "normalize-unit-file.h"
+#include "utils-systemd.h"
 
 static const char key_afm_prefix[] = "X-AFM-";
 static const char key_afid[] = "ID";
@@ -79,7 +58,7 @@ static int get_afid_cb(void *closure, const char *name, const char *path, int is
 	int rc, p;
 
 	/* reads the file */
-	rc = getfile(path, &content, &length);
+	rc = rp_file_get(path, &content, &length);
 	if (rc < 0)
 		return rc;
 
@@ -111,15 +90,17 @@ static int get_afid_cb(void *closure, const char *name, const char *path, int is
 
 static int update_afids(uint32_t *afids)
 {
-	int rc;
+	int rcs, rcu;
 
 	memset(afids, 0, AFID_ACNT * sizeof(uint32_t));
-	rc = systemd_unit_list(0, get_afid_cb, afids);
-	if (rc >= 0)
-		rc = systemd_unit_list(1, get_afid_cb, afids);
-	if (rc < 0)
-		RP_ERROR("troubles while updating afids");
-	return rc;
+	rcs = systemd_unit_list(0, get_afid_cb, afids);
+	if (rcs < 0)
+		RP_ERROR("troubles while updating system's afids");
+	rcu = systemd_unit_list(1, get_afid_cb, afids);
+	if (rcu < 0)
+		RP_ERROR("troubles while updating user's afids");
+
+	return 0; //rcs < 0 ? rcs : rcu;
 }
 
 static int first_free_afid(uint32_t *afids)

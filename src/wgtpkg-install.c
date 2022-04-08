@@ -37,6 +37,8 @@
 #include <sys/stat.h>
 
 #include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-file.h>
+
 #include "wgt.h"
 #include "wgt-info.h"
 #include "wgt-strings.h"
@@ -53,7 +55,6 @@
 #include "utils-dir.h"
 #include "wgtpkg-unit.h"
 #include "utils-systemd.h"
-#include "utils-file.h"
 #include "normalize-unit-file.h"
 #include "manage-afid.h"
 

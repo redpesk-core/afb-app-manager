@@ -36,7 +36,7 @@
 
 #include "utils-json.h"
 #include "utils-systemd.h"
-#include "utils-file.h"
+#include <rp-utils/rp-file.h>
 
 #include "afm-udb.h"
 
@@ -392,7 +392,7 @@ static int read_unit_file(const char *path, char **content, size_t *length)
 	size_t nl;
 
 	/* read the file */
-	rc = getfile(path, content, length);
+	rc = rp_file_get(path, content, length);
 	if (rc >= 0) {
 		/* crop and trim it */
 		*length = nl = crop_and_trim_unit_content(*content, *length);
