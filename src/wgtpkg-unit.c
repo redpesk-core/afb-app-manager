@@ -645,3 +645,13 @@ int unit_uninstall(struct wgt_info *ifo, const struct unitconf *conf)
 	return do_install_uninstall(ifo, conf, do_uninstall_units);
 }
 
+int unit_afmpkg_install(json_object *manifest, const struct unitconf *conf)
+{
+	return unit_generator_process(manifest, conf, do_install_units, NULL);
+}
+
+int unit_afmpkg_uninstall(json_object *manifest, const struct unitconf *conf)
+{
+	return unit_generator_process(manifest, conf, do_uninstall_units, NULL);
+}
+

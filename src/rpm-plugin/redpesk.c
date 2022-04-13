@@ -1,3 +1,26 @@
+/*
+ Copyright (C) 2015-2022 IoT.bzh Company
+
+ Author: José Bollo <jose.bollo@iot.bzh>
+
+ $RP_BEGIN_LICENSE$
+ Commercial License Usage
+  Licensees holding valid commercial IoT.bzh licenses may use this file in
+  accordance with the commercial license agreement provided with the
+  Software or, alternatively, in accordance with the terms contained in
+  a written agreement between you and The IoT.bzh Company. For licensing terms
+  and conditions see https://www.iot.bzh/terms-conditions. For further
+  information use the contact form at https://www.iot.bzh/contact.
+
+ GNU General Public License Usage
+  Alternatively, this file may be used under the terms of the GNU General
+  Public license version 3. This license is as published by the Free Software
+  Foundation and appearing in the file LICENSE.GPLv3 included in the packaging
+  of this file. Please review the following information to ensure the GNU
+  General Public License requirements will be met
+  https://www.gnu.org/licenses/gpl-3.0.html.
+ $RP_END_LICENSE$
+*/
 
 #include <stdio.h>
 #include <linux/limits.h>
@@ -92,14 +115,6 @@ static void dump_ts(rpmts ts, const char *step)
 
 /***************************************************/
 
-#include <sys/socket.h>
-#include <sys/un.h>
-
-#define FRAMEWORK_SOCKET_ADDRESS "/tmp/toto"
-#ifndef FRAMEWORK_SOCKET_ADDRESS
-#define FRAMEWORK_SOCKET_ADDRESS "\0redpesk-application-manager"
-#endif
-
 static const char framework_address[] = FRAMEWORK_SOCKET_ADDRESS;
 
 /** connect to the framework */
@@ -112,14 +127,12 @@ static int connect_framework()
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0)
 		rc = -errno;
-	else if (sock == 0) {
-		rc = connect_framework();
-		close(0);
-	}
 	else {
 		/* connect the socket */
 		adr.sun_family = AF_UNIX;
 		memcpy(adr.sun_path, framework_address, sizeof framework_address);
+		if (adr.sun_path[0] == '@')
+			adr.sun_path[0] = 0;
 		rc = connect(sock, (struct sockaddr*)&adr, sizeof adr);
 		if (rc >= 0)
 			rc = sock;
@@ -134,14 +147,59 @@ static int connect_framework()
 /** disconnect from the framework */
 static void disconnect_framework(int sock)
 {
-	if (sock != 0) {
-		shutdown(sock, SHUT_RDWR);
+	if (sock >= 0)
 		close(sock);
-	}
 }
 
-/** tell something to the framework */
-static int tell_framework(const char *buffer, size_t length, char **errstr)
+/** send something to the framework */
+static int send_framework(int sock, const char *buffer, size_t length)
+{
+	ssize_t sz;
+	do { sz = send(sock, buffer, length, 0); } while(sz == -1 && errno == EINTR);
+	return sz < 0 ? -errno : 0;
+}
+
+/** receive something from the framework */
+static int recv_framework(int sock, char **arg)
+{
+	int rc;
+	char inputbuf[1000];
+	ssize_t sz;
+
+	if (arg != NULL)
+		*arg = NULL;
+
+	/* blocking socket ensure sz == length */
+	do { sz = recv(sock, inputbuf, sizeof inputbuf - 1, 0); } while(sz == -1 && errno == EINTR);
+	if (sz < 0)
+		return -errno;
+
+	/* the reply must be atomic */
+	while (sz && inputbuf[sz - 1] == '\n') sz--;
+	inputbuf[sz] = 0;
+	if (0 == memcmp(inputbuf, "OK", 2)) {
+		rc = 1;
+		sz = 2;
+	}
+	else if (0 == memcmp(inputbuf, "ERROR", 5)) {
+		rc = 0;
+		sz = 5;
+	}
+	else
+		return -EBADMSG;
+	
+	if (inputbuf[sz] != 0) {
+		if (inputbuf[sz] != ' ')
+			return -EBADMSG;
+		do { sz++; } while(inputbuf[sz] == ' ');
+	}
+	if (arg != NULL && inputbuf[sz] != 0)
+		*arg = strdup(&inputbuf[sz]);
+	return 0;
+}
+
+/** dial with the framework */
+static int dial_framework(const char *buffer, size_t length, char **errstr)
 {
 	int rc, sock;
 	char inputbuf[512];
@@ -153,29 +211,10 @@ static int tell_framework(const char *buffer, size_t length, char **errstr)
 	rc = connect_framework();
 	if (rc >= 0) {
 		sock = rc;
-		do { sz = send(sock, buffer, length, 0); } while(sz == -1 && errno == EINTR);
-		if (sz < 0)
-			rc = -errno;
-		else {
-			/* blocking socket ensure sz == length */
-			do { sz = recv(sock, inputbuf, sizeof inputbuf - 1, 0); } while(sz == -1 && errno == EINTR);
-			if (sz < 0)
-				rc = -errno;
-			else {
-				/* the reply is atomic */
-				while (sz && inputbuf[sz - 1] == '\n') sz--;
-				inputbuf[sz] = 0;
-				printf("%.*s\n", (int)sz, inputbuf);
-				if (0 == strcmp(inputbuf, "OK"))
-					rc = 0;
-				else if (0 != strncmp(inputbuf, "ERROR ", 6))
-					rc = -EBADMSG;
-				else {
-					if (errstr != NULL)
-						*errstr = strdup(&inputbuf[6]);
-					rc = -ECANCELED;
-				}
-			}
+		rc = send_framework(sock, buffer, length);
+		if (rc >= 0) {
+			shutdown(sock, SHUT_WR);
+			rc = recv_framework(sock, errstr);
 		}
 		disconnect_framework(sock);
 	}
@@ -264,6 +303,7 @@ static size_t make_message(char *buffer, size_t size, size_t offset, record_t *r
 	const char *rootdir = rpmtsRootDir(record->ts);
 	const char *name = rpmteN(record->te);
 	const char *transid = getenv("REDPESK_RPMPLUG_TRANSID");
+	const char *redpackid = getenv("REDPESK_RPMPLUG_REDPAKID");
 
 	offset = put_key_val_nl(buffer, size, offset, "BEGIN ", operation);
 	offset = put_key_val_nl(buffer, size, offset, "PACKAGE ", name);
@@ -273,6 +313,8 @@ static size_t make_message(char *buffer, size_t size, size_t offset, record_t *r
 		offset = put_key_val_nl(buffer, size, offset, "ROOT ", rootdir);
 	if (transid)
 		offset = put_key_val_nl(buffer, size, offset, "TRANSID ", transid);
+	if (redpackid)
+		offset = put_key_val_nl(buffer, size, offset, "REDPAKID ", redpackid);
 	fi = rpmfilesIter(record->files, RPMFI_ITER_FWD);
 	while (rpmfiNext(fi) >= 0) {
 		filename = rpmfiFN(fi);
@@ -303,7 +345,7 @@ static int perform(record_t *record, rpmElementType type, const char *operation)
 		make_message(message, length, 0, record, operation);
 		message[length] = 0;
 		/* send the message to the framework */
-		tell_framework(message, length, NULL);
+		dial_framework(message, length, NULL);
 		free(message);
 	}
 	return 1; /* done, drop the action */

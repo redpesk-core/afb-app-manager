@@ -127,12 +127,17 @@ endif(WITH_WIDGETS)
 
 add_library(wgtpkg STATIC ${wgtpkg_sources})
 
+set(afmpkg_sources
+	afmpkg.c
+	)
+add_library(afmpkg STATIC ${afmpkg_sources})
+
 add_library(utils STATIC
 	detect-packtype.c
-	normalize-unit-file.c
 	manage-afid.c
 	mime-type.c
 	mustach.c
+	normalize-unit-file.c
 	path-entry.c
 	path-type.c
 	permset.c
@@ -181,6 +186,14 @@ if(WITH_TOOLS)
 	add_executable(wgtpkg-install main-wgtpkg-install.c)
 	target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
 	install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+	add_executable(afmpkg-daemon main-afmpkg-daemon.c cert/file-hash-list.c)
+	target_link_libraries(afmpkg-daemon afmpkg wgtpkg wgt secwrp utils pthread)
+	install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+	add_executable(afmpkg-status main-afmpkg-status.c)
+	install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 else()
 	MESSAGE(STATUS "Not creating packaging tools")
 endif()

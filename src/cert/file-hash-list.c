@@ -50,7 +50,7 @@ void file_list_destroy(file_list_t *files)
 	if (files != NULL) {
 		file_node_t *node = files->root;
 		while (node != NULL) {
-			file_node_t *nxtnode = node;
+			file_node_t *nxtnode = node->next;
 			hash_node_t *hash = node->hashes;
 			while (hash != NULL) {
 				hash_node_t *nxthash = hash->next;
@@ -81,7 +81,7 @@ int file_list_add_length(file_list_t *files, const char *path, size_t length)
 			node->hashes = NULL;
 			node->pdata = NULL;
 			node->idata = 0;
-			node->length = length;
+			node->length = (unsigned)length;
 			node->next = *prev;
 			*prev = node;
 		}
@@ -158,7 +158,7 @@ int file_node_hash(
 		/* convert to string */
 		hash->value[idxstr] = 0;
 		while (hashlen) {
-			unsigned char high = hash->value[--hashlen];
+			unsigned char high = (unsigned char)hash->value[--hashlen];
 			unsigned char low = high & 15;
 			hash->value[--idxstr] = (char)(low + (low <= 9 ? '0' : 'a' - 10));
 			low = (high >> 4) & 15;
@@ -207,9 +207,8 @@ file_node_t *file_node_find(
 /* create the file list containing the files listed by file */
 int file_list_create_from_file(FILE *file, file_list_t **files)
 {
-	int idx;
+	size_t idx;
 	char path[PATH_MAX];
-	FILE *f;
 
 	if (file_list_create(files) < 0)
 		return -ENOMEM;
