@@ -539,23 +539,21 @@ static int set_files_properties(install_state_t *state)
 	return state->rc;
 }
 
-static int setup_units(
-		const afmpkg_t *apkg,
-		json_object *manifest
-) {
+static int setup_units(install_state_t *state)
+{
 	struct unitconf uconf;
 	int rc = rp_jsonc_pack(&uconf.metadata, "{ss ss sb ss* ss*}",
-				"install-dir", "/",
+				"install-dir", &state->path[state->offset_root],
 				"icons-dir", FWK_ICON_DIR,
-				"redpak", apkg->redpakid != NULL,
-				"redpak-id", apkg->redpakid,
-				"root-dir", apkg->root);
+				"redpak", state->apkg->redpakid != NULL,
+				"redpak-id", state->apkg->redpakid,
+				"root-dir", state->apkg->root);
 	if (rc != 0)
 		rc = -ENOMEM;
 	else {
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
-		rc = unit_afmpkg_install(manifest, &uconf);
+		rc = unit_afmpkg_install(state->manifest, &uconf);
 		json_object_put(uconf.metadata);
 	}
 	return rc;
@@ -582,6 +580,7 @@ install_afmpkg(
 ) {
 	int rc;
 	install_state_t state;
+	path_entry_t *packdir;
 
 	state.rc = 0;
 	state.apkg = apkg;
@@ -591,6 +590,8 @@ install_afmpkg(
 	state.offset_root = offset_root;
 	state.offset_pack = offset_pack;
 	state.path = path;
+
+	path_entry_get_length(apkg->files, &packdir, &path[offset_root], offset_pack - offset_root);
 
 	RP_NOTICE("-- Install afm pkg %s from manifest %s --", apkg->package, path);
 
@@ -645,7 +646,13 @@ install_afmpkg(
 	}
 
 	/* generate and install units */
-	rc = setup_units(apkg, state.manifest);
+	if (packdir != NULL)
+		path_entry_get_relpath(packdir, &path[offset_root], PATH_MAX - offset_root, apkg->files);
+	else {
+		path[offset_root] = '/';
+		path[offset_root + 1] = 0;
+	}
+	rc = setup_units(&state);
 error4:
 	permset_destroy(state.permset);
 error3:
