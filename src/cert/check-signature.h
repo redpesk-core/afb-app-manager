@@ -55,7 +55,7 @@ check_signature_with_crl(
 );
 
 /**
- * Same as @see check_signature_with_crl with 
+ * Same as @see check_signature_with_crl with
  * crl_list_size = 0.
  */
 int

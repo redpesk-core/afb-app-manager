@@ -100,7 +100,7 @@ Distributor N check:
   cat > DISTRIBUTOR.HASH
   cat signatureN.p7 |
   certtool --p7-info --p7-show-data |
-  cmp - DISTRIBUTOR.HASH && 
+  cmp - DISTRIBUTOR.HASH &&
   sha256sum --check --status DISTRIBUTOR.HASH &&
   sha256sum --check --status CONTENT.HASH
 

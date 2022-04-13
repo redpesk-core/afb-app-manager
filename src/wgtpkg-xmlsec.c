@@ -141,7 +141,7 @@ static int fill_trusted_keys_dir(const char *directory)
 
 	closedir(dir);
 	return 0;
-	
+
 }
 
 /* initialisation of access to xmlsec */
@@ -208,9 +208,9 @@ void xmlsec_shutdown()
 	xmlSecKeysMngrDestroy(keymgr);
 
 	xmlSecCryptoShutdown();
-	
+
 	xmlSecCryptoAppShutdown();
-	
+
 	xmlSecShutdown();
 }
 
@@ -259,7 +259,7 @@ static const struct { const char *id; const char *xml; } properties[2] = {
 	},
 	{
 		.id = "DistributorSignature", /* template of properties for distributor signature */
-		.xml = 
+		.xml =
 			"<SignatureProperties xmlns:dsp=\"http://www.w3.org/2009/xmldsig-properties\">"
 			 "<SignatureProperty Id=\"profile\" Target=\"#DistributorSignature\">"
 			  "<dsp:Profile URI=\"http://www.w3.org/ns/widgets-digsig#profile\"></dsp:Profile>"

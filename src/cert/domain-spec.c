@@ -147,7 +147,7 @@ int get_string_of_domain_spec(const domain_spec_t *spec, char **result)
 		if (pe > domain_permission_none && pe < _domain_permission_count_)
 			sz += strlen(dom->name) + 2;
 	}
-	
+
 	/* allocate */
 	str = *result = malloc(sz);
 	if (str == NULL)

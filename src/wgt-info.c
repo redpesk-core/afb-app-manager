@@ -205,7 +205,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	node = wgt_config_license();
 	desc->license = optcontent(node);
 	desc->license_href = optprop(node, string_href);
-	
+
 	node = wgt_config_content();
 	desc->content_src = optprop(node, string_src);
 	if (node && desc->content_src == NULL) {

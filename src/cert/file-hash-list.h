@@ -86,7 +86,7 @@ struct {
 
 /**
  * @brief create a simple file list
- * 
+ *
  * @param files result
  * @return int 0 if success or -ENOMEM
  */
@@ -95,7 +95,7 @@ int file_list_create(file_list_t **files);
 
 /**
  * @brief destroys the given list
- * 
+ *
  * @param files the list to destroy
  */
 extern
@@ -103,7 +103,7 @@ void file_list_destroy(file_list_t *files);
 
 /**
  * @brief add a string of given length in the simple list
- * 
+ *
  * @param files the simple file list to change
  * @param path the string value to add (copied)
  * @param length the length of the path value to add (not including null)
@@ -114,7 +114,7 @@ int file_list_add_length(file_list_t *files, const char *path, size_t length);
 
 /**
  * @brief add a zero terminated string in the simple list
- * 
+ *
  * @param files the simple file list to change
  * @param value the string value to add (copied)
  * @return int 0 on success or -ENOMEM on error
@@ -124,7 +124,7 @@ int file_list_add(file_list_t *files, const char *value);
 
 /**
  * @brief compute the hash of the file of the given node
- * 
+ *
  * @param node the node of the file
  * @param algorithm the agorithm to use for computing
  * @param open_file function for opening the file (can use fopen)
@@ -143,7 +143,7 @@ int file_node_hash(
 
 /**
  * @brief call the function until it returns zero or end of the list
- * 
+ *
  * @param files the files list
  * @param function function to be called for each node
  * @param closure closure for function
@@ -157,7 +157,7 @@ void file_list_iterate(
 
 /**
  * @brief find the node whose name is given
- * 
+ *
  * @param files the files list
  * @param name the name to find
  * @param length the length of the name
@@ -172,7 +172,7 @@ file_node_t *file_node_find_length(
 
 /**
  * @brief find the node whose name is given
- * 
+ *
  * @param files the files list
  * @param name the name to find
  * @return the node found or NULL otherwise

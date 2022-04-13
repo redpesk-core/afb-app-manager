@@ -22,7 +22,7 @@
  $RP_END_LICENSE$
 */
 
-
+#pragma once
 
 extern int secmgr_begin(const char *id);
 extern void secmgr_end();
@@ -30,11 +30,11 @@ extern int secmgr_install();
 extern int secmgr_uninstall();
 extern int secmgr_permit(const char *permission);
 
+extern int secmgr_path_id(const char *pathname);
+extern int secmgr_path_lib(const char *pathname);
 extern int secmgr_path_conf(const char *pathname);
 extern int secmgr_path_data(const char *pathname);
 extern int secmgr_path_exec(const char *pathname);
 extern int secmgr_path_http(const char *pathname);
 extern int secmgr_path_icon(const char *pathname);
-extern int secmgr_path_lib(const char *pathname);
 extern int secmgr_path_public(const char *pathname);
-extern int secmgr_path_id(const char *pathname);

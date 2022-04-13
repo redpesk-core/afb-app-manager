@@ -85,7 +85,7 @@ is_issuer(
  *
  * @param cert the certificate
  * @param spec the spec to retrieve (must be empty)
- * @return 
+ * @return
  */
 extern
 int
@@ -127,7 +127,7 @@ sort_certs(
 
 /**
  * @brief create and read the pkcs7 file
- * 
+ *
  * @param file the filename to read
  * @param pkcs7 the pkcs7 struct to create
  * @return 0 in case of success or a negative number otherwise
@@ -137,7 +137,7 @@ int read_pkcs7(const char *file, gnutls_pkcs7_t *pkcs7);
 
 /**
  * @brief create and read an array of certificates
- * 
+ *
  * @param file the filename to read
  * @param certs the array of certificates to be created
  * @param maxnr the count of certificate that can be stored

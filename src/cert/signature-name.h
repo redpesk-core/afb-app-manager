@@ -28,7 +28,7 @@
 
 /**
  * @brief signature type of a file/name
- * 
+ *
  */
 typedef
 enum signature_type
@@ -46,7 +46,7 @@ enum signature_type
 
 /**
  * @brief Get the signature type of path/name
- * 
+ *
  * @param path the path/name to inspect
  * @return the signature type
  */
@@ -55,7 +55,7 @@ signature_type_t signature_name_type(const char *path);
 
 /**
  * @brief Get the signature type of path/name
- * 
+ *
  * @param path the path/name to inspect
  * @param length length of the path/name
  * @return the signature type
@@ -67,7 +67,7 @@ signature_type_t signature_name_type_length(const char *path, size_t length);
  * @brief Get the signature filename for signer of name
  * if there is not enough space in buffer, the returned length is
  * the normal length as if the buffer had enough rooms
- * 
+ *
  * @param name name of the signer
  * @param length length of the name
  * @param buffer place for storing the result
@@ -81,7 +81,7 @@ size_t make_signature_name_length(const char *name, size_t length, char *buffer,
  * @brief Get the signature filename for signer of name
  * if there is not enough space in buffer, the returned length is
  * the normal length as if the buffer had enough rooms
- * 
+ *
  * @param name name of the signer
  * @param buffer place for storing the result
  * @param size size of the buffer
@@ -94,7 +94,7 @@ size_t make_signature_name(const char *name, char *buffer, size_t size);
  * @brief Get the signature filename for signer of number
  * if there is not enough space in buffer, the returned length is
  * the normal length as if the buffer had enough rooms
- * 
+ *
  * @param number the number of the signer
  * @param buffer place for storing the result
  * @param size size of the buffer
@@ -107,7 +107,7 @@ size_t make_signature_name_number(unsigned number, char *buffer, size_t size);
  * @brief Get the signature filename for the author
  * if there is not enough space in buffer, the returned length is
  * the normal length as if the buffer had enough rooms
- * 
+ *
  * @param buffer place for storing the result
  * @param size size of the buffer
  * @return the size of the computed name not including the tailing zero

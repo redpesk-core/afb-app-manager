@@ -45,7 +45,7 @@ void sighup_afm_main()
 	int fd;
 	ssize_t ssz;
 	long pid;
-	
+
 	d = opendir("/proc");
 	if (d != NULL) {
 		while((de = readdir(d)) != NULL) {

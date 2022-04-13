@@ -43,23 +43,49 @@
 #include "afmpkg-common.h"
 #include "afmpkg.h"
 
-#define EXPIRATION 3600 /* one hour */
+/**
+ * @brief retention time in second for data of transactions
+ */
+#define RETENTION_SECONDS 3600 /* one hour */
 
+/**
+ * @brief predefined address of the daemon's socket
+ */
 static const char framework_address[] = FRAMEWORK_SOCKET_ADDRESS;
 
+/**
+ * @brief kind of transaction
+ */
 enum kind
 {
+	/** unset (initial value) */
 	Request_Unset,
+
+	/** request for adding a package */
 	Request_Add_Package,
+
+	/** request to remove a package */
 	Request_Remove_Package,
+
+	/** request to get the status of a transaction */
 	Request_Get_Status
 };
 
+/**
+ * @brief structure recording data of a request
+ */
 struct request
 {
-	enum kind begin;
-	enum kind end;
+	/** the kind of the request */
+	enum kind kind;
+
+	/** end status of the request */
+	int ended;
+
+	/** index of the request in the transaction set */
 	unsigned index;
+
+	/** count of requests in the transaction set */
 	unsigned count;
 
 	/** identifier of the transaction */
@@ -75,53 +101,94 @@ struct request
 	afmpkg_t apkg;
 };
 
+/**
+ * @brief structure for data of transactions
+ */
 struct transaction
 {
+	/** link to the next */
 	struct transaction *next;
+
+	/** expiration time */
 	time_t expire;
+
+	/** count of requests for the transaction */
 	unsigned count;
+
+	/** count of requests successful */
 	unsigned success;
+
+	/** count of requests failed */
 	unsigned fail;
+
+	/** identifier of the transaction */
 	char id[];
 };
 
+/**
+ * @brief mutex protecting accesses to 'all_transactions'
+ */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * @brief head of the list of pending transactions
+ */
 static struct transaction *all_transactions;
 
+/**
+ * @brief Get the transaction object of the given identifier,
+ * creating it if needed.
+ *
+ * The mutex must be taken.
+ *
+ * @param transid the identifier
+ * @param count if not zero, create the transaction object
+ * @return struct transaction*
+ */
 static struct transaction *get_transaction(const char *transid, unsigned count)
 {
-	struct transaction *trans, **previous;
+	struct transaction *trans, *result, **previous;
 	time_t now = time(NULL);
-	previous = &all_transactions;
-	for (;;) {
-		trans = *previous;
-		if (trans == NULL) {
-			if (count != 0) {
-				trans = malloc(sizeof *trans + 1 + strlen(transid));
-				if (trans != NULL) {
-					trans->next = NULL;
-					trans->expire = now + EXPIRATION;
-					trans->count = count;
-					trans->success = 0;
-					trans->fail = 0;
-					strcpy(trans->id, transid);
-					*previous = trans;
-				}
-			}
-			break;
-		}
+
+	/* search the transaction */
+	result = NULL;
+	for (previous = &all_transactions ; (trans = *previous) != NULL ;) {
 		if (trans->expire <= now) {
+			/* drop expired transactions */
 			*previous = trans->next;
 			free(trans);
 		}
-		else if (strcmp(transid, trans->id) == 0)
-			break;
-		else
+		else {
+			if (strcmp(transid, trans->id) == 0)
+				result = trans;
 			previous = &trans->next;
+		}
 	}
-	return trans;
+
+	/* create the transaction */
+	if (result == NULL && count != 0) {
+		trans = malloc(sizeof *trans + 1 + strlen(transid));
+		if (trans != NULL) {
+			trans->next = NULL;
+			trans->expire = now + RETENTION_SECONDS;
+			trans->count = count;
+			trans->success = 0;
+			trans->fail = 0;
+			strcpy(trans->id, transid);
+			*previous = result = trans;
+		}
+	}
+
+	return result;
 }
 
+/**
+ * @brief remove the transaction from the list and free its memory
+ *
+ * The mutex must be taken.
+ *
+ * @param trans the transaction to drop
+ */
 static void put_transaction(struct transaction *trans)
 {
 	struct transaction **previous;
@@ -134,6 +201,13 @@ static void put_transaction(struct transaction *trans)
 	}
 }
 
+/**
+ * @brief init a request structure
+ *
+ * @param req the request to init
+ *
+ * @return 0 on success or else a negative code
+ */
 static int init_request(struct request *req)
 {
 	int rc;
@@ -152,6 +226,11 @@ static int init_request(struct request *req)
 	return rc;
 }
 
+/**
+ * @brief deinit a request structure, freeing its memory
+ *
+ * @param req the request to init
+ */
 static void deinit_request(struct request *req)
 {
 	free(req->transid);
@@ -168,6 +247,12 @@ int dump_one_file(void *closure, path_entry_t *entry, const char *path, size_t l
 	return 0;
 }
 
+/**
+ * @brief helper to print a request
+ *
+ * @param req the request to be printed
+ * @param file output file
+ */
 static void dump_request(struct request *req, FILE *file)
 {
 	static const char *knames[] = {
@@ -179,7 +264,7 @@ static void dump_request(struct request *req, FILE *file)
 
 	file = file == NULL ? stderr : file;
 	fprintf(file, "BEGIN\n");
-	fprintf(file, "  kind      %s\n", knames[req->begin]);
+	fprintf(file, "  kind      %s\n", knames[req->kind]);
 	fprintf(file, "  order     %u/%u\n", req->index, req->count);
 	fprintf(file, "  transid   %s\n", req->transid ?: "");
 	fprintf(file, "  package   %s\n", req->apkg.package ?: "");
@@ -192,8 +277,15 @@ static void dump_request(struct request *req, FILE *file)
 	fprintf(file, "END\n\n");
 }
 
+/**
+ * @brief process a request
+ *
+ * @param req the request to be processed
+ * @return 0 on success or a negative error code
+ */
 static int process(struct request *req)
 {
+	struct transaction *trans;
 	int rc = 0;
 
 	dump_request(req, NULL);
@@ -223,41 +315,49 @@ static int process(struct request *req)
 			trans = get_transaction(req->transid, req->count);
 			if (trans == NULL)
 				rc = -ENOMEM;
-			pthread_mutex_unlock(&mutex);
-			/* DO SOMETHING */
-			pthread_mutex_lock(&mutex);
-			trans = get_transaction(req->transid, 0);
-			if (trans == NULL)
-				rc = -ENOMEM;
 			else if (rc >= 0)
 				trans->success++;
 			else
 				trans->fail--;
 			pthread_mutex_unlock(&mutex);
-			break;
-		case Request_Get_Status:
+		}
+		break;
+
+	case Request_Get_Status:
+		/* request for status of a transaction */
+		if (req->transid == NULL)
+			rc = -EINVAL;
+		else {
 			pthread_mutex_lock(&mutex);
-			trans = get_transaction(req->transid, req->count);
+			trans = get_transaction(req->transid, 0);
 			if (trans == NULL)
 				rc = -ENOMEM;
-			else
+			else {
 				rc = asprintf(&req->reply, "%d %d %d", trans->count, trans->success, trans->fail);
-			put_transaction(trans);
+				put_transaction(trans);
+				rc = rc < 0 ? -errno : 0;
+			}
 			pthread_mutex_unlock(&mutex);
-			break;
 		}
+		break;
 	}
-
-	return 0;
+	return rc;
 }
 
-/** receive a line of request */
+/**
+ * @brief process a line of request
+ *
+ * @param req the request to fill
+ * @param line the line to process
+ * @param length length of the line
+ * @return 0 on success or a negative error code
+ */
 static int receive_line(struct request *req, const char *line, size_t length)
 {
 	char *str;
 	long val;
 	int rc;
-		
+
 #define IF(pattern) \
 		if (memcmp(line, #pattern, sizeof(#pattern)-1) == 0 \
 		 && line[sizeof(#pattern)-1] == ' ') { \
@@ -267,21 +367,24 @@ static int receive_line(struct request *req, const char *line, size_t length)
 #define ELSE  }else{
 #define ELSEIF(pattern) }else IF(pattern)
 
-	if (req->end != Request_Unset)
+	/* should not be ended */
+	if (req->ended != 0)
 		return -1000;
 
 	IF(BEGIN)
-		if (req->begin != Request_Unset)
+		/* BEGIN [ADD|REMOVE] */
+		if (req->kind != Request_Unset)
 			return -1001;
 		if (strcmp(line, "ADD") == 0)
-			req->begin = Request_Add_Package;
+			req->kind = Request_Add_Package;
 		else if (strcmp(line, "REMOVE") == 0)
-			req->begin = Request_Remove_Package;
+			req->kind = Request_Remove_Package;
 		else
 			return -1002;
 
 	ELSEIF(COUNT)
-		if (req->count != 0 || req->begin == Request_Unset)
+		/* COUNT VALUE */
+		if (req->count != 0 || req->kind == Request_Unset)
 			return -1003;
 		errno = 0;
 		val = strtol(line, &str, 10);
@@ -294,24 +397,27 @@ static int receive_line(struct request *req, const char *line, size_t length)
 		req->count = (unsigned)val;
 
 	ELSEIF(END)
-		if (strcmp(line, "ADD") == 0 || req->begin == Request_Unset)
-			req->end = Request_Add_Package;
+		/* END [ADD|REMOVE] */
+		if (strcmp(line, "ADD") == 0)
+			req->ended = req->kind == Request_Add_Package;
 		else if (strcmp(line, "REMOVE") == 0)
-			req->end = Request_Remove_Package;
+			req->ended = req->kind == Request_Remove_Package;
 		else
 			return -1007;
-		if (req->end != req->begin)
+		if (!req->ended)
 			return -1008;
 
 	ELSEIF(FILE)
-		if (req->begin == Request_Unset)
+		/* FILE PATH */
+		if (req->kind == Request_Unset)
 			return -1009;
 		rc = path_entry_add_length(req->apkg.files, NULL, line, length);
 		if (rc < 0)
 			return -1010;
-		
+
 	ELSEIF(INDEX)
-		if (req->index != 0 || req->begin == Request_Unset)
+		/* INDEX VALUE */
+		if (req->index != 0 || req->kind == Request_Unset)
 			return -1011;
 		errno = 0;
 		val = strtol(line, &str, 10);
@@ -348,7 +454,8 @@ static int receive_line(struct request *req, const char *line, size_t length)
 			return -1016;
 
 	ELSEIF(TRANSID)
-		if (req->transid != NULL || req->begin == Request_Unset)
+		/* TRANSID TRANSID */
+		if (req->transid != NULL || req->kind == Request_Unset)
 			return -1019;
 		req->transid = strdup(line);
 		if (req->transid == NULL)
@@ -376,7 +483,13 @@ static int receive_line(struct request *req, const char *line, size_t length)
 #undef ENDIF
 }
 
-/** receive the request */
+/**
+ * @brief receive the request
+ *
+ * @param sock the input socket
+ * @param req the request for recording data
+ * @return 0 on success or a negative error code
+ */
 static int receive(int sock, struct request *req)
 {
 	int rc;
@@ -384,80 +497,161 @@ static int receive(int sock, struct request *req)
 	ssize_t sz;
 	size_t length = 0, it, eol;
 
-	for (;;) {
-		/* blocking socket ensure sz == length */
+	for (rc = 0 ; rc >= 0 ; ) {
+		/* blocking read of socket */
 		do { sz = recv(sock, &buffer[length], sizeof buffer - length, 0); } while(sz == -1 && errno == EINTR);
 		if (sz == -1) {
 			rc = -errno;
 			break;
 		}
-		if (sz > 0) {
+		else {
+			/* end of input? */
+			if (sz == 0)
+				break;
+
 			/* extract the data */
-			it = 0;
 			length = (size_t) sz;
-			for (;;) {
+			it = 0;
+			for (it = 0 ; it < length && rc >= 0 ; ) {
+				/* search the end of the line */
 				for(eol = it ; eol < length && buffer[eol] != '\n' ; eol++);
 				if (eol == length) {
-					for(eol = it ; eol < length ; eol++)
-						buffer[eol - it] = buffer[eol];
+					/* not found, shift end of the buffer */
+					eol = it;
 					length -= it;
-					break;
+					for (it = 0 ; it < length ; )
+						buffer[it++] = buffer[eol++];
 				}
-				if (eol != it) {
-					buffer[eol] = 0;
-					rc = receive_line(req, &buffer[it], eol - it);
-					if (rc < 0)
-						break;
+				else {
+					if (eol != it) {
+						/* found a not empty line, process it */
+						buffer[eol] = 0;
+						rc = receive_line(req, &buffer[it], eol - it);
+					}
+					it = eol + 1;
 				}
-				it = eol + 1;
 			}
-		}
-		else {
-			/* TODO process the data */
-			break;
 		}
 	}
 	shutdown(sock, SHUT_RD);
 	return rc;
 }
 
-static void reply(int sock, int rc, const char *arg)
+/**
+ * @brief send a reply to the client
+ *
+ * @param sock socket for sending to client
+ * @param rc the status
+ * @param arg a string argument for the status
+ * @param length size of the argument string arg
+ */
+static void reply_length(int sock, int rc, const char *arg, size_t length)
 {
+	static char error[] = { 'E', 'R', 'R', 'O', 'R' };
+	static char ok[] = { 'O', 'K' };
+	static char nl[] = { '\n' };
+	static char space[] = { ' ' };
+
+	struct msghdr mh;
+	struct iovec iov[4];
 	ssize_t sz;
-	char buffer[1000];
+
+	/* raz the header */
+	memset(&mh, 0, sizeof mh);
+	mh.msg_iov = iov;
+
+	/* make the message */
+	if (rc >= 0) {
+		iov[0].iov_base = ok;
+		iov[0].iov_len = sizeof ok;
+	}
+	else {
+		iov[0].iov_base = error;
+		iov[0].iov_len = sizeof error;
+	}
+	if (length == 0)
+		mh.msg_iovlen = 2;
+	else {
+		iov[1].iov_base = space;
+		iov[1].iov_len = sizeof space;
+		iov[2].iov_base = (void*)arg;
+		iov[2].iov_len = length;
+		mh.msg_iovlen = 4;
+	}
+	iov[mh.msg_iovlen - 1].iov_base = nl;
+	iov[mh.msg_iovlen - 1].iov_len = sizeof nl;
 
 	/* send the status */
-	snprintf(buffer, sizeof buffer, "%s%s%s\n", rc >= 0 ? "OK" : "ERROR",
-		arg == NULL ? "" : " ", arg == NULL ? "" : arg);
-	buffer[sizeof buffer - 1] = 0;
-	do { sz = send(sock, buffer, strlen(buffer), 0); } while(sz == -1 && errno == EINTR);
+	do { sz = sendmsg(sock, &mh, 0); } while(sz == -1 && errno == EINTR);
 	shutdown(sock, SHUT_WR);
 }
 
+/**
+ * @brief send a reply to the client
+ *
+ * @param sock socket for sending to client
+ * @param rc the status
+ * @param arg a string argument for the status
+ */
+static void reply(int sock, int rc, const char *arg)
+{
+	reply_length(sock, rc, arg, arg == NULL ? 0 : strlen(arg));
+}
+
+/**
+ * @brief serve a client
+ *
+ * This is not a loop. When a client connects, only one request is served
+ * and the the socket is closed.
+ *
+ * @param sock socket for dialing with the client
+ * @return 0 on success or a negative error code
+ */
 static int serve(int sock)
 {
 	int rc;
-	struct request request;
+	struct request request; /* in stack request */
 
+	/* init the request */
 	rc = init_request(&request);
+
+	/* receive the request */
 	if (rc >= 0)
 		rc = receive(sock, &request);
+
+	/* process the request */
 	if (rc >= 0)
 		rc = process(&request);
+
+	/* reply to the request */
 	reply(sock, rc, request.reply);
-	deinit_request(&request);
+
+	/* close the connection */
 	close(sock);
+
+	/* reset the memory */
+	deinit_request(&request);
 	return rc;
 }
 
+/**
+ * @brief main thread for serving
+ *
+ * serving a client is run synchronously in a thread
+ *
+ * @param arg a casted integer handling the socket number
+ */
 static void *serve_thread(void *arg)
 {
 	serve((int)(intptr_t)arg);
 	return NULL;
 }
 
-
-/** connect to the framework */
+/**
+ * @brief create a socket listening to clients
+ *
+ * @return the opened socket or a negative error code
+ */
 static int listen_clients()
 {
 	int rc, sock;
@@ -502,15 +696,21 @@ int run()
 	struct sigaction osa;
 	int rc, sock, socli;
 
+	/* for creating threads in detached state */
 	pthread_attr_init(&tat);
 	pthread_attr_setdetachstate(&tat, PTHREAD_CREATE_DETACHED);
+
+	/* for not dying on client disconnection */
+	memset(&osa, 0, sizeof osa);
+	osa.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &osa, NULL);
+
+	/* create the listening socket */
 	sock = listen_clients();
 	if (sock < 0)
 		return 1;
 
-	memset(&osa, 0, sizeof osa);
-	osa.sa_handler = SIG_IGN;
-	sigaction(SIGPIPE, &osa, NULL);
+	/* loop on wait a client and serve it with a dedicated thread */
 	for(;;) {
 		rc = accept(sock, NULL, NULL);
 		if (rc < 0) {
@@ -523,7 +723,7 @@ int run()
 			if (rc != 0)
 				close(socli);
 		}
-	}	
+	}
 }
 
 

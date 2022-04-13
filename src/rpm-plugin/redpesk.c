@@ -187,7 +187,7 @@ static int recv_framework(int sock, char **arg)
 	}
 	else
 		return -EBADMSG;
-	
+
 	if (inputbuf[sz] != 0) {
 		if (inputbuf[sz] != ' ')
 			return -EBADMSG;
@@ -205,7 +205,7 @@ static int dial_framework(const char *buffer, size_t length, char **errstr)
 	char inputbuf[512];
 	ssize_t sz;
 
-	if (rpmIsDebug()) 
+	if (rpmIsDebug())
 		rpmlog(RPMLOG_DEBUG, "[REDPESK] SENDING\n%.*s", (int)length, buffer);
 
 	rc = connect_framework();

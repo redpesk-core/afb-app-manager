@@ -1,5 +1,5 @@
 #!/bin/sh
-# 
+#
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
 # notice and this notice are preserved.  This file is offered as-is,
@@ -25,7 +25,7 @@ certof() { echo -n "$1.cert.pem"; }
 
 generate() {
 
-local s="$1" n="$2" cn="$3" sig="$4" 
+local s="$1" n="$2" cn="$3" sig="$4"
 local key="$(keyof "$n")" cert="$(certof "$n")"
 
 if [ ! -f "$key" ]
@@ -68,8 +68,8 @@ derivate() {
 	generate "$s" "$n" "$cn" "-CA $(certof "$i") -CAkey $(keyof "$i") -extensions derivate"
 }
 
-	
-genroot 1 root "Root certificate" 
+
+genroot 1 root "Root certificate"
 derivate 2 developer "Root developer" root
 derivate 3 platform "Root platform" root
 derivate 4 partner "Root partner" root

@@ -68,7 +68,7 @@ struct slist {
 
 /**
  * @brief create a simple string list
- * 
+ *
  * @param slist result
  * @return int 0 if success or -ENOMEM
  */
@@ -80,7 +80,7 @@ int slist_create(slist_t **slist)
 
 /**
  * @brief destroys the given list
- * 
+ *
  * @param slist the list to destroy
  */
 void slist_destroy(slist_t *slist)
@@ -98,7 +98,7 @@ void slist_destroy(slist_t *slist)
 
 /**
  * @brief add a string of given length in the simple list
- * 
+ *
  * @param slist the simple string list to change
  * @param value the string value to add (copied)
  * @param length the length of the string value to add (not including null)
@@ -126,7 +126,7 @@ int slist_add(slist_t *slist, const char *value, size_t length)
 
 /**
  * @brief add a zero terminated string in the simple list
- * 
+ *
  * @param slist the simple string list to change
  * @param value the string value to add (copied)
  * @return int 0 on success or -ENOMEM on error
@@ -139,10 +139,10 @@ int slist_addz(slist_t *slist, const char *value)
 /**
  * @brief check that all files of the list are accessibles
  * (access) for the mode
- * 
+ *
  * @param slist the simple list
  * @param mode the mode of access to check
- * @return int 
+ * @return int
  */
 int slist_check_access(slist_t *slist, int mode)
 {
@@ -157,7 +157,7 @@ int slist_check_access(slist_t *slist, int mode)
 
 /**
  * @brief remove the prefix if present
- * 
+ *
  * @param value the value to unprefix
  * @param prefix the prefix to remove
  * @param prefixlength the length of the prefix
@@ -171,7 +171,7 @@ static const char *unprefix(const char *value, const char *prefix, size_t prefix
 /**
  * @brief compute the hash file of sha256sum of files of the list
  * (equivalent to the command sha256sum).
- * 
+ *
  * @param slist the simple list
  * @param hstring where to store the result
  * @param hlength where to store the length
@@ -245,7 +245,7 @@ int slist_hash_prefix_files(slist_t *slist, char **hstring, size_t *hlength, con
 /**
  * @brief compute the hash file of sha256sum of files of the list
  * (equivalent to the command sha256sum).
- * 
+ *
  * @param slist the simple list
  * @param hstring where to store the result
  * @param hlength where to store the length
@@ -261,7 +261,7 @@ int slist_hash_prefixz_files(slist_t *slist, char **hstring, size_t *hlength, co
 /**
  * @brief compute the hash file of sha256sum of files of the list
  * (equivalent to the command sha256sum).
- * 
+ *
  * @param slist the simple list
  * @param hstring where to store the result
  * @param hlength where to store the length
@@ -275,7 +275,7 @@ int slist_hash_files(slist_t *slist, char **hstring, size_t *hlength)
 
 /************************************************************************/
 
-const char stdkey[] = 
+const char stdkey[] =
 	"-----BEGIN RSA PRIVATE KEY-----\n"
 	"MIIG5AIBAAKCAYEAwOfXNNBU6CvxHThMzqjhQVj3qx5NVO3qhHGVpFi9WSkhnADb\n"
 	"Tv0nnHJYwefJPsIpoLHj002tkMJItikMJEUROhsnXJG7fwEJdeGRPL4GyWCHigBh\n"

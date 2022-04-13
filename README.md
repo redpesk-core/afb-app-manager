@@ -17,11 +17,14 @@ This project uses CMAKE and C compiler suite to be compiled.
 This package requires the following libraries or modules:
 
 - ***libxml-2.0***
-- ***openssl***
 - ***xmlsec1***
 - ***xmlsec1-openssl***
+- ***openssl***
+
 - ***json-c***
+
 - ***dbus-1***
+
 - ***sec-lsm-manager***
 
 This package also requires either ***libzip*** (version >= 0.11)
@@ -38,7 +41,7 @@ The main scheme for compiling the project is:
 >
 > sudo make install
 
-By default, the installation is made in ***/usr***.
+By default, the installation is made in ***/usr/local***.
 To change this behaviour, you should set the variable
 CMAKE_INSTALL_PREFIX as in the below example:
 

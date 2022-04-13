@@ -45,7 +45,7 @@ packtype_t detect_packtype(const char *packname, size_t plen, const char *filena
 		packtype_AfmPkg
 	};
 
-	size_t idx, tdx, nlen, fdx;
+	size_t idx, tdx, nlen;
 
 	/* iterate over the suffix names */
 	for (idx = tdx = 0 ; names[idx] ; idx += nlen + 1, tdx++) {

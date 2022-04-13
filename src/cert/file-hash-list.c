@@ -233,4 +233,4 @@ int file_list_create_from_file(FILE *file, file_list_t **files)
 	}
 	return 0;
 }
-		
+

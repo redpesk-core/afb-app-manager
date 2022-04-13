@@ -121,7 +121,7 @@ int add_certificate_b64(const char *b64)
 	unsigned char *d;
 	size_t l;
 	int rc;
-	
+
 	rc = rp_base64_decode(b64, strlen(b64), &d, &l, 0);
 	if (rc != rp_base64_ok)
 		rc = -1;

@@ -110,7 +110,7 @@ static int recv_framework(int sock, char **arg)
 	}
 	else
 		return -EBADMSG;
-	
+
 	if (inputbuf[sz] != 0) {
 		if (inputbuf[sz] != ' ')
 			return -EBADMSG;

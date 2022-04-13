@@ -30,4 +30,3 @@ extern int permission_exists(const char *name);
 extern int request_permission(const char *name);
 extern const char *first_usable_permission();
 extern const char *next_usable_permission();
-

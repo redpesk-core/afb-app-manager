@@ -28,7 +28,7 @@ widget configuration
 
 Access to files of a widget.
 
-Implements the mechanism for seeking for files using the locale settings. 
+Implements the mechanism for seeking for files using the locale settings.
 
 Fact that it seeks for locale if done until EE (Electric Eel version of AGL).
 Locale management to be changed for FF (Funky Flounder).

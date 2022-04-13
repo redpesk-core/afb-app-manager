@@ -556,7 +556,7 @@ static int install_security(const struct wgt_desc *desc)
 			}
 
 			/* prepare next path entry */
-			head[lf++] = '/';	
+			head[lf++] = '/';
 			while(f->name[j] == '/')
 				j++;
 		}

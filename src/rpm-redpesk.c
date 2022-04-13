@@ -43,7 +43,7 @@
 
 /***************************************************
   sequence of INSTALL
- 
+
 	tsm_pre(CHECK)
 	tsm_post(CHECK)
 	tsm_pre(APPLY)
@@ -53,7 +53,7 @@
 		psm_pre(TR_ADDED)             -> [!toinstall,installed,!toremove,installdir]
 		psm_post(TR_ADDED)            -> [!toinstall,installed,!toremove,installdir]
 	tsm_post(APPLY)
- 
+
  sequence of REMOVE
 
 	tsm_pre(CHECK)
@@ -65,7 +65,7 @@
 			- remove -
 		psm_post(TR_REMOVED) + files  -> [!toinstall,!installed,toremove,installdir]
 	tsm_post(APPLY)
- 
+
  sequence of UPGRADE
 
 	tsm_pre(CHECK)

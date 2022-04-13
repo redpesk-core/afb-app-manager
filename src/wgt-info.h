@@ -33,7 +33,7 @@ struct wgt_desc_icon {
 struct wgt_desc_param {
 	struct wgt_desc_param *next;
 	char *name;
-	char *value;	
+	char *value;
 };
 
 struct wgt_desc_feature {

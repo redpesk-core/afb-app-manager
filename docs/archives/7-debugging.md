@@ -3,7 +3,7 @@
 When AGL_DEVEL is ON, the framework include several settings
 in the unit generated files that can be used for debugging.
 
-allows  several 
+allows  several
 
 
 /run/platform/debug/homescreen-service@0.1.env

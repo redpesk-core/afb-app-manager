@@ -149,7 +149,7 @@ static struct filedesc *get_filedesc(const char *name, int create)
 
 	return result;
 }
-	
+
 
 static struct filedesc *file_add(const char *name, enum entrytype type)
 {
@@ -285,7 +285,7 @@ static int fill_files_rec(char name[PATH_MAX], unsigned offset)
 	ent = readdir(dir);
 	while (ent != NULL) {
 		len = (unsigned)strlen(ent->d_name);
-		if (ent->d_name[0] == '.' && (len == 1 || 
+		if (ent->d_name[0] == '.' && (len == 1 ||
 			(ent->d_name[1] == '.' && len == 2)))
 			;
 		else if (offset + len >= PATH_MAX) {

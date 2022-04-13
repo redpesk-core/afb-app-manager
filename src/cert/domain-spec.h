@@ -93,7 +93,7 @@ bool is_domain_spec_string_valid(const char *str);
 
 /**
  * @brief Get the string representation of a domain spec
- * 
+ *
  * @param spec spec to translate
  * @param result created and allocated string
  * @return int return the length of the string or -ENOMEM on memory depletion
@@ -103,7 +103,7 @@ int get_string_of_domain_spec(const domain_spec_t *spec, char **result);
 
 /**
  * @brief Get the domain spec of string object
- * 
+ *
  * @param str the string to translate
  * @param spec the resulting spec
  * @return int 0 on success or -EINVAL if the string isn't good
@@ -115,7 +115,7 @@ int get_domain_spec_of_string(const char *str, domain_spec_t *spec);
  * @brief Init the domain spec
  *
  * Synonim of domain_spec_fill with value domain_permission_none
- * 
+ *
  * @param spec the spec
  */
 extern
@@ -123,7 +123,7 @@ void domain_spec_reset(domain_spec_t *spec);
 
 /**
  * @brief Check if the domain spec is granting the domain
- * 
+ *
  * @param spec the spec giving the permissions
  * @param domain the domain to check
  * @return int 0 on success or -EINVAL if the string isn't good
@@ -133,7 +133,7 @@ bool is_domain_spec_granting(const domain_spec_t *spec, const char *domain);
 
 /**
  * @brief Check if an  authority of domain spec is allowed to sign the other domain spec
- * 
+ *
  * @param auth the spec giving the permissions
  * @param target the spec to check
  * @return int 0 on success or -EINVAL if the string isn't good or -ENOMEM on out of memory
@@ -143,7 +143,7 @@ bool is_domain_spec_able_to_sign(const domain_spec_t *auth, const domain_spec_t 
 
 /**
  * @brief Add to spec the granting capabilities of other
- * 
+ *
  * @param to the spec to update
  * @param from the spec to add
  * @return 0 on success or -EINVAL if the string isn't good or -ENOMEM on out of memory
@@ -153,7 +153,7 @@ int domain_spec_add_grantings(domain_spec_t *to, const domain_spec_t *from);
 
 /**
  * @brief call the given function for all items of the domain spec
- * 
+ *
  * @param spec the spec to inspect
  * @param func the function to call. It receives 3 parameters: the domain name, its
  *             permission and the given closure
@@ -164,7 +164,7 @@ void domain_spec_enum(const domain_spec_t *spec, void (*func)(const char*, domai
 
 /**
  * @brief set the permission of a domain
- * 
+ *
  * @param spec the spec to change
  * @param perm the permission to set to the domain
  * @param domain the modified domain
@@ -177,7 +177,7 @@ domain_spec_set_len(domain_spec_t *spec, domain_permission_t perm, const char *d
 
 /**
  * @brief set the permission of a domain
- * 
+ *
  * @param spec the spec to change
  * @param perm the permission to set to the domain
  * @param domain the modified domain
