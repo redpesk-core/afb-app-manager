@@ -133,6 +133,7 @@ add_library(utils STATIC
 	manage-afid.c
 	mime-type.c
 	mustach.c
+	path-entry.c
 	sighup-framework.c
 	utils-dir.c
 	utils-json.c
