@@ -135,6 +135,7 @@ add_library(utils STATIC
 	mustach.c
 	path-entry.c
 	path-type.c
+	permset.c
 	sighup-framework.c
 	utils-dir.c
 	utils-json.c
