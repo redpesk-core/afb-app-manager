@@ -30,12 +30,12 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#define XMLSEC_CRYPTO_DYNAMIC_LOADING
-#include <xmlsec/app.h>
-#include <xmlsec/templates.h>
+#include <xmlsec/xmlsec.h>
+#include <xmlsec/crypto.h>
 #include <xmlsec/errors.h>
 #include <xmlsec/io.h>
 #include <xmlsec/xmldsig.h>
+#include <xmlsec/templates.h>
 
 #include <rp-utils/rp-verbose.h>
 #include "wgtpkg-files.h"
@@ -296,7 +296,7 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	}
 
 	/* create the root signature node */
-	sign = xmlSecTmplSignatureCreate(doc, xmlSecTransformInclC14N11Id, xmlSecTransformRsaSha256Id, properties[!!index].id);
+	sign = xmlSecTmplSignatureCreate(doc, xmlSecTransformInclC14N11Id, xmlSecTransformRsaSha1Id, properties[!!index].id);
 	if (sign == NULL) {
 		RP_ERROR("xmlSecTmplSignatureCreate failed");
 		goto error2;
@@ -326,7 +326,7 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	for (i = 0 ; i < fc ; i++) {
 		fdesc = file_of_index(i);
 		if (fdesc->type == type_file && (fdesc->flags & mask) == 0) {
-			ref = xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha256Id, NULL, fdesc->name, NULL);
+			ref = xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha1Id, NULL, fdesc->name, NULL);
 			if (ref == NULL) {
 				RP_ERROR("creation of reference to %s failed", fdesc->name);
 				goto error2;
@@ -335,7 +335,7 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	}
 
 	/* create reference to object having properties */
-	ref =  xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha256Id, NULL, "#prop", NULL);
+	ref =  xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha1Id, NULL, "#prop", NULL);
 	if (ref == NULL) {
 		RP_ERROR("creation of reference to #prop failed");
 		goto error2;
