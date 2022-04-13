@@ -26,9 +26,9 @@
 
 #include "signature-name.h"
 
-const char signature_extension[] = ".p7";
-const char signature_prefix[] = "signature-";
-const char author_name[] = "author";
+static const char signature_extension[] = ".p7";
+static const char signature_prefix[] = "signature-";
+static const char author_name[] = "author";
 
 #define LEN(x)    (sizeof(x)-1)
 #define ISEQ(x,y) (0==memcmp((x),(y),LEN(y)))
