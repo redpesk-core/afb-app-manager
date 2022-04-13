@@ -38,6 +38,7 @@
 
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-file.h>
+#include <rp-utils/rp-jsonc.h>
 
 #include "wgt.h"
 #include "wgt-info.h"
@@ -695,13 +696,18 @@ static int setup_files_and_security(const struct wgt_desc *desc)
 static int setup_units(struct wgt_info *ifo, const char *installdir)
 {
 	struct unitconf uconf;
-
-	/* generate and install units */
-	uconf.installdir = installdir;
-	uconf.icondir = FWK_ICON_DIR;
-	uconf.new_afid = get_new_afid;
-	uconf.base_http_ports = HTTP_PORT_BASE;
-	return unit_install(ifo, &uconf);
+	int rc = rp_jsonc_pack(&uconf.metadata, "{ss ss}",
+				"install-dir", installdir,
+				"icons-dir", FWK_ICON_DIR);
+	if (rc != 0)
+		rc = -ENOMEM;
+	else {
+		uconf.new_afid = get_new_afid;
+		uconf.base_http_ports = HTTP_PORT_BASE;
+		rc = unit_install(ifo, &uconf);
+		json_object_put(uconf.metadata);
+	}
+	return rc;
 }
 
 #if WITH_WIDGETS

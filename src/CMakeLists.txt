@@ -53,7 +53,7 @@ else(WITH_OPENSSL)
 	set(xsec gnutls xmlsec1-gnutls)
 endif(WITH_OPENSSL)
 
-pkg_check_modules(EXTRAS REQUIRED libxml-2.0 ${xsec} json-c librp-utils)
+pkg_check_modules(EXTRAS REQUIRED libxml-2.0 ${xsec} json-c librp-utils>=0.0.1)
 add_compile_options(${EXTRAS_CFLAGS})
 include_directories(${EXTRAS_INCLUDE_DIRS})
 link_libraries(${EXTRAS_LIBRARIES})

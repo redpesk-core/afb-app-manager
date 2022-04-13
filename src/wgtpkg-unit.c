@@ -40,7 +40,6 @@
 #include <rp-utils/rp-jsonc.h>
 
 #include "wgtpkg-mustach.h"
-#include "utils-json.h"
 #include "wgt-json.h"
 #include "utils-systemd.h"
 
@@ -381,8 +380,7 @@ int unit_generator_open_template(const char *filename)
 
 static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 {
-	struct json_object *targets, *targ;
-	char portstr[30], afidstr[30];
+	struct json_object *targets, *targ, *obj;
 	int port, afid;
 	rp_jsonc_index_t i, n;
 
@@ -399,20 +397,17 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 					return afid;
 				port = conf->base_http_ports + afid;
 			}
-			sprintf(afidstr, "%d", afid);
-			sprintf(portstr, "%d", port);
-			if (!j_add_many_strings_m(targ,
-				"#metatarget.http-port", portstr,
-				"#metatarget.afid", afidstr,
-				NULL))
+			if (!rp_jsonc_subobject(targ, "#metatarget", &obj)
+			 || !rp_jsonc_add(obj, "afid", json_object_new_int(afid))
+			 || !rp_jsonc_add(obj, "http-port", json_object_new_int(port)))
 				return -1;
 		}
 	}
 
-	return 	j_add_many_strings_m(jdesc,
-		"#metadata.install-dir", conf->installdir,
-		"#metadata.icons-dir", conf->icondir,
-		NULL) ? 0 : -1;
+	if (conf->metadata != NULL
+	 && !rp_jsonc_add(jdesc, "#metadata", json_object_get(conf->metadata)))
+		return -1;
+	return 0;
 }
 
 /*

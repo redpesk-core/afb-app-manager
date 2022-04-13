@@ -83,8 +83,9 @@ int main(int ac, char **av)
 	struct json_object *obj;
 	int rc;
 
-	conf.installdir = "INSTALL-DIR";
-	conf.icondir = "ICONS-DIR";
+	conf.metadata = json_object_new_object();
+	json_object_object_add(conf.metadata, "install-dir", json_object_new_string("INSTALL-DIR"));
+	json_object_object_add(conf.metadata, "icons-dir", json_object_new_string("ICONS-DIR"));
 	conf.new_afid = new_afid;
 	conf.base_http_ports = 20000;
 	rc = unit_generator_open_template(*++av);

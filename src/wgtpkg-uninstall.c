@@ -35,6 +35,8 @@
 #include <stdlib.h>
 
 #include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-jsonc.h>
+
 #include "utils-dir.h"
 #include "secmgr-wrap.h"
 #include "wgtpkg-unit.h"
@@ -44,10 +46,7 @@
 static int setdown_units(struct wgt_info *ifo, const char *installdir)
 {
 	struct unitconf uconf;
-
-	/* generate and install units */
-	uconf.installdir = installdir;
-	uconf.icondir = FWK_ICON_DIR;
+	uconf.metadata = NULL;
 	uconf.new_afid = 0;
 	uconf.base_http_ports = 0;
 	return unit_uninstall(ifo, &uconf);

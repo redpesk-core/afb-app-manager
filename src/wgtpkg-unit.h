@@ -51,8 +51,7 @@ struct unitdesc {
 };
 
 struct unitconf {
-	const char *installdir;
-	const char *icondir;
+	json_object *metadata;
 	int (*new_afid)();
 	int base_http_ports;
 };
