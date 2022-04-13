@@ -50,7 +50,6 @@
 #include "path-entry.h"
 #include "path-type.h"
 #include "permset.h"
-#include "sighup-framework.h"
 
 #include "wgtpkg-unit.h"
 
@@ -760,7 +759,7 @@ int afmpkg_install(
 	unsigned offset_root, offset_pack;
 
 	rc = prepare_and_detect(apkg, path, &offset_root, &offset_pack);
-	if (rc >= 0)
+	if (rc >= 0) {
 		switch ((packtype_t)rc) {
 		case packtype_Widget:
 			rc = install_widget_legacy(path, offset_pack);
@@ -774,6 +773,7 @@ int afmpkg_install(
 			RP_ERROR("Unknown type of package %s", apkg->package ? apkg->package : "?unknown?");
 			rc = -EINVAL;
 		}
+	}
 	return rc;
 }
 
@@ -786,7 +786,7 @@ int afmpkg_uninstall(
 	unsigned offset_root, offset_pack;
 
 	rc = prepare_and_detect(apkg, path, &offset_root, &offset_pack);
-	if (rc >= 0)
+	if (rc >= 0) {
 		switch ((packtype_t)rc) {
 		case packtype_Widget:
 			rc = uninstall_widget_legacy(path, offset_pack);
@@ -800,6 +800,7 @@ int afmpkg_uninstall(
 			RP_ERROR("Unknown type of package %s", apkg->package ? apkg->package : "?unknown?");
 			rc = -EINVAL;
 		}
+	}
 	return rc;
 }
 
@@ -826,7 +827,6 @@ install_widget_legacy(
 	}
 	else {
 		wgt_info_unref(ifo);
-		sighup_all();
 		rc = 0;
 	}
 	return rc;
@@ -845,7 +845,5 @@ uninstall_widget_legacy(
 	rc = uninstall_redpesk(path);
 	if (rc < 0)
 		RP_ERROR("Failed to uninstall %s", path);
-	else
-		sighup_all();
 	return rc;
 }
