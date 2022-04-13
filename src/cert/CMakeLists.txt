@@ -39,4 +39,32 @@ if(${gnutls_FOUND})
 	target_link_libraries(
 		check-signature-tool
 			${gnutls_LINK_LIBRARIES})
+
+	add_executable(
+		signed-digest-tool
+			signed-digest-tool.c
+			signed-digest.c
+			check-signature.c
+			make-signature.c
+			domain-spec.c
+			digest.c
+			common-cert.c
+			signature-name.c
+			../path-entry.c)
+	target_link_libraries(
+		signed-digest-tool
+			${gnutls_LINK_LIBRARIES})
+
+	add_executable(
+		digest-tool
+			digest-tool.c
+			digest.c
+			signed-digest.c
+			signature-name.c
+			../path-entry.c
+			common-cert.c)
+	target_link_libraries(
+		digest-tool
+			${gnutls_LINK_LIBRARIES})
+
 endif()

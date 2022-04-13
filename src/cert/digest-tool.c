@@ -29,6 +29,10 @@
 #include <limits.h>
 #include <unistd.h>
 
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+#include <gnutls/crypto.h>
+
 #include "digest.h"
 
 enum {
@@ -76,7 +80,7 @@ void read_file(FILE *file, const char *filename, char **pointer, size_t *size)
 {
 	size_t sread, sz, len = 0;
 	char *ptr, *buffer = NULL;
-	
+
 	if (file == NULL)
 		file = fopen(filename, "rb");
 	if (file != NULL) {
@@ -104,21 +108,21 @@ void read_file(FILE *file, const char *filename, char **pointer, size_t *size)
 	exit(EXIT_FAILURE);
 }
 
-int check_existing_file(void *closure, file_node_t *node)
+int check_existing_file(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	const char *filename = closure;
-	if (access(node->value, F_OK)) {
-		fprintf(stderr, "file not found %s\n", node->value);
+	//const char *filename = closure;
+	if (access(path, F_OK)) {
+		fprintf(stderr, "file not found %s\n", path);
 		exit(EXIT_FAILURE);
 	}
-	if (access(node->value, R_OK)) {
-		fprintf(stderr, "can't read file %s\n", node->value);
+	if (access(path, R_OK)) {
+		fprintf(stderr, "can't read file %s\n", path);
 		exit(EXIT_FAILURE);
 	}
 	return 0;
 }
 
-void read_file_list(const char *filename, file_list_t **files)
+void read_file_list(const char *filename, path_entry_t **root)
 {
 	int rc;
 	FILE *f;
@@ -129,20 +133,22 @@ void read_file_list(const char *filename, file_list_t **files)
 		exit(EXIT_FAILURE);
 	}
 
-	rc = file_list_create_from_file(f, files);
+	rc = path_entry_create_root(root);
+	if (rc >= 0)
+		rc = path_entry_add_from_file(*root, f);
 	fclose(f);
 	if (rc < 0) {
 		fprintf(stderr, "out of memory\n");
 		exit(EXIT_FAILURE);
 	}
 
-	file_list_iterate(*files, check_existing_file, (void*)filename);
+	path_entry_for_each(PATH_ENTRY_FORALL_ONLY_ADDED, *root, check_existing_file, (void*)filename);
 }
-		
+
 int main(int ac, char **av)
 {
 	int cmd, rc, ai;
-	file_list_t *files;
+	path_entry_t *root;
 	gnutls_digest_algorithm_t algorithm;
 	char *digest;
 	size_t length;
@@ -183,27 +189,27 @@ int main(int ac, char **av)
 	if (ai == ac)
 		help(av[0], true);
 
-	read_file_list(av[ai], &files);
+	read_file_list(av[ai], &root);
 	switch (cmd) {
 	case ID_CMD_make:
-		rc = create_author_digest(files, algorithm, NULL, 0, NULL);
+		rc = create_author_digest(root, algorithm, NULL, 0);
 		if (rc < 0) {
 			fprintf(stderr, "can't compute digest\n");
 			exit(EXIT_FAILURE);
 		}
 		length = (unsigned)rc;
-		digest = malloc(rc + 1);
+		digest = malloc((unsigned)rc + 1);
 		if (digest == NULL) {
 			fprintf(stderr, "out of memory\n");
 			exit(EXIT_FAILURE);
 		}
-		create_author_digest(files, algorithm, digest, length + 1, NULL);
+		create_author_digest(root, algorithm, digest, length + 1);
 		printf("%s", digest);
 		break;
 
 	case ID_CMD_check:
 		read_file(stdin, "<STDIN>", &digest, &length);
-		rc = check_author_digest(files, digest, length, NULL);
+		rc = check_author_digest(root, digest, length);
 		if (rc < 0) {
 			fprintf(stderr, "bad digest\n");
 			exit(EXIT_FAILURE);

@@ -24,86 +24,82 @@
 
 #pragma once
 
-#include "file-hash-list.h"
+#include "../path-entry.h"
 
 /**
- * @brief compute the hash digest of files of the list
- * 
- * @param files the simple list
+ * @brief compute the hash digest of files of the root
+ *
+ * @param root of the file list
  * @param algorithm the agorithm to use for computing
  * @param buffer where to store the result
  * @param length length in bytes of the given buffer
- * @param prefix prefix to add for opening the files
+ * @param real_root if not NULL, the real root for retrieving real files
  * @param isdistributor zero for author, not zero for distributor
  * @return the length of the production or a negative code on error
  */
 extern
 int create_digest(
-	file_list_t *files,
+	path_entry_t *root,
 	gnutls_digest_algorithm_t algorithm,
 	char *buffer,
 	size_t length,
-	const char *prefix,
 	int isdistributor
 );
 
 /**
- * @brief compute the hash digest of files of the list
+ * @brief compute the hash digest of files of the root
  * for author signature
- * 
- * @param files the simple list
+ *
+ * @param root of the file list
  * @param algorithm the agorithm to use for computing
  * @param buffer where to store the result
  * @param length length in bytes of the given buffer
- * @param prefix prefix to add for opening the files
+ * @param real_root if not NULL, the real root for retrieving real files
  * @return the length of the production or a negative code on error
  */
 extern
 int create_author_digest(
-	file_list_t *files,
+	path_entry_t *root,
 	gnutls_digest_algorithm_t algorithm,
 	char *buffer,
-	size_t length,
-	const char *prefix
+	size_t length
 );
 
 /**
- * @brief compute the hash digest of files of the list
+ * @brief compute the hash digest of files of the root
  * for distributor signature
- * 
- * @param files the simple list
+ *
+ * @param root of the file list
  * @param algorithm the agorithm to use for computing
  * @param buffer where to store the result
  * @param length length in bytes of the given buffer
- * @param prefix prefix to add for opening the files
+ * @param real_root if not NULL, the real root for retrieving real files
  * @return the length of the production or a negative code on error
  */
 extern
 int create_distributor_digest(
-	file_list_t *files,
+	path_entry_t *root,
 	gnutls_digest_algorithm_t algorithm,
 	char *buffer,
-	size_t length,
-	const char *prefix
+	size_t length
 );
 
 /**
  * @brief check if the given digest matches the file list
- * 
- * @param files the simple list
+ *
+ * @param root of the file list
  * @param digest the digest to be checked
  * @param length length of the given digest
- * @param prefix prefix to add for opening the files
+ * @param real_root if not NULL, the real root for retrieving real files
  * @return 0 if valid of a negative error code -EINVAL
  * @param isdistributor zero for author, not zero for distributor
  * if the digest doesn't match the format
  */
 extern
 int check_digest(
-	file_list_t *files,
+	path_entry_t *root,
 	const char *digest,
 	size_t length,
-	const char *prefix,
 	int isdistributor
 );
 
@@ -111,36 +107,34 @@ int check_digest(
 /**
  * @brief check if the given digest matches the file list
  * for author signature
- * 
- * @param files the simple list
+ *
+ * @param root of the file list
  * @param digest the digest to be checked
  * @param length length of the given digest
- * @param prefix prefix to add for opening the files
+ * @param real_root if not NULL, the real root for retrieving real files
  * @return 0 if valid of a negative error code -EINVAL
  * if the digest doesn't match the format
  */
 extern
 int check_author_digest(
-	file_list_t *files,
+	path_entry_t *root,
 	const char *digest,
-	size_t length,
-	const char *prefix
+	size_t length
 );
 
 /**
  * @brief check if the given digest matches the file list
  * for distributor signature
- * 
- * @param files the simple list
+ *
+ * @param root of the file list
  * @param digest the digest to be checked
  * @param length length of the given digest
- * @param prefix prefix to add for opening the files
+ * @param real_root if not NULL, the real root for retrieving real files
  * @return 0 if valid of a negative error code
  */
 extern
 int check_distributor_digest(
-	file_list_t *files,
+	path_entry_t *root,
 	const char *digest,
-	size_t length,
-	const char *prefix
+	size_t length
 );

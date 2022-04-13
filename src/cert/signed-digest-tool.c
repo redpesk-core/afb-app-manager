@@ -83,21 +83,21 @@ void help(const char *name, bool bad)
 	exit(EXIT_SUCCESS);
 }
 
-int check_existing_file(void *closure, file_node_t *node)
+int check_existing_file(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	const char *filename = closure;
-	if (access(node->value, F_OK)) {
-		fprintf(stderr, "file not found %s\n", node->value);
+	//const char *filename = closure;
+	if (access(path, F_OK)) {
+		fprintf(stderr, "file not found %s\n", path);
 		exit(EXIT_FAILURE);
 	}
-	if (access(node->value, R_OK)) {
-		fprintf(stderr, "can't read file %s\n", node->value);
+	if (access(path, R_OK)) {
+		fprintf(stderr, "can't read file %s\n", path);
 		exit(EXIT_FAILURE);
 	}
 	return 0;
 }
 
-void read_file_list(const char *filename, file_list_t **files)
+void read_file_list(const char *filename, path_entry_t **root)
 {
 	int rc;
 	FILE *f;
@@ -108,14 +108,16 @@ void read_file_list(const char *filename, file_list_t **files)
 		exit(EXIT_FAILURE);
 	}
 
-	rc = file_list_create_from_file(f, files);
+	rc = path_entry_create_root(root);
+	if (rc >= 0)
+		rc = path_entry_add_from_file(*root, f);
 	fclose(f);
 	if (rc < 0) {
 		fprintf(stderr, "out of memory\n");
 		exit(EXIT_FAILURE);
 	}
 
-	file_list_iterate(*files, check_existing_file, (void*)filename);
+	path_entry_for_each(PATH_ENTRY_FORALL_ONLY_ADDED, *root, check_existing_file, (void*)filename);
 }
 
 int read_remaining_certificates(char **av, int ai, int ac, gnutls_x509_crt_t *certs, int maxnr)
@@ -135,9 +137,8 @@ int read_remaining_certificates(char **av, int ai, int ac, gnutls_x509_crt_t *ce
 int main(int ac, char **av)
 {
 	int cmd, rc, ai;
-	int nca;
 	int distributor = 0, ncerts;
-	file_list_t *files;
+	path_entry_t *root;
 	gnutls_digest_algorithm_t algorithm = GNUTLS_DIG_SHA256;
 	gnutls_x509_crt_t certs[10];
 	gnutls_pkcs7_t pkcs7;
@@ -183,7 +184,7 @@ int main(int ac, char **av)
 	if (ai == ac)
 		help(av[0], true);
 
-	read_file_list(av[ai++], &files);
+	read_file_list(av[ai++], &root);
 	switch (cmd) {
 	case ID_CMD_make:
 		/* make [TYPE] [ALGO] FILELIST * KEY CERT CHAIN... */
@@ -196,7 +197,7 @@ int main(int ac, char **av)
 		}
 		/* make [TYPE] [ALGO] FILELIST KEY * CERT CHAIN... */
 		ncerts = read_remaining_certificates(av, ai, ac, certs, sizeof certs / sizeof *certs);
-		rc = make_signed_digest(&pkcs7, files, NULL, distributor, algorithm, key, certs, ncerts);
+		rc = make_signed_digest(&pkcs7, root, distributor, algorithm, key, certs, ncerts);
 		if (rc < 0) {
 			fprintf(stderr, "creation failed: %s\n", strerror(-rc));
 			exit(EXIT_FAILURE);
@@ -224,7 +225,7 @@ int main(int ac, char **av)
 		}
 		/* check [TYPE] FILELIST SIGFILE * [TRUST...] */
 		ncerts = read_remaining_certificates(av, ai, ac, certs, sizeof certs / sizeof *certs);
-		rc = check_signed_digest(pkcs7, files, NULL, distributor, certs, ncerts, &domains);
+		rc = check_signed_digest(pkcs7, root, distributor, certs, ncerts, &domains);
 		if (rc < 0) {
 			fprintf(stderr, "bad digest\n");
 			exit(EXIT_FAILURE);
@@ -240,7 +241,7 @@ int main(int ac, char **av)
 		/* validate FILELIST * [TRUST...] */
 		ncerts = read_remaining_certificates(av, ai, ac, certs, sizeof certs / sizeof *certs);
 
-		rc = check_signed_digest_of_files(files, NULL, certs, ncerts, &domains);
+		rc = check_signed_digest_of_files(root, certs, ncerts, &domains);
 		if (rc < 0) {
 			fprintf(stderr, "bad digest\n");
 			exit(EXIT_FAILURE);

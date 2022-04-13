@@ -37,8 +37,7 @@
 int
 make_signed_digest(
 	gnutls_pkcs7_t    *pkcs7,
-	file_list_t       *files,
-	const char        *prefix,
+	path_entry_t      *root,
 	int                isdistributor,
 	gnutls_digest_algorithm_t algorithm,
 	gnutls_privkey_t   key,
@@ -50,7 +49,7 @@ make_signed_digest(
 	int rc;
 
 	*pkcs7 = NULL;
-	rc = create_digest(files, algorithm, NULL, 0, prefix, isdistributor);
+	rc = create_digest(root, algorithm, NULL, 0, isdistributor);
 	if (rc < 0)
 		return rc;
 
@@ -59,7 +58,7 @@ make_signed_digest(
 	if (buffer == NULL)
 		return -ENOMEM;
 
-	rc = create_digest(files, algorithm, buffer, size, prefix, isdistributor);
+	rc = create_digest(root, algorithm, buffer, size, isdistributor);
 	if (rc < 0) {
 		free(buffer);
 		return rc;
@@ -73,11 +72,10 @@ make_signed_digest(
 int
 check_signed_digest(
 	gnutls_pkcs7_t    pkcs7,
-	file_list_t       *files,
-	const char        *prefix,
+	path_entry_t      *root,
 	int                isdistributor,
-	gnutls_x509_crt_t *roots,
-	int                nrroots,
+	gnutls_x509_crt_t *trustcerts,
+	int                nrtrustcerts,
 	domain_spec_t     *spec
 ) {
 	int rc;
@@ -92,21 +90,20 @@ check_signed_digest(
 	}
 
 	/* check the digest */
-	rc = check_digest(files, data.data, data.size, prefix, isdistributor);
+	rc = check_digest(root, data.data, data.size, isdistributor);
 	gnutls_free(data.data);
 	if (rc < 0)
 		return rc;
 
 	/* check the signature */
-	rc = check_signature(pkcs7, spec, roots, nrroots);
+	rc = check_signature(pkcs7, spec, trustcerts, nrtrustcerts);
 	return rc;
 }
 
 struct check_all {
-	file_list_t       *files;
-	const char        *prefix;
-	gnutls_x509_crt_t *roots;
-	int                nrroots;
+	path_entry_t      *root;
+	gnutls_x509_crt_t *trustcerts;
+	int                nrtrustcerts;
 	domain_spec_t     *spec;
 	int                rc;
 };
@@ -119,22 +116,16 @@ static void get_domains_cb(const char *name, domain_permission_t perm, void *clo
 		ca->rc = domain_spec_set(ca->spec, perm, name);
 }
 
-static int check_one_of_all(struct check_all *ca, file_node_t *node, int isdistributor)
+static int check_one_of_all(struct check_all *ca, path_entry_t *entry, const char *path, size_t length, int isdistributor)
 {
 	domain_spec_t specs = DOMAIN_SPEC_INITIAL;
 	gnutls_pkcs7_t pkcs7;
 	int rc;
 
-	if (ca->prefix == NULL)
-		rc = read_pkcs7(node->value, &pkcs7);
-	else {
-		char path[PATH_MAX];
-		snprintf(path, sizeof path, "%s/%s", ca->prefix, node->value);
-		rc = read_pkcs7(path, &pkcs7);
-	}
+	rc = read_pkcs7(path, &pkcs7);
 	if (rc == 0) {
-		rc = check_signed_digest(pkcs7, ca->files, ca->prefix, isdistributor,
-				ca->roots, ca->nrroots, &specs);
+		rc = check_signed_digest(pkcs7, ca->root, isdistributor,
+				ca->trustcerts, ca->nrtrustcerts, &specs);
 		gnutls_pkcs7_deinit(pkcs7);
 		if (rc >= 0 && ca->spec != NULL) {
 			domain_spec_enum(&specs, get_domains_cb, ca);
@@ -146,36 +137,42 @@ static int check_one_of_all(struct check_all *ca, file_node_t *node, int isdistr
 	return !rc;
 }
 
-static int check_all_cb(void *closure, file_node_t *node)
+static int check_all_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
 	struct check_all *ca = closure;
-	signature_type_t st = signature_name_type(node->value);
+	signature_type_t st = signature_name_type_length(path, length);
 	switch (st) {
-	default:
-	case Signature_None:
-		return 1;
 	case Signature_Author:
 	case Signature_distributor:
-		return check_one_of_all(ca, node, st == Signature_distributor);
+		check_one_of_all(ca, entry, path, length, st == Signature_distributor);
+		break;
+	default:
+	case Signature_None:
+		break;
 	}
+	return 0;
 }
 
 int
 check_signed_digest_of_files(
-	file_list_t       *files,
-	const char        *prefix,
-	gnutls_x509_crt_t *roots,
-	int                nrroots,
+	path_entry_t      *root,
+	gnutls_x509_crt_t *trustcerts,
+	int                nrtrustcerts,
 	domain_spec_t     *spec
 ) {
 	struct check_all ca = {
-		.files = files,
-		.prefix = prefix,
-		.roots = roots,
-		.nrroots = nrroots,
+		.root = root,
+		.trustcerts = trustcerts,
+		.nrtrustcerts = nrtrustcerts,
 		.spec = spec,
 		.rc = 0
 	};
-	file_list_iterate(files, check_all_cb, &ca);
+
+	path_entry_for_each(
+			PATH_ENTRY_FORALL_ONLY_ADDED | PATH_ENTRY_FORALL_ABSOLUTE,
+			root,
+			check_all_cb,
+			&ca);
+
 	return ca.rc;
 }

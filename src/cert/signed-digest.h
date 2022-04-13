@@ -28,7 +28,8 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs7.h>
 
-#include "file-hash-list.h"
+#include "../path-entry.h"
+#include "domain-spec.h"
 
 /**
  * @brief creates a pkcs7 embedding the signed digest of file with the private key
@@ -37,8 +38,7 @@
  *
  * @param pkcs7 the created structure must not be initialized
  *              but must be deinitialized on success
- * @param files the list of files to digest
- * @param prefix prefix to add for opening the files
+ * @param root of the file list
  * @param isdistributor if not zero, digest for a distributor otherwise an author
  * @param algorithm the algorithm to use to hash the files
  * @param key the key to use to sign
@@ -51,8 +51,7 @@ extern
 int
 make_signed_digest(
 	gnutls_pkcs7_t    *pkcs7,
-	file_list_t       *files,
-	const char        *prefix,
+	path_entry_t      *root,
 	int                isdistributor,
 	gnutls_digest_algorithm_t algorithm,
 	gnutls_privkey_t   key,
@@ -64,11 +63,10 @@ make_signed_digest(
  * @brief checks that the given pkcs7 files validates the file list
  *
  * @param pkcs7 the signed file with the digest
- * @param files the list of files to check
- * @param prefix prefix to add for opening the files
+ * @param root of the file list
  * @param isdistributor if not zero, digest for a distributor otherwise an author
- * @param roots an array of trusted certificates
- * @param nrroots the count of trusted certificates in the array
+ * @param trustcerts an array of trusted certificates
+ * @param nrtrustcerts the count of trusted certificates in the array
  * @param spec returns the authorized domain specifications
  *
  * @return 0 on success or a negative error code
@@ -77,21 +75,19 @@ extern
 int
 check_signed_digest(
 	gnutls_pkcs7_t    pkcs7,
-	file_list_t       *files,
-	const char        *prefix,
+	path_entry_t      *root,
 	int                isdistributor,
-	gnutls_x509_crt_t *roots,
-	int                nrroots,
+	gnutls_x509_crt_t *trustcerts,
+	int                nrtrustcerts,
 	domain_spec_t     *spec
 );
 
 /**
- * @brief check that list of files is valid according to the 
- * 
- * @param files file list to be checked
- * @param prefix prefix to add for opening the files
- * @param roots an array of trusted certificates
- * @param nrroots the count of trusted certificates in the array
+ * @brief check that list of files is valid according to the
+ *
+ * @param root of the file list
+ * @param trustcerts an array of trusted certificates
+ * @param nrtrustcerts the count of trusted certificates in the array
  * @param spec returns the authorized domain specifications
  *
  * @return 0 on success or a negative error code
@@ -99,9 +95,8 @@ check_signed_digest(
 extern
 int
 check_signed_digest_of_files(
-	file_list_t       *files,
-	const char        *prefix,
-	gnutls_x509_crt_t *roots,
-	int                nrroots,
+	path_entry_t      *root,
+	gnutls_x509_crt_t *trustcerts,
+	int                nrtrustcerts,
 	domain_spec_t     *spec
 );
