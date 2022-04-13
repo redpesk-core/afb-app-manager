@@ -134,6 +134,7 @@ add_library(utils STATIC
 	mime-type.c
 	mustach.c
 	path-entry.c
+	path-type.c
 	sighup-framework.c
 	utils-dir.c
 	utils-json.c
