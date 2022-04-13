@@ -135,6 +135,7 @@ add_library(afmpkg STATIC ${afmpkg_sources})
 add_library(utils STATIC
 	detect-packtype.c
 	manage-afid.c
+	manifest.c
 	mime-type.c
 	mustach.c
 	normalize-unit-file.c

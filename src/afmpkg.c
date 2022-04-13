@@ -37,7 +37,6 @@
 #include <sys/stat.h>
 
 #include <rp-utils/rp-verbose.h>
-#include <rp-utils/rp-yaml.h>
 #include <rp-utils/rp-jsonc.h>
 
 #include "cert/signed-digest.h"
@@ -45,6 +44,7 @@
 
 #include "detect-packtype.h"
 #include "manage-afid.h"
+#include "manifest.h"
 #include "mime-type.h"
 #include "normalize-unit-file.h"
 #include "path-entry.h"
@@ -60,15 +60,6 @@
 
 
 #define HTTP_PORT_BASE				29000
-
-#define MANIFEST_REQUIRED_PERMISSIONS		"required-permissions"
-#define MANIFEST_FILE_PROPERTIES		"file-properties"
-#define MANIFEST_TARGETS			"targets"
-#define MANIFEST_NAME				"name"
-#define MANIFEST_VALUE				"value"
-
-#define VALUE_OPTIONAL				"optional"
-#define VALUE_REQUIRED				"required"
 
 
 typedef
@@ -133,47 +124,6 @@ int for_each_content_entry(
 }
 
 
-static int check_valid_string(json_object *jso, const char *key)
-{
-	json_object *jval;
-	const char *value;
-	int pos;
-	char c;
-
-	if (!json_object_object_get_ex(jso, key, &jval))
-		return -EINVAL;
-	value = json_object_get_string(jval);
-	pos = 0;
-	c = value[pos];
-	if (c == 0) {
-		RP_ERROR("empty string forbidden in '%s' (temporary constraints)", key);
-		return -EINVAL;
-	}
-	do {
-		if (!isalnum(c) && !strchr(".-_", c)) {
-			RP_ERROR("forbidden char %c in '%s' -> '%s' (temporary constraints)", c, key, value);
-			return -EINVAL;
-		}
-		c = value[++pos];
-	} while(c);
-	return 0;
-}
-
-static int check_temporary_constraints(json_object *jso)
-{
-	json_object *jval;
-	int rc = 0;
-
-	if (!json_object_object_get_ex(jso, "rp-manifest", &jval)
-	 || strcmp("1", json_object_get_string(jval)))
-		rc = -EINVAL;
-	if (rc == 0)
-		rc = check_valid_string(jso, "id");
-	if (rc == 0)
-		rc = check_valid_string(jso, "version");
-	return rc;
-}
-
 static void for_each_of(json_object *jso, void (*fun)(void*, json_object*), void *closure, const char *key)
 {
 	json_object *item;
@@ -200,9 +150,9 @@ static void process_one_required_permission(void * closure, json_object *jso)
 			perm = json_object_get_string(name);
 		if (!hasvalue)
 			RP_WARNING("permission value is missing: %s", json_object_get_string(jso));
-		else if (!strcmp(json_object_get_string(value), VALUE_OPTIONAL))
+		else if (!strcmp(json_object_get_string(value), MANIFEST_VALUE_OPTIONAL))
 			optional = 1;
-		else if (strcmp(json_object_get_string(value), VALUE_REQUIRED)) {
+		else if (strcmp(json_object_get_string(value), MANIFEST_VALUE_REQUIRED)) {
 			RP_ERROR("invalid permission value: %s", json_object_get_string(jso));
 			perm = NULL;
 		}
@@ -625,29 +575,6 @@ static int setdown_units(
 
 static
 int
-read_and_check_manifest(
-	json_object **obj,
-	char path[PATH_MAX]
-) {
-	int rc;
-
-	rc = rp_yaml_path_to_json_c(obj, path, path);
-	if (rc < 0)
-		RP_ERROR("error while reading manifest file %s", path);
-	else if (*obj == NULL) {
-		RP_ERROR("NULL when reading manifest file %s", path);
-		rc = -EBADF;
-	}
-	else {
-		rc = check_temporary_constraints(*obj);
-		if (rc < 0)
-			RP_ERROR("constraints of manifest not fulfilled for %s", path);
-	}
-	return rc;
-}
-
-static
-int
 install_afmpkg(
 	const afmpkg_t *apkg,
 	char *path,
@@ -671,7 +598,7 @@ install_afmpkg(
 	/* TODO: processing of signatures */
 
 	/* read the manifest */
-	rc = read_and_check_manifest(&state.manifest, path);
+	rc = manifest_read_and_check(&state.manifest, path);
 	if (rc)
 		goto error2;
 
@@ -743,7 +670,7 @@ uninstall_afmpkg(
 
 	/* TODO: process signatures */
 	/* read the manifest */
-	rc = read_and_check_manifest(&manifest, path);
+	rc = manifest_read_and_check(&manifest, path);
 	if (rc)
 		goto error2;
 
