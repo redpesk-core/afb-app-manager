@@ -91,8 +91,8 @@ After=UNIT_NAME_API_SOCKET({{name}})
 
 [Service]
 
-EnvironmentFile=-@afm_confdir@/unit.env.d/*
-EnvironmentFile=-@afm_confdir@/widget.env.d/{{:id}}/*
+EnvironmentFile=-CONF_DIR/unit.env.d/*
+EnvironmentFile=-CONF_DIR/widget.env.d/{{:id}}/*
 SmackProcessLabel=SMACKLABEL
 SELinuxContext=SELINUXLABEL
 SuccessExitStatus=0 SIGKILL

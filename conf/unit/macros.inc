@@ -21,7 +21,7 @@ define( `MUSTACH_IF_NOT', `{{^$1}}pushdef(`ELSE',`{{/$1}}{{#$1}}')pushdef(`ENDIF
 --------------------------------------------------------------------------------
 -- CONDITIONAL HELPERS
 --------------------------------------------------------------------------------
-define( `PERM', `@afm_prefix@permission:$1')
+define( `PERM', `AFM_PERM_PREFIX`'permission:$1')
 define( `REQPERM', `required-permission.PERM($1)')
 
 define( `ON_PERM', `MUSTACH_ON(REQPERM($1),$2,$3)')
@@ -57,11 +57,12 @@ define( `UNIT_NAME_API_SOCKET', `UNIT_NAME_API_BASE($1)UNITSUFFIX.socket')
 define( `UNIT_NAME_BINDING_BASE', `afm-link-$1')
 define( `UNIT_NAME_BINDING_SERVICE', `UNIT_NAME_BINDING_BASE($1)UNITSUFFIX.service')
 
-define( `USER_RUN_DIR', `@afm_users_rundir@/%i')
-define( `DEBUGGING_DIR', `@afm_platform_rundir@/debug')
-define( `PLATFORM_RUN_DIR', `@afm_platform_rundir@')
+define( `USER_RUN_DIR', `AFM_USERS_RUNDIR/%i')
+define( `DEBUGGING_DIR', `AFM_PLATFORM_RUNDIR/debug')
+define( `PLATFORM_RUN_DIR', `AFM_PLATFORM_RUNDIR')
+define( `CONF_DIR', `AFM_CONFDIR')
 
-define( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `@afm_scope_platform_dir@', `/home/%i/app-data')')
+define( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')
 define( `APP_WORK_DIR', `APP_DATA_DIR/{{:id}}')
 define( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
 

@@ -27,23 +27,33 @@ cmake_minimum_required(VERSION 3.10)
 find_program(M4EXEC m4)
 mark_as_advanced(M4EXEC)
 
-file(GLOB in_afm_unit_list
-	LIST_DIRECTORIES false
-	RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-	CONFIGURE_DEPENDS
-	afm-unit *.inc
-)
-foreach(f IN LISTS in_afm_unit_list)
-	configure_file(${f} ${f} @ONLY)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${f})
-endforeach(f)
 if(AGL_DEVEL)
 	set(optm4 -DAGL_DEVEL)
 endif()
+
+set(m4defs
+	-DAFM_PERM_PREFIX=${afm_prefix}
+	-DAFM_USERS_RUNDIR=${afm_users_rundir}
+	-DAFM_PLATFORM_RUNDIR=${afm_platform_rundir}
+	-DAFM_SCOPE_PLATFORM_HOMEDIR=${afm_scope_platform_dir}
+	-DAFM_CONFDIR=${afm_confdir}
+)
+
+set(m4sources
+	afm-unit
+	provided-api-platform.inc
+	provided-binding-platform.inc
+	service.inc
+	binder.inc
+	macros.inc
+	provided-api-user.inc
+	provided-binding-user.inc
+)
+
 add_custom_command(
 	OUTPUT afm-unit.conf
-	COMMAND ${M4EXEC} ${optm4} -I. afm-unit > afm-unit.conf
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	COMMAND ${M4EXEC} ${optm4} ${m4defs} -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/afm-unit > afm-unit.conf
+	DEPENDS ${m4sources}
 )
 add_custom_target(unitconf ALL DEPENDS afm-unit.conf)
 
