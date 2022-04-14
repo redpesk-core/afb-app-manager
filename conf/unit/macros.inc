@@ -79,6 +79,10 @@ define( `USER_API_PATH_WS', `USER_API_PATH/ws')
 define( `USER_API_PATH_LINK', `USER_API_PATH/link')
 
 define( `LOCALUSERAPP', `ON_PERM(`:partner:scope-platform', `localuser---AFID', `localuser--AFID')')
+
+define( `REDWRAP', `{{##metadata.redpak}}/usr/bin/redwrap --redpath {{:#metadata.root-dir}} {{/#metadata.redpak}}')
+define( `BINDER', `{{^#metadata.redpak}}/usr{{/#metadata.redpak}}/bin/afb-binder')
+
 --------------------------------------------------------------------------------
 -- AGL_DEVEL SPECIFIC PARTS
 --------------------------------------------------------------------------------

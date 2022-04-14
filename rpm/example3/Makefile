@@ -1,6 +1,7 @@
 OPT = 
-TOK = REDPESK_RPMPLUG_TRANSID
-RPK = REDPESK_RPMPLUG_REDPAKID=@redpak${PID}
+
+ENV = REDPESK_RPMPLUG_TRANSID=$$$$:$$(date +%s.%N) REDPESK_RPMPLUG_REDPAKID=@redpak$(shell echo $$PPID)
+
 
 .PHONY: DEFAULT
 DEFAULT: install
@@ -62,35 +63,35 @@ testdir:
 	mkdir testdir
 
 install: testdir PLUGIN RPM1
-	${TOK}=$$$$:$$(date +%s.%N) \
+	${ENV} \
 	rpm -D "__plugindir ${PWD}/plugins" \
 		-D "__transaction_redpesk %{__plugindir}/redpesk.so" \
 		${ROOT} \
 		--install ${OPT} example3-1-1.fc34.noarch.rpm
 
 upgrade: testdir PLUGIN RPM2
-	${TOK}=$$$$:$$(date +%s.%N) \
+	${ENV} \
 	rpm -D "__plugindir ${PWD}/plugins" \
 		-D "__transaction_redpesk %{__plugindir}/redpesk.so" \
 		${ROOT} \
 		--upgrade ${OPT} example3-2-1.fc34.noarch.rpm
 
 downgrade: testdir PLUGIN RPM2
-	${TOK}=$$$$:$$(date +%s.%N) \
+	${ENV} \
 	rpm -D "__plugindir ${PWD}/plugins" \
 		-D "__transaction_redpesk %{__plugindir}/redpesk.so" \
 		${ROOT} \
 		--upgrade --oldpackage ${OPT} example3-1-1.fc34.noarch.rpm
 
 erase: testdir PLUGIN
-	${TOK}=$$$$:$$(date +%s.%N) \
+	${ENV} \
 	rpm -D "__plugindir ${PWD}/plugins" \
 		-D "__transaction_redpesk %{__plugindir}/redpesk.so" \
 		${ROOTB} \
 		--erase ${OPT} example3
 
 info: testdir PLUGIN
-	${TOK}=$$$$:$$(date +%s.%N) \
+	${ENV} \
 	rpm -D "__plugindir ${PWD}/plugins" \
 		-D "__transaction_redpesk %{__plugindir}/redpesk.so" \
 		${ROOTB} \
@@ -98,7 +99,7 @@ info: testdir PLUGIN
 
 # reinstall is known to be broken
 reinstall: testdir PLUGIN RPM1
-	${TOK}=$$$$:$$(date +%s.%N) \
+	${ENV} \
 	rpm -D "__plugindir ${PWD}/plugins" \
 		-D "__transaction_redpesk %{__plugindir}/redpesk.so" \
 		${ROOT} \

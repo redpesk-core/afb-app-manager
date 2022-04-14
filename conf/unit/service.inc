@@ -28,6 +28,10 @@ X-AFM-height={{height}}
 {{#icon}}
 X-AFM-icon={{:#metadata.install-dir}}/{{:src}}
 {{/icon}}
+{{##metadata.redpak}}
+X-AFM--redpak-id={{:#metadata.redpak-id}}
+X-AFM--redpak-root={{:#metadata.root-dir}}
+{{/#metadata.redpak}}
 X-AFM--ID=AFID
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
@@ -107,7 +111,7 @@ ELSE
 User=%i
 Slice=user-%i.slice
 WorkingDirectory=-APP_WORK_DIR
-ExecStartPre=/bin/mkdir -p APP_WORK_DIR
+ExecStartPre=REDWRAP /bin/mkdir -p APP_WORK_DIR
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 ENDIF
 IF_PERM(:system:capability:keep-all)
@@ -157,7 +161,7 @@ include(binder.inc)
 ;----                 application/x-executable                              ----
 ;-------------------------------------------------------------------------------
 {{#content.type=application/x-executable}}
-ExecStart={{:#metadata.install-dir}}/{{content.src}}
+ExecStart=REDWRAP {{:#metadata.install-dir}}/{{content.src}}
 {{/content.type=application/x-executable}}
 
 ;-------------------------------------------------------------------------------

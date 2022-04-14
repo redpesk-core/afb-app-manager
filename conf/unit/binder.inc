@@ -9,7 +9,8 @@ ENDIF
 ENDIF
 
 Type=notify
-ExecStart=/usr/bin/afb-binder \
+ExecStart=REDWRAP \
+	BINDER \
 	--name afbd-TARGET \
 	--rootdir={{:#metadata.install-dir}} \
 	--workdir=APP_WORK_DIR \
