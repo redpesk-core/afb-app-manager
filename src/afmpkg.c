@@ -703,10 +703,10 @@ error2:
 struct detect
 {
 	const char *packname;
+	const char *path;
 	size_t packlen;
 	size_t baselen;
-	const char *path;
-	unsigned offset;
+	size_t offset;
 };
 
 static
@@ -723,35 +723,38 @@ int prepare_and_detect(
 	unsigned *offset_root,
 	unsigned *offset_pack
 ) {
+	int rc;
 	struct detect det;
+	size_t offset = 0;
 
 	/* prepare */
-	if (apkg->root == NULL)
-		*offset_root = 0;
-	else {
-		size_t length = strlen(apkg->root);
-		if (length >= PATH_MAX) {
+	if (apkg->root != NULL) {
+		offset = strlen(apkg->root);
+		if (offset >= PATH_MAX) {
 			RP_ERROR("name too long %.200s...", apkg->root);
 			return -ENAMETOOLONG;
 		}
-		memcpy(path, apkg->root, length + 1);
-		if (length > 0 && path[length - 1] == '/')
-			path[--length] = 0;
-		*offset_root = (unsigned)length;
+		memcpy(path, apkg->root, offset + 1);
+		if (offset > 0 && path[offset - 1] == '/')
+			path[--offset] = 0;
 	}
 
 	/* detection of the type of the installed files */
 	det.packname = apkg->package;
 	det.packlen = det.packname == NULL ? 0 : strlen(det.packname);
 	det.path = path;
-	det.offset = *offset_root;
-	return path_entry_for_each_in_buffer(
+	det.offset = offset;
+	det.baselen = 0;
+	rc = path_entry_for_each_in_buffer(
 			PATH_ENTRY_FORALL_ONLY_ADDED | PATH_ENTRY_FORALL_SILENT_ROOT,
 			apkg->files,
 			detect_cb,
 			&det,
 			&path[det.offset],
 			PATH_MAX - det.offset);
+	*offset_root = (unsigned)offset;
+	*offset_pack = (unsigned)det.baselen;
+	return rc;
 }
 
 static int install_widget_legacy(char *path, unsigned offset_pack);
