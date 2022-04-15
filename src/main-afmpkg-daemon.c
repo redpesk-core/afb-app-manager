@@ -40,7 +40,9 @@
 
 #include <rp-utils/rp-verbose.h>
 
+#if !defined(NO_SEND_SIGUP_ALL)
 #include "sighup-framework.h"
+#endif
 
 #include "afmpkg-common.h"
 #include "afmpkg.h"
@@ -310,8 +312,10 @@ static int process(struct request *req)
 				rc = afmpkg_install(&req->apkg);
 			else
 				rc = afmpkg_uninstall(&req->apkg);
+#if !defined(NO_SEND_SIGUP_ALL)
 			if (rc >= 0)
 				sighup_all();
+#endif
 		}
 		/* record status for transaction */
 		if (req->transid != NULL) {
