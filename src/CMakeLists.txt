@@ -188,16 +188,16 @@ if(WITH_TOOLS)
 	target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
 	install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-	add_executable(afmpkg-daemon main-afmpkg-daemon.c cert/file-hash-list.c)
-	target_link_libraries(afmpkg-daemon afmpkg wgtpkg wgt secwrp utils pthread)
-	install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
-
 	add_executable(afmpkg-status main-afmpkg-status.c)
 	install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 else()
 	MESSAGE(STATUS "Not creating packaging tools")
 endif()
+
+add_executable(afmpkg-daemon main-afmpkg-daemon.c)
+target_link_libraries(afmpkg-daemon afmpkg wgtpkg wgt secwrp utils pthread)
+install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ###########################################################################
 # dynamic tool daemons
