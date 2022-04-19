@@ -275,13 +275,6 @@ static int check_contents(install_state_t *state)
 
 
 
-
-
-
-
-
-
-
 static void set_file_type(void *closure, json_object *jso)
 {
 	install_state_t *state = closure;
@@ -327,25 +320,14 @@ static void set_file_type(void *closure, json_object *jso)
 static int fulfill_properties(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
 	install_state_t *state = closure;
-	path_entry_t *parent;
 	path_type_t curtype;
 
 	curtype = get_entry_type(entry);
-	if (curtype == path_type_Unknown) {
+	if (curtype == path_type_Unknown && !path_entry_has_child(entry)) {
 		curtype = path_type_of_entry(entry, state->content);
 		if (curtype == path_type_Unknown)
 			curtype = path_type_Id;
 		set_entry_type(entry, curtype);
-	}
-	switch (curtype) {
-	case path_type_Public:
-	case path_type_Public_Exec:
-	case path_type_Public_Lib:
-		parent = path_entry_parent(entry);
-		set_entry_type(parent, path_type_Public);
-		break;
-	default:
-		break;
 	}
 	return 0;
 }
@@ -389,7 +371,7 @@ static int compute_files_properties(install_state_t *state)
 	if (state->rc >= 0)
 		for_each_of(state->manifest, set_target_file_properties, state, MANIFEST_TARGETS);
 	if (state->rc >= 0)
-		for_each_content_entry(PATH_ENTRY_FORALL_AFTER, state, fulfill_properties);
+		for_each_content_entry(PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_ONLY_ADDED, state, fulfill_properties);
 	return state->rc;
 }
 
@@ -431,8 +413,7 @@ static int set_one_file_security(void *closure, path_entry_t *entry, const char 
 		rc = secmgr_path_http(realpath);
 		break;
 	default:
-		RP_WARNING("unknow path : %s", realpath);
-//		rc = -EINVAL;
+		RP_DEBUG("unknown path type: %s", realpath);
 		break;
 	}
 	if (rc < 0 && state->rc >= 0)

@@ -105,9 +105,7 @@ The attribute *name* is optional. If not set, the *id* is taken as a replacement
 
 ### file-properties
 
-Use this feature for setting properties to files of the package.
-At this time, this feature only allows to set executable flag
-for making companion program executable explicitly.
+Use this feature for setting properties to files or directories of the package.
 
 Example:
 
