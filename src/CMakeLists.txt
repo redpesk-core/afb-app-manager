@@ -230,11 +230,12 @@ add_subdirectory(tests)
 # rpm plugin
 
 if(WITH_RPM_REDPESK_PLUGIN)
+
 	MESSAGE(STATUS "Creating rpm plugin for redpesk")
 
 	pkg_check_modules(RPM REQUIRED IMPORTED_TARGET rpm)
 
-	add_library(redpesk SHARED rpm-redpesk.c)
+	add_library(redpesk SHARED rpm-plugin/redpesk.c)
 	set_target_properties(redpesk PROPERTIES PREFIX "")
 
 	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS})
