@@ -66,7 +66,6 @@ static const char * type_te(rpmte te)
 	switch (rpmteType(te)) {
 		case TR_ADDED: return "TR_ADDED";
 		case TR_REMOVED: return "TR_REMOVED";
-		case TR_RPMDB: return "TR_RPMDB";
 		default: return "UNKNOWN";
 	}
 }
@@ -195,15 +194,13 @@ static int recv_framework(int sock, char **arg)
 	}
 	if (arg != NULL && inputbuf[sz] != 0)
 		*arg = strdup(&inputbuf[sz]);
-	return 0;
+	return rc;
 }
 
 /** dial with the framework */
 static int dial_framework(const char *buffer, size_t length, char **errstr)
 {
 	int rc, sock;
-	char inputbuf[512];
-	ssize_t sz;
 
 	if (rpmIsDebug())
 		rpmlog(RPMLOG_DEBUG, "[REDPESK] SENDING\n%.*s", (int)length, buffer);
