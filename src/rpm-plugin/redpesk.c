@@ -487,7 +487,8 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 	for_each_record(ts, number_adds, &eleidx);
 
 	/* execute the removes */
-	for_each_record(ts, perform_remove, NULL);
+	if ((rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPREUN)) == 0)
+		for_each_record(ts, perform_remove, NULL);
 
 	return RPMRC_OK;
 }
@@ -497,7 +498,8 @@ static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
 	dump_ts(ts, "POST");
 
 	/* execute the adds */
-	if (res == RPMRC_OK)
+	if (res == RPMRC_OK
+	&& ((rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPOST)) == 0))
 		for_each_record(ts, perform_add, NULL);
 
 	/* ensure clean */
