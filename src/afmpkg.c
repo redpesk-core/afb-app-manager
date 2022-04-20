@@ -380,11 +380,10 @@ static int set_one_file_security(void *closure, path_entry_t *entry, const char 
 {
 	install_state_t *state = closure;
 	const char *realpath = state->path;
-	int rc;
+	int rc = 0;
 
 	switch (get_entry_type(entry)) {
 	case path_type_Unset:
-		rc = 0;
 		break;
 	case path_type_Public:
 	case path_type_Public_Exec:
