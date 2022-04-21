@@ -33,4 +33,8 @@ if(${gnutls_FOUND})
 			signature-name.c
 			signed-digest.c
 		)
+	target_compile_options(cert PRIVATE ${gnutls_CFLAGS})
+	target_include_directories(cert PRIVATE ${gnutls_INCLUDE_DIRS})
+	target_link_libraries(cert PUBLIC ${gnutls_LIBRARIES})
+	target_link_directories(cert PUBLIC ${gnutls_LIBRARY_DIRS})
 endif()

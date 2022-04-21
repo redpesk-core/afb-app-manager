@@ -639,7 +639,7 @@ end:
 	return rc;
 }
 
-#if defined(ALLOW_NO_SIGNATURE)
+#if ALLOW_NO_SIGNATURE
 # define DEFAULT_ALLOW_NO_SIGNATURE 1
 #else
 # define DEFAULT_ALLOW_NO_SIGNATURE 0

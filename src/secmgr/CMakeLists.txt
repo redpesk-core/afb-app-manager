@@ -23,18 +23,15 @@
 ###########################################################################
 
 
-if(SIMULATE_SECMGR)
-	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=1)
-else(SIMULATE_SECMGR)
-	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager)
-	add_compile_options(${SECMGR_CFLAGS})
-	include_directories(${SECMGR_INCLUDE_DIRS})
-	link_libraries(${SECMGR_LIBRARIES})
-	link_directories(${SECMGR_LIBRARY_DIRS})
-	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=0)
-endif(SIMULATE_SECMGR)
-
 add_library(secwrp STATIC
 	secmgr-wrap.c
 	)
 
+if(NOT SIMULATE_SECMGR)
+	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager)
+endif()
+
+target_compile_options(secwrp PRIVATE ${SECMGR_CFLAGS} -DSIMULATE_SEC_LSM_MANAGER=$<BOOL:SIMULATE_SECMGR>)
+target_include_directories(secwrp PRIVATE ${SECMGR_INCLUDE_DIRS})
+target_link_libraries(secwrp PUBLIC ${SECMGR_LIBRARIES})
+target_link_directories(secwrp PUBLIC ${SECMGR_LIBRARY_DIRS})

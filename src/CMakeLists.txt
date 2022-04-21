@@ -24,35 +24,54 @@
 
 add_compile_options(-fPIC)
 
+# check availability of libzip
+if(USE_LIBZIP)
+	pkg_check_modules(libzip libzip>=0.11)
+	set(USE_LIBZIP ${libzip_FOUND})
+endif()
+
+# check availability of openssl
 if(WITH_OPENSSL)
-	set(xsec openssl xmlsec1-openssl)
-else(WITH_OPENSSL)
-	set(xsec gnutls xmlsec1-gnutls)
-endif(WITH_OPENSSL)
+	pkg_check_modules(openssl openssl)
+	set(WITH_OPENSSL ${openssl_FOUND})
+endif()
 
-pkg_check_modules(EXTRAS REQUIRED libxml-2.0 ${xsec} json-c librp-utils>=0.0.1)
-add_compile_options(${EXTRAS_CFLAGS})
-include_directories(${EXTRAS_INCLUDE_DIRS})
-link_libraries(${EXTRAS_LIBRARIES})
-link_directories(${EXTRAS_LIBRARY_DIRS})
-
+# check other modules
+pkg_check_modules(gnutls gnutls)
 pkg_check_modules(libsystemd libsystemd>=222)
-if(libsystemd_FOUND)
-	add_compile_options(${libsystemd_CFLAGS})
-	include_directories(${libsystemd_INCLUDE_DIRS})
-	link_libraries(${libsystemd_LIBRARIES})
-	link_directories(${libsystemd_LIBRARY_DIRS})
+pkg_check_modules(rputils librp-utils>=0.0.1)
+pkg_check_modules(libxml libxml-2.0)
+pkg_check_modules(libjsonc json-c)
+if(WITH_OPENSSL)
+	pkg_check_modules(xmlsec xmlsec1-openssl)
 else()
-	add_definitions(-DNO_LIBSYSTEMD)
+	pkg_check_modules(xmlsec xmlsec1-gnutls)
 endif()
 
-pkg_check_modules(AFB afb-binding>=4)
-if(AFB_FOUND)
-	add_compile_options(${AFB_CFLAGS})
-	include_directories(${AFB_INCLUDE_DIRS})
-	link_libraries(${AFB_LIBRARIES})
-	link_directories(${AFB_LIBRARY_DIRS})
-endif()
+add_compile_options(${rputils_CFLAGS})
+include_directories(${rputils_INCLUDE_DIRS})
+link_libraries(${rputils_LIBRARIES})
+link_directories(${rputils_LIBRARY_DIRS})
+
+# definitions
+
+add_definitions(
+	-DFWK_CONFIG_DIR="${afm_confdir}"
+	-DFWK_PREFIX="${afm_prefix}"
+	-DFWK_ICON_DIR="${afm_icondir}"
+	-DFWK_APP_DIR="${afm_appdir}"
+	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_certs_dir}"
+	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
+	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
+	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
+	-DAFM_VERSION="${PROJECT_VERSION}"
+	-DWITH_WIDGETS=$<BOOL:${WITH_WIDGETS}>
+	-DALLOW_NO_SIGNATURE=$<BOOL:${ALLOW_NO_SIGNATURE}>
+	-DDISTINCT_VERSIONS=$<BOOL:${DISTINCT_VERSIONS}>
+	-DWITH_OPENSSL=$<BOOL:${WITH_OPENSSL}>
+	-DUSE_LIBZIP=$<BOOL:${USE_LIBZIP}>
+	-DNO_LIBSYSTEMD=$<BOOL:$<NOT:$<BOOL:${libsystemd_FOUND}>>>
+)
 
 ###########################################################################
 

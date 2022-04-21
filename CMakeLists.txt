@@ -70,49 +70,9 @@ endif(USE_SIMULATION)
 if(WITH_RPM_REDPESK_PLUGIN AND NOT ALLOW_WIDGETS)
     set(WITH_TOOLS OFF)
     set(WITH_WIDGETS OFF)
-    add_definitions(-DWITH_WIDGETS=0)
 else(WITH_RPM_REDPESK_PLUGIN AND NOT ALLOW_WIDGETS)
     set(WITH_WIDGETS ON)
-    add_definitions(-DWITH_WIDGETS=1)
 endif(WITH_RPM_REDPESK_PLUGIN AND NOT ALLOW_WIDGETS)
-
-add_definitions(
-	-DFWK_CONFIG_DIR="${afm_confdir}"
-	-DFWK_PREFIX="${afm_prefix}"
-	-DFWK_ICON_DIR="${afm_icondir}"
-	-DFWK_APP_DIR="${afm_appdir}"
-	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_certs_dir}"
-	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
-	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
-	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
-	-DAFM_VERSION="${PROJECT_VERSION}"
-)
-if(ALLOW_NO_SIGNATURE)
-	add_definitions(-DALLOW_NO_SIGNATURE=1)
-endif(ALLOW_NO_SIGNATURE)
-if(DISTINCT_VERSIONS)
-	add_definitions(-DDISTINCT_VERSIONS=1)
-else(DISTINCT_VERSIONS)
-	add_definitions(-DDISTINCT_VERSIONS=0)
-endif(DISTINCT_VERSIONS)
-if(INSTALL_SAMPLE_KEYS)
-	add_definitions(-DWITH_SAMPLE_KEYS=1)
-endif(INSTALL_SAMPLE_KEYS)
-if(WITH_OPENSSL)
-	add_definitions(-DWITH_OPENSSL=1)
-endif(WITH_OPENSSL)
-
-pkg_check_modules(gnutls gnutls)
-pkg_check_modules(libzip libzip>=0.11)
-if(libzip_FOUND AND USE_LIBZIP)
-	add_compile_options(${libzip_CFLAGS})
-	include_directories(${libzip_INCLUDE_DIRS})
-	link_libraries(${libzip_LIBRARIES})
-	link_directories(${libzip_LIBRARY_DIRS})
-	add_definitions(-DUSE_LIBZIP=1)
-else()
-	add_definitions(-DUSE_LIBZIP=0)
-endif()
 
 add_subdirectory(src)
 add_subdirectory(conf)

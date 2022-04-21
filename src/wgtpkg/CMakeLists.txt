@@ -22,7 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-set(wgtpkg_sources
+add_library(wgtpkg STATIC
 	wgtpkg-certs.c
 	wgtpkg-digsig.c
 	wgtpkg-files.c
@@ -35,11 +35,18 @@ set(wgtpkg_sources
 	wgtpkg-xmlsec.c
 	)
 
-if(WITH_WIDGETS)
-	set(wgtpkg_sources ${wgtpkg_sources} wgtpkg-zip.c)
-endif(WITH_WIDGETS)
+target_compile_options(wgtpkg PRIVATE ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
+target_include_directories(wgtpkg PRIVATE ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS} ${xmlsec_INCLUDE_DIRS})
+target_link_libraries(wgtpkg PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} ${xmlsec_LIBRARIES})
+target_link_directories(wgtpkg PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS} ${xmlsec_LIBRARY_DIRS})
 
-add_library(wgtpkg STATIC ${wgtpkg_sources})
+if(USE_LIBZIP)
+	target_sources(wgtpkg PRIVATE wgtpkg-zip.c)
+	target_compile_options(wgtpkg PRIVATE ${libzip_CFLAGS})
+	target_include_directories(wgtpkg PRIVATE ${libzip_INCLUDE_DIRS})
+	target_link_libraries(wgtpkg PUBLIC ${libzip_LIBRARIES})
+	target_link_directories(wgtpkg PUBLIC ${libzip_LIBRARY_DIRS})
+endif(USE_LIBZIP)
 
 # library for handling the content of the widgets
 add_library(wgt STATIC
@@ -49,3 +56,8 @@ add_library(wgt STATIC
 	wgt-json.c
 	wgt.c
 	)
+
+target_compile_options(wgt PRIVATE ${libxml_CFLAGS} ${libjsonc_CFLAGS})
+target_include_directories(wgt PRIVATE ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS})
+target_link_libraries(wgt PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES})
+target_link_directories(wgt PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS})

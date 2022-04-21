@@ -29,41 +29,18 @@ install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 add_executable(afmpkg-status main-afmpkg-status.c)
 install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(
-	afm-domain-spec
-		main-domain-spec.c)
-target_link_libraries(
-	afm-domain-spec
-		utils)
+add_executable(afm-domain-spec main-domain-spec.c)
+target_link_libraries(afm-domain-spec utils)
 
 if(${gnutls_FOUND})
-	add_executable(
-		afm-check-signature
-			main-check-signature.c)
-	target_link_libraries(
-		afm-check-signature
-			${gnutls_LINK_LIBRARIES}
-			cert
-			utils)
+	add_executable(afm-check-signature main-check-signature.c)
+	target_link_libraries(afm-check-signature ${gnutls_LINK_LIBRARIES} cert utils)
 
-	add_executable(
-		afm-signed-digest
-			main-signed-digest.c)
-	target_link_libraries(
-		afm-signed-digest
-			${gnutls_LINK_LIBRARIES}
-			cert
-			utils)
+	add_executable(afm-signed-digest main-signed-digest.c)
+	target_link_libraries(afm-signed-digest ${gnutls_LINK_LIBRARIES} cert utils)
 
-	add_executable(
-		afm-digest
-			main-digest.c)
-	target_link_libraries(
-		afm-digest
-			${gnutls_LINK_LIBRARIES}
-			cert
-			utils)
-
+	add_executable(afm-digest main-digest.c)
+	target_link_libraries(afm-digest ${gnutls_LINK_LIBRARIES} cert utils)
 endif()
 
 if(WITH_TOOLS)

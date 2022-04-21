@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifndef NO_LIBSYSTEMD
+#if !NO_LIBSYSTEMD
 # include <systemd/sd-bus.h>
 # include <systemd/sd-bus-protocol.h>
 #else

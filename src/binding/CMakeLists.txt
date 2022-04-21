@@ -22,6 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
+pkg_check_modules(AFB afb-binding>=4)
 if(libsystemd_FOUND AND AFB_FOUND)
 	MESSAGE(STATUS "Creating afm-binding")
 
@@ -32,12 +33,28 @@ if(libsystemd_FOUND AND AFB_FOUND)
 		afm-udb.c
 		afm-urun.c
 	)
+	target_compile_options(
+		afm-binding
+		PRIVATE
+		${AFB_CFLAGS}
+	)
+	target_include_directories(
+		afm-binding
+		PRIVATE
+		${AFB_INCLUDE_DIRS}
+	)
 	target_link_libraries(
 		afm-binding
 		wgtpkg
 		wgt
 		secwrp
 		utils
+		${AFB_LIBRARIES}
+	)
+	target_link_directories(
+		afm-binding
+		PRIVATE
+		${AFB_LIBRARY_DIRS}
 	)
 	set_target_properties(
 		afm-binding
