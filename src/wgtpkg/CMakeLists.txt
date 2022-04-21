@@ -22,15 +22,30 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(${gnutls_FOUND})
-	add_library(
-		cert
-			STATIC
-			check-signature.c
-			common-cert.c
-			digest.c
-			make-signature.c
-			signature-name.c
-			signed-digest.c
-		)
-endif()
+set(wgtpkg_sources
+	wgtpkg-certs.c
+	wgtpkg-digsig.c
+	wgtpkg-files.c
+	wgtpkg-install.c
+	wgtpkg-mustach.c
+	wgtpkg-permissions.c
+	wgtpkg-uninstall.c
+	wgtpkg-unit.c
+	wgtpkg-workdir.c
+	wgtpkg-xmlsec.c
+	)
+
+if(WITH_WIDGETS)
+	set(wgtpkg_sources ${wgtpkg_sources} wgtpkg-zip.c)
+endif(WITH_WIDGETS)
+
+add_library(wgtpkg STATIC ${wgtpkg_sources})
+
+# library for handling the content of the widgets
+add_library(wgt STATIC
+	wgt-config.c
+	wgt-info.c
+	wgt-strings.c
+	wgt-json.c
+	wgt.c
+	)

@@ -22,15 +22,19 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(${gnutls_FOUND})
-	add_library(
-		cert
-			STATIC
-			check-signature.c
-			common-cert.c
-			digest.c
-			make-signature.c
-			signature-name.c
-			signed-digest.c
-		)
-endif()
+add_library(utils STATIC
+	detect-packtype.c
+	domain-spec.c
+	manage-afid.c
+	manifest.c
+	mime-type.c
+	mustach.c
+	normalize-unit-file.c
+	path-entry.c
+	path-type.c
+	permset.c
+	sighup-framework.c
+	utils-dir.c
+	utils-json.c
+	utils-systemd.c
+)

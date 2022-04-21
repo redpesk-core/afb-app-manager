@@ -22,15 +22,35 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(${gnutls_FOUND})
+if(libsystemd_FOUND AND AFB_FOUND)
+	MESSAGE(STATUS "Creating afm-binding")
+
 	add_library(
-		cert
-			STATIC
-			check-signature.c
-			common-cert.c
-			digest.c
-			make-signature.c
-			signature-name.c
-			signed-digest.c
-		)
+		afm-binding
+		MODULE
+		afm-binding.c
+		afm-udb.c
+		afm-urun.c
+	)
+	target_link_libraries(
+		afm-binding
+		wgtpkg
+		wgt
+		secwrp
+		utils
+	)
+	set_target_properties(
+		afm-binding
+		PROPERTIES
+		PREFIX ""
+		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-binding.export-map"
+	)
+	install(
+		TARGETS afm-binding
+		LIBRARY
+		DESTINATION ${afm_libexecdir}
+	)
+else()
+	MESSAGE(STATUS "Not creating afm-binding")
 endif()
+

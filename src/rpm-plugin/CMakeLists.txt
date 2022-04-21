@@ -22,15 +22,19 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(${gnutls_FOUND})
-	add_library(
-		cert
-			STATIC
-			check-signature.c
-			common-cert.c
-			digest.c
-			make-signature.c
-			signature-name.c
-			signed-digest.c
-		)
+if(WITH_RPM_REDPESK_PLUGIN)
+
+	MESSAGE(STATUS "Creating rpm plugin for redpesk")
+
+	pkg_check_modules(RPM REQUIRED IMPORTED_TARGET rpm)
+
+	add_library(redpesk SHARED redpesk.c)
+	set_target_properties(redpesk PROPERTIES PREFIX "")
+
+	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS})
+	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} utils)
+	install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
+else()
+	MESSAGE(STATUS "Not creating rpm plugin for redpesk")
 endif()
+

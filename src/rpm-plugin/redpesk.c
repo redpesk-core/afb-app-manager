@@ -38,8 +38,8 @@
 #include <sys/un.h>
 
 
-#include "../afmpkg-common.h"
-#include "../detect-packtype.h"
+#include "afmpkg-common.h"
+#include "detect-packtype.h"
 
 /***************************************************
 * RPM plugins MUST have a NAME following C naming

@@ -22,15 +22,19 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(${gnutls_FOUND})
-	add_library(
-		cert
-			STATIC
-			check-signature.c
-			common-cert.c
-			digest.c
-			make-signature.c
-			signature-name.c
-			signed-digest.c
-		)
-endif()
+
+if(SIMULATE_SECMGR)
+	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=1)
+else(SIMULATE_SECMGR)
+	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager)
+	add_compile_options(${SECMGR_CFLAGS})
+	include_directories(${SECMGR_INCLUDE_DIRS})
+	link_libraries(${SECMGR_LIBRARIES})
+	link_directories(${SECMGR_LIBRARY_DIRS})
+	add_definitions(-DSIMULATE_SEC_LSM_MANAGER=0)
+endif(SIMULATE_SECMGR)
+
+add_library(secwrp STATIC
+	secmgr-wrap.c
+	)
+

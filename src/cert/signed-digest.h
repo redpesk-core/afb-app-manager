@@ -28,7 +28,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs7.h>
 
-#include "../path-entry.h"
+#include "path-entry.h"
 #include "domain-spec.h"
 
 /**

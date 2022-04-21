@@ -22,18 +22,17 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
-project(afb-app-manager C)
+project(afb-app-manager
+        VERSION 11.0.1
+        DESCRIPTION "Secured Application framework, Daemons, Tools, Configuratioon"
+        HOMEPAGE_URL "https://github.com/redpesk-core/afb-app-manager"
+        LANGUAGES C)
 
+include(FindPkgConfig)
 include(GNUInstallDirs)
 include(CTest)
-
-set(PROJECT_NAME "AFM Main")
-set(PROJECT_PRETTY_NAME "Application Framework Main")
-set(PROJECT_DESCRIPTION "Secured Application framework")
-set(PROJECT_VERSION 11.0.1)
-set(PROJECT_URL "https://github.com/redpesk-core/afb-app-manager")
 
 option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
 option(USE_LIBZIP         "Should try to use libzip?" ON)
@@ -44,7 +43,7 @@ option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
 option(ALLOW_WIDGETS      "Allow widgets even if WITH_RPM_REDPESK_PLUGIN is ON" OFF)
-option(WITH_OPENSSL       "Use openssl instead of gnutls" ON)
+option(WITH_OPENSSL       "Use openssl instead of gnutls" OFF)
 
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 
@@ -103,6 +102,17 @@ if(WITH_OPENSSL)
 	add_definitions(-DWITH_OPENSSL=1)
 endif(WITH_OPENSSL)
 
+pkg_check_modules(gnutls gnutls)
+pkg_check_modules(libzip libzip>=0.11)
+if(libzip_FOUND AND USE_LIBZIP)
+	add_compile_options(${libzip_CFLAGS})
+	include_directories(${libzip_INCLUDE_DIRS})
+	link_libraries(${libzip_LIBRARIES})
+	link_directories(${libzip_LIBRARY_DIRS})
+	add_definitions(-DUSE_LIBZIP=1)
+else()
+	add_definitions(-DUSE_LIBZIP=0)
+endif()
 
 add_subdirectory(src)
 add_subdirectory(conf)
@@ -118,5 +128,3 @@ INSTALL(FILES
     DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
-
-

@@ -30,7 +30,7 @@
 #include "secmgr-wrap.h"
 
 #if SIMULATE_SEC_LSM_MANAGER
-#include "simulation/sec-lsm-manager.h"
+#include "simulate-sec-lsm-manager.h"
 #else
 #include <sec-lsm-manager.h>
 #endif

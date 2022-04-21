@@ -34,7 +34,7 @@
 #include <gnutls/crypto.h>
 #include <gnutls/abstract.h>
 
-#include "../path-entry.h"
+#include "path-entry.h"
 #include "check-signature.h"
 #include "signature-name.h"
 #include "digest.h"

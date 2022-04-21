@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "../path-entry.h"
+#include "path-entry.h"
 
 /**
  * @brief compute the hash digest of files of the root
