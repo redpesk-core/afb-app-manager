@@ -38,7 +38,7 @@
 */
 #include "afmpkg-common.h"
 
-static const char framework_address[] = FRAMEWORK_SOCKET_ADDRESS;
+static const char framework_address[] = AFMPKG_SOCKET_ADDRESS;
 
 /** connect to the framework */
 static int connect_framework()

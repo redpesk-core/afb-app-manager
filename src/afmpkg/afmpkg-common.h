@@ -24,8 +24,7 @@
 
 #pragma once
 
-#define FRAMEWORK_SOCKET_ADDRESS "/tmp/toto"
-#ifndef FRAMEWORK_SOCKET_ADDRESS
-#define FRAMEWORK_SOCKET_ADDRESS "@redpesk-application-manager"
+#ifndef AFMPKG_SOCKET_ADDRESS
+#define AFMPKG_SOCKET_ADDRESS "@afmpkg-daemon.socket"
 #endif
 

@@ -33,12 +33,14 @@
 #include <pthread.h>
 #include <time.h>
 #include <getopt.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
 #include <rp-utils/rp-verbose.h>
+#include <rp-utils/rp-socket.h>
 
 #if !defined(NO_SEND_SIGUP_ALL)
 #include "sighup-framework.h"
@@ -53,9 +55,14 @@
 #define RETENTION_SECONDS 3600 /* one hour */
 
 /**
+ * @brief iteration time in second for shuting down
+ */
+#define SHUTDOWN_CHECK_SECONDS 300 /* 5 minutes */
+
+/**
  * @brief predefined address of the daemon's socket
  */
-static const char framework_address[] = FRAMEWORK_SOCKET_ADDRESS;
+static const char *socket_uri = AFMPKG_SOCKET_ADDRESS;
 
 /**
  * @brief kind of transaction
@@ -137,7 +144,39 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * @brief head of the list of pending transactions
  */
-static struct transaction *all_transactions;
+static struct transaction *all_transactions = NULL;
+
+/**
+ * @brief count of living threads
+ */
+static int living_threads = 0;
+
+/**
+ * @brief is running for ever?
+ */
+static char run_forever = 0;
+
+/**
+ * @brief remove expired transactions
+ *
+ * The mutex must be taken.
+ */
+static void cleanup_transactions()
+{
+	struct transaction *trans, **previous;
+	time_t now = time(NULL);
+
+	/* search the transaction */
+	for (previous = &all_transactions ; (trans = *previous) != NULL ;) {
+		if (trans->expire > now)
+			previous = &trans->next;
+		else {
+			/* drop expired transactions */
+			*previous = trans->next;
+			free(trans);
+		}
+	}
+}
 
 /**
  * @brief Get the transaction object of the given identifier,
@@ -154,32 +193,25 @@ static struct transaction *get_transaction(const char *transid, unsigned count)
 	struct transaction *trans, *result, **previous;
 	time_t now = time(NULL);
 
+	/* cleaup transactions */
+	cleanup_transactions();
+
 	/* search the transaction */
-	result = NULL;
-	for (previous = &all_transactions ; (trans = *previous) != NULL ;) {
-		if (trans->expire <= now) {
-			/* drop expired transactions */
-			*previous = trans->next;
-			free(trans);
-		}
-		else {
-			if (strcmp(transid, trans->id) == 0)
-				result = trans;
-			previous = &trans->next;
-		}
-	}
+	result = all_transactions;
+	while (result != NULL && strcmp(transid, result->id) != 0)
+		result = result->next;
 
 	/* create the transaction */
 	if (result == NULL && count != 0) {
-		trans = malloc(sizeof *trans + 1 + strlen(transid));
-		if (trans != NULL) {
-			trans->next = NULL;
-			trans->expire = now + RETENTION_SECONDS;
-			trans->count = count;
-			trans->success = 0;
-			trans->fail = 0;
-			strcpy(trans->id, transid);
-			*previous = result = trans;
+		result = malloc(sizeof *trans + 1 + strlen(transid));
+		if (result != NULL) {
+			result->expire = time(NULL) + RETENTION_SECONDS;
+			result->count = count;
+			result->success = 0;
+			result->fail = 0;
+			strcpy(result->id, transid);
+			result->next = all_transactions;
+			all_transactions = result;
 		}
 	}
 
@@ -367,7 +399,8 @@ static int receive_line(struct request *req, const char *line, size_t length)
 	int rc;
 
 #define IF(pattern) \
-		if (memcmp(line, #pattern, sizeof(#pattern)-1) == 0 \
+		if (length >= sizeof(#pattern) \
+		 && memcmp(line, #pattern, sizeof(#pattern)-1) == 0 \
 		 && line[sizeof(#pattern)-1] == ' ') { \
 			line += sizeof(#pattern); \
 			length -= sizeof(#pattern);
@@ -634,9 +667,6 @@ static int serve(int sock)
 	/* reply to the request */
 	reply(sock, rc, request.reply);
 
-	/* close the connection */
-	close(sock);
-
 	/* reset the memory */
 	deinit_request(&request);
 	return rc;
@@ -651,8 +681,58 @@ static int serve(int sock)
  */
 static void *serve_thread(void *arg)
 {
-	serve((int)(intptr_t)arg);
+	int sock = (int)(intptr_t)arg;
+
+	/* serve the connection */
+	serve(sock);
+
+	/* close the connection */
+	close(sock);
+
+	/* update liveness */
+	pthread_mutex_lock(&mutex);
+	living_threads = living_threads - 1;
+	pthread_mutex_unlock(&mutex);
 	return NULL;
+}
+
+/**
+ * @brief basic run loop
+ */
+void launch_serve_thread(int socli)
+{
+	pthread_attr_t tat;
+	pthread_t tid;
+	int rc;
+
+	/* for creating threads in detached state */
+	pthread_attr_init(&tat);
+	pthread_attr_setdetachstate(&tat, PTHREAD_CREATE_DETACHED);
+
+	/* update liveness */
+	pthread_mutex_lock(&mutex);
+	living_threads = living_threads + 1;
+	rc = pthread_create(&tid, &tat, serve_thread, (void*)(intptr_t)socli);
+	if (rc != 0) {
+		/* can't run thread */
+		close(socli);
+		living_threads = living_threads - 1;
+	}
+	pthread_mutex_unlock(&mutex);
+}
+
+/**
+ * @brief check if stopping is possible
+ */
+int can_stop()
+{
+	int result;
+
+	pthread_mutex_lock(&mutex);
+	cleanup_transactions();
+	result = living_threads == 0 && all_transactions == NULL;
+	pthread_mutex_unlock(&mutex);
+	return result;
 }
 
 /**
@@ -662,36 +742,21 @@ static void *serve_thread(void *arg)
  */
 static int listen_clients()
 {
-	int rc, sock;
-	struct sockaddr_un adr;
+	return rp_socket_open_scheme(socket_uri, 1, "unix:");
+}
 
-	/* create the socket */
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0)
-		rc = -errno;
-	else {
-		/* connect the socket */
-		adr.sun_family = AF_UNIX;
-		memcpy(adr.sun_path, framework_address, sizeof framework_address);
-		if (adr.sun_path[0] == '@')
-			adr.sun_path[0] = 0;
-		else if (adr.sun_path[0] != 0)
-			unlink(adr.sun_path);
-		rc = bind(sock, (struct sockaddr*)&adr, sizeof adr);
-		if (rc < 0)
-			rc = -errno;
-		else {
-			/* set it up */
-			fcntl(sock, F_SETFD, FD_CLOEXEC);
-			rc = listen(sock, 10);
-			if (rc < 0)
-				rc = -errno;
-			else
-				return sock;
-		}
-		close(sock);
-	}
-	return rc;
+/**
+ * @brief prepare run loop
+ */
+void prepare_run()
+{
+	struct sigaction osa;
+
+	/* for not dying on client disconnection */
+	memset(&osa, 0, sizeof osa);
+	osa.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &osa, NULL);
+	sigaction(SIGHUP, &osa, NULL);
 }
 
 /**
@@ -699,43 +764,29 @@ static int listen_clients()
  */
 int run()
 {
-	pthread_attr_t tat;
-	pthread_t tid;
-	struct sigaction osa;
-	int rc, sock, socli;
-
-	/* for creating threads in detached state */
-	pthread_attr_init(&tat);
-	pthread_attr_setdetachstate(&tat, PTHREAD_CREATE_DETACHED);
-
-	/* for not dying on client disconnection */
-	memset(&osa, 0, sizeof osa);
-	osa.sa_handler = SIG_IGN;
-	sigaction(SIGPIPE, &osa, NULL);
+	struct pollfd pfd;
+	int rc;
 
 	/* create the listening socket */
-	sock = listen_clients();
-	if (sock < 0)
+	pfd.fd = listen_clients();
+	if (pfd.fd < 0)
 		return 1;
 
 	/* loop on wait a client and serve it with a dedicated thread */
+	pfd.events = POLLIN;
 	for(;;) {
-		rc = accept(sock, NULL, NULL);
-		if (rc < 0) {
-			if (errno != EINTR)
-				return 2;
+		rc = poll(&pfd, 1, SHUTDOWN_CHECK_SECONDS * 1000);
+		if (rc == 1) {
+			rc = accept(pfd.fd, NULL, NULL);
+			if (rc >= 0)
+				launch_serve_thread(rc);
 		}
-		else {
-			socli = rc;
-			rc = pthread_create(&tid, &tat, serve_thread, (void*)(intptr_t)socli);
-			if (rc != 0)
-				close(socli);
-		}
+		if (rc < 0 && errno != EINTR)
+			return 2;
+		if (can_stop() && !run_forever)
+			return 0;
 	}
 }
-
-
-
 
 static const char appname[] = "afmpkg-daemon";
 
@@ -756,19 +807,24 @@ static void version()
 static void usage()
 {
 	printf(
-		"usage: %s [-q] [-v] [-V]\n"
-		"\n"
-		"   -q            quiet\n"
-		"   -v            verbose\n"
-		"   -V            version\n"
+		"usage: %s [options...]\n"
+		"options:\n"
+		"   -f, --forever     don't stop when unused\n"
+		"   -h, --help        help\n"
+		"   -q, --quiet       quiet\n"
+		"   -s, --socket URI  socket URI\n"
+		"   -v, --verbose     verbose\n"
+		"   -V, --version     version\n"
 		"\n",
 		appname
 	);
 }
 
 static struct option options[] = {
+	{ "forever",     no_argument,       NULL, 'f' },
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "quiet",       no_argument,       NULL, 'q' },
+	{ "socket",      required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
@@ -782,11 +838,17 @@ int main(int ac, char **av)
 		if (i < 0)
 			break;
 		switch (i) {
+		case 'f':
+			run_forever = 1;
+			break;
 		case 'h':
 			usage();
 			return 0;
 		case 'q':
 			rp_verbose_dec();
+			break;
+		case 's':
+			socket_uri = optarg;
 			break;
 		case 'v':
 			rp_verbose_inc();
@@ -799,6 +861,7 @@ int main(int ac, char **av)
 			return 1;
 		}
 	}
+	prepare_run();
 	return run();
 }
 

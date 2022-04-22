@@ -62,6 +62,7 @@ set(afm_platform_rundir     "/run/platform" CACHE STRING "Path to location of pl
 set(afm_users_rundir        "/run/user" CACHE STRING "Path to location of users runtime sockets")
 set(afm_scope_platform_dir  "/var/scope-platform" CACHE STRING "Path to home of scope-platform apps")
 set(rpm_plugin_dir          "${CMAKE_INSTALL_FULL_LIBDIR}/rpm-plugins" CACHE STRING "Path to rpm plugins")
+set(AFMPKG_SOCKET_ADDRESS   "@afmpkg-daemon.socket" CACHE STRING "specification of afmpkg installer socket")
 
 if(USE_SIMULATION)
     set(SIMULATE_SECMGR ON)

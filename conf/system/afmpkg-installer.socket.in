@@ -1,0 +1,13 @@
+[Unit]
+Description=Installer for application framework socket
+
+[Socket]
+FileDescriptorName=sock
+ListenStream=@AFMPKG_SOCKET_ADDRESS@
+SocketMode=0660
+SmackLabelIPIn=@
+SmackLabelIPOut=@
+Service=afmpkg-installer.service
+
+[Install]
+WantedBy=sockets.target

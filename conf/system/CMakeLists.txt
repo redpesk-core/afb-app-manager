@@ -37,6 +37,8 @@ configure_file(afm-create-user.sh.in        afm-create-user.sh         @ONLY)
 configure_file(afm-user-session@.service.in afm-user-session@.service  @ONLY)
 configure_file(afm-user-setup@.service.in   afm-user-setup@.service    @ONLY)
 configure_file(afm-user-setup.sh.in         afm-user-setup.sh          @ONLY)
+configure_file(afmpkg-installer.service.in  afmpkg-installer.service   @ONLY)
+configure_file(afmpkg-installer.socket.in   afmpkg-installer.socket    @ONLY)
 
 if(NOT USE_SDK)
 	set(SYSCONFDIR_DBUS_SYSTEM ${CMAKE_INSTALL_SYSCONFDIR}/dbus-1/system.d CACHE STRING "Path to dbus system configuration files")
@@ -54,6 +56,8 @@ if(NOT USE_SDK)
 			${CMAKE_CURRENT_BINARY_DIR}/afm-user-session@.service
 			${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session@.target
 			${CMAKE_CURRENT_BINARY_DIR}/afm-user-setup@.service
+			${CMAKE_CURRENT_BINARY_DIR}/afmpkg-installer.service
+			${CMAKE_CURRENT_BINARY_DIR}/afmpkg-installer.socket
 		DESTINATION
 			${UNITDIR_SYSTEM}
 	)
