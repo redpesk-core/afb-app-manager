@@ -22,7 +22,8 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_compile_options(-fPIC)
+add_compile_options(-fPIC -ffunction-sections -fdata-sections)
+add_link_options(-Wl,--as-needed -Wl,--gc-sections)
 
 # check availability of libzip
 if(USE_LIBZIP)

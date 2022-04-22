@@ -35,8 +35,8 @@ add_library(wgtpkg STATIC
 	wgtpkg-xmlsec.c
 	)
 
-target_compile_options(wgtpkg PRIVATE ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
-target_include_directories(wgtpkg PRIVATE ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS} ${xmlsec_INCLUDE_DIRS})
+target_compile_options(wgtpkg PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
+target_include_directories(wgtpkg PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS} ${xmlsec_INCLUDE_DIRS})
 target_link_libraries(wgtpkg PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} ${xmlsec_LIBRARIES})
 target_link_directories(wgtpkg PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS} ${xmlsec_LIBRARY_DIRS})
 
@@ -57,7 +57,7 @@ add_library(wgt STATIC
 	wgt.c
 	)
 
-target_compile_options(wgt PRIVATE ${libxml_CFLAGS} ${libjsonc_CFLAGS})
-target_include_directories(wgt PRIVATE ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS})
+target_compile_options(wgt PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS})
+target_include_directories(wgt PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS})
 target_link_libraries(wgt PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES})
 target_link_directories(wgt PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS})
