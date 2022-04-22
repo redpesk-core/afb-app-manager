@@ -26,17 +26,17 @@ X-AFM-author-email={{author.email}}
 X-AFM-width={{width}}
 X-AFM-height={{height}}
 {{#icon}}
-X-AFM-icon={{:#metadata.install-dir}}/{{:src}}
+X-AFM-icon=WIDGET_DIR/{{:src}}
 {{/icon}}
-{{##metadata.redpak}}
-X-AFM--redpak-id={{:#metadata.redpak-id}}
-X-AFM--redpak-root={{:#metadata.root-dir}}
-{{/#metadata.redpak}}
+IF_REDPAK
+X-AFM--redpak-id=REDPAK_ID
+X-AFM--redpak-root=REDPAK_ROOT_DIR
+ENDIF
 X-AFM--ID=AFID
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
-X-AFM--wgtdir={{:#metadata.install-dir}}
+X-AFM--wgtdir=WIDGET_DIR
 X-AFM--workdir=APP_WORK_DIR
 X-AFM--visibility=ON_PERM(`:public:hidden', `hidden', `visible')
 %nl
@@ -129,11 +129,11 @@ ON_NOT_PERM(:public:syscall:clock, SystemCallFilter=~@clock)
 %nl
 
 Environment=AFM_ID=TARGET
-Environment=AFM_APP_INSTALL_DIR={{:#metadata.install-dir}}
+Environment=AFM_APP_INSTALL_DIR=WIDGET_DIR
 Environment=AFM_WORKDIR=APP_WORK_DIR
 Environment=AFM_WSAPI_DIR=API_PATH_WS
-Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:{{:#metadata.install-dir}}/bin
-Environment=LD_LIBRARY_PATH={{:#metadata.install-dir}}/lib
+Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:WIDGET_DIR/bin
+Environment=LD_LIBRARY_PATH=WIDGET_DIR/lib
 Environment=XDG_DATA_HOME=APP_WORK_DIR
 Environment=XDG_CONFIG_HOME=APP_WORK_DIR
 Environment=XDG_CACHE_HOME=APP_WORK_DIR
@@ -161,7 +161,7 @@ include(binder.inc)
 ;----                 application/x-executable                              ----
 ;-------------------------------------------------------------------------------
 {{#content.type=application/x-executable}}
-ExecStart=REDWRAP {{:#metadata.install-dir}}/{{content.src}}
+ExecStart=REDWRAP WIDGET_DIR/{{content.src}}
 {{/content.type=application/x-executable}}
 
 ;-------------------------------------------------------------------------------

@@ -43,6 +43,6 @@ After=afm-system-setup.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -sf {{:#metadata.install-dir}}/{{value}} PLATFORM_API_PATH_LINK/{{name}}
+ExecStart=/bin/ln -sf WIDGET_DIR/{{value}} PLATFORM_API_PATH_LINK/{{name}}
 
 %end systemd-unit

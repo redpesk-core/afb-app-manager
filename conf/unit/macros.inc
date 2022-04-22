@@ -36,6 +36,11 @@ define( `IF_NOT_CONTENT', `MUSTACH_IF_NOT(content.type=$1)')
 define( `ON_VALUE', `MUSTACH_ON(value=$1,$2,$3)')
 define( `IF_VALUE', `MUSTACH_IF(value=$1)')
 define( `IF_NOT_VALUE', `MUSTACH_IF_NOT(value=$1)')
+
+define( `ON_REDPAK', `MUSTACH_ON(#metadata.redpak,$1,$2)')
+define( `ON_NOT_REDPAK', `MUSTACH_ON(#metadata.redpak,$2,$1)')
+define( `IF_REDPAK', `MUSTACH_IF(#metadata.redpak)')
+define( `IF_NOT_REDPAK', `MUSTACH_IF_NOT(#metadata.redpak)')
 --------------------------------------------------------------------------------
 -- AFM DEFINITION
 --------------------------------------------------------------------------------
@@ -80,9 +85,15 @@ define( `USER_API_PATH_LINK', `USER_API_PATH/link')
 
 define( `LOCALUSERAPP', `ON_PERM(`:partner:scope-platform', `localuser---AFID', `localuser--AFID')')
 
-define( `REDWRAP', `{{##metadata.redpak}}/usr/bin/redwrap --redpath {{:#metadata.root-dir}} {{/#metadata.redpak}}')
-define( `BINDER', `{{^#metadata.redpak}}/usr{{/#metadata.redpak}}/bin/afb-binder')
+define( `REDPAK_ID', `{{:#metadata.redpak-id}}')
+define( `REDPAK_ROOT_DIR', `{{:#metadata.root-dir}}')
 
+define( `REDWRAP', `ON_REDPAK(`/usr/bin/redwrap --redpath REDPAK_ROOT_DIR ')')
+define( `BINDER', `ON_NOT_REDPAK(`/usr')/bin/afb-binder')
+
+define( `HTTP_PORT', `{{:#metatarget.http-port}}')
+define( `ICONS_DIR', `{{:#metadata.icons-dir}}')
+define( `WIDGET_DIR', `{{:#metadata.install-dir}}')
 --------------------------------------------------------------------------------
 -- AGL_DEVEL SPECIFIC PARTS
 --------------------------------------------------------------------------------
