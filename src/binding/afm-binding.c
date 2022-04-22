@@ -41,8 +41,11 @@
 #include "afm-udb.h"
 #include "afm-urun.h"
 #include "wgt-info.h"
-#include "wgtpkg-install.h"
-#include "wgtpkg-uninstall.h"
+
+#if WITH_WIDGETS
+# include "wgtpkg-install.h"
+# include "wgtpkg-uninstall.h"
+#endif
 
 /*
  * constant strings
@@ -141,7 +144,6 @@ static const char _added_[]     = "added";
 static const char _install_[]   = "install";
 static const char _uninstall_[] = "uninstall";
 
-
 static const struct afb_auth
 	auth_perm_widget_install = {
 		.type = afb_auth_Permission,
@@ -166,6 +168,15 @@ static const struct afb_auth
  * default root
  */
 static const char rootdir[] = FWK_APP_DIR;
+#endif
+
+/* add legacy widget's verbs if needed */
+#if !WITH_WIDGETS && !defined(WITH_LEGACY_WIDGET_VERBS)
+#  define WITH_LEGACY_WIDGET_VERBS 1
+#endif
+#if WITH_LEGACY_WIDGET_VERBS
+static const char _install_[]   = "install";
+static const char _uninstall_[] = "uninstall";
 #endif
 
 /**
@@ -754,6 +765,13 @@ static void uninstall(afb_req_t req)
 }
 #endif
 
+#if WITH_LEGACY_WIDGET_VERBS
+static void __unimplemented_legacy__(afb_req_t req)
+	{ afb_req_fail(req, "unimplemented-legacy", NULL); }
+static void install(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
+static void uninstall(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
+#endif
+
 static void onsighup(int signal)
 {
 	afm_udb_update(afudb);
@@ -793,6 +811,10 @@ static const afb_verb_t verbs[] =
 #if WITH_WIDGETS
 	{.verb=_install_  , .callback=install,   .auth=&auth_install,   .info="Install an application using a widget file", .session=AFB_SESSION_CHECK },
 	{.verb=_uninstall_, .callback=uninstall, .auth=&auth_uninstall, .info="Uninstall an application",                   .session=AFB_SESSION_CHECK },
+#endif
+#if WITH_LEGACY_WIDGET_VERBS
+	{.verb=_install_  , .callback=install,   .auth=NULL,            .info="Install a widget (legacy, unimplmented)",    .session=0 },
+	{.verb=_uninstall_, .callback=uninstall, .auth=NULL,            .info="Install an application (legacy, unimplmented)", .session=0 },
 #endif
 	{.verb=NULL }
 };
