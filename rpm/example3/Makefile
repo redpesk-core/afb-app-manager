@@ -48,8 +48,11 @@ PLUGIN: plugins/redpesk.so
 plugins:
 	mkdir plugins
 
-plugins/redpesk.so: redpesk.c plugins
-	$(CC) -o $@ $< ../../src/detect-packtype.c -lrpm -I../../external-includes -I../../src/rpm-plugin -shared -fPIC -g
+SRCS = ../../src
+REDPLUGSRC = $(SRCS)/rpm-plugin/redpesk.c $(SRCS)/utils/detect-packtype.c
+REDPLUGHDR = -I../../external-includes -I$(SRCS)/utils -I$(SRCS)/afmpkg
+plugins/redpesk.so: $(REDPLUGSRC) plugins
+	$(CC) -o $@ $(REDPLUGSRC) $(REDPLUGHDR) -lrpm  -shared -fPIC -g
 
 ########################################
 # Testing
