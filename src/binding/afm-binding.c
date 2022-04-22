@@ -172,7 +172,7 @@ static const char rootdir[] = FWK_APP_DIR;
 
 /* add legacy widget's verbs if needed */
 #if !WITH_WIDGETS && !defined(WITH_LEGACY_WIDGET_VERBS)
-#  define WITH_LEGACY_WIDGET_VERBS 1
+#  define WITH_LEGACY_WIDGET_VERBS 0
 #endif
 #if WITH_LEGACY_WIDGET_VERBS
 static const char _install_[]   = "install";

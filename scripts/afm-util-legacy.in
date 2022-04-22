@@ -30,6 +30,18 @@ case "$1" in
     send runnables "{\"all\":$all,\"uid\":$uid}"
     ;;
 
+  add|install)
+    f=$(realpath $2)
+    r=true
+    if [[ "$(basename $0)" = "afm-install" ]]; then r=false; fi
+    send install "{\"wgt\":\"$f\",\"force\":$force,\"reload\":$r}"
+    ;;
+
+  remove|uninstall)
+    i=$2
+    send uninstall "\"$i\""
+    ;;
+
   info|detail)
     i=$2
     send detail "{\"id\":$i,\"uid\":$uid}"
@@ -69,6 +81,12 @@ The commands are:
   runnables      list the runnable widgets installed
                  option -a or --all for all instances
 
+  add wgt
+  install wgt    install the wgt file
+
+  remove id
+  uninstall id   remove the installed widget of id
+
   info id
   detail id      print detail about the installed widget of id
 
@@ -95,3 +113,5 @@ EOC
     exit 1
     ;;
 esac
+
+

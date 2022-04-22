@@ -25,7 +25,11 @@
 cmake_minimum_required(VERSION 3.10)
 
 if(NOT USE_SDK)
-	configure_file(afm-util.in afm-util @ONLY)
+	if(WITH_WIDGETS)
+		configure_file(afm-util-legacy.in afm-util @ONLY)
+	else()
+		configure_file(afm-util.in afm-util @ONLY)
+	endif()
 	install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/afm-util DESTINATION ${CMAKE_INSTALL_BINDIR})
 	install(PROGRAMS afm-install DESTINATION ${CMAKE_INSTALL_BINDIR})
 	if(AGL_DEVEL)
