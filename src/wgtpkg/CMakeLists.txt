@@ -27,7 +27,6 @@ add_library(wgtpkg STATIC
 	wgtpkg-digsig.c
 	wgtpkg-files.c
 	wgtpkg-install.c
-	wgtpkg-mustach.c
 	wgtpkg-permissions.c
 	wgtpkg-uninstall.c
 	wgtpkg-unit.c

@@ -32,6 +32,7 @@
 #include <json-c/json.h>
 
 #include "mustach.h"
+#include "apply-mustach.h"
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-jsonc.h>
 

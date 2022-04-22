@@ -54,6 +54,7 @@
 #include "wgtpkg-uninstall.h"
 #include "secmgr-wrap.h"
 #include "utils-dir.h"
+#include "unit-generator.h"
 #include "wgtpkg-unit.h"
 #include "utils-systemd.h"
 #include "normalize-unit-file.h"

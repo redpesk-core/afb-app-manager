@@ -23,6 +23,7 @@
 ###########################################################################
 
 add_library(utils STATIC
+	apply-mustach.c
 	detect-packtype.c
 	domain-spec.c
 	manage-afid.c
@@ -34,6 +35,7 @@ add_library(utils STATIC
 	path-type.c
 	permset.c
 	sighup-framework.c
+	unit-generator.c
 	utils-dir.c
 	utils-json.c
 	utils-systemd.c

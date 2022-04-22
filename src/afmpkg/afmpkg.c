@@ -51,12 +51,12 @@
 #include "path-type.h"
 #include "permset.h"
 
+#include "unit-generator.h"
 #include "wgtpkg-unit.h"
 
 #include "secmgr-wrap.h"
 
 #include "afmpkg.h"
-
 
 #define HTTP_PORT_BASE				29000
 
@@ -533,7 +533,7 @@ static int setup_units(install_state_t *state)
 	else {
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
-		rc = unit_afmpkg_install(state->manifest, &uconf);
+		rc = unit_generator_install(state->manifest, &uconf);
 		json_object_put(uconf.metadata);
 	}
 	return rc;
@@ -547,7 +547,7 @@ static int setdown_units(
 	uconf.metadata = NULL;
 	uconf.new_afid = get_new_afid;
 	uconf.base_http_ports = HTTP_PORT_BASE;
-	return unit_afmpkg_uninstall(manifest, &uconf);
+	return unit_generator_uninstall(manifest, &uconf);
 }
 
 static

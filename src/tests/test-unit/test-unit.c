@@ -34,8 +34,7 @@
 #include <wgt.h>
 #include <utils-json.h>
 #include <wgt-json.h>
-#include <wgtpkg-mustach.h>
-#include <wgtpkg-unit.h>
+#include <unit-generator.h>
 
 
 #define error(...) fprintf(stderr,__VA_ARGS__),exit(1)

@@ -22,52 +22,9 @@
  $RP_END_LICENSE$
 */
 
-
 struct json_object;
 struct wgt_info;
+struct unitconf;
 
-
-enum unitscope {
-	unitscope_unknown = 0,
-	unitscope_system,
-	unitscope_user
-};
-
-enum unittype {
-	unittype_unknown = 0,
-	unittype_service,
-	unittype_socket
-};
-
-struct unitdesc {
-	enum unitscope scope;
-	enum unittype type;
-	const char *name;
-	size_t name_length;
-	const char *content;
-	size_t content_length;
-	const char *wanted_by;
-	size_t wanted_by_length;
-};
-
-struct unitconf {
-	json_object *metadata;
-	int (*new_afid)();
-	int base_http_ports;
-};
-
-struct generatedesc {
-	const struct unitconf *conf;
-	struct json_object *desc;
-	const struct unitdesc *units;
-	int nunits;
-};
-
-extern int unit_generator_open_template(const char *filename);
-extern void unit_generator_close_template();
-extern int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure);
 extern int unit_install(struct wgt_info *ifo, const struct unitconf *conf);
 extern int unit_uninstall(struct wgt_info *ifo, const struct unitconf *conf);
-extern int unit_afmpkg_install(struct json_object *manifest, const struct unitconf *conf);
-extern int unit_afmpkg_uninstall(struct json_object *manifest, const struct unitconf *conf);
-

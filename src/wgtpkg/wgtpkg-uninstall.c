@@ -39,6 +39,7 @@
 
 #include "utils-dir.h"
 #include "secmgr-wrap.h"
+#include "unit-generator.h"
 #include "wgtpkg-unit.h"
 #include "wgt.h"
 #include "wgt-info.h"
