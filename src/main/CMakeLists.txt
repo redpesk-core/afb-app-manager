@@ -22,6 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
+MESSAGE(STATUS "Creating afmpkg-daemon and afmpkg-status")
 add_executable(afmpkg-daemon main-afmpkg-daemon.c)
 target_link_libraries(afmpkg-daemon afmpkg wgtpkg wgt secwrp utils pthread)
 install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -29,51 +30,54 @@ install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 add_executable(afmpkg-status main-afmpkg-status.c)
 install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(afm-domain-spec main-domain-spec.c)
-target_link_libraries(afm-domain-spec utils)
-
-if(${gnutls_FOUND})
-	add_executable(afm-check-signature main-check-signature.c)
-	target_link_libraries(afm-check-signature ${gnutls_LINK_LIBRARIES} cert utils)
-
-	add_executable(afm-signed-digest main-signed-digest.c)
-	target_link_libraries(afm-signed-digest ${gnutls_LINK_LIBRARIES} cert utils)
-
-	add_executable(afm-digest main-digest.c)
-	target_link_libraries(afm-digest ${gnutls_LINK_LIBRARIES} cert utils)
-endif()
-
-if(WITH_TOOLS)
-	MESSAGE(STATUS "Creating packaging tools")
-
-	add_executable(wgtpkg-sign main-wgtpkg-sign.c)
-	target_link_libraries(wgtpkg-sign wgtpkg utils)
-	install(TARGETS wgtpkg-sign DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-	add_executable(wgtpkg-pack main-wgtpkg-pack.c)
-	target_link_libraries(wgtpkg-pack wgtpkg utils)
-	install(TARGETS wgtpkg-pack DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-	add_executable(wgtpkg-info main-wgtpkg-info.c)
-	target_link_libraries(wgtpkg-info wgtpkg wgt utils)
-	install(TARGETS wgtpkg-info DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-	add_executable(wgtpkg-install main-wgtpkg-install.c)
-	target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
-	install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-else()
-	MESSAGE(STATUS "Not creating packaging tools")
-endif()
-
 if(libsystemd_FOUND AND AFB_FOUND)
-	MESSAGE(STATUS "Creating daemons")
+	MESSAGE(STATUS "Creating afm-user-session")
 
 	add_executable(afm-user-session main-afm-user-session.c)
 	install(TARGETS afm-user-session DESTINATION ${afm_libexecdir}
 			PERMISSIONS SETUID OWNER_READ OWNER_WRITE OWNER_EXECUTE
 					GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 else()
-	MESSAGE(STATUS "Not creating daemons")
+	MESSAGE("WARNING, Not creating afm-user-session!")
+endif()
+
+if(WITH_TOOLS)
+
+	MESSAGE(STATUS "Creating tools for legacy widgets")
+	add_executable(afm-domain-spec main-domain-spec.c)
+	target_link_libraries(afm-domain-spec utils)
+
+	if(${gnutls_FOUND})
+		add_executable(afm-check-signature main-check-signature.c)
+		target_link_libraries(afm-check-signature ${gnutls_LINK_LIBRARIES} cert utils)
+
+		add_executable(afm-signed-digest main-signed-digest.c)
+		target_link_libraries(afm-signed-digest ${gnutls_LINK_LIBRARIES} cert utils)
+
+		add_executable(afm-digest main-digest.c)
+		target_link_libraries(afm-digest ${gnutls_LINK_LIBRARIES} cert utils)
+	else()
+		MESSAGE("WARNING, No gnutls, not creating afm cryptographic tools!")
+	endif()
+
+	if(WITH_WIDGETS)
+		MESSAGE(STATUS "Creating tools for legacy widgets")
+
+		add_executable(wgtpkg-sign main-wgtpkg-sign.c)
+		target_link_libraries(wgtpkg-sign wgtpkg utils)
+		install(TARGETS wgtpkg-sign DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+		add_executable(wgtpkg-pack main-wgtpkg-pack.c)
+		target_link_libraries(wgtpkg-pack wgtpkg utils)
+		install(TARGETS wgtpkg-pack DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+		add_executable(wgtpkg-info main-wgtpkg-info.c)
+		target_link_libraries(wgtpkg-info wgtpkg wgt utils)
+		install(TARGETS wgtpkg-info DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+		add_executable(wgtpkg-install main-wgtpkg-install.c)
+		target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
+		install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
 endif()
 
