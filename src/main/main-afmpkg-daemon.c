@@ -78,6 +78,12 @@ enum kind
 	/** request to remove a package */
 	Request_Remove_Package,
 
+	/** request for checking add of a package */
+	Request_Check_Add_Package,
+
+	/** request for checkinfg remove a package */
+	Request_Check_Remove_Package,
+
 	/** request to get the status of a transaction */
 	Request_Get_Status
 };
@@ -294,6 +300,8 @@ static void dump_request(struct request *req, FILE *file)
 		[Request_Unset] = "?unset?",
 		[Request_Add_Package] = AFMPKG_OPERATION_ADD,
 		[Request_Remove_Package] = AFMPKG_OPERATION_REMOVE,
+		[Request_Check_Add_Package] = AFMPKG_OPERATION_CHECK_ADD,
+		[Request_Check_Remove_Package] = AFMPKG_OPERATION_CHECK_REMOVE,
 		[Request_Get_Status] = "status"
 	};
 
@@ -362,6 +370,10 @@ static int process(struct request *req)
 		}
 		break;
 
+	case Request_Check_Add_Package:
+	case Request_Check_Remove_Package:
+		break;
+
 	case Request_Get_Status:
 		/* request for status of a transaction */
 		if (req->transid == NULL)
@@ -395,6 +407,10 @@ static enum kind get_operation_kind(const char *string)
 		return Request_Add_Package;
 	if (strcmp(string, AFMPKG_OPERATION_REMOVE) == 0)
 		return Request_Remove_Package;
+	if (strcmp(string, AFMPKG_OPERATION_CHECK_ADD) == 0)
+		return Request_Check_Add_Package;
+	if (strcmp(string, AFMPKG_OPERATION_CHECK_REMOVE) == 0)
+		return Request_Check_Remove_Package;
 	return Request_Unset;
 }
 

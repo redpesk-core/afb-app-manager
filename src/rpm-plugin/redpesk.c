@@ -384,6 +384,18 @@ static int perform_add(record_t *record, void *closure)
 	return perform(record, TR_ADDED, AFMPKG_OPERATION_ADD);
 }
 
+/** callback for performing check remove actions */
+static int perform_check_remove(record_t *record, void *closure)
+{
+	return perform(record, TR_REMOVED, AFMPKG_OPERATION_CHECK_REMOVE);
+}
+
+/** callback for performing check add actions */
+static int perform_check_add(record_t *record, void *closure)
+{
+	return perform(record, TR_ADDED, AFMPKG_OPERATION_CHECK_ADD);
+}
+
 /** apply the function to each record of the given set */
 static void for_each_record(rpmts ts, int (*fun)(record_t*, void *), void *closure)
 {
@@ -511,8 +523,14 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 	for_each_record(ts, number_adds, &eleidx);
 
 	/* execute the removes */
-	if ((rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPREUN)) == 0)
+	switch (rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPREUN)) {
+	case 0:
 		for_each_record(ts, perform_remove, NULL);
+		break;
+	case RPMTRANS_FLAG_TEST:
+		for_each_record(ts, perform_check_remove, NULL);
+		break;
+	}
 
 	return RPMRC_OK;
 }
@@ -522,9 +540,16 @@ static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
 	dump_ts(ts, "POST");
 
 	/* execute the adds */
-	if (res == RPMRC_OK
-	&& ((rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPOST)) == 0))
-		for_each_record(ts, perform_add, NULL);
+	if (res == RPMRC_OK) {
+		switch (rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPOST)) {
+		case 0:
+			for_each_record(ts, perform_add, NULL);
+			break;
+		case RPMTRANS_FLAG_TEST:
+			for_each_record(ts, perform_check_add, NULL);
+			break;
+		}
+	}
 
 	/* ensure clean */
 	for_each_record(ts, NULL, NULL);
