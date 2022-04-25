@@ -92,7 +92,7 @@ extern int path_entry_get(const path_entry_t *root, path_entry_t **result, const
 /**
  * @brief prepend the path to the root, on succes, the old root is now at the given
  * path and is returned in entry.
- * 
+ *
  * @param root the root to alter
  * @param entry the entry corresponding to the previous root (if not NULL)
  * @param path the path of the root
@@ -104,7 +104,7 @@ extern int path_entry_root_prepend_length(path_entry_t *root, path_entry_t **ent
 /**
  * @brief prepend the path to the root, on succes, the old root is now at the given
  * path and is returned in entry.
- * 
+ *
  * @param root the root to alter
  * @param entry the entry corresponding to the previous root (if not NULL)
  * @param path the path of the root
@@ -240,7 +240,7 @@ extern void *path_entry_var(const path_entry_t *entry, const void *key);
 
 /**
  * @brief set the value of a variable
- * 
+ *
  * @param entry the entry
  * @param key the key of the variable
  * @param value the value to set
@@ -252,7 +252,7 @@ extern int path_entry_var_set(path_entry_t *entry, const void *key, void *value,
 
 /**
  * @brief delete the variable of key of the entry
- * 
+ *
  * @param entry the entry
  * @param key the key of the variable to delete
  */
@@ -260,7 +260,7 @@ extern void path_entry_var_del(path_entry_t *entry, const void *key);
 
 /**
  * @brief get the count of existing variables
- * 
+ *
  * @param entry the entry
  *
  * @return the count of existing variables
@@ -269,7 +269,7 @@ extern unsigned path_entry_var_count(const path_entry_t *entry);
 
 /**
  * @brief get a variable by its index
- * 
+ *
  * @param entry the entry
  * @param index the index of the variable
  * @param key pointer receiving the key if not NULL
@@ -280,7 +280,7 @@ extern void *path_entry_var_at(const path_entry_t *entry, unsigned index, const 
 
 /**
  * @brief read the file and add its entry to the root
- * 
+ *
  * @param root the root to fulfill
  * @param file the file to read
  * @return 0 on success or a negative error code

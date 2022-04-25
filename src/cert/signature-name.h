@@ -55,7 +55,7 @@ signature_type_t signature_name_type(const char *path);
 
 /**
  * @brief Get the signature type of path/name
- *
+ * 
  * @param path the path/name to inspect
  * @param length length of the path/name
  * @return the signature type

@@ -66,7 +66,7 @@ path_type_t path_type_of_dirname(const char *dir)
 path_type_t path_type_of_entry(const path_entry_t *entry, const path_entry_t *root)
 {
 	path_type_t type = path_type_Unknown;
-	
+
 	if (!path_entry_has_child(entry))
 		entry = path_entry_parent(entry);
 

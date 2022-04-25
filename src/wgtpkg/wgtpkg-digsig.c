@@ -63,7 +63,7 @@ static xmlNodePtr next_element(xmlNodePtr node)
 static int is_element(xmlNodePtr node, const char *name)
 {
 	return node->type == XML_ELEMENT_NODE
-		&& !strcmp(name, node->name);
+		&& !strcmp(name, (char*)node->name);
 }
 
 /* is the 'node' an element node of 'name'? */
@@ -139,7 +139,7 @@ static int check_one_reference(xmlNodePtr ref)
 	rc = -1;
 
 	/* get the uri */
-	uri = xmlGetProp(ref, "URI");
+	uri = (char*)xmlGetProp(ref, (const xmlChar*)"URI");
 	if (uri == NULL) {
 		RP_ERROR("attribute URI of element <Reference> not found");
 		goto error;
@@ -242,7 +242,7 @@ static int get_certificates(xmlNodePtr kinfo)
 			n2 = n1->children;
 			while (n2) {
 				if (is_element(n2, "X509Certificate")) {
-					b = xmlNodeGetContent(n2);
+					b = (char*)xmlNodeGetContent(n2);
 					if (b == NULL) {
 						RP_ERROR("xmlNodeGetContent of X509Certificate failed");
 						return -1;

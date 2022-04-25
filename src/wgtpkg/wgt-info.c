@@ -45,7 +45,7 @@ struct wgt_info {
 static int getpropbool(xmlNodePtr node, const char *prop, int def)
 {
 	int result;
-	char *val = xmlGetProp(node, prop);
+	char *val = (char*)xmlGetProp(node, (const xmlChar*)prop);
 	if (!val)
 		result = def;
 	else {
@@ -63,7 +63,7 @@ static int getpropbool(xmlNodePtr node, const char *prop, int def)
 static int getpropnum(xmlNodePtr node, const char *prop, int def)
 {
 	int result;
-	char *val = xmlGetProp(node, prop);
+	char *val = (char*)xmlGetProp(node, (const xmlChar*)prop);
 	if (!val)
 		result = def;
 	else {
@@ -75,7 +75,7 @@ static int getpropnum(xmlNodePtr node, const char *prop, int def)
 
 static xmlChar *optprop(xmlNodePtr node, const char *prop)
 {
-	return node ? xmlGetProp(node, prop) : NULL;
+	return node ? xmlGetProp(node, (const xmlChar*)prop) : NULL;
 }
 
 static xmlChar *optcontent(xmlNodePtr node)
@@ -166,7 +166,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 		return -1;
 	}
 
-	desc->id = xmlGetProp(node, string_id);
+	desc->id = (char*)xmlGetProp(node, (const xmlChar*)string_id);
 	if (desc->id == NULL) {
 		RP_WARNING("no id");
 		errno = EINVAL;
@@ -176,7 +176,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	desc->id_underscore = strdup(desc->id);
 	dash_to_underscore(desc->id_underscore);
 
-	desc->version = xmlGetProp(node, string_version);
+	desc->version = (char*)xmlGetProp(node, (const xmlChar*)string_version);
 	if (desc->version == NULL) {
 		RP_WARNING("no version");
 		errno = EINVAL;
@@ -187,34 +187,34 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	desc->idaver = mkidaver(desc->id, desc->ver);
 	desc->width = getpropnum(node, string_width, 0);
 	desc->height = getpropnum(node, string_height, 0);
-	desc->viewmodes = xmlGetProp(node, string_viewmodes);
-	desc->defaultlocale = xmlGetProp(node, string_defaultlocale);
+	desc->viewmodes = (char*)xmlGetProp(node, (const xmlChar*)string_viewmodes);
+	desc->defaultlocale = (char*)xmlGetProp(node, (const xmlChar*)string_defaultlocale);
 
 	node = wgt_config_name();
-	desc->name = optcontent(node);
-	desc->name_short = optprop(node, string_short);
+	desc->name = (char*)optcontent(node);
+	desc->name_short = (char*)optprop(node, string_short);
 
 	node = wgt_config_description();
-	desc->description = optcontent(node);
+	desc->description = (char*)optcontent(node);
 
 	node = wgt_config_author();
-	desc->author = optcontent(node);
-	desc->author_href = optprop(node, string_href);
-	desc->author_email = optprop(node, string_email);
+	desc->author = (char*)optcontent(node);
+	desc->author_href = (char*)optprop(node, string_href);
+	desc->author_email = (char*)optprop(node, string_email);
 
 	node = wgt_config_license();
-	desc->license = optcontent(node);
-	desc->license_href = optprop(node, string_href);
+	desc->license = (char*)optcontent(node);
+	desc->license_href = (char*)optprop(node, string_href);
 
 	node = wgt_config_content();
-	desc->content_src = optprop(node, string_src);
+	desc->content_src = (char*)optprop(node, string_src);
 	if (node && desc->content_src == NULL) {
 		RP_WARNING("content without src");
 		errno = EINVAL;
 		return -1;
 	}
-	desc->content_type = optprop(node, string_type);
-	desc->content_encoding = optprop(node, string_encoding);
+	desc->content_type = (char*)optprop(node, string_type);
+	desc->content_encoding = (char*)optprop(node, string_encoding);
 
 	if (want_icons) {
 		icontail = &desc->icons;
@@ -225,7 +225,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				errno = ENOMEM;
 				return -1;
 			}
-			icon->src = xmlGetProp(node, string_src);
+			icon->src = (char*)xmlGetProp(node, (const xmlChar*)string_src);
 			icon->width = getpropnum(node, string_width, 0);
 			icon->height = getpropnum(node, string_height, 0);
 
@@ -251,7 +251,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				errno = ENOMEM;
 				return -1;
 			}
-			feature->name = xmlGetProp(node, string_name);
+			feature->name = (char*)xmlGetProp(node, (const xmlChar*)string_name);
 			feature->required = getpropbool(node, string_required, 1);
 			feature->params = NULL;
 
@@ -272,8 +272,8 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 					errno = ENOMEM;
 					return -1;
 				}
-				param->name = xmlGetProp(pnode, string_name);
-				param->value = xmlGetProp(pnode, string_value);
+				param->name = (char*)xmlGetProp(pnode, (const xmlChar*)string_name);
+				param->value = (char*)xmlGetProp(pnode, (const xmlChar*)string_value);
 
 				param->next = NULL;
 				*paramtail = param;
@@ -302,8 +302,8 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 				errno = ENOMEM;
 				return -1;
 			}
-			preference->name = xmlGetProp(node, string_name);
-			preference->value = xmlGetProp(node, string_value);
+			preference->name = (char*)xmlGetProp(node, (const xmlChar*)string_name);
+			preference->value = (char*)xmlGetProp(node, (const xmlChar*)string_value);
 			preference->readonly = getpropbool(node, string_readonly, 0);
 
 			*preferencetail = preference;

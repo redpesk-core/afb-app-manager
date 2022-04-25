@@ -754,12 +754,12 @@ int afmpkg_install(
 		case packtype_Widget:
 			rc = install_widget_legacy(path, offset_pack);
 			break;
-		
+
 		case packtype_AfmPkg:
 			rc = install_afmpkg(apkg, path, offset_root, offset_pack);
 			break;
 
-		default:		
+		default:
 			RP_ERROR("Unknown type of package %s", apkg->package ? apkg->package : "?unknown?");
 			rc = -EINVAL;
 		}
@@ -781,12 +781,12 @@ int afmpkg_uninstall(
 		case packtype_Widget:
 			rc = uninstall_widget_legacy(path, offset_pack);
 			break;
-		
+
 		case packtype_AfmPkg:
 			rc = uninstall_afmpkg(apkg, path, offset_root, offset_pack);
 			break;
 
-		default:		
+		default:
 			RP_ERROR("Unknown type of package %s", apkg->package ? apkg->package : "?unknown?");
 			rc = -EINVAL;
 		}

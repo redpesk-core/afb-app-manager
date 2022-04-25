@@ -42,7 +42,7 @@ static xmlDocPtr configxml = NULL;
 
 static xmlNodePtr next(xmlNodePtr node, const char *type)
 {
-	while (node && (node->type != XML_ELEMENT_NODE || strcmp(type, node->name)))
+	while (node && (node->type != XML_ELEMENT_NODE || strcmp(type, (char*)node->name)))
 		node = node->next;
 	return node;
 }
@@ -56,7 +56,7 @@ static xmlNodePtr first(const char *type)
 
 static unsigned int scorelang(xmlNodePtr node)
 {
-	char *lang = xmlNodeGetLang(node);
+	char *lang = (char*)xmlNodeGetLang(node);
 	unsigned int score = wgt_locales_score(configwgt, lang);
 	xmlFree(lang);
 	return score;
@@ -117,7 +117,7 @@ xmlNodePtr wgt_config_widget()
 	xmlNodePtr root;
 	assert(configxml);
 	root = xmlDocGetRootElement(configxml);
-	return strcmp(string_widget, root->name) ? NULL : root;
+	return strcmp(string_widget, (char*)root->name) ? NULL : root;
 }
 
 /* elements based on localisation */
@@ -214,11 +214,11 @@ static int score_dim(xmlNodePtr ref, xmlNodePtr x, const char *dim, int request)
 	int r, iref, ix;
 	char *sref, *sx;
 
-	sref = xmlGetProp(ref, dim);
+	sref = (char*)xmlGetProp(ref, (const xmlChar*)dim);
 	if (sref) {
 		iref = atoi(sref);
 		xmlFree(sref);
-		sx = xmlGetProp(x, dim);
+		sx = (char*)xmlGetProp(x, (const xmlChar*)dim);
 		if (sx) {
 			/* sref && sx */
 			ix = atoi(sx);
@@ -242,7 +242,7 @@ static int score_dim(xmlNodePtr ref, xmlNodePtr x, const char *dim, int request)
 				r = 0;
 		}
 	} else {
-		sx = xmlGetProp(x, dim);
+		sx = (char*)xmlGetProp(x, (const xmlChar*)dim);
 		if (sx) {
 			/* !sref && sx */
 			ix = atoi(sx);

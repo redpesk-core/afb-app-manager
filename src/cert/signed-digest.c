@@ -90,7 +90,7 @@ check_signed_digest(
 	}
 
 	/* check the digest */
-	rc = check_digest(root, data.data, data.size, isdistributor);
+	rc = check_digest(root, (char*)data.data, data.size, isdistributor);
 	gnutls_free(data.data);
 	if (rc < 0)
 		return rc;

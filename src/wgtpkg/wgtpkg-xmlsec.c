@@ -289,14 +289,14 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	assert(initdone && !initstatus);
 
 	/* create the document */
-	doc = xmlNewDoc("1.0");
+	doc = xmlNewDoc((const xmlChar*)"1.0");
 	if (doc == NULL) {
 		RP_ERROR("xmlNewDoc failed");
 		goto error;
 	}
 
 	/* create the root signature node */
-	sign = xmlSecTmplSignatureCreate(doc, xmlSecTransformInclC14N11Id, xmlSecTransformRsaSha1Id, properties[!!index].id);
+	sign = xmlSecTmplSignatureCreate(doc, xmlSecTransformInclC14N11Id, xmlSecTransformRsaSha1Id, (const xmlChar*)properties[!!index].id);
 	if (sign == NULL) {
 		RP_ERROR("xmlSecTmplSignatureCreate failed");
 		goto error2;
@@ -304,12 +304,12 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	xmlDocSetRootElement(doc, sign);
 
 	/* create the object and its reference */
-	obj = xmlSecTmplSignatureAddObject(sign, "prop", NULL, NULL);
+	obj = xmlSecTmplSignatureAddObject(sign, (const xmlChar*)"prop", NULL, NULL);
 	if (obj == NULL) {
 		RP_ERROR("xmlSecTmplSignatureAddObject failed");
 		goto error2;
 	}
-	rc = xmlParseBalancedChunkMemory(doc, NULL, NULL, 0, properties[!!index].xml, &props);
+	rc = xmlParseBalancedChunkMemory(doc, NULL, NULL, 0, (const xmlChar*)properties[!!index].xml, &props);
 	if (rc) {
 		RP_ERROR("xmlParseBalancedChunkMemory failed");
 		goto error2;
@@ -326,7 +326,7 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	for (i = 0 ; i < fc ; i++) {
 		fdesc = file_of_index(i);
 		if (fdesc->type == type_file && (fdesc->flags & mask) == 0) {
-			ref = xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha1Id, NULL, fdesc->name, NULL);
+			ref = xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha1Id, NULL, (const xmlChar*)fdesc->name, NULL);
 			if (ref == NULL) {
 				RP_ERROR("creation of reference to %s failed", fdesc->name);
 				goto error2;
@@ -335,7 +335,7 @@ xmlDocPtr xmlsec_create(unsigned int index, const char *key, const char **certs)
 	}
 
 	/* create reference to object having properties */
-	ref =  xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha1Id, NULL, "#prop", NULL);
+	ref =  xmlSecTmplSignatureAddReference(sign, xmlSecTransformSha1Id, NULL, (const xmlChar*)"#prop", NULL);
 	if (ref == NULL) {
 		RP_ERROR("creation of reference to #prop failed");
 		goto error2;
