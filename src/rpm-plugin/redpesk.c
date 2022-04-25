@@ -347,10 +347,11 @@ static size_t make_message(char *buffer, size_t size, size_t offset, record_t *r
 }
 
 /** perform the given operation if the record is of the given type */
-static int perform(record_t *record, rpmElementType type, const char *operation)
+static int perform(record_t *record, rpmElementType type, const char *operation, rpmRC *prc)
 {
 	char *message;
 	size_t length;
+	int rc;
 
 	/* check the type */
 	if (record->type != type)
@@ -359,15 +360,19 @@ static int perform(record_t *record, rpmElementType type, const char *operation)
 	/* compute size of the message and allocates it */
 	length = make_message(NULL, 0, 0, record, operation);
 	message = malloc(length + 1);
-	if (message == NULL)
+	if (message == NULL) {
 		rpmlog(RPMLOG_ERR, "malloc failed");
+		*prc = RPMRC_FAIL;
+	}
 	else {
 		/* make the message in the fresh buffer */
 		make_message(message, length, 0, record, operation);
 		message[length] = 0;
 		/* send the message to the framework */
-		dial_framework(message, length, NULL);
+		rc = dial_framework(message, length, NULL);
 		free(message);
+		if (rc <= 0)
+			*prc = RPMRC_FAIL;
 	}
 	return 1; /* done, drop the action */
 }
@@ -375,25 +380,25 @@ static int perform(record_t *record, rpmElementType type, const char *operation)
 /** callback for performing remove actions */
 static int perform_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, AFMPKG_OPERATION_REMOVE);
+	return perform(record, TR_REMOVED, AFMPKG_OPERATION_REMOVE, (rpmRC*)closure);
 }
 
 /** callback for performing add actions */
 static int perform_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, AFMPKG_OPERATION_ADD);
+	return perform(record, TR_ADDED, AFMPKG_OPERATION_ADD, (rpmRC*)closure);
 }
 
 /** callback for performing check remove actions */
 static int perform_check_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, AFMPKG_OPERATION_CHECK_REMOVE);
+	return perform(record, TR_REMOVED, AFMPKG_OPERATION_CHECK_REMOVE, (rpmRC*)closure);
 }
 
 /** callback for performing check add actions */
 static int perform_check_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, AFMPKG_OPERATION_CHECK_ADD);
+	return perform(record, TR_ADDED, AFMPKG_OPERATION_CHECK_ADD, (rpmRC*)closure);
 }
 
 /** apply the function to each record of the given set */
@@ -481,6 +486,7 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 	rpmElementType type;
 	int idx, count;
 	int eleidx, elecnt;
+	rpmRC rc = RPMRC_OK;
 
 	dump_ts(ts, "PRE");
 
@@ -525,28 +531,30 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 	/* execute the removes */
 	switch (rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPREUN)) {
 	case 0:
-		for_each_record(ts, perform_remove, NULL);
+		for_each_record(ts, perform_remove, &rc);
 		break;
 	case RPMTRANS_FLAG_TEST:
-		for_each_record(ts, perform_check_remove, NULL);
+		for_each_record(ts, perform_check_remove, &rc);
 		break;
 	}
 
-	return RPMRC_OK;
+	return rc;
 }
 
 static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
 {
+	rpmRC rc = RPMRC_OK;
+
 	dump_ts(ts, "POST");
 
 	/* execute the adds */
 	if (res == RPMRC_OK) {
 		switch (rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPOST)) {
 		case 0:
-			for_each_record(ts, perform_add, NULL);
+			for_each_record(ts, perform_add, &rc);
 			break;
 		case RPMTRANS_FLAG_TEST:
-			for_each_record(ts, perform_check_add, NULL);
+			for_each_record(ts, perform_check_add, &rc);
 			break;
 		}
 	}
@@ -554,7 +562,7 @@ static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
 	/* ensure clean */
 	for_each_record(ts, NULL, NULL);
 
-	return RPMRC_OK;
+	return rc;
 }
 
 struct rpmPluginHooks_s redpesk_hooks = {
