@@ -37,7 +37,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-
 #include "afmpkg-common.h"
 #include "detect-packtype.h"
 
@@ -176,13 +175,13 @@ static int recv_framework(int sock, char **arg)
 	/* the reply must be atomic */
 	while (sz && inputbuf[sz - 1] == '\n') sz--;
 	inputbuf[sz] = 0;
-	if (0 == memcmp(inputbuf, "OK", 2)) {
+	if (0 == memcmp(inputbuf, AFMPKG_KEY_OK, strlen(AFMPKG_KEY_OK))) {
 		rc = 1;
-		sz = 2;
+		sz = strlen(AFMPKG_KEY_OK);
 	}
-	else if (0 == memcmp(inputbuf, "ERROR", 5)) {
+	else if (0 == memcmp(inputbuf, AFMPKG_KEY_ERROR, strlen(AFMPKG_KEY_ERROR))) {
 		rc = 0;
-		sz = 5;
+		sz = strlen(AFMPKG_KEY_ERROR);
 	}
 	else
 		return -EBADMSG;
@@ -263,9 +262,15 @@ static size_t put_nl(char *buffer, size_t size, size_t offset)
 	return put_str(buffer, size, offset, "\n", 1);
 }
 
+static size_t put_sp(char *buffer, size_t size, size_t offset)
+{
+	return put_str(buffer, size, offset, " ", 1);
+}
+
 static size_t put_str_nl(char *buffer, size_t size, size_t offset, const char *str, size_t length)
 {
-	return put_nl(buffer, size, put_str(buffer, size, offset, str, length));
+	offset = put_str(buffer, size, offset, str, length);
+	return put_nl(buffer, size, offset);
 }
 
 static size_t put_strz(char *buffer, size_t size, size_t offset, const char *str)
@@ -280,9 +285,18 @@ static size_t put_strz_nl(char *buffer, size_t size, size_t offset, const char *
 
 static size_t put_key_val_nl(char *buffer, size_t size, size_t offset, const char *key, const char *val)
 {
-	return put_strz_nl(buffer, size, put_strz(buffer, size, offset, key), val);
+	offset = put_strz(buffer, size, offset, key);
+	offset = put_sp(buffer, size, offset);
+	return put_strz_nl(buffer, size, offset, val);
 }
 
+/**
+ * @brief translate a positive integer to a zero terminated string
+ *
+ * @param value the value to convert
+ * @param buffer the buffer for storing the value
+ * @return the computed string representation
+ */
 #define ITOALEN 25
 static const char *itoa(int value, char buffer[ITOALEN])
 {
@@ -292,6 +306,16 @@ static const char *itoa(int value, char buffer[ITOALEN])
 	return p;
 }
 
+/**
+ * @brief Makes the message's buffer
+ *
+ * @param buffer the buffer that receive the message (can be NULL if size <= offset)
+ * @param size size of the buffer
+ * @param offset offset for starting write
+ * @param record the record describing the transaction
+ * @param operation the operation of the message
+ * @return offset of the byte after the end of the buffer
+ */
 static size_t make_message(char *buffer, size_t size, size_t offset, record_t *record, const char *operation)
 {
 	rpmfi fi;
@@ -299,26 +323,26 @@ static size_t make_message(char *buffer, size_t size, size_t offset, record_t *r
 	const char *filename;
 	const char *rootdir = rpmtsRootDir(record->ts);
 	const char *name = rpmteN(record->te);
-	const char *transid = getenv("REDPESK_RPMPLUG_TRANSID");
-	const char *redpackid = getenv("REDPESK_RPMPLUG_REDPAKID");
+	const char *transid = getenv(AFMPKG_ENVVAR_TRANSID);
+	const char *redpackid = getenv(AFMPKG_ENVVAR_REDPAKID);
 
-	offset = put_key_val_nl(buffer, size, offset, "BEGIN ", operation);
-	offset = put_key_val_nl(buffer, size, offset, "PACKAGE ", name);
-	offset = put_key_val_nl(buffer, size, offset, "INDEX ", itoa(record->index, scratch));
-	offset = put_key_val_nl(buffer, size, offset, "COUNT ", itoa(record->count, scratch));
+	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_BEGIN, operation);
+	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_PACKAGE, name);
+	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_INDEX, itoa(record->index, scratch));
+	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_COUNT, itoa(record->count, scratch));
 	if (rootdir)
-		offset = put_key_val_nl(buffer, size, offset, "ROOT ", rootdir);
+		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_ROOT, rootdir);
 	if (transid)
-		offset = put_key_val_nl(buffer, size, offset, "TRANSID ", transid);
+		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_TRANSID, transid);
 	if (redpackid)
-		offset = put_key_val_nl(buffer, size, offset, "REDPAKID ", redpackid);
+		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_REDPAKID, redpackid);
 	fi = rpmfilesIter(record->files, RPMFI_ITER_FWD);
 	while (rpmfiNext(fi) >= 0) {
 		filename = rpmfiFN(fi);
-		offset = put_key_val_nl(buffer, size, offset, "FILE ", filename);
+		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_FILE, filename);
 	}
 	rpmfiFree(fi);
-	offset = put_key_val_nl(buffer, size, offset, "END ", operation);
+	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_END, operation);
 	return offset;
 }
 
@@ -351,13 +375,13 @@ static int perform(record_t *record, rpmElementType type, const char *operation)
 /** callback for performing remove actions */
 static int perform_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, "REMOVE");
+	return perform(record, TR_REMOVED, AFMPKG_OPERATION_REMOVE);
 }
 
 /** callback for performing add actions */
 static int perform_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, "ADD");
+	return perform(record, TR_ADDED, AFMPKG_OPERATION_ADD);
 }
 
 /** apply the function to each record of the given set */

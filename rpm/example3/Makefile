@@ -1,6 +1,6 @@
 OPT = 
 
-ENV = REDPESK_RPMPLUG_TRANSID=$$$$:$$(date +%s.%N) REDPESK_RPMPLUG_REDPAKID=@redpak$(shell echo $$PPID)
+ENV = AFMPKG_TRANSID=$$$$:$$(date +%s.%N) AFMPKG_REDPAKID=@redpak$(shell echo $$PPID)
 
 
 .PHONY: DEFAULT

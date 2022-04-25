@@ -190,8 +190,7 @@ static void cleanup_transactions()
  */
 static struct transaction *get_transaction(const char *transid, unsigned count)
 {
-	struct transaction *trans, *result, **previous;
-	time_t now = time(NULL);
+	struct transaction *trans, *result;
 
 	/* cleaup transactions */
 	cleanup_transactions();
@@ -293,8 +292,8 @@ static void dump_request(struct request *req, FILE *file)
 {
 	static const char *knames[] = {
 		[Request_Unset] = "?unset?",
-		[Request_Add_Package] = "add",
-		[Request_Remove_Package] = "remove",
+		[Request_Add_Package] = AFMPKG_OPERATION_ADD,
+		[Request_Remove_Package] = AFMPKG_OPERATION_REMOVE,
 		[Request_Get_Status] = "status"
 	};
 
@@ -385,6 +384,21 @@ static int process(struct request *req)
 }
 
 /**
+ * @brief Get the operation kind object
+ *
+ * @param string string value of the operation
+ * @return the kind of the operation or Request_Unset if not recognized
+ */
+static enum kind get_operation_kind(const char *string)
+{
+	if (strcmp(string, AFMPKG_OPERATION_ADD) == 0)
+		return Request_Add_Package;
+	if (strcmp(string, AFMPKG_OPERATION_REMOVE) == 0)
+		return Request_Remove_Package;
+	return Request_Unset;
+}
+
+/**
  * @brief process a line of request
  *
  * @param req the request to fill
@@ -398,15 +412,15 @@ static int receive_line(struct request *req, const char *line, size_t length)
 	long val;
 	int rc;
 
-#define IF(pattern) \
-		if (length >= sizeof(#pattern) \
-		 && memcmp(line, #pattern, sizeof(#pattern)-1) == 0 \
-		 && line[sizeof(#pattern)-1] == ' ') { \
-			line += sizeof(#pattern); \
-			length -= sizeof(#pattern);
+#define IF(key) \
+		if (length >= sizeof(AFMPKG_KEY_##key) \
+		 && memcmp(line, AFMPKG_KEY_##key, sizeof(AFMPKG_KEY_##key)-1) == 0 \
+		 && line[sizeof(AFMPKG_KEY_##key)-1] == ' ') { \
+			line += sizeof(AFMPKG_KEY_##key); \
+			length -= sizeof(AFMPKG_KEY_##key);
 #define ENDIF }
 #define ELSE  }else{
-#define ELSEIF(pattern) }else IF(pattern)
+#define ELSEIF(key) }else IF(key)
 
 	/* should not be ended */
 	if (req->ended != 0)
@@ -416,11 +430,8 @@ static int receive_line(struct request *req, const char *line, size_t length)
 		/* BEGIN [ADD|REMOVE] */
 		if (req->kind != Request_Unset)
 			return -1001;
-		if (strcmp(line, "ADD") == 0)
-			req->kind = Request_Add_Package;
-		else if (strcmp(line, "REMOVE") == 0)
-			req->kind = Request_Remove_Package;
-		else
+		req->kind = get_operation_kind(line);
+		if (req->kind == Request_Unset)
 			return -1002;
 
 	ELSEIF(COUNT)
@@ -439,14 +450,9 @@ static int receive_line(struct request *req, const char *line, size_t length)
 
 	ELSEIF(END)
 		/* END [ADD|REMOVE] */
-		if (strcmp(line, "ADD") == 0)
-			req->ended = req->kind == Request_Add_Package;
-		else if (strcmp(line, "REMOVE") == 0)
-			req->ended = req->kind == Request_Remove_Package;
-		else
-			return -1007;
-		if (!req->ended)
+		if (req->kind != get_operation_kind(line))
 			return -1008;
+		req->ended = 1;
 
 	ELSEIF(FILE)
 		/* FILE PATH */
@@ -588,8 +594,8 @@ static int receive(int sock, struct request *req)
  */
 static void reply_length(int sock, int rc, const char *arg, size_t length)
 {
-	static char error[] = { 'E', 'R', 'R', 'O', 'R' };
-	static char ok[] = { 'O', 'K' };
+	static char error[] = AFMPKG_KEY_ERROR;
+	static char ok[] = AFMPKG_KEY_OK;
 	static char nl[] = { '\n' };
 	static char space[] = { ' ' };
 
@@ -604,11 +610,11 @@ static void reply_length(int sock, int rc, const char *arg, size_t length)
 	/* make the message */
 	if (rc >= 0) {
 		iov[0].iov_base = ok;
-		iov[0].iov_len = sizeof ok;
+		iov[0].iov_len = sizeof ok - 1;
 	}
 	else {
 		iov[0].iov_base = error;
-		iov[0].iov_len = sizeof error;
+		iov[0].iov_len = sizeof error - 1;
 	}
 	if (length == 0)
 		mh.msg_iovlen = 2;
@@ -864,4 +870,3 @@ int main(int ac, char **av)
 	prepare_run();
 	return run();
 }
-

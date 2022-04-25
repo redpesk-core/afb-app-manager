@@ -31,11 +31,6 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 
-/*
-#include <linux/limits.h>
-#include <sys/types.h>
-
-*/
 #include "afmpkg-common.h"
 
 static const char framework_address[] = AFMPKG_SOCKET_ADDRESS;
@@ -100,13 +95,13 @@ static int recv_framework(int sock, char **arg)
 	/* the reply must be atomic */
 	while (sz && inputbuf[sz - 1] == '\n') sz--;
 	inputbuf[sz] = 0;
-	if (0 == memcmp(inputbuf, "OK", 2)) {
+	if (0 == memcmp(inputbuf, AFMPKG_KEY_OK, strlen(AFMPKG_KEY_OK))) {
 		rc = 1;
-		sz = 2;
+		sz = strlen(AFMPKG_KEY_OK);
 	}
-	else if (0 == memcmp(inputbuf, "ERROR", 5)) {
+	else if (0 == memcmp(inputbuf, AFMPKG_KEY_ERROR, strlen(AFMPKG_KEY_ERROR))) {
 		rc = 0;
-		sz = 5;
+		sz = strlen(AFMPKG_KEY_ERROR);
 	}
 	else
 		return -EBADMSG;
@@ -140,7 +135,7 @@ int main(int ac, char **av)
 	if (ac != 2)
 		return error("one parameter is expected");
 
-	len = snprintf(buffer, sizeof buffer, "STATUS %s\n", av[1]);
+	len = snprintf(buffer, sizeof buffer, "%s %s\n", AFMPKG_KEY_STATUS, av[1]);
 	if (len < 0 || len >= (int)sizeof buffer)
 		return error("too long");
 
