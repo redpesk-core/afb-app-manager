@@ -532,7 +532,10 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 	switch (rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPREUN)) {
 	case 0:
 		for_each_record(ts, perform_remove, &rc);
+	case RPMTRANS_FLAG_NOPREUN:
+		/* nothing */
 		break;
+	case RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPREUN:
 	case RPMTRANS_FLAG_TEST:
 		for_each_record(ts, perform_check_remove, &rc);
 		break;
@@ -553,6 +556,10 @@ static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
 		case 0:
 			for_each_record(ts, perform_add, &rc);
 			break;
+		case RPMTRANS_FLAG_NOPOST:
+			/* nothing */
+			break;
+		case RPMTRANS_FLAG_TEST | RPMTRANS_FLAG_NOPOST:
 		case RPMTRANS_FLAG_TEST:
 			for_each_record(ts, perform_check_add, &rc);
 			break;
