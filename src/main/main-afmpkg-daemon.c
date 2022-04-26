@@ -34,6 +34,7 @@
 #include <time.h>
 #include <getopt.h>
 #include <poll.h>
+#include <stdarg.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
@@ -283,8 +284,20 @@ static void deinit_request(struct request *req)
 }
 
 static
+void dump(FILE *file, const char *format, ...)
+{
+	va_list vl;
+	va_start(vl, format);
+	if (file != NULL)
+		vfprintf(file, format, vl);
+	else
+		rp_vverbose(rp_Log_Level_Info, NULL, 0, NULL, format, vl);
+	va_end(vl);
+}
+
+static
 int dump_one_file(void *closure, path_entry_t *entry, const char *path, size_t length) {
-	fprintf((FILE *)closure, "    %s\n", path);
+	dump((FILE *)closure, "    %s\n", path);
 	return 0;
 }
 
@@ -306,18 +319,18 @@ static void dump_request(struct request *req, FILE *file)
 	};
 
 	file = file == NULL ? stderr : file;
-	fprintf(file, "BEGIN\n");
-	fprintf(file, "  kind      %s\n", knames[req->kind]);
-	fprintf(file, "  order     %u/%u\n", req->index, req->count);
-	fprintf(file, "  transid   %s\n", req->transid ?: "");
-	fprintf(file, "  package   %s\n", req->apkg.package ?: "");
-	fprintf(file, "  root      %s\n", req->apkg.root ?: "");
-	fprintf(file, "  redpakid  %s\n", req->apkg.redpakid ?: "");
-	fprintf(file, "  files:\n");
+	dump(file, "BEGIN\n");
+	dump(file, "  kind      %s\n", knames[req->kind]);
+	dump(file, "  order     %u/%u\n", req->index, req->count);
+	dump(file, "  transid   %s\n", req->transid ?: "");
+	dump(file, "  package   %s\n", req->apkg.package ?: "");
+	dump(file, "  root      %s\n", req->apkg.root ?: "");
+	dump(file, "  redpakid  %s\n", req->apkg.redpakid ?: "");
+	dump(file, "  files:\n");
 
 	path_entry_for_each(PATH_ENTRY_FORALL_ONLY_ADDED, req->apkg.files, dump_one_file, file);
 
-	fprintf(file, "END\n\n");
+	dump(file, "END\n\n");
 }
 
 /**
@@ -331,7 +344,8 @@ static int process(struct request *req)
 	struct transaction *trans;
 	int rc = 0;
 
-	dump_request(req, NULL);
+	if (rp_verbose_wants(rp_Log_Level_Info))
+		dump_request(req, NULL);
 
 	switch(req->kind) {
 	default:
