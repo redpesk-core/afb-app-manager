@@ -28,8 +28,6 @@ target_compile_options(afmpkg-daemon PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMUL
 target_link_libraries(afmpkg-daemon afmpkg wgtpkg wgt secwrp utils pthread)
 install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-
-
 add_executable(afmpkg-status main-afmpkg-status.c)
 install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
 

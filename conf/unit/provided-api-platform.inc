@@ -27,7 +27,7 @@ ExecStart=/bin/true
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -sf PLATFORM_API_PATH_WS/{{name}} USER_API_PATH_WS/{{name}}
+ExecStart=/bin/ln -sf FULL_PLATFORM_API_PATH_WS/{{name}} FULL_USER_API_PATH_WS/{{name}}
 
 %end systemd-unit
 
@@ -79,7 +79,7 @@ SmackLabel=*
 SmackLabelIPIn=System
 SmackLabelIPOut=System
 SELinuxContextFromNet=true
-ListenStream=PLATFORM_API_PATH_WS/{{name}}
+ListenStream=FULL_PLATFORM_API_PATH_WS/{{name}}
 FileDescriptorName={{name}}
 Service=UNIT_NAME_BASE.service
 

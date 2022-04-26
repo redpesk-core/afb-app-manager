@@ -62,38 +62,42 @@ define( `UNIT_NAME_API_SOCKET', `UNIT_NAME_API_BASE($1)UNITSUFFIX.socket')
 define( `UNIT_NAME_BINDING_BASE', `afm-link-$1')
 define( `UNIT_NAME_BINDING_SERVICE', `UNIT_NAME_BINDING_BASE($1)UNITSUFFIX.service')
 
-define( `USER_RUN_DIR', `AFM_USERS_RUNDIR/%i')
-define( `DEBUGGING_DIR', `AFM_PLATFORM_RUNDIR/debug')
-define( `PLATFORM_RUN_DIR', `AFM_PLATFORM_RUNDIR')
-define( `CONF_DIR', `AFM_CONFDIR')
+define( `REDPAK_ID', `{{:#metadata.redpak-id}}')
+define( `ROOT_DIR', `{{:#metadata.root-dir}}')
 
-define( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')
-define( `APP_WORK_DIR', `APP_DATA_DIR/{{:id}}')
-define( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
+define( `DEFPATH', `define(`$1', `ON_NOT_REDPAK(ROOT_DIR/)$2') define(`FULL_$1', `ROOT_DIR/$2')' )
+define( `DEFSUBPATH', `define(`$1', `$2/$3') define(`FULL_$1', `FULL_$2/$3')' )
 
-define( `API_PATH', `RUN_DIR/apis')
-define( `API_PATH_WS', `API_PATH/ws')
-define( `API_PATH_LINK', `API_PATH/link')
+define( `REDWRAP', `ON_REDPAK(`/usr/bin/redwrap --redpath ROOT_DIR ')')
+define( `BINDER', `ON_NOT_REDPAK(`/usr')/bin/afb-binder')
 
-define( `PLATFORM_API_PATH', `PLATFORM_RUN_DIR/apis')
-define( `PLATFORM_API_PATH_WS', `PLATFORM_API_PATH/ws')
-define( `PLATFORM_API_PATH_LINK', `PLATFORM_API_PATH/link')
+DEFPATH( `USER_RUN_DIR', `AFM_USERS_RUNDIR/%i')
+DEFPATH( `DEBUGGING_DIR', `AFM_PLATFORM_RUNDIR/debug')
+DEFPATH( `PLATFORM_RUN_DIR', `AFM_PLATFORM_RUNDIR')
+DEFPATH( `CONF_DIR', `AFM_CONFDIR')
+DEFPATH( `ICONS_DIR', `{{:#metadata.icons-dir}}')
+DEFPATH( `WIDGET_DIR', `{{:#metadata.install-dir}}')
 
-define( `USER_API_PATH', `USER_RUN_DIR/apis')
-define( `USER_API_PATH_WS', `USER_API_PATH/ws')
-define( `USER_API_PATH_LINK', `USER_API_PATH/link')
+DEFPATH( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
+DEFPATH( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')
+
+DEFSUBPATH( `APP_WORK_DIR', `APP_DATA_DIR', `{{:id}}')
+
+DEFSUBPATH( `API_PATH', `RUN_DIR', `apis')
+DEFSUBPATH( `API_PATH_WS', `API_PATH', `ws')
+DEFSUBPATH( `API_PATH_LINK', `API_PATH', `link')
+
+DEFSUBPATH( `PLATFORM_API_PATH', `PLATFORM_RUN_DIR', `apis')
+DEFSUBPATH( `PLATFORM_API_PATH_WS', `PLATFORM_API_PATH', `ws')
+DEFSUBPATH( `PLATFORM_API_PATH_LINK', `PLATFORM_API_PATH', `link')
+
+DEFSUBPATH( `USER_API_PATH', `USER_RUN_DIR', `apis')
+DEFSUBPATH( `USER_API_PATH_WS', `USER_API_PATH', `ws')
+DEFSUBPATH( `USER_API_PATH_LINK', `USER_API_PATH', `link')
 
 define( `LOCALUSERAPP', `ON_PERM(`:partner:scope-platform', `localuser---AFID', `localuser--AFID')')
 
-define( `REDPAK_ID', `{{:#metadata.redpak-id}}')
-define( `REDPAK_ROOT_DIR', `{{:#metadata.root-dir}}')
-
-define( `REDWRAP', `ON_REDPAK(`/usr/bin/redwrap --redpath REDPAK_ROOT_DIR ')')
-define( `BINDER', `ON_NOT_REDPAK(`/usr')/bin/afb-binder')
-
 define( `HTTP_PORT', `{{:#metatarget.http-port}}')
-define( `ICONS_DIR', `{{:#metadata.icons-dir}}')
-define( `WIDGET_DIR', `{{:#metadata.install-dir}}')
 --------------------------------------------------------------------------------
 -- AGL_DEVEL SPECIFIC PARTS
 --------------------------------------------------------------------------------

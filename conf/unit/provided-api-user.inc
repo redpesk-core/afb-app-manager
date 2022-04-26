@@ -47,7 +47,7 @@ SmackLabel=*
 SmackLabelIPIn=System
 SmackLabelIPOut=System
 SELinuxContextFromNet=true
-ListenStream=USER_API_PATH_WS/{{name}}
+ListenStream=FULL_USER_API_PATH_WS/{{name}}
 FileDescriptorName={{name}}
 Service=UNIT_NAME_BASE@%i.service
 

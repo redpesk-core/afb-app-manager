@@ -26,18 +26,18 @@ X-AFM-author-email={{author.email}}
 X-AFM-width={{width}}
 X-AFM-height={{height}}
 {{#icon}}
-X-AFM-icon=WIDGET_DIR/{{:src}}
+X-AFM-icon=FULL_WIDGET_DIR/{{:src}}
 {{/icon}}
+X-AFM--ID=AFID
 IF_REDPAK
 X-AFM--redpak-id=REDPAK_ID
-X-AFM--redpak-root=REDPAK_ROOT_DIR
 ENDIF
-X-AFM--ID=AFID
+X-AFM--rootdir=ROOT_DIR
+X-AFM--wgtdir=FULL_WIDGET_DIR
+X-AFM--workdir=FULL_APP_WORK_DIR
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
-X-AFM--wgtdir=WIDGET_DIR
-X-AFM--workdir=APP_WORK_DIR
 X-AFM--visibility=ON_PERM(`:public:hidden', `hidden', `visible')
 %nl
 
@@ -95,8 +95,8 @@ After=UNIT_NAME_API_SOCKET({{name}})
 
 [Service]
 
-EnvironmentFile=-CONF_DIR/unit.env.d/*
-EnvironmentFile=-CONF_DIR/widget.env.d/{{:id}}/*
+EnvironmentFile=-FULL_CONF_DIR/unit.env.d/*
+EnvironmentFile=-FULL_CONF_DIR/widget.env.d/{{:id}}/*
 SmackProcessLabel=SMACKLABEL
 SELinuxContext=SELINUXLABEL
 SuccessExitStatus=0 SIGKILL
@@ -110,7 +110,7 @@ Slice=platform.slice
 ELSE
 User=%i
 Slice=user-%i.slice
-WorkingDirectory=-APP_WORK_DIR
+WorkingDirectory=-FULL_APP_WORK_DIR
 ExecStartPre=REDWRAP /bin/mkdir -p APP_WORK_DIR
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 ENDIF
@@ -130,10 +130,10 @@ ON_NOT_PERM(:public:syscall:clock, SystemCallFilter=~@clock)
 
 Environment=AFM_ID=TARGET
 Environment=AFM_APP_INSTALL_DIR=WIDGET_DIR
-Environment=AFM_WORKDIR=APP_WORK_DIR
-Environment=AFM_WSAPI_DIR=API_PATH_WS
 Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:WIDGET_DIR/bin
 Environment=LD_LIBRARY_PATH=WIDGET_DIR/lib
+Environment=AFM_WORKDIR=APP_WORK_DIR
+Environment=AFM_WSAPI_DIR=API_PATH_WS
 Environment=XDG_DATA_HOME=APP_WORK_DIR
 Environment=XDG_CONFIG_HOME=APP_WORK_DIR
 Environment=XDG_CACHE_HOME=APP_WORK_DIR
@@ -142,7 +142,7 @@ ON_CONTENT(text/html, Environment=WAIT_FOR_HOST_SERVICE="1")
 
 IF_AGL_DEVEL
 ; Needed to enable debug
-EnvironmentFile=-DEBUGGING_DIR/TARGET.env
+EnvironmentFile=-FULL_DEBUGGING_DIR/TARGET.env
 ENDIF
 
 SyslogIdentifier=afbd-TARGET

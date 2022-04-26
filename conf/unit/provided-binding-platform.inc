@@ -20,7 +20,7 @@ After=UNIT_NAME_BINDING_BASE({{name}}).service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -sf PLATFORM_API_PATH_LINK/{{name}} USER_API_PATH_LINK/{{name}}
+ExecStart=/bin/ln -sf FULL_PLATFORM_API_PATH_LINK/{{name}} FULL_USER_API_PATH_LINK/{{name}}
 
 %end systemd-unit
 
@@ -43,6 +43,6 @@ After=afm-system-setup.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -sf WIDGET_DIR/{{value}} PLATFORM_API_PATH_LINK/{{name}}
+ExecStart=/bin/ln -sf FULL_WIDGET_DIR/{{value}} FULL_PLATFORM_API_PATH_LINK/{{name}}
 
 %end systemd-unit

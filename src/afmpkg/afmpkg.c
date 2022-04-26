@@ -537,7 +537,7 @@ static int setup_units(install_state_t *state)
 {
 	struct unitconf uconf;
 	int rc = make_install_metadata(&uconf.metadata,
-				state->apkg, &state->path[state->offset_root]);
+				state->apkg, "");
 	if (rc == 0) {
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
