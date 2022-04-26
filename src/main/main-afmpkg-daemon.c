@@ -43,7 +43,7 @@
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-socket.h>
 
-#if !defined(NO_SEND_SIGUP_ALL)
+#if !defined(NO_SEND_SIGHUP_ALL)
 #include "sighup-framework.h"
 #endif
 
@@ -365,7 +365,7 @@ static int process(struct request *req)
 				rc = afmpkg_install(&req->apkg);
 			else
 				rc = afmpkg_uninstall(&req->apkg);
-#if !defined(NO_SEND_SIGUP_ALL)
+#if !defined(NO_SEND_SIGHUP_ALL)
 			if (rc >= 0)
 				sighup_all();
 #endif
