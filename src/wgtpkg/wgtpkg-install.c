@@ -680,7 +680,7 @@ static int setup_units(struct wgt_info *ifo, const char *installdir, json_object
 		rc = -ENOMEM;
 	else {
 		if (metadata != NULL)
-			rp_jsonc_object_merge(uconf.metadata, metadata, rp_jsonc_merge_option_keep);
+			rp_jsonc_object_merge(uconf.metadata, metadata, rp_jsonc_merge_option_replace);
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
 		rc = unit_install(ifo, &uconf);

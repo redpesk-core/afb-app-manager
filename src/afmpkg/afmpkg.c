@@ -745,7 +745,11 @@ int prepare_and_detect(
 	return rc;
 }
 
-static int install_widget_legacy(char *path, unsigned offset_pack);
+static int install_widget_legacy(
+			const afmpkg_t *apkg,
+			char *path,
+			unsigned offset_root,
+			unsigned offset_pack);
 static int uninstall_widget_legacy(char *path, unsigned offset_pack);
 
 /* install afm package */
@@ -760,7 +764,7 @@ int afmpkg_install(
 	if (rc >= 0) {
 		switch ((packtype_t)rc) {
 		case packtype_Widget:
-			rc = install_widget_legacy(path, offset_pack);
+			rc = install_widget_legacy(apkg, path, offset_root, offset_pack);
 			break;
 
 		case packtype_AfmPkg:
@@ -809,23 +813,30 @@ int afmpkg_uninstall(
 static
 int
 install_widget_legacy(
+	const afmpkg_t *apkg,
 	char *path,
+	unsigned offset_root,
 	unsigned offset_pack
 ) {
+	json_object *metadata;
 	struct wgt_info *ifo;
 	int rc;
 
 	path[offset_pack] = 0;
 	RP_NOTICE("-- Install legacy widget from %s --", path);
 
-	ifo = install_redpesk(path);
-	if (!ifo) {
-		RP_ERROR("Fail to install %s", path);
-		rc = -errno;
-	}
-	else {
-		wgt_info_unref(ifo);
-		rc = 0;
+	rc = make_install_metadata(&metadata, apkg, &path[offset_root]);
+	if (rc == 0) {
+		ifo = install_redpesk_with_meta(path, metadata);
+		if (!ifo) {
+			RP_ERROR("Fail to install %s", path);
+			rc = -errno;
+		}
+		else {
+			wgt_info_unref(ifo);
+			rc = 0;
+		}
+		json_object_put(metadata);
 	}
 	return rc;
 }
