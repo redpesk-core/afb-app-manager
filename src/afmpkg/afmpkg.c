@@ -519,18 +519,26 @@ static int set_files_properties(install_state_t *state)
 	return state->rc;
 }
 
+static int make_install_metadata(
+	json_object **object,
+	const afmpkg_t *apkg,
+	const char *installdir
+) {
+	int rc = rp_jsonc_pack(object, "{ss ss sb ss* ss*}",
+				"install-dir", installdir,
+				"icons-dir", FWK_ICON_DIR,
+				"redpak", apkg->redpakid != NULL,
+				"redpak-id", apkg->redpakid,
+				"root-dir", apkg->root);
+	return rc == 0 ? 0 : -ENOMEM;
+}
+
 static int setup_units(install_state_t *state)
 {
 	struct unitconf uconf;
-	int rc = rp_jsonc_pack(&uconf.metadata, "{ss ss sb ss* ss*}",
-				"install-dir", &state->path[state->offset_root],
-				"icons-dir", FWK_ICON_DIR,
-				"redpak", state->apkg->redpakid != NULL,
-				"redpak-id", state->apkg->redpakid,
-				"root-dir", state->apkg->root);
-	if (rc != 0)
-		rc = -ENOMEM;
-	else {
+	int rc = make_install_metadata(&uconf.metadata,
+				state->apkg, &state->path[state->offset_root]);
+	if (rc == 0) {
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
 		rc = unit_generator_install(state->manifest, &uconf);
