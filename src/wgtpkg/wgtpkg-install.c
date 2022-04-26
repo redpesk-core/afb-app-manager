@@ -258,30 +258,6 @@ static int check_widget(const struct wgt_desc *desc)
 	return result;
 }
 
-static int get_target_directory(char target[PATH_MAX], const char *root, const struct wgt_desc *desc)
-{
-	int rc;
-
-#if DISTINCT_VERSIONS
-	rc = snprintf(target, PATH_MAX, "%s/%s/%s", root, desc->id, desc->ver);
-#else
-	rc = snprintf(target, PATH_MAX, "%s/%s", root, desc->id);
-#endif
-	if (rc < PATH_MAX)
-		rc = 0;
-	else {
-		RP_ERROR("path too long");
-		errno = EINVAL;
-		rc = -1;
-	}
-	return rc;
-}
-
-static int move_widget_to(const char *destdir, int force)
-{
-	return move_workdir(destdir, 1, force);
-}
-
 static int install_icon(const struct wgt_desc *desc)
 {
 	char link[PATH_MAX];
@@ -712,6 +688,31 @@ static int setup_units(struct wgt_info *ifo, const char *installdir)
 }
 
 #if WITH_WIDGETS
+
+static int move_widget_to(const char *destdir, int force)
+{
+	return move_workdir(destdir, 1, force);
+}
+
+static int get_target_directory(char target[PATH_MAX], const char *root, const struct wgt_desc *desc)
+{
+	int rc;
+
+#if DISTINCT_VERSIONS
+	rc = snprintf(target, PATH_MAX, "%s/%s/%s", root, desc->id, desc->ver);
+#else
+	rc = snprintf(target, PATH_MAX, "%s/%s", root, desc->id);
+#endif
+	if (rc < PATH_MAX)
+		rc = 0;
+	else {
+		RP_ERROR("path too long");
+		errno = EINVAL;
+		rc = -1;
+	}
+	return rc;
+}
+
 /* install the widget of the file */
 struct wgt_info *install_widget(const char *wgtfile, const char *root, int force)
 {
