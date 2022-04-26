@@ -670,7 +670,7 @@ static int setup_files_and_security(const struct wgt_desc *desc)
 	return rc;
 }
 
-static int setup_units(struct wgt_info *ifo, const char *installdir)
+static int setup_units(struct wgt_info *ifo, const char *installdir, json_object *metadata)
 {
 	struct unitconf uconf;
 	int rc = rp_jsonc_pack(&uconf.metadata, "{ss ss}",
@@ -679,6 +679,8 @@ static int setup_units(struct wgt_info *ifo, const char *installdir)
 	if (rc != 0)
 		rc = -ENOMEM;
 	else {
+		if (metadata != NULL)
+			rp_jsonc_object_merge(uconf.metadata, metadata, rp_jsonc_merge_option_keep);
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
 		rc = unit_install(ifo, &uconf);
@@ -762,7 +764,7 @@ struct wgt_info *install_widget(const char *wgtfile, const char *root, int force
 		goto error3;
 
 	/* generate and install units */
-	rc = setup_units(ifo, installdir);
+	rc = setup_units(ifo, installdir, NULL);
 	if (rc)
 		goto error3;
 
@@ -786,6 +788,11 @@ error1:
 /* install redpesk from installdir widget directory */
 struct wgt_info *install_redpesk(const char *installdir)
 {
+	return install_redpesk_with_meta(installdir, NULL);
+}
+
+struct wgt_info *install_redpesk_with_meta(const char *installdir, json_object *metadata)
+{
 	struct wgt_info *ifo;
 	const struct wgt_desc *desc;
 	int rc;
@@ -808,7 +815,7 @@ struct wgt_info *install_redpesk(const char *installdir)
 
 
 	/* generate and install units */
-	rc = setup_units(ifo, installdir);
+	rc = setup_units(ifo, installdir, metadata);
 	if (rc)
 		goto error3;
 
