@@ -127,6 +127,7 @@ static int connect_framework()
 		rc = -errno;
 	else {
 		/* connect the socket */
+		memset(&adr, 0, sizeof adr);
 		adr.sun_family = AF_UNIX;
 		memcpy(adr.sun_path, framework_address, sizeof framework_address);
 		if (adr.sun_path[0] == '@')
