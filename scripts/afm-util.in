@@ -32,7 +32,7 @@ case "$1" in
 
   info|detail)
     i=$2
-    send detail "{\"id\":$i,\"uid\":$uid}"
+    send detail "{\"id\":\"$i\",\"uid\":$uid}"
     ;;
 
   ps|runners)
@@ -41,12 +41,12 @@ case "$1" in
 
   run|start)
     i=$2
-    send start "{\"id\":$i,\"uid\":$uid}"
+    send start "{\"id\":\"$i\",\"uid\":$uid}"
     ;;
 
   once)
     i=$2
-    send once "{\"id\":$i,\"uid\":$uid}"
+    send once "{\"id\":\"$i\",\"uid\":$uid}"
     ;;
 
   terminate|kill)
