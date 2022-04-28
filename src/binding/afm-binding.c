@@ -74,7 +74,6 @@ static const char _state_[]     = "state";
 static const char _terminate_[] = "terminate";
 static const char _uid_[]       = "uid";
 static const char _update_[]    = "update";
-static const char _wgt_[]       = "wgt";
 
 /*
  * the permissions
@@ -143,6 +142,7 @@ static const struct afb_auth
 static const char _added_[]     = "added";
 static const char _install_[]   = "install";
 static const char _uninstall_[] = "uninstall";
+static const char _wgt_[]       = "wgt";
 
 static const struct afb_auth
 	auth_perm_widget_install = {
@@ -192,7 +192,9 @@ enum {
 	Param_Reload = 8,
 	Param_Id     = 16,
 	Param_RunId  = 32,
+#if WITH_WIDGETS
 	Param_WGT    = 64,
+#endif
 	Param_Root   = 128
 };
 
@@ -347,10 +349,12 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 			params->id = json_object_get_string(args);
 			found |= Param_Id;
 		}
+#if WITH_WIDGETS
 		else if (expected & Param_WGT) {
 			params->wgt = json_object_get_string(args);
 			found |= Param_WGT;
 		}
+#endif
 	}
 
 	/* args is a object value: inspect it */
@@ -411,6 +415,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 			found |= Param_Root;
 		}
 
+#if WITH_WIDGETS
 		/* get WGT */
 		if (expected & Param_WGT) {
 			if (json_object_object_get_ex(args, _wgt_, &obj)) {
@@ -418,6 +423,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 				found |= Param_WGT;
 			}
 		}
+#endif
 
 		/* get appid */
 		if (expected & (Param_Id | Param_RunId)) {
