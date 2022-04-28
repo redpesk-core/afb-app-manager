@@ -608,7 +608,7 @@ static void once(afb_req_t req)
 	}
 
 	/* returns the state */
-	resp = runid ? afm_urun_state(afudb, runid, afb_req_get_uid(req)) : NULL;
+	resp = runid ? afm_urun_state(afudb, runid, params.uid) : NULL;
 	afb_req_success(req, resp, NULL);
 }
 
