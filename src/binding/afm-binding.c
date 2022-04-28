@@ -358,7 +358,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		/* get UID */
 		if (json_object_object_get_ex(args, _uid_, &obj)) {
 			if (!json_object_is_type(obj, json_type_int))
-				error = 1;
+				error = error_bad_request;
 			else {
 				id = json_object_get_int(obj);
 				if (id < 0)
@@ -430,7 +430,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		/* get runid */
 		if (expected & Param_RunId) {
 			if (json_object_object_get_ex(args, _runid_, &obj)) {
-				if (json_object_is_type(obj, json_type_int))
+				if (!json_object_is_type(obj, json_type_int))
 					error = error_bad_request;
 				else {
 					params->runid = json_object_get_int(obj);
