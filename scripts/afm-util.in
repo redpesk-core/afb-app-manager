@@ -11,7 +11,7 @@ force=false
 uid="$UID"
 help=false
 
-set -- $(getopt -l all,force,help,uid: -s afhu: -n afm-util -- "$@")
+eval set -- $(getopt -n afm-util -s bash -l all,force,help,uid: afhu: -- "$@")
 while :
 do
   case "$1" in
