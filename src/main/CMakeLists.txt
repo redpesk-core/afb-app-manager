@@ -22,6 +22,8 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
+add_link_options(-Wl,--as-needed -Wl,--gc-sections)
+
 MESSAGE(STATUS "Creating afmpkg-daemon and afmpkg-status")
 add_executable(afmpkg-daemon main-afmpkg-daemon.c)
 target_compile_options(afmpkg-daemon PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
@@ -35,6 +37,10 @@ if(libsystemd_FOUND AND AFB_FOUND)
 	MESSAGE(STATUS "Creating afm-user-session")
 
 	add_executable(afm-user-session main-afm-user-session.c)
+	target_compile_options(afm-user-session PRIVATE ${libsystemd_CFLAGS})
+	target_include_directories(afm-user-session PRIVATE ${libsystemd_INCLUDE_DIRS})
+	target_link_libraries(afm-user-session PUBLIC ${libsystemd_LIBRARIES})
+	target_link_directories(afm-user-session PUBLIC ${libsystemd_LIBRARY_DIRS})
 	install(TARGETS afm-user-session DESTINATION ${afm_libexecdir}
 			PERMISSIONS SETUID OWNER_READ OWNER_WRITE OWNER_EXECUTE
 					GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
