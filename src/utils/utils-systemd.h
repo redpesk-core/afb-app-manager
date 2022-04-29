@@ -74,9 +74,9 @@ struct sd_bus;
 extern int systemd_get_bus(int isuser, struct sd_bus **ret);
 extern void systemd_set_bus(int isuser, struct sd_bus *bus);
 
-extern int systemd_get_units_dir(char *path, size_t pathlen, int isuser);
-extern int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
-extern int systemd_get_wants_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
+extern int systemd_get_afm_units_dir(char *path, size_t pathlen, int isuser);
+extern int systemd_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
+extern int systemd_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
 extern int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
 extern int systemd_daemon_reload(int isuser);
 

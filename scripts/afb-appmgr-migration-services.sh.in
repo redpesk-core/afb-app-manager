@@ -9,7 +9,7 @@
 
 LANG=
 base="$1"
-test -z "$base" && base=@systemd_units_root@
+test -z "$base" && base=@afm_units_root@
 
 # retrieve files to be changed and names to be updated
 files=$(find "$base" -name 'afm-*--*--*.service' 2>/dev/null | sort)

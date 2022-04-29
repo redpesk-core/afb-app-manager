@@ -470,7 +470,7 @@ static int check_unit_desc(const struct unitdesc *desc, int tells)
 
 static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc = systemd_get_unit_path(
+	int rc = systemd_get_afm_unit_path(
 			path, pathlen, desc->scope == unitscope_user,
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
@@ -482,7 +482,7 @@ static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc
 
 static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc = systemd_get_wants_path(
+	int rc = systemd_get_afm_wants_unit_path(
 			path, pathlen, desc->scope == unitscope_user, desc->wanted_by,
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 

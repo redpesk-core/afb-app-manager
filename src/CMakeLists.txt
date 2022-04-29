@@ -65,7 +65,7 @@ add_definitions(
 	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_certs_dir}"
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
 	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
-	-DSYSTEMD_UNITS_ROOT="${systemd_units_root}"
+	-DAFM_UNITS_ROOT="${afm_units_root}"
 	-DAFM_VERSION="${PROJECT_VERSION}"
 	-DAFMPKG_SOCKET_ADDRESS="${AFMPKG_SOCKET_ADDRESS}"
 	-DWITH_WIDGETS=$<BOOL:${WITH_WIDGETS}>

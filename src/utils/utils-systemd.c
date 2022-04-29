@@ -53,8 +53,8 @@
 
 #include "utils-systemd.h"
 
-#if !defined(SYSTEMD_UNITS_ROOT)
-# define SYSTEMD_UNITS_ROOT "/usr/local/lib/systemd"
+#if !defined(AFM_UNITS_ROOT)
+# define AFM_UNITS_ROOT "/usr/local/lib/systemd"
 #endif
 
 static const char sdb_destination[] = "org.freedesktop.systemd1";
@@ -415,19 +415,19 @@ static int check_snprintf_result(int rc, size_t buflen)
 	return (rc >= 0 && (size_t)rc >= buflen) ? seterrno(ENAMETOOLONG) : rc;
 }
 
-int systemd_get_units_dir(char *path, size_t pathlen, int isuser)
+int systemd_get_afm_units_dir(char *path, size_t pathlen, int isuser)
 {
 	int rc = snprintf(path, pathlen, "%s/%s",
-			SYSTEMD_UNITS_ROOT,
+			AFM_UNITS_ROOT,
 			isuser ? "user" : "system");
 
 	return check_snprintf_result(rc, pathlen);
 }
 
-int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
+int systemd_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.%s",
-			SYSTEMD_UNITS_ROOT,
+			AFM_UNITS_ROOT,
 			isuser ? "user" : "system",
 			unit,
 			uext);
@@ -435,10 +435,10 @@ int systemd_get_unit_path(char *path, size_t pathlen, int isuser, const char *un
 	return check_snprintf_result(rc, pathlen);
 }
 
-int systemd_get_wants_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext)
+int systemd_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.wants/%s.%s",
-			SYSTEMD_UNITS_ROOT,
+			AFM_UNITS_ROOT,
 			isuser ? "user" : "system",
 			wanter,
 			unit,
@@ -481,7 +481,7 @@ int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *nam
 	struct stat st;
 
 	/* get the path */
-	rc = systemd_get_units_dir(path, sizeof path - 1, isuser);
+	rc = systemd_get_afm_units_dir(path, sizeof path - 1, isuser);
 	if (rc < 0)
 		return rc;
 	offset = (size_t)rc;
