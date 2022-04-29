@@ -37,13 +37,16 @@ void normalize_unit_file(char *content)
 		case '\n':
 		case ' ':
 		case '\t':
+			/* remove blank lines and blanck at line begin */
 			c = *read++;
 			break;
 		case '#':
 		case ';':
+			/* remove comments until end of line */
 			do { c = *read++; } while(c && c != '\n');
 			break;
 		default:
+			/* read the line */
 			*write++ = c;
 			do { *write++ = c = *read++; } while(c && c != '\n');
 			if (write - content >= 2 && write[-2] == '\\')

@@ -168,6 +168,48 @@ static size_t pack(char *text, char purge)
 }
 
 /*
+ * Removes duplicate slashes of a null terminated 'text'.
+ *
+ * Returns the size after packing (offset of the ending null).
+ */
+static size_t dedup_slashes(char *text)
+{
+	int nrs;       /* count of successives slashes */
+	int acnt;      /* allowed count of successives slashes */
+	char *read;    /* read iterator */
+	char *write;   /* write iterator */
+	char c;        /* currently scanned character (pointed by read) */
+
+	/* iteration over lines */
+	c = *(write = read = text);
+	while (c) {
+		if (c != '/') {
+			*write++ = c;
+			c = *++read;
+		}
+		else {
+			/* compute the allowed count of successive slashes */
+#define PRECEDED_BY(txt) ((size_t)(write - text) >= strlen(txt) && !memcmp(txt, write - strlen(txt), strlen(txt)))
+			if (PRECEDED_BY("http:") || PRECEDED_BY("https:"))
+				acnt = 2;
+			else if (PRECEDED_BY("file:"))
+				acnt = 3;
+			else
+				acnt = 1;
+#undef PRECEDED_BY
+			for (nrs = 0 ; c == '/' && nrs < acnt ; nrs++) {
+				*write++ = '/';
+				c = *++read;
+			}
+			while (c == '/')
+				c = *++read;
+		}
+	}
+	*write = 0;
+	return (size_t)(write - text);
+}
+
+/*
  * Searchs the first character of the next line
  * of the 'text' and returns its address
  * Returns NULL if there is no next line.
@@ -242,7 +284,8 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 	}
 
 	desc->content = spec;
-	desc->content_length = pack(spec, '%');
+	pack(spec, '%');
+	desc->content_length = dedup_slashes(spec);
 
 	return 0;
 }
