@@ -2,7 +2,7 @@
 
 send() {
   local verb="$1"
-  afb-client -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$verb" "$2" |
+  afb-client -u afm-util -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$verb" "$2" |
   awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
 }
 
