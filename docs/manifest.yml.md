@@ -32,8 +32,8 @@ author: Qt team
 license: GPL
 
 description: >
-	This is the Smarthome QML demo application. It shows some user interfaces for controlling an
-	automated house. The user interface is completely done with QML.
+  This is the Smarthome QML demo application. It shows some user interfaces for controlling an
+  automated house. The user interface is completely done with QML.
 
 targets:
   - target: main

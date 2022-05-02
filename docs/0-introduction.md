@@ -3,12 +3,12 @@
 ## Overview
 
 The application framework of **redpesk**
-provides components to install and uninstall applications
+provides components to install and remove applications
 as well as to run them in a secured environment.
 
 The main functionalities are:
 
-- install/uninstall applications and services
+- install/remove applications and services
 
 - start/terminate installed applications and services
 
@@ -24,12 +24,8 @@ implementation of the security on the system that constrains how
 to implement the programming model.
 
 The framework manages applications and hides them security details.
-To achieves it, the framework is built on top of a secured Linux.
-
-The current implementation uses either Smack or SELinux
-Linux security modules (LSM) on top of ordinary DAC.
-
-The programming model and the security are inspired from Tizen 3.
+To achieves it, the framework is built on top of security frameworks
+of Linux: standard DAC and SELinux or Smack.
 
 ## The programming model
 
@@ -37,11 +33,12 @@ The framework ensures that sensitive services, devices or resources
 of the platform are protected. Applications can access these sensitive
 resources only if explicitly permitted to do so.
 
-Applications are packaged and delivered in a digitally signed RPM that contains:
+Applications are packaged and delivered in a digitally signed RPM that
+contains:
 
 - the application and its data
-- a configuration file *config.xml*
-- some signature files
+- a configuration file `manifest.yml` in a directory `.rpconfig`
+- some signature files in directory `.rpconfig`
 
 Signature make possible to allow or deny permissions required by the
 application based on certificates of signers.
@@ -49,10 +46,10 @@ application based on certificates of signers.
 A chain of trust in the creation of certificates allows a hierarchical
 structuring of permissions.
 
-It also adds the description of dependency to other service because redpesk
-programming model emphasis micro-services architecture design.
+It also adds the description of dependency to other service because
+redpesk programming model emphasis micro-services architecture design.
 
-As today this model allows the distribution of HTML, QML and binary applications
+As today this model allows the distribution of HTML and binary applications
 but it could be extended to any other class of applications.
 
 ## The security model
@@ -67,9 +64,6 @@ The application framework uses the security model/framework
 to ensure the security and the privacy of the applications that
 it manages.
 
-The implemented security model comes from the security model of Tizen 3.
-This model is described [here][tizen-secu-3].
-
 The security framework includes:
 
 - **sec-lsm-manager**: component that interact with the security module of linux (Smack)
@@ -79,14 +73,3 @@ The security framework includes:
 **In theory, the security framework/model is an implementation details
 that should not impact the programming model from a user point of view**.
 
-
-[openssl]:          https://www.openssl.org                                         "OpenSSL"
-[xmlsec]:           https://www.aleksey.com/xmlsec                                  "XMLSec"
-[json-c]:           https://github.com/json-c/json-c                                "JSON-c"
-[d-bus]:            http://www.freedesktop.org/wiki/Software/dbus                   "D-Bus"
-[libzip]:           http://www.nih.at/libzip                                        "libzip"
-[cmake]:            https://cmake.org                                               "CMake"
-[sec-lsm-manager]: https://wiki.tizen.org/wiki/Security/Tizen_3.X_Security_Manager  "Sec-lsm-Manager"
-[app-manifest]:     http://www.w3.org/TR/appmanifest                                "Web App Manifest"
-[tizen-security]:   https://wiki.tizen.org/wiki/Security                            "Tizen security home page"
-[tizen-secu-3]:     https://wiki.tizen.org/wiki/Security/Tizen_3.X_Overview         "Tizen 3 security overview"

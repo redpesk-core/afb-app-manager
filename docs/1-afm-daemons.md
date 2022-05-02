@@ -5,8 +5,6 @@
 The daemon ***afm-system-daemon*** handle applications life.
 Understand that they will manage operations that mainly are:
 
-- ***installation***
-- ***uninstallation***
 - ***running***
 - ***terminating***
 - ***inventory***
@@ -16,13 +14,13 @@ and that applications are executed in the correct context.
 
 The daemon ***afm-system-daemon*** is accessible through redpesk
 micro-service architecture using either the binder ***afb-binder*** or
-the client library ***libafbwsc***.
+the client library ***libafbcli***.
 
 ## Starting **afm-system-daemon**
 
-***afm-system-daemon*** is launched by systemd services.
-Normally, service files are located in the directory
-*/lib/systemd/system/afm-system-daemon.service*.
+***afm-system-daemon*** is started by systemd services.
+Service files are generally located in the directory
+*/usr/lib/systemd/system/afm-system-daemon.service*.
 
 Internally, the daemon is built as a binding served by afb-binder.
 
@@ -65,9 +63,3 @@ When owning the right permissions, a client can get the list
 of running instances and details about a specific
 running instance.
 It can also terminate a given application.
-
-### Installing and uninstalling applications
-
-If the client own the right permissions,
-**afm-system-daemon** delegates that task
-to **afm-system-daemon**.

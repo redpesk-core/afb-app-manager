@@ -53,7 +53,7 @@ void help(const char *name, bool bad)
 	printf("where commands are:\n");
 	printf("\n");
 	printf("  check PKCS7 [ROOT.CERTIFICATE]\n");
-	printf("      Check if the PKCS7 signature is valide and output its granted permissions\n");
+	printf("      Check if the PKCS7 signature is valid and output its granted permissions\n");
 	printf("\n");
 	printf("  help\n");
 	printf("      This help\n");
