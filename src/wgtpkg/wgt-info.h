@@ -81,6 +81,7 @@ struct wgt;
 struct wgt_info;
 extern struct wgt_info *wgt_info_create(struct wgt *wgt, int icons, int features, int preferences);
 extern struct wgt_info *wgt_info_createat(int dirfd, const char *pathname, int icons, int features, int preferences);
+extern struct wgt_info *wgt_info_from_config(int dirfd, const char *path, int icons, int features, int preferences);
 extern const struct wgt_desc *wgt_info_desc(struct wgt_info *ifo);
 extern struct wgt *wgt_info_wgt(struct wgt_info *ifo);
 extern void wgt_info_addref(struct wgt_info *ifo);

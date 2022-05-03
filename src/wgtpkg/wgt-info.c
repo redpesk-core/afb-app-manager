@@ -436,6 +436,31 @@ static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
 	}
 }
 
+/* create info for current config and then closes the config */
+static int info_of_config(struct wgt_info **result, int icons, int features, int preferences)
+{
+	int rc;
+	struct wgt_info *info;
+
+	info = calloc(sizeof * info, 1);
+	if (info == NULL) {
+		rc = -1;
+		errno = ENOMEM;
+	}
+	else {
+		info->refcount = 1;
+		info->wgt = NULL;
+		rc = fill_desc(&info->desc, icons, features, preferences);
+		if (rc) {
+			wgt_info_unref(info);
+			info = NULL;
+		}
+	}
+	*result = info;
+	wgt_config_close();
+	return rc;
+}
+
 struct wgt_info *wgt_info_create(struct wgt *wgt, int icons, int features, int preferences)
 {
 	int rc;
@@ -446,24 +471,14 @@ struct wgt_info *wgt_info_create(struct wgt *wgt, int icons, int features, int p
 	rc = wgt_config_open(wgt);
 	if (rc) {
 		errno = EINVAL;
-		return NULL;
+		result = NULL;
 	}
-
-	result = calloc(sizeof * result, 1);
-	if (!result) {
-		wgt_config_close();
-		errno = ENOMEM;
-		return NULL;
-	}
-	result->refcount = 1;
-	result->wgt = wgt;
-	wgt_addref(wgt);
-
-	rc = fill_desc(&result->desc, icons, features, preferences);
-	wgt_config_close();
-	if (rc) {
-		wgt_info_unref(result);
-		return NULL;
+	else {
+		rc = info_of_config(&result, icons, features, preferences);
+		if (!rc) {
+			result->wgt = wgt;
+			wgt_addref(wgt);
+		}
 	}
 	return result;
 }
@@ -479,6 +494,15 @@ struct wgt_info *wgt_info_createat(int dirfd, const char *pathname, int icons, i
 	return result;
 }
 
+struct wgt_info *wgt_info_from_config(int dirfd, const char *path, int icons, int features, int preferences)
+{
+	struct wgt_info *info = NULL;
+	int rc = wgt_config_open_fileat(dirfd, path);
+	if (!rc)
+		rc = info_of_config(&info, icons, features, preferences);
+	return info;
+}
+
 const struct wgt_desc *wgt_info_desc(struct wgt_info *ifo)
 {
 	assert(ifo);
@@ -488,7 +512,6 @@ const struct wgt_desc *wgt_info_desc(struct wgt_info *ifo)
 struct wgt *wgt_info_wgt(struct wgt_info *ifo)
 {
 	assert(ifo);
-	assert(ifo->wgt);
 	return ifo->wgt;
 }
 
@@ -507,7 +530,8 @@ void wgt_info_unref(struct wgt_info *ifo)
 		return;
 
 	free_desc(&ifo->desc);
-	wgt_unref(ifo->wgt);
+	if (ifo->wgt != NULL)
+		wgt_unref(ifo->wgt);
 	free(ifo);
 }
 
