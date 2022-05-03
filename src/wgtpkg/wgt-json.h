@@ -30,4 +30,5 @@ extern struct json_object *wgt_info_to_json(struct wgt_info *info);
 extern struct json_object *wgt_to_json(struct wgt *wgt);
 extern struct json_object *wgt_path_at_to_json(int dfd, const char *path);
 extern struct json_object *wgt_path_to_json(const char *path);
+extern struct json_object *wgt_config_to_json(const char *path);
 

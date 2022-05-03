@@ -543,36 +543,27 @@ struct json_object *wgt_info_to_json(struct wgt_info *info)
 	return to_json(wgt_info_desc(info));
 }
 
-/* get the json_object of the 'wgt' or NULL if error */
-struct json_object *wgt_to_json(struct wgt *wgt)
+/* helper for internal converters */
+static struct json_object *convrel(struct wgt_info *info)
 {
-	struct json_object *result;
-	struct wgt_info *info;
-
-	info = wgt_info_create(wgt, 1, 1, 1);
-	if (info == NULL)
-		result = NULL;
-	else {
+	struct json_object *result = NULL;
+	if (info != NULL) {
 		result = wgt_info_to_json(info);
 		wgt_info_unref(info);
 	}
 	return result;
 }
 
+/* get the json_object of the 'wgt' or NULL if error */
+struct json_object *wgt_to_json(struct wgt *wgt)
+{
+	return convrel(wgt_info_create(wgt, 1, 1, 1));
+}
+
 /* get the json_object of the widget of 'path' relative to 'dfd' or NULL if error */
 struct json_object *wgt_path_at_to_json(int dfd, const char *path)
 {
-	struct json_object *result;
-	struct wgt_info *info;
-
-	info = wgt_info_createat(dfd, path, 1, 1, 1);
-	if (info == NULL)
-		result = NULL;
-	else {
-		result = wgt_info_to_json(info);
-		wgt_info_unref(info);
-	}
-	return result;
+	return convrel(wgt_info_createat(dfd, path, 1, 1, 1));
 }
 
 /* get the json_object of the widget of 'path' or NULL if error */
@@ -581,4 +572,9 @@ struct json_object *wgt_path_to_json(const char *path)
 	return wgt_path_at_to_json(AT_FDCWD, path);
 }
 
+/* get the json_object of the config of 'path' or NULL if error */
+struct json_object *wgt_config_to_json(const char *path)
+{
+	return convrel(wgt_info_from_config(AT_FDCWD, path, 1, 1, 1));
+}
 
