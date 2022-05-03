@@ -58,5 +58,5 @@ add_library(wgt STATIC
 
 target_compile_options(wgt PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS})
 target_include_directories(wgt PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS})
-target_link_libraries(wgt PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES})
+target_link_libraries(wgt PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} utils)
 target_link_directories(wgt PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS})
