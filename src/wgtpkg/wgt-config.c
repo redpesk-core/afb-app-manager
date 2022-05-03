@@ -26,6 +26,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -57,7 +58,7 @@ static xmlNodePtr first(const char *type)
 static unsigned int scorelang(xmlNodePtr node)
 {
 	char *lang = (char*)xmlNodeGetLang(node);
-	unsigned int score = wgt_locales_score(configwgt, lang);
+	unsigned int score = configwgt == NULL ? 0 : wgt_locales_score(configwgt, lang);
 	xmlFree(lang);
 	return score;
 }
@@ -92,24 +93,32 @@ void wgt_config_close()
 	}
 }
 
-int wgt_config_open(struct wgt *wgt)
+static int read_config_file(int fd, const char *pathname, struct wgt *wgt)
 {
-	int fd;
 	assert(!configxml);
-	fd = wgt_open_read(wgt, string_config_dot_xml);
 	if (fd < 0) {
-		RP_ERROR("can't open config file %s", string_config_dot_xml);
+		RP_ERROR("can't open config file %s", pathname);
 		return fd;
 	}
-	configxml = xmlReadFd(fd, string_config_dot_xml, NULL, 0);
+	configxml = xmlReadFd(fd, pathname, NULL, 0);
 	close(fd);
 	if (configxml == NULL) {
-		RP_ERROR("xml parse of config file %s failed", string_config_dot_xml);
+		RP_ERROR("xml parse of config file %s failed", pathname);
 		return -1;
 	}
 	assert(xmlDocGetRootElement(configxml));
 	configwgt = wgt;
 	return 0;
+}
+
+int wgt_config_open(struct wgt *wgt)
+{
+	return read_config_file(wgt_open_read(wgt, string_config_dot_xml), string_config_dot_xml, wgt);
+}
+
+int wgt_config_open_fileat(int dirfd, const char *pathname)
+{
+	return read_config_file(openat(dirfd, pathname, O_RDONLY), pathname, NULL);
 }
 
 xmlNodePtr wgt_config_widget()

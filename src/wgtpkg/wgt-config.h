@@ -25,6 +25,7 @@
 
 struct wgt;
 extern int wgt_config_open(struct wgt *wgt);
+extern int wgt_config_open_fileat(int dirfd, const char *pathname);
 extern void wgt_config_close();
 extern xmlNodePtr wgt_config_widget();
 extern xmlNodePtr wgt_config_name();
