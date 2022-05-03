@@ -42,10 +42,127 @@
 #define MANIFEST_RP_MANIFEST			"rp-manifest"
 #define MANIFEST_ID				"id"
 #define MANIFEST_VERSION			"version"
+#define MANIFEST_ID_UNDERSCORE			"id-underscore"
+#define MANIFEST_VER				"ver"
+#define MANIFEST_IDAVER				"idaver"
 
 #define MANIFEST_VALUE_OPTIONAL			"optional"
 #define MANIFEST_VALUE_REQUIRED			"required"
 
+
+static void make_lowercase(char *s)
+{
+	while(*s) {
+		*s = (char)tolower(*s);
+		s++;
+	}
+}
+
+static void dash_to_underscore(char *s)
+{
+	while(*s) {
+		if(*s == '-') {
+			*s = '_';
+		}
+		s++;
+	}
+}
+
+static char *mkver(const char *version)
+{
+	unsigned int lver;
+	char c, *r;
+	if (version) {
+		c = version[lver = 0];
+		while(c && c != ' ' && c != '.')
+			c = version[++lver];
+		if (c == '.') {
+			c = version[++lver];
+			while(c && c != ' ' && c != '.')
+				c = version[++lver];
+		}
+		r = malloc(lver + 1);
+		if (r) {
+			memcpy(r, version, lver);
+			r[lver] = 0;
+			make_lowercase(r);
+			return r;
+		}
+	}
+	return NULL;
+}
+
+static char *mkidaver(char *id, char *ver)
+{
+#if DISTINCT_VERSIONS
+	size_t lid, lver;
+	char *r;
+	if (id && ver) {
+		lid = strlen(id);
+		lver = strlen(ver);
+		r = malloc(2 + lid + lver);
+		if (r) {
+			memcpy(r, id, lid);
+			r[lid] = '@';
+			memcpy(r + lid + 1, ver, lver);
+			r[lid + lver + 1] = 0;
+			return r;
+		}
+	}
+	return NULL;
+#else
+	return strdup(id);
+#endif
+}
+
+static int add(json_object *jso, const char *key, const char *value)
+{
+	json_object *v = json_object_new_string(value);
+	if (v != NULL) {
+		json_object_object_add(jso, key, v);
+		if (json_object_object_get(jso, key) == v)
+			return 0;
+	}
+	return -ENOMEM;
+}
+
+static int fulfill(json_object *jso)
+{
+	int rc;
+	char *lowid = NULL, *undid = NULL, *ver = NULL, *idaver = NULL;
+	json_object *id, *version;
+
+	if (!json_object_object_get_ex(jso, MANIFEST_ID, &id)
+	 || !json_object_object_get_ex(jso, MANIFEST_VERSION, &version))
+		rc = -EINVAL;
+	else {
+		ver = mkver(json_object_get_string(version));
+		lowid = strdup(json_object_get_string(id));
+		if (lowid != NULL) {
+			make_lowercase(lowid);
+			if (ver != NULL)
+				idaver = mkidaver(lowid, ver);
+			undid = strdup(lowid);
+			if (undid != NULL)
+				dash_to_underscore(undid);
+		}
+
+		if (lowid != NULL && undid != NULL && ver != NULL && idaver != NULL) {
+			rc = add(jso, MANIFEST_ID, lowid);
+			if (rc == 0)
+				rc = add(jso, MANIFEST_ID_UNDERSCORE, undid);
+			if (rc == 0)
+				rc = add(jso, MANIFEST_IDAVER, idaver);
+			if (rc == 0)
+				rc = add(jso, MANIFEST_VER, ver);
+		}
+		free(lowid);
+		free(undid);
+		free(ver);
+		free(idaver);
+	}
+	return rc;
+}
 
 static int check_valid_string(json_object *jso, const char *key)
 {
@@ -113,7 +230,15 @@ manifest_read_and_check(
 		rc = manifest_check(*obj);
 		if (rc < 0)
 			RP_ERROR("constraints of manifest not fulfilled for %s", path);
+		else {
+			rc = fulfill(*obj);
+			if (rc < 0)
+				RP_ERROR("can't fulfill manifest %s", path);
+		}
+		if (rc < 0) {
+			json_object_put(*obj);
+			*obj = NULL;
+		}
 	}
 	return rc;
 }
-
