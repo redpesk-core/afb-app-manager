@@ -49,12 +49,17 @@ else()
 endif()
 
 if(WITH_TOOLS)
-
 	MESSAGE(STATUS "Creating tools for legacy widgets")
 	add_executable(afm-domain-spec main-domain-spec.c)
 	target_link_libraries(afm-domain-spec utils)
 
+	add_executable(wgt-migrate main-migrate-config.c)
+	target_link_libraries(wgt-migrate wgt utils)
+
 	if(${gnutls_FOUND})
+		# TODO: these programs are compiled but not installed
+		# because their names are not 100% good and they are not
+		# needed today
 		add_executable(afm-check-signature main-check-signature.c)
 		target_link_libraries(afm-check-signature ${gnutls_LINK_LIBRARIES} cert utils)
 

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" id="example" version="1.0">
+  <name short="example">Example of widget</name>
+  <description>This is the example application for packaging widgets.</description>
+  <author email="jo@josep.bzh" href="https://www.josep.bzh/">Josep</author>
+  <license href="https://www.josep.bzh/mit.txt">MIT</license>
+  <icon src="example-10.png" width="10px" height="10px"/>
+  <icon src="example-30.png" width="30px" height="30px"/>
+  <icon src="example-100.png" width="100px" height="100px"/>
+  <content src="lib/example.so" type="text/scheme-r7rs"/>
+
+  <feature name="urn:AGL:widget:file-properties">
+    <param name="flite" value="executable" />
+    <param name="jtalk" value="executable" />
+  </feature>
+
+  <feature name="urn:AGL:widget:provided-binding">
+    <param name="extra" value="export/binding-gps.so" />
+  </feature>
+
+  <feature name="urn:AGL:widget:required-api">
+    <param name="#target" value="main" />
+    <param name="gps" value="auto" />
+    <param name="afm-main" value="link" />
+  </feature>
+  <feature name="urn:AGL:widget:required-binding">
+    <param name="libexec/binding-gps.so" value="local" />
+    <param name="extra" value="extern" />
+  </feature>
+  <feature name="urn:AGL:widget:required-permission">
+    <param name="urn:AGL:permission:real-time" value="required" />
+    <param name="urn:AGL:permission:syscall:*" value="required" />
+  </feature>
+  <feature name="urn:AGL:widget:provided-api">
+    <param name="#target" value="main" />
+    <param name="geoloc" value="auto" />
+    <param name="moonloc" value="auto" />
+  </feature>
+
+
+  <feature name="urn:AGL:widget:provided-unit">
+    <param name="#target" value="geoloc" />
+    <param name="description" value="binding of name geoloc" />
+    <param name="content.src" value="index.html" />
+    <param name="content.type" value="application/vnd.agl.service" />
+  </feature>
+  <feature name="urn:AGL:widget:required-permission">
+    <param name="#target" value="geoloc" />
+    <param name="urn:AGL:permission:real-time" value="required" />
+    <param name="urn:AGL:permission:syscall:*" value="required" />
+  </feature>
+  <feature name="urn:AGL:widget:required-api">
+    <param name="#target" value="geoloc" />
+    <param name="gps" value="auto" />
+    <param name="afm-main" value="link" />
+  </feature>
+  <feature name="urn:AGL:widget:required-binding">
+    <param name="#target" value="geoloc" />
+    <param name="libexec/binding-gps.so" value="local" />
+    <param name="extra" value="extern" />
+  </feature>
+  <feature name="urn:AGL:widget:provided-api">
+    <param name="#target" value="geoloc" />
+    <param name="geoloc" value="auto" />
+    <param name="moonloc" value="auto" />
+  </feature>
+
+
+</widget>
