@@ -18,6 +18,6 @@ After=afm-user-setup@%i.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -sf FULL_WIDGET_DIR/{{value}} FULL_USER_API_PATH_LINK/{{name}}
+ExecStart=/bin/ln -sf FULL_WIDGET_DIR/{{value}} FLOOR_USER_API_PATH_LINK/{{name}}
 
 %end systemd-unit

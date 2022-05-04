@@ -4,7 +4,7 @@ Description=Installer for application framework socket
 [Socket]
 FileDescriptorName=sock
 ListenStream=@AFMPKG_SOCKET_ADDRESS@
-SocketMode=0660
+SocketMode=0666
 SmackLabelIPIn=@
 SmackLabelIPOut=@
 Service=afmpkg-installer.service
