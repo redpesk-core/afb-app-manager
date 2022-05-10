@@ -173,12 +173,50 @@ extern size_t path_entry_get_path(const path_entry_t *entry, char *buffer, size_
  */
 extern size_t path_entry_get_relpath(const path_entry_t *entry, char *buffer, size_t length, const path_entry_t *root);
 
-#define PATH_ENTRY_FORALL_ONLY_ADDED         1
-#define PATH_ENTRY_FORALL_NO_PATH            2
-#define PATH_ENTRY_FORALL_BEFORE             4
-#define PATH_ENTRY_FORALL_AFTER              8
-#define PATH_ENTRY_FORALL_ABSOLUTE          16
-#define PATH_ENTRY_FORALL_SILENT_ROOT       32
+/**
+ * Flags to control functions "path_entry_for_each" and "path_entry_for_each_in_buffer"
+ */
+enum {
+	/**
+	 * If set, the callback function is called only for added
+	 * entries
+	 * Otherwise, when unset, callback function is also called
+	 * for intermediate directories
+	 */
+	PATH_ENTRY_FORALL_ONLY_ADDED  =  1,
+
+	/**
+	 * If set, the callback function receives paths of length 0
+	 * and of inaccurate value. In that case, it is safe to pass
+	 * a NULL pointer as buffer value for "path_entry_for_each_in_buffer"
+	 */
+	PATH_ENTRY_FORALL_NO_PATH     =  2,
+
+	/**
+	 * If set, the callback function is called for directories before
+	 * their content.
+	 */
+	PATH_ENTRY_FORALL_BEFORE      =  4,
+
+	/**
+	 * If set, the callback function is called for directories after
+	 * their content.
+	 * When neither PATH_ENTRY_FORALL_AFTER nor PATH_ENTRY_FORALL_BEFORE
+	 * are set, this is the default behaviour
+	 */
+	PATH_ENTRY_FORALL_AFTER       =  8,
+
+	/**
+	 * Expects absolute path, not relatives to the root entry
+	 * given to the for-each function
+	 */
+	PATH_ENTRY_FORALL_ABSOLUTE    = 16,
+
+	/**
+	 * If set, the callback function is NOT called for the root entry
+	 */
+	PATH_ENTRY_FORALL_SILENT_ROOT = 32
+};
 
 /**
  * @brief iterate over entries until function returns a not zero value
