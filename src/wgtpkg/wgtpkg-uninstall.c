@@ -41,6 +41,8 @@
 #include "secmgr-wrap.h"
 #include "unit-generator.h"
 #include "wgtpkg-unit.h"
+#include "wgtpkg-workdir.h"
+#include "wgtpkg-files.h"
 #include "wgt.h"
 #include "wgt-info.h"
 
@@ -55,8 +57,9 @@ static int setdown_units(struct wgt_info *ifo, const char *installdir)
 
 static int setdown_files_and_security(const struct wgt_desc *desc)
 {
-	char path[PATH_MAX];
+	char path[PATH_MAX], *head;
 	int rc;
+	unsigned int idx, nrf;
 
 	/* removes the icon of the application */
 	rc = snprintf(path, sizeof path, "%s/%s", FWK_ICON_DIR, desc->idaver);
@@ -76,6 +79,18 @@ static int setdown_files_and_security(const struct wgt_desc *desc)
 		RP_ERROR("can't init sec lsm manager context");
 		return rc;
 	}
+
+	file_reset();
+	fill_files();
+	nrf = file_count();
+	head = stpcpy(path, workdir);
+	if (head != path && head[-1] != '/')
+		*head++ = '/';
+	for (idx = 0 ; idx < nrf ; idx++) {
+		strcpy(head, file_of_index(idx)->name);
+		secmgr_path_remove(path);
+	}
+
 	rc = secmgr_uninstall();
 	secmgr_end();
 	if (rc < 0)

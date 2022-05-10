@@ -470,6 +470,12 @@ end:
 	return rc;
 }
 
+static int setdown_files(void *closure, path_entry_t *entry, const char *path, size_t length)
+{
+	secmgr_path_id(path);
+	return 0;
+}
+
 static int setdown_security(
 		const afmpkg_t *apkg,
 		json_object *manifest
@@ -478,6 +484,9 @@ static int setdown_security(
 	if (rc < 0)
 		RP_ERROR("can't init sec lsm manager context");
 	else {
+		path_entry_for_each(PATH_ENTRY_FORALL_ONLY_ADDED | PATH_ENTRY_FORALL_ABSOLUTE,
+			apkg->files, setdown_files, NULL);
+
 		rc = secmgr_uninstall();
 		secmgr_end();
 		if (rc < 0)
