@@ -160,3 +160,8 @@ int secmgr_path_id(const char *pathname)
 {
 	return addpath(pathname, "id");
 }
+
+int secmgr_path_remove(const char *pathname)
+{
+	return addpath(pathname, "id");
+}
