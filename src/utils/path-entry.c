@@ -33,7 +33,10 @@
 
 #include "path-entry.h"
 
-#define FLAGS_IS_ADDED 1
+#define FLAGS_IS_ADDED    1
+#define FLAGS_HAS_SLASH   2
+
+typedef unsigned char flag_t;
 
 typedef struct var
 {
@@ -50,11 +53,11 @@ struct path_entry {
 	path_entry_t *sibling;
 	var_t *vars;
 	unsigned length;
-	unsigned char flags;
+	flag_t flags;
 	char name[];
 };
 
-static path_entry_t *search_child(path_entry_t *parent, const char *name, unsigned length)
+static path_entry_t *search_child(path_entry_t *parent, const char *name, unsigned length, flag_t flags)
 {
 	path_entry_t *entry = parent->children;
 	while (entry != NULL && (entry->length != length || memcmp(name, entry->name, length)))
@@ -62,7 +65,7 @@ static path_entry_t *search_child(path_entry_t *parent, const char *name, unsign
 	return entry;
 }
 
-static path_entry_t *make_child(path_entry_t *parent, const char *name, unsigned length)
+static path_entry_t *make_child(path_entry_t *parent, const char *name, unsigned length, flag_t flags)
 {
 	path_entry_t **prv, *entry = malloc(length + 1 + sizeof *entry);
 
@@ -71,7 +74,7 @@ static path_entry_t *make_child(path_entry_t *parent, const char *name, unsigned
 		entry->children = NULL;
 		entry->vars = NULL;
 		entry->length = length;
-		entry->flags = 0;
+		entry->flags = flags;
 		entry->name[length] = 0;
 		memcpy(entry->name, name, length);
 		prv = &parent->children;
@@ -83,25 +86,27 @@ static path_entry_t *make_child(path_entry_t *parent, const char *name, unsigned
 	return entry;
 }
 
-static path_entry_t *get_child(path_entry_t *parent, const char *name, unsigned length)
+static path_entry_t *get_child(path_entry_t *parent, const char *name, unsigned length, flag_t flags)
 {
-	return search_child(parent, name, length) ?: make_child(parent, name, length);
+	return search_child(parent, name, length, flags) ?: make_child(parent, name, length, flags);
 }
 
 static path_entry_t *process(
 		path_entry_t *root,
-		path_entry_t *(*get)(path_entry_t*, const char*, unsigned),
+		path_entry_t *(*get)(path_entry_t*, const char*, unsigned, flag_t),
 		const char *path,
 		unsigned length
 ) {
 	unsigned end, beg;
 	path_entry_t *entry = root;
+	flag_t flags = 0;
 
-	for (beg = 0 ; beg < length && path[beg] == '/' ; beg++);
+	for (beg = 0 ; beg < length && path[beg] == '/' ; beg++, flags = FLAGS_HAS_SLASH);
 	while (entry != NULL && beg < length) {
 		for (end = beg ; end < length && path[end] != '/' ; end++);
-		entry = get(entry, &path[beg], end - beg);
+		entry = get(entry, &path[beg], end - beg, flags);
 		for (beg = end ; beg < length && path[beg] == '/' ; beg++);
+		flags = FLAGS_HAS_SLASH;
 	}
 	return entry;
 }
@@ -268,18 +273,20 @@ size_t path_entry_get_relpath(const path_entry_t *entry, char *buffer, size_t le
 		if (entry->length == 0)
 			result = offset;
 		else {
-			result = offset + entry->length + 1;
+			result = offset + entry->length;
+			if (offset > 0 || (entry->flags & FLAGS_HAS_SLASH) != 0) {
+				result++;
+				if (offset < length)
+					buffer[offset++] = '/';
+			}
 			if (offset < length) {
-				buffer[offset++] = '/';
 				length -= offset;
-				if (length > 0) {
-					if (entry->length >= length)
-						length = length - 1;
-					else
-						length = entry->length;
-					memcpy(&buffer[offset], entry->name, length);
-					buffer[offset + length] = 0;
-				}
+				if (entry->length >= length)
+					length = length - 1;
+				else
+					length = entry->length;
+				memcpy(&buffer[offset], entry->name, length);
+				buffer[offset + length] = 0;
 			}
 		}
 	}
@@ -314,7 +321,8 @@ static int do_foreach(struct foreach *fe, path_entry_t *entry)
 		if (entry->length > 0 && !(fe->flags & PATH_ENTRY_FORALL_NO_PATH)) {
 			if (fe->length + entry->length + 2 > fe->size)
 				return -ENAMETOOLONG;
-			fe->buffer[fe->length++] = '/';
+			if (fe->length > 0 || (entry->flags & FLAGS_HAS_SLASH) != 0)
+				fe->buffer[fe->length++] = '/';
 			memcpy(&fe->buffer[fe->length], entry->name, entry->length);
 			fe->length += entry->length;
 		}
