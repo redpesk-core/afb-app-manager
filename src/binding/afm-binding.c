@@ -508,7 +508,7 @@ static void reply_status(afb_req_t req, int status)
 /*
  * On query "runnables"
  */
-static void runnables(afb_req_t req)
+static void v_runnables(afb_req_t req)
 {
 	struct params params;
 	struct json_object *resp;
@@ -525,7 +525,7 @@ static void runnables(afb_req_t req)
 /*
  * On query "detail"
  */
-static void detail(afb_req_t req)
+static void v_detail(afb_req_t req)
 {
 	struct params params;
 	struct json_object *resp;
@@ -545,7 +545,7 @@ static void detail(afb_req_t req)
 /*
  * On query "start"
  */
-static void start(afb_req_t req)
+static void v_start(afb_req_t req)
 {
 	struct params params;
 	struct json_object *appli, *resp;
@@ -583,7 +583,7 @@ static void start(afb_req_t req)
 /*
  * On query "once"
  */
-static void once(afb_req_t req)
+static void v_once(afb_req_t req)
 {
 	struct params params;
 	struct json_object *appli, *resp;
@@ -615,7 +615,7 @@ static void once(afb_req_t req)
 /*
  * On query "pause"
  */
-static void pause(afb_req_t req)
+static void v_pause(afb_req_t req)
 {
 	struct params params;
 	int status;
@@ -630,7 +630,7 @@ static void pause(afb_req_t req)
 /*
  * On query "resume" from 'smsg' with parameters of 'obj'.
  */
-static void resume(afb_req_t req)
+static void v_resume(afb_req_t req)
 {
 	struct params params;
 	int status;
@@ -645,7 +645,7 @@ static void resume(afb_req_t req)
 /*
  * On query "terminate"
  */
-static void terminate(afb_req_t req)
+static void v_terminate(afb_req_t req)
 {
 	struct params params;
 	int status;
@@ -660,7 +660,7 @@ static void terminate(afb_req_t req)
 /*
  * On query "runners"
  */
-static void runners(afb_req_t req)
+static void v_runners(afb_req_t req)
 {
 	struct params params;
 	struct json_object *resp;
@@ -676,7 +676,7 @@ static void runners(afb_req_t req)
 /*
  * On query "state"
  */
-static void state(afb_req_t req)
+static void v_state(afb_req_t req)
 {
 	struct params params;
 	struct json_object *resp;
@@ -699,7 +699,7 @@ static void do_reloads()
 /*
  * On querying installation of widget(s)
  */
-static void install(afb_req_t req)
+static void v_install(afb_req_t req)
 {
 	struct params params;
 	struct wgt_info *ifo;
@@ -746,7 +746,7 @@ static void install(afb_req_t req)
 /*
  * On querying uninstallation of widget(s)
  */
-static void uninstall(afb_req_t req)
+static void v_uninstall(afb_req_t req)
 {
 	struct params params;
 	int rc;
@@ -774,8 +774,8 @@ static void uninstall(afb_req_t req)
 #if WITH_LEGACY_WIDGET_VERBS
 static void __unimplemented_legacy__(afb_req_t req)
 	{ afb_req_fail(req, "unimplemented-legacy", NULL); }
-static void install(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
-static void uninstall(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
+static void v_install(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
+static void v_uninstall(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
 #endif
 
 static void onsighup(int signal)
@@ -805,22 +805,22 @@ static int init(afb_api_t api)
 
 static const afb_verb_t verbs[] =
 {
-	{.verb=_runnables_, .callback=runnables, .auth=&auth_detail,    .info="Get list of runnable applications",          .session=AFB_SESSION_CHECK },
-	{.verb=_detail_   , .callback=detail,    .auth=&auth_detail,    .info="Get the details for one application",        .session=AFB_SESSION_CHECK },
-	{.verb=_start_    , .callback=start,     .auth=&auth_start,     .info="Start an application",                       .session=AFB_SESSION_CHECK },
-	{.verb=_once_     , .callback=once,      .auth=&auth_start,     .info="Start once an application",                  .session=AFB_SESSION_CHECK },
-	{.verb=_terminate_, .callback=terminate, .auth=&auth_kill,      .info="Terminate a running application",            .session=AFB_SESSION_CHECK },
-	{.verb=_pause_    , .callback=pause,     .auth=&auth_kill,      .info="Pause a running application",                .session=AFB_SESSION_CHECK },
-	{.verb=_resume_   , .callback=resume,    .auth=&auth_kill,      .info="Resume a paused application",                .session=AFB_SESSION_CHECK },
-	{.verb=_runners_  , .callback=runners,   .auth=&auth_state,     .info="Get the list of running applications",       .session=AFB_SESSION_CHECK },
-	{.verb=_state_    , .callback=state,     .auth=&auth_state,     .info="Get the state of a running application",     .session=AFB_SESSION_CHECK },
+	{.verb=_runnables_, .callback=v_runnables, .auth=&auth_detail,    .info="Get list of runnable applications",          .session=AFB_SESSION_CHECK },
+	{.verb=_detail_   , .callback=v_detail,    .auth=&auth_detail,    .info="Get the details for one application",        .session=AFB_SESSION_CHECK },
+	{.verb=_start_    , .callback=v_start,     .auth=&auth_start,     .info="Start an application",                       .session=AFB_SESSION_CHECK },
+	{.verb=_once_     , .callback=v_once,      .auth=&auth_start,     .info="Start once an application",                  .session=AFB_SESSION_CHECK },
+	{.verb=_terminate_, .callback=v_terminate, .auth=&auth_kill,      .info="Terminate a running application",            .session=AFB_SESSION_CHECK },
+	{.verb=_pause_    , .callback=v_pause,     .auth=&auth_kill,      .info="Pause a running application",                .session=AFB_SESSION_CHECK },
+	{.verb=_resume_   , .callback=v_resume,    .auth=&auth_kill,      .info="Resume a paused application",                .session=AFB_SESSION_CHECK },
+	{.verb=_runners_  , .callback=v_runners,   .auth=&auth_state,     .info="Get the list of running applications",       .session=AFB_SESSION_CHECK },
+	{.verb=_state_    , .callback=v_state,     .auth=&auth_state,     .info="Get the state of a running application",     .session=AFB_SESSION_CHECK },
 #if WITH_WIDGETS
-	{.verb=_install_  , .callback=install,   .auth=&auth_install,   .info="Install an application using a widget file", .session=AFB_SESSION_CHECK },
-	{.verb=_uninstall_, .callback=uninstall, .auth=&auth_uninstall, .info="Uninstall an application",                   .session=AFB_SESSION_CHECK },
+	{.verb=_install_  , .callback=v_install,   .auth=&auth_install,   .info="Install an application using a widget file", .session=AFB_SESSION_CHECK },
+	{.verb=_uninstall_, .callback=v_uninstall, .auth=&auth_uninstall, .info="Uninstall an application",                   .session=AFB_SESSION_CHECK },
 #endif
 #if WITH_LEGACY_WIDGET_VERBS
-	{.verb=_install_  , .callback=install,   .auth=NULL,            .info="Install a widget (legacy, unimplmented)",    .session=0 },
-	{.verb=_uninstall_, .callback=uninstall, .auth=NULL,            .info="Install an application (legacy, unimplmented)", .session=0 },
+	{.verb=_install_  , .callback=v_install,   .auth=NULL,            .info="Install a widget (legacy, unimplmented)",    .session=0 },
+	{.verb=_uninstall_, .callback=v_uninstall, .auth=NULL,            .info="Install an application (legacy, unimplmented)", .session=0 },
 #endif
 	{.verb=NULL }
 };
