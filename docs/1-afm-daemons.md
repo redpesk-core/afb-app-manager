@@ -12,13 +12,14 @@ Understand that they will manage operations that mainly are:
 In addition, they ensure that operations use the security framework as needed
 and that applications are executed in the correct context.
 
-The daemon ***afm-system-daemon*** is accessible through redpesk
-micro-service architecture using either the binder ***afb-binder*** or
-the client library ***libafbcli***.
+The daemon **afm-system-daemon** is accessible through redpesk
+micro-service architecture using either the binder **afb-binder**,
+the client library **libafbcli** or the programs **afb-client** and
+**afm-util**.
 
 ## Starting **afm-system-daemon**
 
-***afm-system-daemon*** is started by systemd services.
+**afm-system-daemon** is started by systemd services.
 Service files are generally located in the directory
 */usr/lib/systemd/system/afm-system-daemon.service*.
 

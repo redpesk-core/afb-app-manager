@@ -36,15 +36,19 @@ resources only if explicitly permitted to do so.
 Applications are packaged and delivered in a digitally signed RPM that
 contains:
 
-- the application and its data
-- a configuration file `manifest.yml` in a directory `.rpconfig`
-- some signature files in directory `.rpconfig`
+* the application and its data
+* a configuration file `manifest.yml` in a directory `.rpconfig`
+* some signature files in directory `.rpconfig`
+
+```
+IN SOME FUTURE
 
 Signature make possible to allow or deny permissions required by the
 application based on certificates of signers.
 
 A chain of trust in the creation of certificates allows a hierarchical
 structuring of permissions.
+```
 
 It also adds the description of dependency to other service because
 redpesk programming model emphasis micro-services architecture design.
@@ -68,6 +72,8 @@ The security framework includes:
 
 - **sec-lsm-manager**: component that interact with the security module of linux (Smack)
 - **sec-cynagora**: component to manage permissions
+- **afmpkg-daemon**: component to install and remove packages of the framework
+- **redpesk**: RPM plugin in that interacts with afmpkg-daemon
 - **D-Bus** compliant to Cynagora: checks the permissions to deliver messages
 
 **In theory, the security framework/model is an implementation details

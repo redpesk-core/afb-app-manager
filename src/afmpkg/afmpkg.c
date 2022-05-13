@@ -194,8 +194,6 @@ static int check_permissions(install_state_t *state)
 	return 0;
 }
 
-
-
 static int check_one_content(const char *src, const char *type, install_state_t *state)
 {
 	int rc;
@@ -270,10 +268,6 @@ static int check_contents(install_state_t *state)
 	for_each_of(state->manifest, check_one_target, state, MANIFEST_TARGETS);
 	return state->rc;
 }
-
-
-
-
 
 static void set_file_type(void *closure, json_object *jso)
 {
@@ -352,7 +346,6 @@ static void set_target_file_properties(void *closure, json_object *jso)
 	}
 }
 
-
 static int reset_type_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
 	install_state_t *state = closure;
@@ -374,7 +367,6 @@ static int compute_files_properties(install_state_t *state)
 		for_each_content_entry(PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_ONLY_ADDED, state, fulfill_properties);
 	return state->rc;
 }
-
 
 static int set_one_file_security(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
@@ -419,7 +411,6 @@ static int set_one_file_security(void *closure, path_entry_t *entry, const char 
 		state->rc = rc;
 	return 0;
 }
-
 
 static int setup_security(install_state_t *state)
 {

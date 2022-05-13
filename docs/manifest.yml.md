@@ -151,17 +151,23 @@ The value must contain the path of the exported binding.
 
 ### required-permission
 
-List of the permissions required globally, meaning by each target.
+Dictionnary of the permissions required globally, meaning by each target.
 
 Example:
 
 ```yaml
 required-permission:
-  - name: urn:AGL:permission:real-time
+  urn:AGL:permission:real-time:
+    name: urn:AGL:permission:real-time
     value: required
-  - name: urn:AGL:permission:syscall:*
+  urn:AGL:permission:syscall:
+    name: urn:AGL:permission:syscall:*
     value: required
 ```
+
+The key is the value of the required permission.
+
+The name is optional.
 
 The value is either:
 
@@ -210,7 +216,7 @@ This attribute is used for describing the target.
 
 ### required-api
 
-List of the api required by the package.
+List of the api required by the target.
 
 Example:
 

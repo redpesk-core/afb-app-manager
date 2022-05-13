@@ -1,12 +1,22 @@
+# Document for memo, to be reordered
 
-## signing the content
+## signing the content and signed content
 
-The tool **signed-digest-tool** allows to:
+The tool **afm-signed-digest** allows to:
 
 - make a signature (author or distributor)
 - check a signature
 - check all the signature and report allowed domains
 
+The tool **afm-check-signature** reads a signature
+file and if validated by a trusted certificates,
+prints the allowed domains.
+
+## computing digest
+
+The program **afm-digest** is similar to the program
+**shasum**. It is used to create the digest that is signed
+by other processes.
 
 ## ANNEX
 
