@@ -40,7 +40,7 @@
 #include "digest.h"
 
 
-#define FIELD_SEPARATOR ' '
+#define FIELD_SEPARATOR   ' '
 #define RECORD_TERMINATOR '\n'
 
 typedef
@@ -95,6 +95,7 @@ int entry_hash(
 	hash_node_t *hash, *prv;
 	gnutls_hash_hd_t hctx;
 	unsigned hashlen, idxstr;
+	int rc;
 	FILE *file;
 	size_t rlen;
 	unsigned char buffer[65500];
@@ -126,17 +127,17 @@ int entry_hash(
 		hash->algorithm = algorithm;
 		hash->length = idxstr;
 
-
 		/* link the has to the node */
 		hash->next = NULL;
 		if (prv != NULL)
 			prv->next = hash;
 		else {
-			int rc = path_entry_var_set(entry, entry_hash, hash, dispose_hash);
-			free(hash);
-			return rc;
+			rc = path_entry_var_set(entry, entry_hash, hash, dispose_hash);
+			if (rc < 0) {
+				free(hash);
+				return rc;
+			}
 		}
-
 
 		/* compute the hash */
 		gnutls_hash_init(&hctx, algorithm);
