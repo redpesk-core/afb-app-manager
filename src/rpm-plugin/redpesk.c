@@ -542,7 +542,7 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 		break;
 	}
 
-	return rc;
+	return /* rc */ RPMRC_OK; /* never fail at the moment */
 }
 
 static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
@@ -570,7 +570,7 @@ static rpmRC tsm_post_cb(rpmPlugin plugin, rpmts ts, int res)
 	/* ensure clean */
 	for_each_record(ts, NULL, NULL);
 
-	return rc;
+	return /* rc */ RPMRC_OK; /* never fail at the moment */
 }
 
 struct rpmPluginHooks_s redpesk_hooks = {
