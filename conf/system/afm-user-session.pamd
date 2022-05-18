@@ -1,4 +1,6 @@
-account  include common-account
+account  include system-auth
+session  required pam_selinux.so close
+session  required pam_selinux.so nottys open
 session  required pam_loginuid.so
-session  include common-session
-
+session  required pam_smack.so root=System =User
+session  include system-auth
