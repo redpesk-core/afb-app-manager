@@ -24,11 +24,11 @@
 
 add_link_options(-Wl,--as-needed -Wl,--gc-sections)
 
-MESSAGE(STATUS "Creating afmpkg-daemon and afmpkg-status")
-add_executable(afmpkg-daemon main-afmpkg-daemon.c)
-target_compile_options(afmpkg-daemon PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
-target_link_libraries(afmpkg-daemon afmpkg wgtpkg wgt secwrp utils pthread)
-install(TARGETS afmpkg-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+MESSAGE(STATUS "Creating afmpkg-installer and afmpkg-status")
+add_executable(afmpkg-installer main-afmpkg-installer.c)
+target_compile_options(afmpkg-installer PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
+target_link_libraries(afmpkg-installer afmpkg wgtpkg wgt secwrp utils pthread)
+install(TARGETS afmpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_executable(afmpkg-status main-afmpkg-status.c)
 install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})

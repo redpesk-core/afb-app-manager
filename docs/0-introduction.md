@@ -72,8 +72,8 @@ The security framework includes:
 
 - **sec-lsm-manager**: component that interact with the security module of linux (Smack)
 - **sec-cynagora**: component to manage permissions
-- **afmpkg-daemon**: component to install and remove packages of the framework
-- **redpesk**: RPM plugin in that interacts with afmpkg-daemon
+- **afmpkg-installer**: component to install and remove packages of the framework
+- **redpesk**: RPM plugin in that interacts with afmpkg-installer
 - **D-Bus** compliant to Cynagora: checks the permissions to deliver messages
 
 **In theory, the security framework/model is an implementation details

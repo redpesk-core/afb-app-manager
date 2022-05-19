@@ -3,5 +3,5 @@ Description=Installer for application framework
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/afmpkg-daemon --socket sd:sock
-Sockets=afmpkg-installer-daemon.socket
+ExecStart=/usr/bin/afmpkg-installer --socket sd:sock
+Sockets=afmpkg-installer.socket

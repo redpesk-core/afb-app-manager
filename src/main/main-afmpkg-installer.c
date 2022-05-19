@@ -366,8 +366,7 @@ static int process(struct request *req)
 			else
 				rc = afmpkg_uninstall(&req->apkg);
 #if !defined(NO_SEND_SIGHUP_ALL)
-			if (rc >= 0)
-				sighup_all();
+			sighup_all();
 #endif
 		}
 		/* record status for transaction */
@@ -824,7 +823,7 @@ int run()
 	}
 }
 
-static const char appname[] = "afmpkg-daemon";
+static const char appname[] = "afmpkg-installer";
 
 static void version()
 {

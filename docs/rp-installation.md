@@ -9,14 +9,14 @@ When installing or uninstalling:
   package is integrated in the framework (it detects files
   `config.xml` or `.rpconfig/manifest.yml`)
 * if it is a package managed by the framework, the RPM plugin for
-  redpesk contacts the daemon afmpkg-daemon (service afmpkg-installer)
-* `afmpkg-daemon` scan the manifest files in order to set or remove
+  redpesk contacts the daemon afmpkg-installer (service afmpkg-installer)
+* `afmpkg-installer` scan the manifest files in order to set or remove
   service files, permissions and secirity labels
-* `afmpkg-daemon` contacts `sec-lsm-manager` to setup permisions
+* `afmpkg-installer` contacts `sec-lsm-manager` to setup permisions
   and labels
 
 Before calling `rpm` or `dnf`, the following environment variables
-can be set. They will be passed to `afmpkg-daemon`:
+can be set. They will be passed to `afmpkg-installer`:
 
 * AFMPKG_REDPAKID: this is transmitted to configuration setup in order
   to correctly set the services

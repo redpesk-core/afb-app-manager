@@ -25,7 +25,7 @@
 #pragma once
 
 #ifndef AFMPKG_SOCKET_ADDRESS
-#define AFMPKG_SOCKET_ADDRESS "@afmpkg-daemon.socket"
+#define AFMPKG_SOCKET_ADDRESS "@afmpkg-installer.socket"
 #endif
 
 #define AFMPKG_OPERATION_ADD           "ADD"
