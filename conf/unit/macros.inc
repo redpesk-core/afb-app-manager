@@ -65,8 +65,8 @@ define( `UNIT_NAME_BINDING_SERVICE', `UNIT_NAME_BINDING_BASE($1)UNITSUFFIX.servi
 define( `REDPAK_ID', `{{:#metadata.redpak-id}}')
 define( `ROOT_DIR', `{{:#metadata.root-dir}}')
 
-define( `DEFPATH', `define(`$1', `ON_NOT_REDPAK(ROOT_DIR/)$2') define(`FULL_$1', `ROOT_DIR/$2')'  define(`FLOOR_$1', `$2')' )
-define( `DEFSUBPATH', `define(`$1', `$2/$3') define(`FULL_$1', `FULL_$2/$3')' define(`FLOOR_$1', `FLOOR_$2/$3')' )
+define( `DEFPATH', `define(`$1', `ON_NOT_REDPAK(ROOT_DIR/)$2') define(`FULL_$1', `ROOT_DIR/$2')  define(`FLOOR_$1', `$2')' )
+define( `DEFSUBPATH', `define(`$1', `$2/$3') define(`FULL_$1', `FULL_$2/$3') define(`FLOOR_$1', `FLOOR_$2/$3')' )
 
 define( `REDWRAP', `ON_REDPAK(`/usr/bin/redwrap --redpath ROOT_DIR -- ')')
 define( `BINDER', `ON_NOT_REDPAK(`/usr')/bin/afb-binder')
