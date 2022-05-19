@@ -180,5 +180,6 @@ int uninstall_widget(const char *idaver, const char *root)
 int uninstall_redpesk(const char *installdir)
 {
 	RP_NOTICE("-- UNINSTALLING redpesk agl from %s  --", installdir);
+	set_workdir(installdir, 0);
 	return uninstall_at(installdir);
 }

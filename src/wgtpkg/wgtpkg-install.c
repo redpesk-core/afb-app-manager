@@ -801,6 +801,7 @@ struct wgt_info *install_redpesk_with_meta(const char *installdir, json_object *
 
 	/* prepare workdir */
 	set_workdir(installdir, 0);
+	file_reset();
 	fill_files();
 
 	/* info and check */
