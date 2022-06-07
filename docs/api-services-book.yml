@@ -8,14 +8,22 @@ books:
     author: "IotBzh"
     version: master
     chapters:
-        - url: "0-introduction.md"
+        - url: introduction.md
           name: Introduction
-        - url: "1-afm-daemons.md"
-          name: afm-system-daemon
-        - url: 2-afm-util.md
+        - url: afm-daemons.md
+          name: Application manager daemons
+        - url: afm-util.md
           name: afm-util tool
-        - url: "3-config.xml.md"
+        - url: manifest.yml.md
           name: Configuration
-        - url: "4-permissions.md"
+        - url: known-content-types.md
+          name: Known content types
+        - url: permissions.md
           name: Permissions
+        - url: rp-installation.md
+          name: Installation process
+        - url: migration-from-wgt-to-rpm.md
+          name: Migration from widget to redpesk packages
+        - url: config.xml.md
+          name: Legacy configuration
 

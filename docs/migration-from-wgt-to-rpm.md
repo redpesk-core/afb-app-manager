@@ -3,7 +3,7 @@
 The widget standard is now obsolete and the way it is
 integration within DNF/RPM is not using zip package file.
 
-the new packagin doesn't rely any more on the configuration
+the new packaging doesn't rely any more on the configuration
 file `config.xml` but exploit files of directory `.rpconfig`.
 
 These files are:
@@ -25,3 +25,12 @@ Where:
 
 * FILE is the path to the configuration file to convert
 * RESULT is the path of the created manifest file
+
+So the migration from wgtpkg to afmpkg could be as below:
+
+```
+mkdir .rpconfig
+wgt-migrate config.xml > .rpconfig/manifest.yml
+git add .rpconfig/manifest.yml
+git rm config.xml
+```

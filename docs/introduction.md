@@ -23,9 +23,9 @@ flexible high level API, and, in the other hand, there is an
 implementation of the security on the system that constrains how
 to implement the programming model.
 
-The framework manages applications and hides them security details.
+The framework manages applications and hides their security details.
 To achieves it, the framework is built on top of security frameworks
-of Linux: standard DAC and SELinux or Smack.
+of Linux: standard DAC and a MAC module SELinux or Smack.
 
 ## The programming model
 
@@ -72,10 +72,9 @@ The security framework includes:
 
 - **sec-lsm-manager**: component that interact with the security module of linux (Smack)
 - **sec-cynagora**: component to manage permissions
-- **afmpkg-installer**: component to install and remove packages of the framework
+- **afmpkg-daemon**: component to install and remove packages of the framework
 - **redpesk**: RPM plugin in that interacts with afmpkg-installer
 - **D-Bus** compliant to Cynagora: checks the permissions to deliver messages
 
 **In theory, the security framework/model is an implementation details
 that should not impact the programming model from a user point of view**.
-

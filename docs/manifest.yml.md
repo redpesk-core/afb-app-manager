@@ -325,6 +325,5 @@ specific permissions for specific target.
 
 
 
-
 [known-content]:    ./known-content-types.md                                        "Known content types"
 

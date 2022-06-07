@@ -26,6 +26,13 @@ add_compile_options(-fPIC -ffunction-sections -fdata-sections)
 add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 add_link_options(-Wl,--as-needed -Wl,--gc-sections)
 
+# rputils
+pkg_check_modules(rputils REQUIRED librp-utils>=0.0.1)
+add_compile_options(${rputils_CFLAGS})
+include_directories(${rputils_INCLUDE_DIRS})
+link_libraries(${rputils_LIBRARIES})
+link_directories(${rputils_LIBRARY_DIRS})
+
 # check availability of libzip
 if(USE_LIBZIP)
 	pkg_check_modules(libzip libzip>=0.11)
@@ -41,7 +48,6 @@ endif()
 # check other modules
 pkg_check_modules(gnutls gnutls)
 pkg_check_modules(libsystemd libsystemd>=222)
-pkg_check_modules(rputils librp-utils>=0.0.1)
 pkg_check_modules(libxml libxml-2.0)
 pkg_check_modules(libjsonc json-c)
 if(WITH_OPENSSL)
@@ -50,13 +56,7 @@ else()
 	pkg_check_modules(xmlsec xmlsec1-gnutls)
 endif()
 
-add_compile_options(${rputils_CFLAGS})
-include_directories(${rputils_INCLUDE_DIRS})
-link_libraries(${rputils_LIBRARIES})
-link_directories(${rputils_LIBRARY_DIRS})
-
 # definitions
-
 add_definitions(
 	-DFWK_CONFIG_DIR="${afm_confdir}"
 	-DFWK_PREFIX="${afm_prefix}"

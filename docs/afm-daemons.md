@@ -2,8 +2,10 @@
 
 ## Introduction
 
-The daemon ***afm-system-daemon*** handle applications life.
-Understand that they will manage operations that mainly are:
+The daemon ***afmpkg-daemon*** installs and removes applications.
+It is automatically called when ***dnf*** installs or removes applications.
+
+The daemon ***afm-system-daemon*** handles life of installed application:
 
 - ***running***
 - ***terminating***
@@ -20,8 +22,6 @@ the client library **libafbcli** or the programs **afb-client** and
 ## Starting **afm-system-daemon**
 
 **afm-system-daemon** is started by systemd services.
-Service files are generally located in the directory
-*/usr/lib/systemd/system/afm-system-daemon.service*.
 
 Internally, the daemon is built as a binding served by afb-binder.
 
@@ -32,11 +32,6 @@ Internally, the daemon is built as a binding served by afb-binder.
 At start **afm-system-daemon** scans the directories containing
 applications and load in memory a list of available applications
 accessible by current user.
-
-When **afm-system-daemon** installs or removes an application,
-on success it sends the signal.
-When receiving such a signal, **afm-system-daemon** rebuilds its
-applications list.
 
 **afm-system-daemon** provides the data it collects about
 applications to its clients.
@@ -64,3 +59,29 @@ When owning the right permissions, a client can get the list
 of running instances and details about a specific
 running instance.
 It can also terminate a given application.
+
+## Starting **afmpkg-daemon**
+
+**afmpkg-daemon** is started by systemd services on need.
+
+## Tasks of **afmpkg-daemon**
+
+The daemon ***afmpkg-daemon*** is activated by the *dnf*'s plugin
+named ***redpesk*** when it detects that the installed or removed
+package is an afmpkg.
+
+When ***afmpkg-daemon*** installs or removes an application,
+it sends a signal to **afm-system-daemon** that updates its
+applications database.
+
+### Installing applications
+
+***afmpkg-daemon*** reads the manifest of the installed package
+check it and, according to its content, set up the system security
+with the help of the security manager.
+
+### Uninstalling applications
+
+***afmpkg-daemon*** contacts the serity manager to cleanup the
+security rules for the removed application and to remove their
+security setup.
