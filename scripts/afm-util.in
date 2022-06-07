@@ -7,16 +7,14 @@ send() {
 }
 
 all=false
-force=false
 uid="$UID"
 help=false
 
-eval set -- $(getopt -n afm-util -s bash -l all,force,help,uid: -o afhu: -- "$@")
+eval set -- $(getopt -n afm-util -s bash -l all,help,uid: -o ahu: -- "$@")
 while :
 do
   case "$1" in
   -a|--all) all=true; shift;;
-  -f|--force) force=true; shift;;
   -h|--help) help=true; shift;;
   -u|--uid) uid="$2"; shift 2;;
   --) shift; break;;
@@ -60,10 +58,11 @@ case "$1" in
     ;;
 
   -h|--help|help)
-    cat << EOC
-usage: $(basename $0) command [arg]
 
-The commands are:
+    cat << EOC
+usage: $(basename $0) [-u UID] CMD [arg]
+
+The command CMD is of of the below commands:
 
   list
   runnables      list the runnable widgets installed
