@@ -55,6 +55,7 @@ if(WITH_TOOLS)
 
 	add_executable(wgt-migrate main-migrate-config.c)
 	target_link_libraries(wgt-migrate wgt utils)
+	install(TARGETS wgt-migrate DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 	if(${gnutls_FOUND})
 		# TODO: these programs are compiled but not installed
