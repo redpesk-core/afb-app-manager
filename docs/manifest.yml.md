@@ -325,5 +325,5 @@ specific permissions for specific target.
 
 
 
-[known-content]:    ./known-content-types                                        "Known content types"
+[known-content]:    ./known-content-types.html                                        "Known content types"
 
