@@ -6,7 +6,6 @@ books:
     description: Application Framework documentation
     keywords:
     author: "IotBzh"
-    version: master
     chapters:
         - url: introduction.md
           name: Introduction
