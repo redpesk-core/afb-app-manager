@@ -9,6 +9,7 @@ ENDIF
 ENDIF
 
 Type=notify
+NotifyAccess=ON_REDPAK(all,main)
 ExecStart=REDWRAP \
 	BINDER \
 	--name afbd-TARGET \
