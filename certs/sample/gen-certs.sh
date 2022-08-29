@@ -32,8 +32,8 @@ if [ ! -f "$key" ]
 then
 	echo
 	echo "generation of the $n key"
-	openssl genpkey \
-		-algorithm RSA -pkeyopt rsa_keygen_bits:4096 \
+	openssl ecparam \
+		-name secp256k1 -genkey \
 		-outform PEM \
 		-out "$key"
 fi
