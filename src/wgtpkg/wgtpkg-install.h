@@ -24,6 +24,11 @@
 
 struct json_object;
 
+/**
+* base for attribution of TCP ports
+*/
+extern int tcp_port_base;
+
 #if WITH_WIDGETS
 extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
 #endif

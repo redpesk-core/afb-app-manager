@@ -61,7 +61,11 @@
 #include "manage-afid.h"
 #include "mime-type.h"
 
-#define HTTP_PORT_BASE		30000
+#ifndef DEFAULT_TCP_PORT_BASE
+#define DEFAULT_TCP_PORT_BASE		27000
+#endif
+
+int tcp_port_base = DEFAULT_TCP_PORT_BASE;
 
 static const char *default_permissions[] = {
 	"urn:AGL:token:valid"
@@ -682,7 +686,7 @@ static int setup_units(struct wgt_info *ifo, const char *installdir, json_object
 		if (metadata != NULL)
 			rp_jsonc_object_merge(uconf.metadata, metadata, rp_jsonc_merge_option_replace);
 		uconf.new_afid = get_new_afid;
-		uconf.base_http_ports = HTTP_PORT_BASE;
+		uconf.base_http_ports = tcp_port_base;
 		rc = unit_install(ifo, &uconf);
 		json_object_put(uconf.metadata);
 	}
