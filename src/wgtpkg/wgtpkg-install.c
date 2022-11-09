@@ -355,11 +355,12 @@ static int has_true_param(const struct wgt_desc_feature *feature, const char *na
 	return value != NULL && (strcmp(value, "yes") == 0 || strcmp(value, "true") == 0);
 }
 
-static int strpos(const char *string, const char *search)
+static int is_at_dir(const char *string, const char *search)
 {
-	char *p = strstr(string, search);
-	if(!p) return -1;
-	return (int) (p - string);
+	while(*search)
+		if (*search++ != *string++)
+			return 0;
+	return *string == 0 || *string =='/';
 }
 
 static int set_pathtype(const char *path, const struct wgt_desc *desc, enum path_type *pathtype)
@@ -408,19 +409,19 @@ static int set_pathtype(const char *path, const struct wgt_desc *desc, enum path
 		feat = feat->next;
 	}
 
-	if(!strpos(path, "bin")) {
+	if(is_at_dir(path, "bin")) {
 		*pathtype = type_exec;
-	} else if(!strpos(path, "etc")) {
+	} else if(is_at_dir(path, "etc")) {
 		*pathtype = type_conf;
-	} else if(!strpos(path, "conf")) {
+	} else if(is_at_dir(path, "conf")) {
 		*pathtype = type_conf;
-	} else if(!strpos(path, "lib")) {
+	} else if(is_at_dir(path, "lib")) {
 		*pathtype = type_lib;
-	} else if(!strpos(path, "var")) {
+	} else if(is_at_dir(path, "var")) {
 		*pathtype = type_data;
-	} else if(!strpos(path, "htdocs")) {
+	} else if(is_at_dir(path, "htdocs")) {
 		*pathtype = type_http;
-	} else if(!strpos(path, "public")) {
+	} else if(is_at_dir(path, "public")) {
 		*pathtype = type_public;
 	}
 
