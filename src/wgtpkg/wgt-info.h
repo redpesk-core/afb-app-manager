@@ -88,4 +88,5 @@ extern void wgt_info_addref(struct wgt_info *ifo);
 extern void wgt_info_unref(struct wgt_info *ifo);
 extern void wgt_info_dump(struct wgt_info *ifo, int fd, const char *prefix);
 extern const struct wgt_desc_feature *wgt_info_feature(struct wgt_info *ifo, const char *name);
+extern const struct wgt_desc_param *wgt_info_desc_param(const struct wgt_desc_feature *feature, const char *name);
 extern const char *wgt_info_param(const struct wgt_desc_feature *feature, const char *name);

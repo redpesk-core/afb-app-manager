@@ -557,14 +557,17 @@ const struct wgt_desc_feature *wgt_info_feature(struct wgt_info *ifo, const char
 	return result;
 }
 
-const char *wgt_info_param(const struct wgt_desc_feature *feature, const char *name)
+const struct wgt_desc_param *wgt_info_desc_param(const struct wgt_desc_feature *feature, const char *name)
 {
 	const struct wgt_desc_param *param = feature->params;
-	while(param) {
-		if (0 == strcmp(name, param->name))
-			return param->value;
+	while(param != NULL && strcmp(name, param->name) != 0)
 		param = param->next;
-	}
-	return NULL;
+	return param;
+}
+
+const char *wgt_info_param(const struct wgt_desc_feature *feature, const char *name)
+{
+	const struct wgt_desc_param *param = wgt_info_desc_param(feature, name);
+	return param == NULL ? NULL : param->value;
 }
 
