@@ -71,7 +71,7 @@ The target part MUST have the following fields:
 - target
 - content
 
-In any case, the unknown attribute are ignored silently.
+In all cases, unknown attributes are silently ignored.
 
 ## Global part of the manifest file
 
@@ -306,7 +306,7 @@ The value is one of the following values:
 - ws:
   export the api using UNIX websocket
 
-- dbus: [OBSOLETE, shouldn't be used currently]
+- dbus: [EXPERIMENTAL]
   export the API using dbus
 
 - auto:
