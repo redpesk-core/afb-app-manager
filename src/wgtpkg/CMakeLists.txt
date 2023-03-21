@@ -32,6 +32,7 @@ add_library(wgtpkg STATIC
 	wgtpkg-unit.c
 	wgtpkg-workdir.c
 	wgtpkg-xmlsec.c
+	wgtpkg-zip.c
 	)
 
 target_compile_options(wgtpkg PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
@@ -40,7 +41,6 @@ target_link_libraries(wgtpkg PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} ${
 target_link_directories(wgtpkg PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS} ${xmlsec_LIBRARY_DIRS})
 
 if(USE_LIBZIP)
-	target_sources(wgtpkg PRIVATE wgtpkg-zip.c)
 	target_compile_options(wgtpkg PRIVATE ${libzip_CFLAGS})
 	target_include_directories(wgtpkg PRIVATE ${libzip_INCLUDE_DIRS})
 	target_link_libraries(wgtpkg PUBLIC ${libzip_LIBRARIES})
