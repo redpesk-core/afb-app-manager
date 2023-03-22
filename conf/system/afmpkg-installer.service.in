@@ -5,3 +5,6 @@ Description=Installer for application framework
 Type=simple
 ExecStart=/usr/bin/afmpkg-installer --socket sd:sock
 Sockets=afmpkg-installer.socket
+
+[Install]
+WantedBy=multi-user.target
