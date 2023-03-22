@@ -23,6 +23,7 @@
 */
 
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +53,7 @@ static int connect_framework()
 		memcpy(adr.sun_path, framework_address, sizeof framework_address);
 		if (adr.sun_path[0] == '@')
 			adr.sun_path[0] = 0;
-		rc = connect(sock, (struct sockaddr*)&adr, sizeof adr);
+		rc = connect(sock, (struct sockaddr*)&adr, offsetof(struct sockaddr_un,sun_path) + sizeof framework_address - !adr.sun_path[0]);
 		if (rc >= 0)
 			rc = sock;
 		else {
