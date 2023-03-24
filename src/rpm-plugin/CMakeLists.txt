@@ -31,6 +31,7 @@ if(WITH_RPM_REDPESK_PLUGIN)
 	add_library(redpesk SHARED redpesk.c)
 	set_target_properties(redpesk PROPERTIES PREFIX "")
 
+	target_include_directories(redpesk PRIVATE ${CMAKE_SOURCE_DIR}/external-includes)
 	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS})
 	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} utils)
 	install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})

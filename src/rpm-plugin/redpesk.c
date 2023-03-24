@@ -23,6 +23,7 @@
 */
 
 #include <stddef.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <linux/limits.h>
 #include <sys/types.h>
