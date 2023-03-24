@@ -363,7 +363,7 @@ static int is_at_dir(const char *string, const char *search)
 	return *string == 0 || *string =='/';
 }
 
-static int set_pathtype(const char *path, const struct wgt_desc *desc, enum path_type *pathtype)
+static int compute_pathtype(const char *path, const struct wgt_desc *desc, enum path_type *pathtype)
 {
 	const struct wgt_desc_icon *icon;
 	const struct wgt_desc_feature *feat;
@@ -473,11 +473,11 @@ static int install_security(const struct wgt_desc *desc)
 	n = file_count();
 	for (i = 0 ; i < n ; i++) {
 		f = file_of_index(i);
-		rc = set_pathtype(f->name, desc, &pathtype);
+		rc = compute_pathtype(f->name, desc, &pathtype);
 
 		if(rc < 0) {
-			RP_ERROR("invalid pathtype for %s", f->name);
-			goto error;
+			RP_INFO("dangling pathtype for %s", f->name);
+			pathtype = type_conf;
 		}
 
 		// if one soon path is public root path is public
