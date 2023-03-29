@@ -349,10 +349,12 @@ struct pathent {
 		char name[];
 };
 
-static int has_true_param(const struct wgt_desc_feature *feature, const char *name)
+static int feature_has_value(const struct wgt_desc_feature *feature, const char *value)
 {
-	const char *value = wgt_info_param(feature, name);
-	return value != NULL && (strcmp(value, "yes") == 0 || strcmp(value, "true") == 0);
+	const struct wgt_desc_param *param = feature->params;
+	while(param != NULL && strcmp(param->value, value))
+		param = param->next;
+	return param != NULL;
 }
 
 static int is_at_dir(const char *string, const char *search)
@@ -387,18 +389,18 @@ static int compute_pathtype(const char *path, const struct wgt_desc *desc, enum 
 	while (feat != NULL) {
 
 		if (!strcasecmp(feat->name, "urn:AGL:widget:provided-binding") /* provided bindings are public */
-			|| !strcasecmp(feat->name, "urn:AGL:widget:public-files")) {
-			*pathtype = has_true_param(feat, path) ? type_public : type_none;
-		} else if (strcasecmp(feat->name, "urn:AGL:widget:lib-files")) {
-			*pathtype = has_true_param(feat, path) ? type_lib : type_none;
-		} else if (strcasecmp(feat->name, "urn:AGL:widget:conf-files")) {
-			*pathtype = has_true_param(feat, path) ? type_conf: type_none;
-		} else if (strcasecmp(feat->name, "urn:AGL:widget:exec-files")) {
-			*pathtype = has_true_param(feat, path) ? type_exec : type_none;
-		} else if (strcasecmp(feat->name, "urn:AGL:widget:data-files")) {
-			*pathtype = has_true_param(feat, path) ? type_data: type_none;
-		} else if (strcasecmp(feat->name, "urn:AGL:widget:http-files")) {
-			*pathtype = has_true_param(feat, path) ? type_http : type_none;
+		 || !strcasecmp(feat->name, "urn:AGL:widget:public-files")) {
+			*pathtype = feature_has_value(feat, path) ? type_public : type_none;
+		} else if (!strcasecmp(feat->name, "urn:AGL:widget:lib-files")) {
+			*pathtype = feature_has_value(feat, path) ? type_lib : type_none;
+		} else if (!strcasecmp(feat->name, "urn:AGL:widget:conf-files")) {
+			*pathtype = feature_has_value(feat, path) ? type_conf: type_none;
+		} else if (!strcasecmp(feat->name, "urn:AGL:widget:exec-files")) {
+			*pathtype = feature_has_value(feat, path) ? type_exec : type_none;
+		} else if (!strcasecmp(feat->name, "urn:AGL:widget:data-files")) {
+			*pathtype = feature_has_value(feat, path) ? type_data: type_none;
+		} else if (!strcasecmp(feat->name, "urn:AGL:widget:http-files")) {
+			*pathtype = feature_has_value(feat, path) ? type_http : type_none;
 		}
 
 		if(*pathtype != type_none)
