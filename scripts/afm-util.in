@@ -49,17 +49,28 @@ case "$1" in
 
   terminate|kill)
     i=$2
-    send terminate  "{\"runid\":$i,\"uid\":$uid}"
+    if echo -n "$i" | grep -q '^[0-9]\{1,\}$'
+    then
+      send terminate  "{\"runid\":$i,\"uid\":$uid}"
+    else
+      send terminate  "{\"id\":\"$i\",\"uid\":$uid}"
+    fi
     ;;
 
   state|status)
     i=$2
-    send state  "{\"runid\":$i,\"uid\":$uid}"
+    if echo -n "$i" | grep -q '^[0-9]\{1,\}$'
+    then
+      send state  "{\"runid\":$i,\"uid\":$uid}"
+    else
+      send state  "{\"id\":\"$i\",\"uid\":$uid}"
+    fi
     ;;
 
   -h|--help|help)
 
     cat << EOC
+
 usage: $(basename $0) [-u UID] CMD [arg]
 
 The command CMD is of of the below commands:
