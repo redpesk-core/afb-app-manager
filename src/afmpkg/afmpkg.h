@@ -40,7 +40,7 @@ typedef struct
 	/** root directory */
 	char *root;
 
-	/** some redakid */
+	/** some redpakid */
 	char *redpakid;
 }
 	afmpkg_t;

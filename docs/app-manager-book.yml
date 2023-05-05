@@ -1,0 +1,13 @@
+type: books
+books:
+-
+    id: application-framework
+    title: Application Framework
+    description: Application Framework documentation
+    keywords:
+    chapters:
+        - url: introduction.md
+          name: Introduction
+        - url: permissions.md
+          name: Permissions
+

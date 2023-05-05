@@ -1,0 +1,15 @@
+type: books
+books:
+-
+    id: application-framework-admin
+    title: Application Framework, Administrator Guide
+    description: Administrator Guide of redpesk Application Framework
+    keywords:
+    chapters:
+        - url: afm-util.md
+          name: afm-util tool
+        - url: afm-daemons.md
+          name: Application manager daemons
+        - url: rp-installation.md
+          name: Installation process
+

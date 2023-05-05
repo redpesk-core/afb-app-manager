@@ -27,36 +27,49 @@ Given the list of content in a file: CONTENT.LIST
 The following command produces the finger print hash
 of that content: CONTENT.HASH
 
+```sh
   LANG= sort | xargs -n1 sha256sum --tag
+```
 
 The content hash can be checked using the command:
 
+```sh
   sha256sum --check --status CONTENT.HASH
+```
 
 An authority can sign the hash using the PKCS.7
 tools provoded by gnutls or openssl.
 
+```sh
   certtool --infile CONTENT.HASH \
            --outfile CONTENT.SIGN.p7 \
            --p7-sign \
 	   --p7-time \
 	   --load-certificate certs/end.pem \
 	   --load-privkey keys/end.key.pem
+```
 
 The signed content can be shown as below
 
+```sh
  |certtool --p7-info --p7-show-data --infile CONTENT.SIGN.p7
+```
 
 It can be verified as below
 
+```sh
   certtool --p7-info --p7-show-data --infile CONTENT.SIGN.p7 |
   sha256sum --check --status
+```
 
 Coming from the widget digsig specifications, the mechanism to sign
 the content is performed by the author and optionnaly by distributors.
+
 The content of the signatures differs:
- - the author signs the content files
- - distributors sign the content files and the author signature
+
+- the author signs the content files
+
+- distributors sign the content files and the author signature
 
 Name of author signature: author-signature.p7
 
@@ -78,6 +91,7 @@ of files describing extra features. This files are then signed.
 
 Author signature:
 
+```sh
   cat CONTENT.HASH |
   certtool --p7-sign \
 	   --p7-time \
@@ -85,16 +99,20 @@ Author signature:
 	   --load-certificate AUTHOR-CERTIFICATE.pem \
 	   --load-privkey AUTHOR-PRIVATE-KEY.pem |
   cat > author-signature.p7
+```
 
 Author check:
 
+```sh
   cat author-signature.p7 |
   certtool --p7-info --p7-show-data |
   cmp - CONTENT.HASH &&
   sha256sum --check --status CONTENT.HASH
+```
 
 Distributor N signature:
 
+```sh
   sha256sum CONTENT.HASH author-signature.p7 |
   tee DISTRIBUTOR.HASH |
   certtool --p7-sign \
@@ -103,9 +121,11 @@ Distributor N signature:
 	   --load-certificate DISTRIBUTOR-CERTIFICATE.pem \
 	   --load-privkey DISTRIBUTOR-PRIVATE-KEY.pem |
   cat > signatureN.p7
+```
 
 Distributor N check:
 
+```sh
   sha256sum CONTENT.HASH author-signature.p7 |
   cat > DISTRIBUTOR.HASH
   cat signatureN.p7 |
@@ -113,19 +133,23 @@ Distributor N check:
   cmp - DISTRIBUTOR.HASH &&
   sha256sum --check --status DISTRIBUTOR.HASH &&
   sha256sum --check --status CONTENT.HASH
-
+```
 
 Before checking the content, the signatures have to be
 validated against a chain of trust. To achieve this
 the following command have to be used:
 
+```sh
   cat SIGNATURE.p7 |
   certtool --p7-verify --load-ca-certificate ROOT-CERTIFICATE.pem
+```
 
 Or merely, if the trusted root is installed in the
 platform.
 
+```sh
   certtool --p7-verify < SIGNATURE.p7
+```
 
 The issue here is that the chain of trust must be fully
 available to be validated. The simplest way of doing it

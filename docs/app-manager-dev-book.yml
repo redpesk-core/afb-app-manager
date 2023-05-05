@@ -1,0 +1,30 @@
+type: books
+books:
+-
+    id: application-framework-dev
+    title: Application Framework Developper's Guide
+    description: Application Framework Developper's Guide
+    chapters:
+        - name: redpesk packages
+          url: redpesk-packages.md
+        - name: Packaging applications
+          children:
+            - name: Metadata manifest
+              url: manifest.yml.md
+            - name: Known content types
+              url: known-content-types.md
+            - name: Signing package content
+              url: signing-content.md
+        - name: Legacy packaging
+          children:
+            - name: Migration from widget to redpesk packages
+              url: migration-from-wgt-to-rpm.md
+            - name: Legacy metadata config.xml
+              url: config.xml.md
+        - name: internals
+          children:
+            - name: Configuration of installer
+              url: configuration.md
+            - name: Installer protocol
+              url: installer-protocol.md
+
