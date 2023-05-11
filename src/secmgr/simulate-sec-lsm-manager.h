@@ -25,20 +25,6 @@
 
 typedef struct sec_lsm_manager sec_lsm_manager_t;
 
-enum path_type
-{
-    type_none,
-    type_conf,
-    type_data,
-    type_exec,
-    type_http,
-    type_icon,
-    type_id,
-    type_lib,
-    type_public,
-    number_path_type
-};
-
 static int ptr_ = 0;
 
 #define sec_lsm_manager_create(sm_handle, socketspec) \
