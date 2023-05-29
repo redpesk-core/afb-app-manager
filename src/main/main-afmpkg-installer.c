@@ -869,7 +869,7 @@ static struct option options[] = {
 int main(int ac, char **av)
 {
 	for (;;) {
-		int i = getopt_long(ac, av, "hqvV", options, NULL);
+		int i = getopt_long(ac, av, "fhqsvV", options, NULL);
 		if (i < 0)
 			break;
 		switch (i) {
