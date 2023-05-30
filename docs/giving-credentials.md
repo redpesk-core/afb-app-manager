@@ -71,6 +71,7 @@ accesses.
 Examples:
 
 Displays the granted domains of a domain specification
+
 ```
 > afm-domain-spec granted +toto,+titi
 toto

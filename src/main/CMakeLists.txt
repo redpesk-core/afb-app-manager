@@ -49,13 +49,16 @@ else()
 endif()
 
 if(WITH_TOOLS)
-	MESSAGE(STATUS "Creating tools for legacy widgets")
+	MESSAGE(STATUS "Creating tools")
 	add_executable(afm-domain-spec main-domain-spec.c)
 	target_link_libraries(afm-domain-spec utils)
 
 	add_executable(wgt-migrate main-migrate-config.c)
 	target_link_libraries(wgt-migrate wgt utils)
-	install(TARGETS wgt-migrate DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+	add_executable(afm-check-pkg main-afmpkg-check.c)
+	target_link_libraries(afm-check-pkg afmpkg wgtpkg wgt secwrp utils)
+	install(TARGETS wgt-migrate afm-domain-spec afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 	if(${gnutls_FOUND})
 		# TODO: these programs are compiled but not installed
@@ -69,6 +72,8 @@ if(WITH_TOOLS)
 
 		add_executable(afm-digest main-digest.c)
 		target_link_libraries(afm-digest ${gnutls_LINK_LIBRARIES} cert utils)
+
+		install(TARGETS afm-check-signature afm-signed-digest afm-digest DESTINATION ${CMAKE_INSTALL_BINDIR})
 	else()
 		MESSAGE("WARNING, No gnutls, not creating afm cryptographic tools!")
 	endif()

@@ -22,4 +22,4 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_library(afmpkg STATIC afmpkg.c)
+add_library(afmpkg STATIC afmpkg.c afmpkg-request.c)

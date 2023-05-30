@@ -42,81 +42,14 @@
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-socket.h>
 
-#if !NO_SEND_SIGHUP_ALL
-#include "sighup-framework.h"
-#endif
-
 #include "afmpkg-common.h"
 #include "afmpkg.h"
+#include "afmpkg-request.h"
 
 /**
  * @brief retention time in second for data of transactions
  */
 #define RETENTION_SECONDS 3600 /* one hour */
-
-/**
- * @brief iteration time in second for shuting down
- */
-#define SHUTDOWN_CHECK_SECONDS 300 /* 5 minutes */
-
-/**
- * @brief predefined address of the daemon's socket
- */
-static const char *socket_uri = AFMPKG_SOCKET_ADDRESS;
-
-/**
- * @brief kind of transaction
- */
-enum kind
-{
-	/** unset (initial value) */
-	Request_Unset,
-
-	/** request for adding a package */
-	Request_Add_Package,
-
-	/** request to remove a package */
-	Request_Remove_Package,
-
-	/** request for checking add of a package */
-	Request_Check_Add_Package,
-
-	/** request for checkinfg remove a package */
-	Request_Check_Remove_Package,
-
-	/** request to get the status of a transaction */
-	Request_Get_Status
-};
-
-/**
- * @brief structure recording data of a request
- */
-struct request
-{
-	/** the kind of the request */
-	enum kind kind;
-
-	/** end status of the request */
-	int ended;
-
-	/** index of the request in the transaction set */
-	unsigned index;
-
-	/** count of requests in the transaction set */
-	unsigned count;
-
-	/** identifier of the transaction */
-	char *transid;
-
-	/** argument of the reply */
-	char *reply;
-
-	/** root of files */
-	path_entry_t *root;
-
-	/** the packaging request */
-	afmpkg_t apkg;
-};
 
 /**
  * @brief structure for data of transactions
@@ -151,16 +84,6 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * @brief head of the list of pending transactions
  */
 static struct transaction *all_transactions = NULL;
-
-/**
- * @brief count of living threads
- */
-static int living_threads = 0;
-
-/**
- * @brief is running for ever?
- */
-static char run_forever = 0;
 
 /**
  * @brief remove expired transactions
@@ -224,7 +147,7 @@ static struct transaction *get_transaction(const char *transid, unsigned count)
 }
 
 /**
- * @brief remove the transaction from the list and free its memory
+ * @brief remove the transaction from the list and free its memory2a1ced824fcf36f3dfe676129e3d4b76317cb751
  *
  * The mutex must be taken.
  *
@@ -249,7 +172,7 @@ static void put_transaction(struct transaction *trans)
  *
  * @return 0 on success or else a negative code
  */
-static int init_request(struct request *req)
+int afmpkg_request_init(afmpkg_request_t *req)
 {
 	int rc;
 	req->kind = Request_Unset;
@@ -272,7 +195,7 @@ static int init_request(struct request *req)
  *
  * @param req the request to init
  */
-static void deinit_request(struct request *req)
+void afmpkg_request_deinit(afmpkg_request_t *req)
 {
 	free(req->transid);
 	free(req->reply);
@@ -306,7 +229,7 @@ int dump_one_file(void *closure, path_entry_t *entry, const char *path, size_t l
  * @param req the request to be printed
  * @param file output file
  */
-static void dump_request(struct request *req, FILE *file)
+static void dump_request(afmpkg_request_t *req, FILE *file)
 {
 	static const char *knames[] = {
 		[Request_Unset] = "?unset?",
@@ -338,7 +261,7 @@ static void dump_request(struct request *req, FILE *file)
  * @param req the request to be processed
  * @return 0 on success or a negative error code
  */
-static int process(struct request *req)
+int afmpkg_request_process(afmpkg_request_t *req)
 {
 	struct transaction *trans;
 	int rc = 0;
@@ -410,7 +333,7 @@ static int process(struct request *req)
  * @param string string value of the operation
  * @return the kind of the operation or Request_Unset if not recognized
  */
-static enum kind get_operation_kind(const char *string)
+static afmpkg_request_kind_t get_operation_kind(const char *string)
 {
 	if (strcmp(string, AFMPKG_OPERATION_ADD) == 0)
 		return Request_Add_Package;
@@ -427,11 +350,11 @@ static enum kind get_operation_kind(const char *string)
  * @brief process a line of request
  *
  * @param req the request to fill
- * @param line the line to process
+ * @param line the line to process (must be zero terminated)
  * @param length length of the line
  * @return 0 on success or a negative error code
  */
-static int receive_line(struct request *req, const char *line, size_t length)
+int afmpkg_request_add_line(afmpkg_request_t *req, const char *line, size_t length)
 {
 	char *str;
 	long val;
@@ -555,354 +478,3 @@ static int receive_line(struct request *req, const char *line, size_t length)
 #undef ENDIF
 }
 
-/**
- * @brief receive the request
- *
- * @param sock the input socket
- * @param req the request for recording data
- * @return 0 on success or a negative error code
- */
-static int receive(int sock, struct request *req)
-{
-	int rc;
-	char buffer[32768];
-	ssize_t sz;
-	size_t length = 0, it, eol;
-
-	for (rc = 0 ; rc >= 0 ; ) {
-		/* blocking read of socket */
-		do { sz = recv(sock, &buffer[length], sizeof buffer - length, 0); } while(sz == -1 && errno == EINTR);
-		if (sz == -1) {
-			rc = -errno;
-			break;
-		}
-		else {
-			/* end of input? */
-			if (sz == 0)
-				break;
-
-			/* extract the data */
-			length = (size_t) sz;
-			it = 0;
-			for (it = 0 ; it < length && rc >= 0 ; ) {
-				/* search the end of the line */
-				for(eol = it ; eol < length && buffer[eol] != '\n' ; eol++);
-				if (eol == length) {
-					/* not found, shift end of the buffer */
-					eol = it;
-					length -= it;
-					for (it = 0 ; it < length ; )
-						buffer[it++] = buffer[eol++];
-				}
-				else {
-					if (eol != it) {
-						/* found a not empty line, process it */
-						buffer[eol] = 0;
-						rc = receive_line(req, &buffer[it], eol - it);
-					}
-					it = eol + 1;
-				}
-			}
-		}
-	}
-	shutdown(sock, SHUT_RD);
-	return rc;
-}
-
-/**
- * @brief send a reply to the client
- *
- * @param sock socket for sending to client
- * @param rc the status
- * @param arg a string argument for the status
- * @param length size of the argument string arg
- */
-static void reply_length(int sock, int rc, const char *arg, size_t length)
-{
-	static char error[] = AFMPKG_KEY_ERROR;
-	static char ok[] = AFMPKG_KEY_OK;
-	static char nl[] = { '\n' };
-	static char space[] = { ' ' };
-
-	struct msghdr mh;
-	struct iovec iov[4];
-	ssize_t sz;
-
-	/* raz the header */
-	memset(&mh, 0, sizeof mh);
-	mh.msg_iov = iov;
-
-	/* make the message */
-	if (rc >= 0) {
-		iov[0].iov_base = ok;
-		iov[0].iov_len = sizeof ok - 1;
-	}
-	else {
-		iov[0].iov_base = error;
-		iov[0].iov_len = sizeof error - 1;
-	}
-	if (length == 0)
-		mh.msg_iovlen = 2;
-	else {
-		iov[1].iov_base = space;
-		iov[1].iov_len = sizeof space;
-		iov[2].iov_base = (void*)arg;
-		iov[2].iov_len = length;
-		mh.msg_iovlen = 4;
-	}
-	iov[mh.msg_iovlen - 1].iov_base = nl;
-	iov[mh.msg_iovlen - 1].iov_len = sizeof nl;
-
-	/* send the status */
-	do { sz = sendmsg(sock, &mh, 0); } while(sz == -1 && errno == EINTR);
-	shutdown(sock, SHUT_WR);
-}
-
-/**
- * @brief send a reply to the client
- *
- * @param sock socket for sending to client
- * @param rc the status
- * @param arg a string argument for the status
- */
-static void reply(int sock, int rc, const char *arg)
-{
-	reply_length(sock, rc, arg, arg == NULL ? 0 : strlen(arg));
-}
-
-/**
- * @brief serve a client
- *
- * This is not a loop. When a client connects, only one request is served
- * and the the socket is closed.
- *
- * @param sock socket for dialing with the client
- * @return 0 on success or a negative error code
- */
-static int serve(int sock)
-{
-	int rc;
-	struct request request; /* in stack request */
-
-	/* init the request */
-	rc = init_request(&request);
-
-	/* receive the request */
-	if (rc >= 0)
-		rc = receive(sock, &request);
-
-	/* process the request */
-	if (rc >= 0) {
-		rc = process(&request);
-#if !NO_SEND_SIGHUP_ALL
-		switch (request.kind) {
-		case Request_Add_Package:
-		case Request_Remove_Package:
-			sighup_all();
-			break;
-		default:
-			break;
-		}
-#endif
-	}
-
-	/* reply to the request */
-	reply(sock, rc, request.reply);
-
-	/* reset the memory */
-	deinit_request(&request);
-	return rc;
-}
-
-/**
- * @brief main thread for serving
- *
- * serving a client is run synchronously in a thread
- *
- * @param arg a casted integer handling the socket number
- */
-static void *serve_thread(void *arg)
-{
-	int sock = (int)(intptr_t)arg;
-
-	/* serve the connection */
-	serve(sock);
-
-	/* close the connection */
-	close(sock);
-
-	/* update liveness */
-	pthread_mutex_lock(&mutex);
-	living_threads = living_threads - 1;
-	pthread_mutex_unlock(&mutex);
-	return NULL;
-}
-
-/**
- * @brief basic run loop
- */
-void launch_serve_thread(int socli)
-{
-	pthread_attr_t tat;
-	pthread_t tid;
-	int rc;
-
-	/* for creating threads in detached state */
-	pthread_attr_init(&tat);
-	pthread_attr_setdetachstate(&tat, PTHREAD_CREATE_DETACHED);
-
-	/* update liveness */
-	pthread_mutex_lock(&mutex);
-	living_threads = living_threads + 1;
-	rc = pthread_create(&tid, &tat, serve_thread, (void*)(intptr_t)socli);
-	if (rc != 0) {
-		/* can't run thread */
-		close(socli);
-		living_threads = living_threads - 1;
-	}
-	pthread_mutex_unlock(&mutex);
-}
-
-/**
- * @brief check if stopping is possible
- */
-int can_stop()
-{
-	int result;
-
-	pthread_mutex_lock(&mutex);
-	cleanup_transactions();
-	result = living_threads == 0 && all_transactions == NULL;
-	pthread_mutex_unlock(&mutex);
-	return result;
-}
-
-/**
- * @brief create a socket listening to clients
- *
- * @return the opened socket or a negative error code
- */
-static int listen_clients()
-{
-	return rp_socket_open_scheme(socket_uri, 1, "unix:");
-}
-
-/**
- * @brief prepare run loop
- */
-void prepare_run()
-{
-	struct sigaction osa;
-
-	/* for not dying on client disconnection */
-	memset(&osa, 0, sizeof osa);
-	osa.sa_handler = SIG_IGN;
-	sigaction(SIGPIPE, &osa, NULL);
-	sigaction(SIGHUP, &osa, NULL);
-}
-
-/**
- * @brief basic run loop
- */
-int run()
-{
-	struct pollfd pfd;
-	int rc;
-
-	/* create the listening socket */
-	pfd.fd = listen_clients();
-	if (pfd.fd < 0)
-		return 1;
-
-	/* loop on wait a client and serve it with a dedicated thread */
-	pfd.events = POLLIN;
-	for(;;) {
-		rc = poll(&pfd, 1, SHUTDOWN_CHECK_SECONDS * 1000);
-		if (rc == 1) {
-			rc = accept(pfd.fd, NULL, NULL);
-			if (rc >= 0)
-				launch_serve_thread(rc);
-		}
-		if (rc < 0 && errno != EINTR)
-			return 2;
-		if (can_stop() && !run_forever)
-			return 0;
-	}
-}
-
-static const char appname[] = "afmpkg-installer";
-
-static void version()
-{
-	printf(
-		"\n"
-		"  %s  version="AFM_VERSION"\n"
-		"\n"
-		"  Copyright (C) 2015-2023 IoT.bzh Company\n"
-		"  AFB comes with ABSOLUTELY NO WARRANTY.\n"
-		"  Licence Apache 2\n"
-		"\n",
-		appname
-	);
-}
-
-static void usage()
-{
-	printf(
-		"usage: %s [options...]\n"
-		"options:\n"
-		"   -f, --forever     don't stop when unused\n"
-		"   -h, --help        help\n"
-		"   -q, --quiet       quiet\n"
-		"   -s, --socket URI  socket URI\n"
-		"   -v, --verbose     verbose\n"
-		"   -V, --version     version\n"
-		"\n",
-		appname
-	);
-}
-
-static struct option options[] = {
-	{ "forever",     no_argument,       NULL, 'f' },
-	{ "help",        no_argument,       NULL, 'h' },
-	{ "quiet",       no_argument,       NULL, 'q' },
-	{ "socket",      required_argument, NULL, 's' },
-	{ "verbose",     no_argument,       NULL, 'v' },
-	{ "version",     no_argument,       NULL, 'V' },
-	{ NULL, 0, NULL, 0 }
-};
-
-/* install the widgets of the list */
-int main(int ac, char **av)
-{
-	for (;;) {
-		int i = getopt_long(ac, av, "fhqsvV", options, NULL);
-		if (i < 0)
-			break;
-		switch (i) {
-		case 'f':
-			run_forever = 1;
-			break;
-		case 'h':
-			usage();
-			return 0;
-		case 'q':
-			rp_verbose_dec();
-			break;
-		case 's':
-			socket_uri = optarg;
-			break;
-		case 'v':
-			rp_verbose_inc();
-			break;
-		case 'V':
-			version();
-			return 0;
-		default:
-			RP_ERROR("unrecognized option");
-			return 1;
-		}
-	}
-	prepare_run();
-	return run();
-}
