@@ -431,8 +431,10 @@ static int set_one_file_security(void *closure, path_entry_t *entry, const char 
 	case path_type_Http:
 		rc = secmgr_path_http(realpath);
 		break;
+	case path_type_Unknown:
 	default:
 		RP_DEBUG("unknown path type: %s", realpath);
+		rc = secmgr_path_conf(realpath);
 		break;
 	}
 	if (rc < 0 && state->rc >= 0)
