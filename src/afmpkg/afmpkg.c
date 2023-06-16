@@ -79,6 +79,9 @@ struct install_state
 	/** path entry for the content */
 	path_entry_t *content;
 
+	/** path entry for the package */
+	path_entry_t *packdir;
+
 	/** offset of root in path */
 	unsigned offset_root;
 
@@ -194,6 +197,12 @@ static int check_permissions(install_state_t *state)
 	return 0;
 }
 
+static int get_path_entry(install_state_t *state, path_entry_t **result, const char *path)
+{
+	const path_entry_t *root = path[0] == '/' ? state->content : state->packdir;
+	return path_entry_get(root, result, path);
+}
+
 static int check_one_content(const char *src, const char *type, install_state_t *state)
 {
 	int rc;
@@ -201,9 +210,9 @@ static int check_one_content(const char *src, const char *type, install_state_t 
 	size_t length;
 	path_entry_t *entry;
 
-	rc = path_entry_get(state->content, &entry, src);
+	rc = get_path_entry(state, &entry, src);
 	if (rc < 0) {
-		rc = path_entry_get(state->content, &entry, "htdocs");
+		rc = get_path_entry(state, &entry, "htdocs");
 		if (rc >= 0)
 			rc = path_entry_get(entry, &entry, src);
 		if (rc < 0) {
@@ -280,7 +289,7 @@ static void set_file_type(void *closure, json_object *jso)
 
 	if (json_object_object_get_ex(jso, "name", &name)
 	 && json_object_object_get_ex(jso, "value", &value)) {
-		rc = path_entry_get(state->content, &entry, json_object_get_string(name));
+		rc = get_path_entry(state, &entry, json_object_get_string(name));
 		if (rc < 0) {
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
 			rc = -ENOENT;
@@ -335,7 +344,7 @@ static void set_target_file_properties(void *closure, json_object *jso)
 	if (json_object_object_get_ex(jso, "content", &content)
 	 && json_object_object_get_ex(content, "src", &src)
 	 && json_object_object_get_ex(content, "type", &type)) {
-		if (path_entry_get(state->content, &entry, json_object_get_string(src)) < 0) {
+		if (get_path_entry(state, &entry, json_object_get_string(src)) < 0) {
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
 			if (state->rc == 0)
 				state->rc = -ENOENT;
@@ -568,18 +577,19 @@ install_afmpkg(
 ) {
 	int rc;
 	install_state_t state;
-	path_entry_t *packdir;
 
 	state.rc = 0;
 	state.apkg = apkg;
 	state.manifest = NULL;
 	state.permset = NULL;
-	state.content = NULL;
+	state.content = apkg->files;
 	state.offset_root = offset_root;
 	state.offset_pack = offset_pack;
 	state.path = path;
 
-	path_entry_get_length(apkg->files, &packdir, &path[offset_root], offset_pack - offset_root);
+	rc = path_entry_get_length(state.content, &state.packdir, &path[offset_root], offset_pack - offset_root);
+	if (rc < 0)
+		state.packdir = state.content;
 
 	RP_NOTICE("-- Install afm pkg %s from manifest %s --", apkg->package, path);
 
@@ -596,9 +606,6 @@ install_afmpkg(
 		RP_ERROR("can't create permset");
 		goto error3;
 	}
-
-	/* creates the path entries */
-	state.content = apkg->files;
 
 	/* check permissions */
 	rc = check_permissions(&state);
@@ -634,8 +641,8 @@ install_afmpkg(
 	}
 
 	/* generate and install units */
-	if (packdir != NULL)
-		path_entry_get_relpath(packdir, &path[offset_root], PATH_MAX - offset_root, apkg->files);
+	if (state.packdir != state.content)
+		path_entry_get_relpath(state.packdir, &path[offset_root], PATH_MAX - offset_root, apkg->files);
 	else {
 		path[offset_root] = '/';
 		path[offset_root + 1] = 0;
