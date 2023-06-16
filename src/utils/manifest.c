@@ -49,6 +49,8 @@
 #define MANIFEST_VALUE_OPTIONAL			"optional"
 #define MANIFEST_VALUE_REQUIRED			"required"
 
+#define MANIFEST_TARGET				"target"
+#define MANIFEST_SHARP_TARGET			"#target"
 
 static void make_lowercase(char *s)
 {
@@ -124,6 +126,37 @@ static int add(json_object *jso, const char *key, const char *value)
 			return 0;
 	}
 	return -ENOMEM;
+}
+
+/*
+ * add a key #target to the value of target, see bug #5358
+ */
+static int retargets(json_object *jso)
+{
+	int rc = 0;
+	unsigned idx, length;
+	json_object *targets, *item, *targ;
+
+	if (!json_object_object_get_ex(jso, MANIFEST_TARGETS, &targets)
+	 || !json_object_is_type(targets, json_type_array))
+		rc = -EINVAL;
+	else {
+		length = (unsigned)json_object_array_length(targets);
+		for (idx = 0 ; idx < length ; idx++) {
+			item = json_object_array_get_idx(targets, idx);
+			if (!json_object_is_type(item, json_type_object))
+				rc = -EINVAL;
+			else if (!json_object_object_get_ex(item, MANIFEST_SHARP_TARGET, &targ)) {
+				if (!json_object_object_get_ex(item, MANIFEST_TARGET, &targ))
+					rc = -EINVAL;
+				else {
+					targ = json_object_get(targ);
+					json_object_object_add(item, MANIFEST_SHARP_TARGET, targ);
+				}
+			}
+		}
+	}
+	return rc;
 }
 
 static int fulfill(json_object *jso)
@@ -234,6 +267,11 @@ manifest_read_and_check(
 			rc = fulfill(*obj);
 			if (rc < 0)
 				RP_ERROR("can't fulfill manifest %s", path);
+			else {
+				rc = retargets(*obj);
+				if (rc < 0)
+					RP_ERROR("can't retarget manifest %s", path);
+			}
 		}
 		if (rc < 0) {
 			json_object_put(*obj);

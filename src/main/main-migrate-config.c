@@ -83,6 +83,8 @@ void put(const char *key, const char *value)
 		d--;
 		printf("%s", d || !begarr ? tab : beg);
 	}
+	if (key[0] == '#') /* translate #target to target, see bug #5358 */
+		key++;
 	if (key != NULL)
 		printf("%s:", key);
 	if (key != NULL && value != NULL && *value != 0)

@@ -44,18 +44,13 @@ define( `IF_NOT_REDPAK', `MUSTACH_IF_NOT(#metadata.redpak)')
 --------------------------------------------------------------------------------
 -- AFM DEFINITION
 --------------------------------------------------------------------------------
--- NOTE:
---  when home screen will use real ids
---  use TARGET={{:id}}--{{:#target}}
---  instead of TARGET={{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}
---------------------------------------------------------------------------------
 define( `AFID', `{{:#metatarget.afid}}')
 define( `SMACKLABEL', `App:{{:id}}')
 define( `SELINUXLABEL', `system_u:system_r:{{:id-underscore}}_t:s0')
-define( `TARGET', `{{idaver}}{{^#target=main}}@{{:#target}}{{/#target=main}}')
-define( `NEWTARGET', `{{:id}}--{{:#target}}')
+define( `TARGET', `{{idaver}}{{^#target=main}}--{{:#target}}{{/#target=main}}')
+define( `FULLTARGET', `{{:id}}--{{:#target}}')
 define( `UNITSUFFIX', `ON_NOT_PERM(`:partner:scope-platform', `@%i')')
-define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-NEWTARGET')
+define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-FULLTARGET')
 define( `UNIT_NAME_API_BASE', `afm-api-$1')
 define( `UNIT_NAME_API_SERVICE', `UNIT_NAME_API_BASE($1)UNITSUFFIX.service')
 define( `UNIT_NAME_API_SOCKET', `UNIT_NAME_API_BASE($1)UNITSUFFIX.socket')
