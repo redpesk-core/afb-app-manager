@@ -125,6 +125,25 @@ int for_each_content_entry(
 			&state->path[state->offset_root], PATH_MAX - state->offset_root);
 }
 
+int for_each_pack_entry(
+	unsigned flags,
+	install_state_t *state,
+	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
+) {
+	size_t pos = state->offset_root;
+
+	/* generate and install units */
+	if (state->packdir != state->content)
+		pos += path_entry_get_relpath(state->packdir, &state->path[pos], PATH_MAX - pos, state->content);
+	else {
+		state->path[pos] = '/';
+		state->path[++pos] = 0;
+	}
+
+	return path_entry_for_each_in_buffer(flags, state->packdir, fun, state,
+			&state->path[pos], PATH_MAX - pos);
+}
+
 
 static void for_each_of(json_object *jso, void (*fun)(void*, json_object*), void *closure, const char *key)
 {
@@ -434,7 +453,7 @@ static int setup_security(install_state_t *state)
 	}
 
 	/* setup file security */
-	for_each_content_entry(PATH_ENTRY_FORALL_AFTER, state, set_one_file_security);
+	for_each_pack_entry(PATH_ENTRY_FORALL_AFTER, state, set_one_file_security);
 	rc = state->rc;
 	if (rc < 0)
 		goto end;
