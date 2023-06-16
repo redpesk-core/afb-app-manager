@@ -365,9 +365,6 @@ static int process(struct request *req)
 				rc = afmpkg_install(&req->apkg);
 			else
 				rc = afmpkg_uninstall(&req->apkg);
-#if !NO_SEND_SIGHUP_ALL
-			sighup_all();
-#endif
 		}
 		/* record status for transaction */
 		if (req->transid != NULL) {
@@ -696,8 +693,18 @@ static int serve(int sock)
 		rc = receive(sock, &request);
 
 	/* process the request */
-	if (rc >= 0)
+	if (rc >= 0) {
 		rc = process(&request);
+#if !NO_SEND_SIGHUP_ALL
+		switch (request.kind) {
+		case Request_Add_Package:
+		case Request_Remove_Package:
+			sighup_all();
+			break;
+		default:
+		}
+#endif
+	}
 
 	/* reply to the request */
 	reply(sock, rc, request.reply);
