@@ -533,11 +533,11 @@ static int make_install_metadata(
 	return rc == 0 ? 0 : -ENOMEM;
 }
 
-static int setup_units(install_state_t *state)
+static int setup_units(install_state_t *state, const char *installdir)
 {
 	struct unitconf uconf;
 	int rc = make_install_metadata(&uconf.metadata,
-				state->apkg, "");
+				state->apkg, installdir);
 	if (rc == 0) {
 		uconf.new_afid = get_new_afid;
 		uconf.base_http_ports = HTTP_PORT_BASE;
@@ -640,7 +640,7 @@ install_afmpkg(
 		path[offset_root] = '/';
 		path[offset_root + 1] = 0;
 	}
-	rc = setup_units(&state);
+	rc = setup_units(&state, &path[offset_root]);
 error4:
 	permset_destroy(state.permset);
 error3:
