@@ -161,14 +161,12 @@ static int retargets(json_object *jso)
 
 static int fulfill(json_object *jso)
 {
-	int rc;
+	int rc = -EINVAL;
 	char *lowid = NULL, *undid = NULL, *ver = NULL, *idaver = NULL;
 	json_object *id, *version;
 
-	if (!json_object_object_get_ex(jso, MANIFEST_ID, &id)
-	 || !json_object_object_get_ex(jso, MANIFEST_VERSION, &version))
-		rc = -EINVAL;
-	else {
+	if (json_object_object_get_ex(jso, MANIFEST_ID, &id)
+	 && json_object_object_get_ex(jso, MANIFEST_VERSION, &version)) {
 		ver = mkver(json_object_get_string(version));
 		lowid = strdup(json_object_get_string(id));
 		if (lowid != NULL) {
