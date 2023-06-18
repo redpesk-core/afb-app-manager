@@ -702,6 +702,7 @@ static int serve(int sock)
 			sighup_all();
 			break;
 		default:
+			break;
 		}
 #endif
 	}
