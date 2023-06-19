@@ -131,17 +131,19 @@ int for_each_pack_entry(
 	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
 ) {
 	size_t pos = state->offset_root;
+	path_entry_t *entry = path_entry_parent(state->packdir) ?: state->packdir;
 
 	/* generate and install units */
-	if (state->packdir != state->content)
-		pos += path_entry_get_relpath(state->packdir, &state->path[pos], PATH_MAX - pos, state->content);
+	if (entry != state->content)
+		pos += path_entry_get_relpath(entry, &state->path[pos], PATH_MAX - pos, state->content);
 	else {
 		state->path[pos] = '/';
 		state->path[++pos] = 0;
 	}
 
-	return path_entry_for_each_in_buffer(flags, state->packdir, fun, state,
-			&state->path[pos], PATH_MAX - pos);
+	if (entry == state->packdir)
+		flags |= PATH_ENTRY_FORALL_SILENT_ROOT;
+	return path_entry_for_each_in_buffer(flags, state->packdir, fun, state,	&state->path[pos], PATH_MAX - pos);
 }
 
 
