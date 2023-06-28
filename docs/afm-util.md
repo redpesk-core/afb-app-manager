@@ -96,5 +96,5 @@ Here is the list
 | terminate     | kill       |
 | state         | status     |
 | help          | -h, --help |
-
+{: .table-small-center }
 

@@ -28,7 +28,7 @@ This representation is shown along the examples of the documentation
 of the config files of packages.
 
 In a second step, the mustache template `afm-unit.conf`
-is instantiated using the C library [mustach](https://gitlab.com:jobol/mustach) that follows
+is instantiated using the C library [mustach](https://gitlab.com/jobol/mustach) that follows
 the rules of [mustache](http://mustache.github.io/) and with all its available
 extensions:
 
