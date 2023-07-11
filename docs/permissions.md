@@ -169,7 +169,7 @@ These permissions are available the 21th of May 2019.
   Permission of the application framework
 
 
-## older proposal not implemented
+## Proposals of evolution
 
 ### [PROPOSAL 1] @API
 
