@@ -118,6 +118,21 @@ These permissions are available the 21th of May 2019.
 
   Install the service at the scope of the platform.
 
+- `urn:AGL:permission::partner:tty`
+
+  Adds the group "tty" to the list of supplementary groups
+  of the process.
+
+- `urn:AGL:permission::partner:dialout`
+
+  Adds the group "dialout" to the list of supplementary groups
+  of the process.
+
+- `urn:AGL:permission::partner:video`
+
+  Adds the group "video" to the list of supplementary groups
+  of the process.
+
 - `urn:AGL:permission::system:capability:keep-all`
 
   Keep all capabilities for the service. Note that implementing
