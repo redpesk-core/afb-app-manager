@@ -73,9 +73,6 @@ typedef struct afmpkg_request
 	/** argument of the reply */
 	char *reply;
 
-	/** root of files */
-	path_entry_t *root;
-
 	/** the packaging request */
 	afmpkg_t apkg;
 }

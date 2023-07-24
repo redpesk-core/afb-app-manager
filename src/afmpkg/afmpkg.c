@@ -24,6 +24,8 @@
 
 #define _GNU_SOURCE
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <limits.h>
 #include <errno.h>
 #include <string.h>
@@ -32,7 +34,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -62,102 +63,135 @@
 #define DEFAULT_TCP_PORT_BASE				29000
 #endif
 
+/**
+* processing structure
+*/
 typedef
 struct
 {
+	/** the request */
+	const afmpkg_t *apkg;
+
+	/** should install? */
+	bool install;
+
+	/** should uninstall? */
+	bool uninstall;
+
 	/** for returning the status */
 	int rc;
-
-	/** the installed afmpkg object */
-	const afmpkg_t *apkg;
 
 	/** the json object of the manifest */
 	json_object *manifest;
 
+	/** application ID from manifest */
+	const char *appid;
+
 	/** the set of permission s*/
 	permset_t *permset;
-
-	/** path entry for the content */
-	path_entry_t *content;
 
 	/** path entry for the package */
 	path_entry_t *packdir;
 
-	/** offset of root in path */
+	/** offset of the root path */
 	unsigned offset_root;
 
-	/** offset of package in path */
+	/** offset of the package path */
 	unsigned offset_pack;
 
-	/** buffer for setting paths */
-	char *path;
+	/** path buffer */
+	char path[PATH_MAX];
 }
 	process_state_t;
 
 
+static const char name_manifest[] = ".rpconfig/manifest.yml";
+static const char name_config[] = "config.xml";
+static const char key_pkg[] = "pkg";
+static const char key_type[] = "type";
+static const char key_next[] = "next";
+
+/** default given permissions */
 static const char *default_permissions[] = {
 	"urn:AGL:token:valid"
 };
 
+/* predeclaration of legacy functions (avoids including legacy headers at top) */
+static int process_legacy_config(process_state_t *state);
 
+/*********************************************************************************************/
+/*** MANAGE ENTRY TYPE ***********************************************************************/
+/*********************************************************************************************/
 
+/** returns the path type attached to the entry */
+static
 path_type_t get_entry_type(const path_entry_t *entry)
 {
-	void *value = path_entry_var(entry, get_entry_type);
+	void *value = path_entry_var(entry, key_type);
 	return (path_type_t)(intptr_t)value;
 }
 
+/** attach a path type attached to the entry */
+static
 int set_entry_type(path_entry_t *entry, path_type_t type)
 {
 	void *value = (void*)(intptr_t)type;
-	return path_entry_var_set(entry, get_entry_type, value, NULL);
+	return path_entry_var_set(entry, key_type, value, NULL);
 }
 
+/*********************************************************************************************/
+/*** ITERATION OVER JSON *********************************************************************/
+/*********************************************************************************************/
 
-
-
-
-int for_each_content_entry(
-	unsigned flags,
-	process_state_t *state,
-	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
-) {
-	return path_entry_for_each_in_buffer(flags | PATH_ENTRY_FORALL_SILENT_ROOT, state->content, fun, state,
-			&state->path[state->offset_root], PATH_MAX - state->offset_root);
-}
-
-int for_each_pack_entry(
-	unsigned flags,
-	process_state_t *state,
-	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
-) {
-	size_t pos = state->offset_root;
-	path_entry_t *entry = path_entry_parent(state->packdir) ?: state->packdir;
-
-	/* generate and install units */
-	if (entry != state->content)
-		pos += path_entry_get_relpath(entry, &state->path[pos], PATH_MAX - pos, state->content);
-	else {
-		state->path[pos] = '/';
-		state->path[++pos] = 0;
-	}
-
-	if (entry == state->packdir)
-		flags |= PATH_ENTRY_FORALL_SILENT_ROOT;
-	return path_entry_for_each_in_buffer(flags, state->packdir, fun, state,	&state->path[pos], PATH_MAX - pos);
-}
-
-
-static void for_each_of(json_object *jso, void (*fun)(void*, json_object*), void *closure, const char *key)
+/**
+* Iterate over items of the array at key in jso
+*
+* @param jso the root object
+* @param key the key indexing the array to iterate
+* @param fun callback function called for each entry of the array
+* @param clo closure of the function
+*
+* The callback function 'fun' receives 2 parameters:
+*   - the closure value 'clo'
+*   - the json-c object under iteration
+*/
+static
+void for_each_of(json_object *jso, const char *key, void (*fun)(void*, json_object*), void *clo)
 {
 	json_object *item;
 	if (json_object_object_get_ex(jso, key, &item))
-		rp_jsonc_array_for_all(item, fun, closure);
+		rp_jsonc_array_for_all(item, fun, clo);
 }
 
-static void process_one_required_permission(void * closure, json_object *jso)
+static
+void for_each_target(process_state_t *state, void (*fun)(void*, json_object*), void *clo)
 {
-	permset_t *permset = closure;
+	for_each_of(state->manifest, MANIFEST_TARGETS, fun, clo);
+}
+
+/*********************************************************************************************/
+/*** ITERATION OVER FILES ********************************************************************/
+/*********************************************************************************************/
+
+/** iterate over the entries of the package */
+static
+int for_each_file_entry(
+	process_state_t *state,
+	unsigned flags,
+	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
+) {
+	return path_entry_for_each_in_buffer(flags | PATH_ENTRY_FORALL_SILENT_ROOT, state->packdir, fun, state,
+			&state->path[state->offset_pack], PATH_MAX - state->offset_pack);
+}
+
+/*********************************************************************************************/
+/*** CHECKING PERMISSIONS ********************************************************************/
+/*********************************************************************************************/
+
+static void check_one_permission_cb(void * closure, json_object *jso, const char *key)
+{
+	process_state_t *state = closure;
+	permset_t *permset = state->permset;
 	const char *perm = NULL;
 	json_object *name, *value;
 	int hasname, hasvalue, optional = 0;
@@ -205,36 +239,35 @@ static void process_one_required_permission(void * closure, json_object *jso)
 	}
 }
 
-static void process_required_permissions_of(void * closure, json_object *jso)
+static void check_permissions_cb(void * clo, json_object *jso)
 {
-	json_object *item;
-	if (json_object_object_get_ex(jso, MANIFEST_REQUIRED_PERMISSIONS, &item))
-		rp_jsonc_array_for_all(item, process_one_required_permission, closure);
+	json_object *perms;
+	if (json_object_object_get_ex(jso, MANIFEST_REQUIRED_PERMISSIONS, &perms))
+		rp_jsonc_object_for_all(perms, check_one_permission_cb, clo);
 }
 
 static int check_permissions(process_state_t *state)
 {
-	process_required_permissions_of(state->permset, state->manifest);
-	for_each_of(state->manifest, process_required_permissions_of, state->permset, MANIFEST_TARGETS);
+	check_permissions_cb(state, state->manifest);
+	for_each_target(state, check_permissions_cb, state);
 	return 0;
 }
 
-static int get_path_entry(process_state_t *state, path_entry_t **result, const char *path)
-{
-	const path_entry_t *root = path[0] == '/' ? state->content : state->packdir;
-	return path_entry_get(root, result, path);
-}
-
-static int check_one_content(const char *src, const char *type, process_state_t *state)
+/*
+* check the src and type of one target
+*/
+static int check_src_type_definition(process_state_t *state, const char *src, const char *type)
 {
 	int rc;
 	struct stat s;
 	size_t length;
 	path_entry_t *entry;
 
-	rc = get_path_entry(state, &entry, src);
+	/* get the entry for the src */
+	rc = path_entry_get(state->packdir, &entry, src);
 	if (rc < 0) {
-		rc = get_path_entry(state, &entry, "htdocs");
+		/* fallback to htdocs for http content */
+		rc = path_entry_get(state->packdir, &entry, "htdocs");
 		if (rc >= 0)
 			rc = path_entry_get(entry, &entry, src);
 		if (rc < 0) {
@@ -243,18 +276,23 @@ static int check_one_content(const char *src, const char *type, process_state_t 
 		}
 	}
 
-	length = path_entry_get_relpath(entry, &state->path[state->offset_root], PATH_MAX - state->offset_root, state->content);
+	/* get the full name of the entry on disk */
+	length = path_entry_relpath(entry, &state->path[state->offset_pack],
+	                            PATH_MAX - state->offset_pack, state->packdir,
+				    PATH_ENTRY_FORCE_LEADING_SLASH);
 	if (length + state->offset_root > PATH_MAX) {
 		RP_ERROR("filename too long %s", src);
 		return -ENAMETOOLONG;
 	}
 
+	/* get src path information */
 	rc = fstatat(AT_FDCWD, state->path, &s, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
 	if (rc < 0) {
 		rc = -errno;
-		RP_ERROR("can't get status of src %s: %m", state->path);
+		RP_ERROR("can't get status of src %s: %s", state->path, strerror(errno));
 		return rc;
 	}
+	/* check src conformity */
 	if (!S_ISREG(s.st_mode) && !S_ISDIR(s.st_mode)) {
 		RP_ERROR("src isn't a regular file or a directory %s", state->path);
 		return -EINVAL;
@@ -263,40 +301,52 @@ static int check_one_content(const char *src, const char *type, process_state_t 
 	return 0;
 }
 
-static void check_one_target(void *closure, json_object *jso)
+/*
+* check definition of one target
+*/
+static void check_target_content_cb(void *closure, json_object *jso)
 {
+	json_object *content, *src, *type;
 	process_state_t *state = closure;
 	int rc = -EINVAL;
-	json_object *content, *src, *type;
 
+	/* check if has a content */
 	if (!json_object_object_get_ex(jso, "content", &content))
 		RP_ERROR("no content %s", json_object_get_string(jso));
 
+	/* check that the content is an object */
 	else if (!json_object_is_type(content, json_type_object))
 		RP_ERROR("content isn't an object %s", json_object_get_string(content));
 
+	/* check that the content has a key "src" */
 	else if (!json_object_object_get_ex(content, "src", &src))
 		RP_ERROR("no content.src %s", json_object_get_string(content));
 
+	/* check that the content's value at key "src" is a string */
 	else if (!json_object_is_type(src, json_type_string))
 		RP_ERROR("no content.src isn't a string %s", json_object_get_string(src));
 
+	/* check that the content has a key "type" */
 	else if (!json_object_object_get_ex(content, "type", &type))
 		RP_ERROR("no content.type %s", json_object_get_string(content));
 
+	/* check that the content's value at key "type" is a string */
 	else if (!json_object_is_type(type, json_type_string))
 		RP_ERROR("no content.type isn't a string %s", json_object_get_string(type));
 
 	else
-		rc = check_one_content(json_object_get_string(src), json_object_get_string(type), state);
+		rc = check_src_type_definition(state, json_object_get_string(src), json_object_get_string(type));
 
 	if (rc < 0 && state->rc == 0)
 		state->rc = rc;
 }
 
+/*
+* checks that any target of the manifest is correctly setup
+*/
 static int check_contents(process_state_t *state)
 {
-	for_each_of(state->manifest, check_one_target, state, MANIFEST_TARGETS);
+	for_each_target(state, check_target_content_cb, state);
 	return state->rc;
 }
 
@@ -311,7 +361,7 @@ static void set_file_type(void *closure, json_object *jso)
 
 	if (json_object_object_get_ex(jso, "name", &name)
 	 && json_object_object_get_ex(jso, "value", &value)) {
-		rc = get_path_entry(state, &entry, json_object_get_string(name));
+		rc = path_entry_get(state->packdir, &entry, json_object_get_string(name));
 		if (rc < 0) {
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
 			rc = -ENOENT;
@@ -349,7 +399,7 @@ static int fulfill_properties(void *closure, path_entry_t *entry, const char *pa
 
 	curtype = get_entry_type(entry);
 	if (curtype == path_type_Unknown && !path_entry_has_child(entry)) {
-		curtype = path_type_of_entry(entry, state->content);
+		curtype = path_type_of_entry(entry, state->packdir);
 		if (curtype == path_type_Unknown)
 			curtype = path_type_Id;
 		set_entry_type(entry, curtype);
@@ -366,7 +416,7 @@ static void set_target_file_properties(void *closure, json_object *jso)
 	if (json_object_object_get_ex(jso, "content", &content)
 	 && json_object_object_get_ex(content, "src", &src)
 	 && json_object_object_get_ex(content, "type", &type)) {
-		if (get_path_entry(state, &entry, json_object_get_string(src)) < 0) {
+		if (path_entry_get(state->packdir, &entry, json_object_get_string(src)) < 0) {
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
 			if (state->rc == 0)
 				state->rc = -ENOENT;
@@ -389,17 +439,55 @@ static int reset_type_cb(void *closure, path_entry_t *entry, const char *path, s
 static int compute_files_properties(process_state_t *state)
 {
 	if (state->rc >= 0)
-		for_each_content_entry(PATH_ENTRY_FORALL_NO_PATH, state, reset_type_cb);
+		for_each_file_entry(state, PATH_ENTRY_FORALL_NO_PATH, reset_type_cb);
 	if (state->rc >= 0)
-		for_each_of(state->manifest, set_file_type, state, MANIFEST_FILE_PROPERTIES);
+		for_each_of(state->manifest, MANIFEST_FILE_PROPERTIES, set_file_type, state);
 	if (state->rc >= 0)
-		for_each_of(state->manifest, set_target_file_properties, state, MANIFEST_TARGETS);
+		for_each_target(state, set_target_file_properties, state);
 	if (state->rc >= 0)
-		for_each_content_entry(PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_ONLY_ADDED, state, fulfill_properties);
+		for_each_file_entry(state, PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_ONLY_ADDED, fulfill_properties);
 	return state->rc;
 }
 
-static int set_one_file_security(void *closure, path_entry_t *entry, const char *path, size_t length)
+static int make_file_executable(const char *filename)
+{
+	int rc = chmod(filename, 0755);
+	if (rc < 0) {
+		RP_ERROR("can't make file executable %s", filename);
+		rc = -errno;
+	}
+	return rc;
+}
+
+static int set_one_file_properties_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+{
+	process_state_t *state = closure;
+	int rc;
+	switch (get_entry_type(entry)) {
+	case path_type_Public_Exec:
+	case path_type_Exec:
+		rc = make_file_executable(state->path);
+		if (rc < 0 && state->rc == 0)
+			state->rc = rc;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static int set_files_properties(process_state_t *state)
+{
+	for_each_file_entry(state, 0, set_one_file_properties_cb);
+	return state->rc;
+}
+
+
+/*********************************************************************************************/
+/*** SETTING OF THE SECURITY ITEMS ***********************************************************/
+/*********************************************************************************************/
+
+static int setup_security_file_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
 	process_state_t *state = closure;
 	const char *realpath = state->path;
@@ -445,71 +533,78 @@ static int set_one_file_security(void *closure, path_entry_t *entry, const char 
 	return 0;
 }
 
+static int permit(process_state_t *state, const char *perm)
+{
+	int rc = secmgr_permit(perm);
+	if (rc < 0)
+		RP_ERROR("Fails to permit %s", perm);
+	else
+		RP_INFO("Permits %s", perm);
+	return rc;
+}
+
 static int setup_security(process_state_t *state)
 {
-	unsigned i, n;
-	const char *perm;
 	int rc;
+	unsigned i, n;
 
-	rc = secmgr_begin(state->apkg->package);
+	/* starts a transaction with the security manager */
+	rc = secmgr_begin(state->appid);
 	if (rc < 0) {
 		RP_ERROR("can't initialize security-manager context");
 		goto end;
 	}
 
 	/* setup file security */
-	for_each_pack_entry(PATH_ENTRY_FORALL_AFTER, state, set_one_file_security);
+	for_each_file_entry(state, PATH_ENTRY_FORALL_AFTER, setup_security_file_cb);
 	rc = state->rc;
 	if (rc < 0)
 		goto end;
 
-	/* setup  permissions */
-	permset_select_first(state->permset, permset_Select_Requested_And_Granted);
-	perm = permset_current(state->permset);
-	while(perm) {
-		rc = secmgr_permit(perm);
-		RP_INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
-		if (rc)
+	/* setup permissions */
+	rc = permset_select_first(state->permset, permset_Select_Requested_And_Granted);
+	while(rc) {
+		rc = permit(state, permset_current(state->permset));
+		if (rc < 0)
 			goto cancel;
-		permset_select_next(state->permset, permset_Select_Requested_And_Granted);
-		perm = permset_current(state->permset);
+		rc = permset_select_next(state->permset, permset_Select_Requested_And_Granted);
 	}
 
-	/* install default permissions */
+	/* also setup default permissions */
 	n = (unsigned)(sizeof default_permissions / sizeof *default_permissions);
 	for (i = 0 ; i < n ; i++) {
-		perm = default_permissions[i];
-		rc = secmgr_permit(perm);
-		RP_INFO("permitting %s %s", perm, rc ? "FAILED!" : "success");
+		rc = permit(state, default_permissions[i]);
 		if (rc < 0)
 			goto cancel;
 	}
 
+	/* installs the setting now, it commits the transaction */
 	rc = secmgr_install();
 
 cancel:
+	/* terminate the transaction, cancelling it if not commited */
 	secmgr_end();
 
 end:
 	return rc;
 }
 
-static int setdown_files(void *closure, path_entry_t *entry, const char *path, size_t length)
+static int setdown_security_file_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
+	/* before uninstalling, set the id for making files inaccessible */
 	secmgr_path_id(path);
 	return 0;
 }
 
 static int setdown_security(
-		const afmpkg_t *apkg,
-		json_object *manifest
+		process_state_t *state
 ) {
-	int rc = secmgr_begin(apkg->package);
+	int rc = secmgr_begin(state->appid);
 	if (rc < 0)
 		RP_ERROR("can't init sec lsm manager context");
 	else {
 		path_entry_for_each(PATH_ENTRY_FORALL_ONLY_ADDED | PATH_ENTRY_FORALL_ABSOLUTE,
-			apkg->files, setdown_files, NULL);
+			state->packdir, setdown_security_file_cb, NULL);
 
 		rc = secmgr_uninstall();
 		secmgr_end();
@@ -519,39 +614,30 @@ static int setdown_security(
 	return rc;
 }
 
-static int make_file_executable(const char *filename)
-{
-	int rc = chmod(filename, 0755);
-	if (rc < 0) {
-		RP_ERROR("can't make file executable %s", filename);
-		rc = -errno;
-	}
-	return rc;
-}
+/*********************************************************************************************/
+/*** SETTING THE UNIT FILES ******************************************************************/
+/*********************************************************************************************/
 
-static int set_one_file_properties(void *closure, path_entry_t *entry, const char *path, size_t length)
-{
-	process_state_t *state = closure;
-	int rc;
-	switch (get_entry_type(entry)) {
-	case path_type_Public_Exec:
-	case path_type_Exec:
-		rc = make_file_executable(state->path);
-		if (rc < 0 && state->rc == 0)
-			state->rc = rc;
-		break;
-	default:
-		break;
-	}
-	return 0;
-}
-
-static int set_files_properties(process_state_t *state)
-{
-	for_each_content_entry(0, state, set_one_file_properties);
-	return state->rc;
-}
-
+/**
+* Creates the JSON-C object containing metadata used when exanding
+* mustache configuration files.
+*
+* The created object will contain the keys:
+*
+*  - root-dir: pathe of the root dir if any
+*  - install-dir: path of installation directory relative to root directory
+*  - icons-dir: path of the icon directory
+*  - redpak: boolean indicating if installation occurs within a redpak container
+*  - redpak-id: identifier of the redpak container or null
+*
+* The values of the keys are extracted from the given parameters.
+*
+* @param object pointer for storing the result
+* @param apkg   the request object
+* @param installdir relative path of installation directory
+*
+* @return 0 in case of success or else returns -ENOMEM
+*/
 static int make_install_metadata(
 	json_object **object,
 	const afmpkg_t *apkg,
@@ -566,8 +652,10 @@ static int make_install_metadata(
 	return rc == 0 ? 0 : -ENOMEM;
 }
 
-static int setup_units(process_state_t *state, const char *installdir)
-{
+static int setup_units(
+		process_state_t *state,
+		const char *installdir
+) {
 	struct unitconf uconf;
 	int rc = make_install_metadata(&uconf.metadata,
 				state->apkg, installdir);
@@ -581,261 +669,341 @@ static int setup_units(process_state_t *state, const char *installdir)
 }
 
 static int setdown_units(
-		const afmpkg_t *apkg,
-		json_object *manifest
+		process_state_t *state
 ) {
 	struct unitconf uconf;
 	uconf.metadata = NULL;
 	uconf.new_afid = get_new_afid;
 	uconf.base_http_ports = DEFAULT_TCP_PORT_BASE;
-	return unit_generator_uninstall(manifest, &uconf);
+	return unit_generator_uninstall(state->manifest, &uconf);
 }
+
+/*********************************************************************************************/
+/*** INSTALLATION AND DEINSTALLATION OF AFMPKG ***********************************************/
+/*********************************************************************************************/
 
 static
 int
 install_afmpkg(
-	const afmpkg_t *apkg,
-	char *path,
-	unsigned offset_root,
-	unsigned offset_pack
+	process_state_t *state
 ) {
 	int rc;
-	process_state_t state;
 
-	state.rc = 0;
-	state.apkg = apkg;
-	state.manifest = NULL;
-	state.permset = NULL;
-	state.content = apkg->files;
-	state.offset_root = offset_root;
-	state.offset_pack = offset_pack;
-	state.path = path;
-
-	rc = path_entry_get_length(state.content, &state.packdir, &path[offset_root], offset_pack - offset_root);
-	if (rc < 0)
-		state.packdir = state.content;
-
-	RP_NOTICE("-- Install afm pkg %s from manifest %s --", apkg->package, path);
-
-	/* TODO: processing of signatures */
-
-	/* read the manifest */
-	rc = manifest_read_and_check(&state.manifest, path);
-	if (rc)
-		goto error2;
+	RP_NOTICE("-- Install afm pkg %s from manifest %s --", state->appid, state->path);
 
 	/* creates the permission set */
-	rc = permset_create(&state.permset);
+	rc = permset_create(&state->permset);
 	if (rc < 0) {
 		RP_ERROR("can't create permset");
 		goto error3;
 	}
 
 	/* check permissions */
-	rc = check_permissions(&state);
+	rc = check_permissions(state);
 	if (rc < 0) {
-		RP_ERROR("can't validate permission %s", apkg->package);
+		RP_ERROR("can't validate permission %s", state->appid);
 		goto error4;
 	}
 
 	/* check content */
-	rc = check_contents(&state);
+	rc = check_contents(state);
 	if (rc < 0) {
-		RP_ERROR("can't validate package content %s", apkg->package);
+		RP_ERROR("can't validate package content %s", state->appid);
 		goto error4;
 	}
 
-	/* install files and security */
-	rc = compute_files_properties(&state);
+	/* compute the security type of files */
+	rc = compute_files_properties(state);
 	if (rc < 0) {
-		RP_ERROR("failed to setup afm pkg %s", apkg->package);
+		RP_ERROR("failed to setup afm pkg %s", state->appid);
 		goto error4;
 	}
 
-	rc = setup_security(&state);
+	/* setup specific file properties */
+	rc = set_files_properties(state);
 	if (rc < 0) {
-		RP_ERROR("failed to setup afm pkg %s", apkg->package);
+		RP_ERROR("failed to setup afm pkg %s", state->appid);
 		goto error4;
 	}
 
-	rc = set_files_properties(&state);
+	/* install security items */
+	rc = setup_security(state);
 	if (rc < 0) {
-		RP_ERROR("failed to setup afm pkg %s", apkg->package);
+		RP_ERROR("failed to setup afm pkg %s", state->appid);
 		goto error4;
 	}
 
 	/* generate and install units */
-	if (state.packdir != state.content)
-		path_entry_get_relpath(state.packdir, &path[offset_root], PATH_MAX - offset_root, apkg->files);
+	if (state->offset_root != state->offset_pack)
+		state->path[state->offset_pack] = 0;
 	else {
-		path[offset_root] = '/';
-		path[offset_root + 1] = 0;
+		state->path[state->offset_root] = '/';
+		state->path[state->offset_root + 1] = 0;
 	}
-	rc = setup_units(&state, &path[offset_root]);
+	rc = setup_units(state, &state->path[state->offset_root]);
 error4:
-	permset_destroy(state.permset);
+	permset_destroy(state->permset);
 error3:
-	json_object_put(state.manifest);
-error2:
 	return rc;
 }
 
 static
 int
 uninstall_afmpkg(
-	const afmpkg_t *apkg,
-	char *path,
-	unsigned offset_root,
-	unsigned offset_pack
+	process_state_t *state
 ) {
 	int rc;
-	json_object *manifest;
 
-	RP_NOTICE("-- Uninstall afm pkg %s from manifest %s --", apkg->package, path);
+	RP_NOTICE("-- Uninstall afm pkg %s from manifest %s --", state->appid, state->path);
+
+	/* removed installed units */
+	rc = setdown_units(state);
+	if (rc < 0)
+		RP_ERROR("can't set units down for %s", state->appid);
+	else {
+		/* uninstall security */
+		rc = setdown_security(state);
+		if (rc < 0)
+			RP_ERROR("can't set security down for %s", state->appid);
+	}
+
+	return rc;
+}
+
+static int process_manifest(process_state_t *state)
+{
+	int rc;
 
 	/* TODO: process signatures */
 	/* read the manifest */
-	rc = manifest_read_and_check(&manifest, path);
-	if (rc)
-		goto error2;
+	state->path[state->offset_pack] = '/';
+	strncpy(&state->path[state->offset_pack + 1], name_manifest, sizeof state->path - 1  - state->offset_pack);
+	rc = manifest_read_and_check(&state->manifest, state->path);
+	if (rc < 0)
+		RP_ERROR("Unable to get or validate manifest %s --", state->path);
+	else {
+		RP_DEBUG("processing manifest %s", json_object_to_json_string_ext(state->manifest, JSON_C_TO_STRING_PRETTY));
 
-	/* removed installed units */
-	rc = setdown_units(apkg, manifest);
-	if (rc < 0) {
-		RP_ERROR("can't set units down for %s", apkg->package);
-		goto error3;
+		state->appid = json_object_get_string(json_object_object_get(state->manifest, "id"));
+		if (state->install)
+			return install_afmpkg(state);
+		if (state->uninstall)
+			return uninstall_afmpkg(state);
+		json_object_put(state->manifest);
 	}
-
-	/* uninstall security */
-	rc = setdown_security(apkg, manifest);
-	if (rc < 0) {
-		RP_ERROR("can't set security down for %s", apkg->package);
-		goto error3;
-	}
-
-error3:
-	json_object_put(manifest);
-error2:
 	return rc;
 }
 
-struct detect
-{
-	const char *packname;
-	const char *path;
-	size_t packlen;
-	size_t baselen;
-	size_t offset;
-};
+/*********************************************************************************************/
+/*** SETTING DEFAULT SECURITY TAGS ON REMAINING FILES ****************************************/
+/*********************************************************************************************/
 
+/** callback for adding path to security manager */
 static
-int detect_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+int process_default_tree_add_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	struct detect *det = closure;
-	return detect_packtype(det->packname, det->packlen, det->path, length + det->offset, &det->baselen);
+	process_state_t *state = closure;
+	return secmgr_path_default(state->path);
 }
 
+/** callback for detecting that at least on path exists */
 static
-int prepare_and_detect(
+int process_default_tree_detect_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+{
+	return 1;
+}
+
+static int process_default_tree(process_state_t *state, path_entry_t *root)
+{
+	int rc = 0;
+	if (state->install || state->uninstall) {
+		rc = path_entry_for_each_in_buffer(
+				PATH_ENTRY_FORALL_ONLY_ADDED
+				 | PATH_ENTRY_FORALL_NO_PATH
+				 | PATH_ENTRY_FORALL_BEFORE,
+				root,
+				process_default_tree_detect_cb,
+				NULL,
+				NULL,
+				0);
+		if (rc > 0) {
+			rc = secmgr_begin(NULL);
+			if (rc >= 0) {
+				rc = path_entry_for_each_in_buffer(
+					PATH_ENTRY_FORALL_ONLY_ADDED
+					 | PATH_ENTRY_FORALL_BEFORE,
+					root,
+					process_default_tree_add_cb,
+					state,
+					&state->path[state->offset_root],
+					sizeof state->path - state->offset_root);
+
+				if (rc >= 0)
+					rc = state->install ? secmgr_install() : secmgr_uninstall();
+				secmgr_end();
+			}
+			if (rc < 0)
+				RP_ERROR("Unable to set default security");
+		}
+	}
+	return rc;
+}
+
+/*********************************************************************************************/
+/*** DETECT INCLUDED PACKAGE, LOOP ON IT                                                   ***/
+/*********************************************************************************************/
+
+/*
+* Detect the type of the current entry. The type is identified by the name of
+* the manifest file. The currently known manifests are:
+*  - name_manifest for '.rpconfig/manifest.yml'
+*  - name_config for 'config.xml'
+*
+* When the current entry has a sub-entry of the given name (found with path_entry_get_length),
+* it is acted has being the root of a package. So two variables are set for the entry:
+*  - with key_pkg, the detected pkg type
+*  - with key_next, a link to the previous package entry found
+*
+* Linking the entries together in the reverse order of the found order when inspecting
+* file tree in deep-last order means that children of a root are seen first when the list
+* is scanned later.
+*/
+static
+int detect_package_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+{
+	const char *pkg;
+	path_entry_t **head;
+	int rc = 0;
+
+	if (path_entry_has_child(entry)) {
+		/* check if at root of a known entry type */
+		if (0 == path_entry_get_length(entry, NULL, name_manifest, (sizeof name_manifest) - 1))
+			pkg = name_manifest;
+		else if (0 == path_entry_get_length(entry, NULL, name_config, (sizeof name_config) - 1))
+			pkg = name_config;
+		else
+			pkg = NULL;
+		if (pkg != NULL) {
+			/* set the pkg type in a linked list reverse order */
+			rc = path_entry_var_set(entry, key_pkg, (void*)pkg, NULL);
+			if (rc == 0) {
+				head = closure;
+				rc = path_entry_var_set(entry, key_next, *head, NULL);
+				if (rc == 0)
+					*head = entry;
+			}
+			if (rc < 0)
+				RP_ERROR("out of memory");
+		}
+	}
+	return rc;
+}
+
+/*
+* Common processing routine for installation, uninstallation or just check
+*/
+static
+int afmpkg_process(
 	const afmpkg_t *apkg,
-	char path[PATH_MAX],
-	unsigned *offset_root,
-	unsigned *offset_pack
+	bool install,
+	bool uninstall
 ) {
 	int rc;
-	struct detect det;
-	size_t offset = 0;
+	process_state_t state;
+	path_entry_t *entries, *root;
+	const char *curpkg;
 
-	/* prepare */
-	if (apkg->root != NULL) {
-		offset = strlen(apkg->root);
-		if (offset >= PATH_MAX) {
+	/* prepare data for processing */
+	state.apkg = apkg;
+	state.install = install;
+	state.uninstall = uninstall;
+	if (apkg->root == NULL)
+		state.offset_root = 0;
+	else {
+		state.offset_root = strlen(apkg->root);
+		if (state.offset_root >= PATH_MAX) {
 			RP_ERROR("name too long %.200s...", apkg->root);
 			return -ENAMETOOLONG;
 		}
-		memcpy(path, apkg->root, offset + 1);
-		if (offset > 0 && path[offset - 1] == '/')
-			path[--offset] = 0;
+		memcpy(state.path, apkg->root, state.offset_root + 1);
+		if (state.offset_root > 0 && state.path[state.offset_root - 1] == '/')
+			--state.offset_root;
+	}
+	state.path[state.offset_root] = 0;
+	RP_DEBUG("Processing AFMPKG at root %s", state.path);
+
+	/* scan the packages: builds the list of entries */
+	entries = NULL;
+	rc = path_entry_for_each_in_buffer(
+			PATH_ENTRY_FORALL_NO_PATH | PATH_ENTRY_FORALL_BEFORE,
+			apkg->files,
+			detect_package_cb,
+			&entries,
+			NULL,
+			0);
+
+	/* process the found packages of entries */
+	root = apkg->files;
+	while (rc >= 0 && entries != NULL) {
+		/* reset current state */
+		state.rc = 0;
+		state.permset = NULL;
+		state.manifest = NULL;
+		state.appid = NULL;
+
+		/* extract current entry and remove it from the list */
+		state.packdir = entries;
+		entries = path_entry_var(state.packdir, key_next);
+
+		/* compute the path of the base of the package */
+		state.offset_pack = state.offset_root
+		                  + path_entry_path(state.packdir,
+						&state.path[state.offset_root],
+						sizeof state.path - state.offset_root,
+						PATH_ENTRY_FORCE_LEADING_SLASH);
+		state.path[state.offset_pack] = 0;
+
+		/* process the package subtree */
+		curpkg = path_entry_var(state.packdir, key_pkg);
+		RP_DEBUG("Processing AFMPKG package type %s found at %s", curpkg, state.path);
+		if (curpkg == name_manifest)
+			rc = process_manifest(&state);
+		else
+			rc = process_legacy_config(&state);
+
+		/* remove processed subtree */
+		path_entry_destroy(state.packdir);
+		if (state.packdir == root)
+			root = NULL;
 	}
 
-	/* detection of the type of the installed files */
-	det.packname = apkg->package;
-	det.packlen = det.packname == NULL ? 0 : strlen(det.packname);
-	det.path = path;
-	det.offset = offset;
-	det.baselen = 0;
-	rc = path_entry_for_each_in_buffer(
-			PATH_ENTRY_FORALL_ONLY_ADDED | PATH_ENTRY_FORALL_SILENT_ROOT,
-			apkg->files,
-			detect_cb,
-			&det,
-			&path[det.offset],
-			PATH_MAX - det.offset);
-	*offset_root = (unsigned)offset;
-	*offset_pack = (unsigned)det.baselen;
+	/* process remaining files */
+	if (rc >= 0 && root != NULL) {
+		RP_DEBUG("Processing AFMPKG remaining files");
+		rc = process_default_tree(&state, root);
+	}
+
+	RP_DEBUG("Processing AFMPKG ends with code %d", rc);
 	return rc;
 }
-
-static int install_widget_legacy(
-			const afmpkg_t *apkg,
-			char *path,
-			unsigned offset_root,
-			unsigned offset_pack);
-static int uninstall_widget_legacy(char *path, unsigned offset_pack);
 
 /* install afm package */
 int afmpkg_install(
 	const afmpkg_t *apkg
 ) {
-	int rc;
-	char path[PATH_MAX];
-	unsigned offset_root, offset_pack;
-
-	rc = prepare_and_detect(apkg, path, &offset_root, &offset_pack);
-	if (rc >= 0) {
-		switch ((packtype_t)rc) {
-		case packtype_Widget:
-			rc = install_widget_legacy(apkg, path, offset_root, offset_pack);
-			break;
-
-		case packtype_AfmPkg:
-			rc = install_afmpkg(apkg, path, offset_root, offset_pack);
-			break;
-
-		default:
-			RP_ERROR("Unknown type of package %s", apkg->package ? apkg->package : "?unknown?");
-			rc = -EINVAL;
-		}
-	}
-	return rc;
+	return afmpkg_process(apkg, true, false);
 }
 
 /* install afm package */
 int afmpkg_uninstall(
 	const afmpkg_t *apkg
 ) {
-	int rc;
-	char path[PATH_MAX];
-	unsigned offset_root, offset_pack;
-
-	rc = prepare_and_detect(apkg, path, &offset_root, &offset_pack);
-	if (rc >= 0) {
-		switch ((packtype_t)rc) {
-		case packtype_Widget:
-			rc = uninstall_widget_legacy(path, offset_pack);
-			break;
-
-		case packtype_AfmPkg:
-			rc = uninstall_afmpkg(apkg, path, offset_root, offset_pack);
-			break;
-
-		default:
-			RP_ERROR("Unknown type of package %s", apkg->package ? apkg->package : "?unknown?");
-			rc = -EINVAL;
-		}
-	}
-	return rc;
+	return afmpkg_process(apkg, false, true);
 }
+
+/*********************************************************************************************/
+/*** LEGACY WIDGETS **************************************************************************/
+/*********************************************************************************************/
 
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
@@ -843,47 +1011,42 @@ int afmpkg_uninstall(
 
 static
 int
-install_widget_legacy(
-	const afmpkg_t *apkg,
-	char *path,
-	unsigned offset_root,
-	unsigned offset_pack
+process_legacy_config(
+	process_state_t *state
 ) {
-	json_object *metadata;
-	struct wgt_info *ifo;
-	int rc;
+	int rc = 0;
 
-	path[offset_pack] = 0;
-	RP_NOTICE("-- Install legacy widget from %s --", path);
-
-	rc = make_install_metadata(&metadata, apkg, &path[offset_root]);
-	if (rc == 0) {
-		ifo = install_redpesk_with_meta(path, metadata);
-		if (!ifo) {
-			RP_ERROR("Fail to install %s", path);
-			rc = -errno;
-		}
-		else {
-			wgt_info_unref(ifo);
-			rc = 0;
-		}
-		json_object_put(metadata);
+	if (state->uninstall) {
+		/*
+		** UNINSTALL
+		*/
+		RP_NOTICE("-- Uninstall legacy widget from %s --", state->path);
+		rc = uninstall_redpesk(state->path);
+		if (rc < 0)
+			RP_ERROR("Failed to uninstall %s", state->path);
 	}
-	return rc;
-}
+	else if (state->install) {
+		/*
+		** INSTALL
+		*/
+		json_object *metadata;
+		struct wgt_info *ifo;
 
-static
-int
-uninstall_widget_legacy(
-	char *path,
-	unsigned offset_pack
-) {
-	int rc;
+		RP_NOTICE("-- Install legacy widget from %s --", state->path);
 
-	path[offset_pack] = 0;
-	RP_NOTICE("-- Uninstall legacy widget from %s --", path);
-	rc = uninstall_redpesk(path);
-	if (rc < 0)
-		RP_ERROR("Failed to uninstall %s", path);
+		rc = make_install_metadata(&metadata, state->apkg, &state->path[state->offset_root]);
+		if (rc == 0) {
+			ifo = install_redpesk_with_meta(state->path, metadata);
+			if (!ifo) {
+				RP_ERROR("Fail to install %s", state->path);
+				rc = -errno;
+			}
+			else {
+				wgt_info_unref(ifo);
+				rc = 0;
+			}
+			json_object_put(metadata);
+		}
+	}
 	return rc;
 }

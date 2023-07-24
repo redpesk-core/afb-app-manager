@@ -181,12 +181,10 @@ int afmpkg_request_init(afmpkg_request_t *req)
 	req->count = 0;
 	req->transid = NULL;
 	req->reply = NULL;
-	req->root = NULL;
 	req->apkg.package = NULL;
 	req->apkg.root = NULL;
 	req->apkg.redpakid = NULL;
-	rc = path_entry_create_root(&req->root);
-	req->apkg.files = req->root;
+	rc = path_entry_create_root(&req->apkg.files);
 	return rc;
 }
 
@@ -202,7 +200,7 @@ void afmpkg_request_deinit(afmpkg_request_t *req)
 	free(req->apkg.package);
 	free(req->apkg.root);
 	free(req->apkg.redpakid);
-	path_entry_destroy(req->root);
+	path_entry_destroy(req->apkg.files);
 }
 
 static
@@ -278,9 +276,6 @@ int afmpkg_request_process(afmpkg_request_t *req)
 
 	case Request_Add_Package:
 	case Request_Remove_Package:
-		/* init the pkg root if needed */
-		if (req->apkg.root != NULL)
-			rc = path_entry_root_prepend(req->root, &req->apkg.files, req->apkg.root);
 		/* process the request */
 		if (rc == 0) {
 			if (req->kind == Request_Add_Package)
