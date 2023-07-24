@@ -58,6 +58,9 @@ int secmgr_begin(const char *id)
 		goto ret;
 	}
 
+	if (id == NULL)
+		goto ret;
+
 	rc = sec_lsm_manager_set_id(sm_handle, id);
 
 	if (rc < 0) {
@@ -164,4 +167,9 @@ int secmgr_path_id(const char *pathname)
 int secmgr_path_remove(const char *pathname)
 {
 	return addpath(pathname, "id");
+}
+
+int secmgr_path_default(const char *pathname)
+{
+	return addpath(pathname, "default");
 }
