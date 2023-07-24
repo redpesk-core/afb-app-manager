@@ -44,9 +44,34 @@
 #define MANIFEST_TARGET				"target"
 #define MANIFEST_SHARP_TARGET			"#target"
 
+/**
+* Validates the given manifest object
+*
+* @param jso    pointer where to store the readen object
+*
+* @return 0 if valid or a negative code if invalid
+*/
 extern int manifest_check(json_object *jso);
 
+/**
+* Reads the manifest file of 'path'
+* and return its JSON-C representation in *'obj'
+*
+* @param obj    pointer where to store the readen object
+* @param path   path to the manifest file
+*
+* @return 0 on success or a negative code on error
+*/
 extern int manifest_read(json_object **obj, const char *path);
 
+/**
+* Reads the manifest file of 'path', validate it
+* and return its JSON-C representation in *'obj'
+*
+* @param obj    pointer where to store the readen object
+* @param path   path to the manifest file
+*
+* @return 0 on success or a negative code on error
+*/
 extern int manifest_read_and_check(json_object **obj, const char *path);
 

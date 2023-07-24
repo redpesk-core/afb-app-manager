@@ -34,6 +34,7 @@
 
 #include "manifest.h"
 
+/* convert string to lower case */
 static void make_lowercase(char *s)
 {
 	while(*s) {
