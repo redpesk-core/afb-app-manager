@@ -63,7 +63,7 @@
 #endif
 
 typedef
-struct install_state
+struct
 {
 	/** for returning the status */
 	int rc;
@@ -92,7 +92,7 @@ struct install_state
 	/** buffer for setting paths */
 	char *path;
 }
-	install_state_t;
+	process_state_t;
 
 
 static const char *default_permissions[] = {
@@ -119,7 +119,7 @@ int set_entry_type(path_entry_t *entry, path_type_t type)
 
 int for_each_content_entry(
 	unsigned flags,
-	install_state_t *state,
+	process_state_t *state,
 	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
 ) {
 	return path_entry_for_each_in_buffer(flags | PATH_ENTRY_FORALL_SILENT_ROOT, state->content, fun, state,
@@ -128,7 +128,7 @@ int for_each_content_entry(
 
 int for_each_pack_entry(
 	unsigned flags,
-	install_state_t *state,
+	process_state_t *state,
 	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
 ) {
 	size_t pos = state->offset_root;
@@ -212,20 +212,20 @@ static void process_required_permissions_of(void * closure, json_object *jso)
 		rp_jsonc_array_for_all(item, process_one_required_permission, closure);
 }
 
-static int check_permissions(install_state_t *state)
+static int check_permissions(process_state_t *state)
 {
 	process_required_permissions_of(state->permset, state->manifest);
 	for_each_of(state->manifest, process_required_permissions_of, state->permset, MANIFEST_TARGETS);
 	return 0;
 }
 
-static int get_path_entry(install_state_t *state, path_entry_t **result, const char *path)
+static int get_path_entry(process_state_t *state, path_entry_t **result, const char *path)
 {
 	const path_entry_t *root = path[0] == '/' ? state->content : state->packdir;
 	return path_entry_get(root, result, path);
 }
 
-static int check_one_content(const char *src, const char *type, install_state_t *state)
+static int check_one_content(const char *src, const char *type, process_state_t *state)
 {
 	int rc;
 	struct stat s;
@@ -265,7 +265,7 @@ static int check_one_content(const char *src, const char *type, install_state_t 
 
 static void check_one_target(void *closure, json_object *jso)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	int rc = -EINVAL;
 	json_object *content, *src, *type;
 
@@ -294,7 +294,7 @@ static void check_one_target(void *closure, json_object *jso)
 		state->rc = rc;
 }
 
-static int check_contents(install_state_t *state)
+static int check_contents(process_state_t *state)
 {
 	for_each_of(state->manifest, check_one_target, state, MANIFEST_TARGETS);
 	return state->rc;
@@ -302,7 +302,7 @@ static int check_contents(install_state_t *state)
 
 static void set_file_type(void *closure, json_object *jso)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	path_entry_t *entry;
 	int rc = 0;
 	json_object *name, *value;
@@ -344,7 +344,7 @@ static void set_file_type(void *closure, json_object *jso)
 
 static int fulfill_properties(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	path_type_t curtype;
 
 	curtype = get_entry_type(entry);
@@ -359,7 +359,7 @@ static int fulfill_properties(void *closure, path_entry_t *entry, const char *pa
 
 static void set_target_file_properties(void *closure, json_object *jso)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	json_object *content, *src, *type;
 	path_entry_t *entry;
 
@@ -379,14 +379,14 @@ static void set_target_file_properties(void *closure, json_object *jso)
 
 static int reset_type_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	int rc = set_entry_type(entry, path_type_Unknown);
 	if (rc < 0 && state->rc >= 0)
 		state->rc = rc;
 	return 0;
 }
 
-static int compute_files_properties(install_state_t *state)
+static int compute_files_properties(process_state_t *state)
 {
 	if (state->rc >= 0)
 		for_each_content_entry(PATH_ENTRY_FORALL_NO_PATH, state, reset_type_cb);
@@ -401,7 +401,7 @@ static int compute_files_properties(install_state_t *state)
 
 static int set_one_file_security(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	const char *realpath = state->path;
 	int rc = 0;
 
@@ -445,7 +445,7 @@ static int set_one_file_security(void *closure, path_entry_t *entry, const char 
 	return 0;
 }
 
-static int setup_security(install_state_t *state)
+static int setup_security(process_state_t *state)
 {
 	unsigned i, n;
 	const char *perm;
@@ -531,7 +531,7 @@ static int make_file_executable(const char *filename)
 
 static int set_one_file_properties(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
-	install_state_t *state = closure;
+	process_state_t *state = closure;
 	int rc;
 	switch (get_entry_type(entry)) {
 	case path_type_Public_Exec:
@@ -546,7 +546,7 @@ static int set_one_file_properties(void *closure, path_entry_t *entry, const cha
 	return 0;
 }
 
-static int set_files_properties(install_state_t *state)
+static int set_files_properties(process_state_t *state)
 {
 	for_each_content_entry(0, state, set_one_file_properties);
 	return state->rc;
@@ -566,7 +566,7 @@ static int make_install_metadata(
 	return rc == 0 ? 0 : -ENOMEM;
 }
 
-static int setup_units(install_state_t *state, const char *installdir)
+static int setup_units(process_state_t *state, const char *installdir)
 {
 	struct unitconf uconf;
 	int rc = make_install_metadata(&uconf.metadata,
@@ -600,7 +600,7 @@ install_afmpkg(
 	unsigned offset_pack
 ) {
 	int rc;
-	install_state_t state;
+	process_state_t state;
 
 	state.rc = 0;
 	state.apkg = apkg;
