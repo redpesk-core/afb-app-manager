@@ -62,7 +62,7 @@
 #include "mime-type.h"
 
 #ifndef DEFAULT_TCP_PORT_BASE
-#define DEFAULT_TCP_PORT_BASE		27000
+#define DEFAULT_TCP_PORT_BASE		29000
 #endif
 
 int tcp_port_base = DEFAULT_TCP_PORT_BASE;

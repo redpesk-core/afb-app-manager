@@ -58,8 +58,9 @@
 
 #include "afmpkg.h"
 
-#define HTTP_PORT_BASE				29000
-
+#if !defined(DEFAULT_TCP_PORT_BASE)
+#define DEFAULT_TCP_PORT_BASE				29000
+#endif
 
 typedef
 struct install_state
@@ -572,7 +573,7 @@ static int setup_units(install_state_t *state, const char *installdir)
 				state->apkg, installdir);
 	if (rc == 0) {
 		uconf.new_afid = get_new_afid;
-		uconf.base_http_ports = HTTP_PORT_BASE;
+		uconf.base_http_ports = DEFAULT_TCP_PORT_BASE;
 		rc = unit_generator_install(state->manifest, &uconf);
 		json_object_put(uconf.metadata);
 	}
@@ -586,7 +587,7 @@ static int setdown_units(
 	struct unitconf uconf;
 	uconf.metadata = NULL;
 	uconf.new_afid = get_new_afid;
-	uconf.base_http_ports = HTTP_PORT_BASE;
+	uconf.base_http_ports = DEFAULT_TCP_PORT_BASE;
 	return unit_generator_uninstall(manifest, &uconf);
 }
 
