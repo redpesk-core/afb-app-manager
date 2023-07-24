@@ -50,7 +50,7 @@ set(afm_name                "afm"                                          CACHE
 set(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}" CACHE STRING "Directory for configuration files")
 set(afm_datadir             "${CMAKE_INSTALL_FULL_DATADIR}/${afm_name}"    CACHE STRING "Root directory for installions")
 set(afm_libexecdir          "${CMAKE_INSTALL_FULL_LIBEXECDIR}/${afm_name}" CACHE STRING "Directory for installing internal binaries")
-set(afm_contentdir          "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/${afm_name}" CACHE STRING "Directory for managed content")
+set(afm_contentdir          "${CMAKE_INSTALL_PREFIX}/redpesk"              CACHE STRING "Directory for managed content")
 set(afm_appdir              "${afm_contentdir}/applications"               CACHE STRING "Directory for installing applications")
 set(afm_icondir             "${afm_contentdir}/icons"                      CACHE STRING "Directory for installing icons")
 set(afm_prefix              "urn:AGL:"                                     CACHE STRING "Prefix for uniform resource name")
