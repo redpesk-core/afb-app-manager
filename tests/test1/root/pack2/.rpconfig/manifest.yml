@@ -1,0 +1,15 @@
+rp-manifest: 1
+
+id: pack2
+version: 1
+author: iot team
+license: none
+
+description: >
+  This is a tiny example for testing.
+
+targets:
+  - target: main
+    content:
+       src: hello.html
+       type: text/html

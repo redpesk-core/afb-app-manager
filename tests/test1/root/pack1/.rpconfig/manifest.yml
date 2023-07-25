@@ -1,0 +1,18 @@
+rp-manifest: 1
+
+id: pack1
+version: 1
+author: iot team
+license: none
+
+description: >
+  This is a tiny example for testing.
+
+targets:
+  - target: main
+    content:
+       src: hello.html
+       type: text/html
+    required-permission:
+      - urn:AGL:permission::public:no-htdocs
+
