@@ -298,14 +298,20 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
  * with its given 'closure' and the array descripbing the units.
  * Return 0 in case of success or a negative value in case of error.
  */
-static int process_all_units(char *corpus, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure, struct json_object *jdesc)
-{
+static
+int process_all_units(
+	char *corpus,
+	const struct unitconf *config,
+	int (*process)(void *closure, const struct generatedesc *desc),
+	void *closure,
+	struct json_object *jdesc
+) {
 	int rc, rc2;
 	char *beg, *end, *befbeg, *aftend;
 	struct unitdesc *u;
 	struct generatedesc gdesc;
 
-	gdesc.conf = conf;
+	gdesc.conf = config;
 	gdesc.desc = jdesc;
 	gdesc.units = NULL;
 	gdesc.nunits = 0;
@@ -420,7 +426,7 @@ int unit_generator_open_template(const char *filename)
 	return rc;
 }
 
-static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
+static int add_metadata(struct json_object *jdesc, const struct unitconf *config)
 {
 	struct json_object *targets, *targ, *obj;
 	int port, afid;
@@ -430,14 +436,14 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 		n = json_object_array_length(targets);
 		for (i = 0 ; i < n ; i++) {
 			targ = json_object_array_get_idx(targets, i);
-			if (!conf->new_afid) {
+			if (!config->new_afid) {
 				afid = 0;
 				port = 0;
 			} else {
-				afid = conf->new_afid();
+				afid = config->new_afid();
 				if (afid < 0)
 					return afid;
-				port = conf->base_http_ports + afid;
+				port = config->base_http_ports + afid;
 			}
 			if (!rp_jsonc_subobject(targ, "#metatarget", &obj)
 			 || !rp_jsonc_add(obj, "afid", json_object_new_int(afid))
@@ -446,15 +452,15 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
 		}
 	}
 
-	if (conf->metadata != NULL
-	 && !rp_jsonc_add(jdesc, "#metadata", json_object_get(conf->metadata)))
+	if (config->metadata != NULL
+	 && !rp_jsonc_add(jdesc, "#metadata", json_object_get(config->metadata)))
 		return -1;
 	return 0;
 }
 
 /*
  * Applies the object 'jdesc' augmented of meta data coming
- * from 'conf' to the current unit generator.
+ * from 'config' to the current unit generator.
  * The current unit generator will be set to the default one if not unit
  * was previously set using the function 'unit_generator_open_template'.
  * The callback function 'process' is then called with the
@@ -462,13 +468,17 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *conf)
  * Return what returned process in case of success or a negative
  * error code.
  */
-int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure)
-{
+int unit_generator_process(
+	struct json_object *jdesc,
+	const struct unitconf *config,
+	int (*process)(void *closure, const struct generatedesc *desc),
+	void *closure
+) {
 	int rc;
 	size_t size;
 	char *instance;
 
-	rc = add_metadata(jdesc, conf);
+	rc = add_metadata(jdesc, config);
 	if (rc)
 		RP_ERROR("can't set the metadata. %m");
 	else {
@@ -477,7 +487,7 @@ int unit_generator_process(struct json_object *jdesc, const struct unitconf *con
 			instance = NULL;
 			rc = apply_mustach(template, jdesc, &instance, &size);
 			if (!rc)
-				rc = process_all_units(instance, conf, process, closure, jdesc);
+				rc = process_all_units(instance, config, process, closure, jdesc);
 			free(instance);
 		}
 	}
@@ -633,6 +643,7 @@ static int do_install_units(void *closure, const struct generatedesc *desc)
 		if (!rc) {
 			rc = get_unit_path(path, sizeof path, u);
 			if (rc >= 0) {
+				RP_INFO("installing unit %s", path);
 				rc = rp_file_put(path, u->content, u->content_length);
 				if (rc >= 0 && u->wanted_by != NULL) {
 					rc = get_wants_path(path, sizeof path, u);
@@ -658,12 +669,14 @@ error:
 	return rc;
 }
 
-int unit_generator_install(json_object *manifest, const struct unitconf *conf)
+/* installs the unit files accordingly to manifest and config */
+int unit_generator_install(json_object *manifest, const struct unitconf *config)
 {
-	return unit_generator_process(manifest, conf, do_install_units, NULL);
+	return unit_generator_process(manifest, config, do_install_units, NULL);
 }
 
-int unit_generator_uninstall(json_object *manifest, const struct unitconf *conf)
+/* uninstalls the unit files accordingly to manifest and config */
+int unit_generator_uninstall(json_object *manifest, const struct unitconf *config)
 {
-	return unit_generator_process(manifest, conf, do_uninstall_units, NULL);
+	return unit_generator_process(manifest, config, do_uninstall_units, NULL);
 }
