@@ -252,6 +252,21 @@ extern size_t path_entry_path(const path_entry_t *entry, char *buffer, size_t le
 extern size_t path_entry_relpath(const path_entry_t *entry, char *buffer, size_t length, const path_entry_t *root, unsigned flags);
 
 /**
+ * @brief callback of path_entry_for_each and path_entry_for_each_in_buffer
+ *
+ * That callback receives 4 arguments:
+ *
+ * @param closure the void pointer for handling closure context1
+ * @param entry the current path_entry
+ * @param path the path of the entry (except if PATH_ENTRY_FORALL_NO_PATH)
+ * @param length the length of the path (except if PATH_ENTRY_FORALL_NO_PATH)
+ *
+ * The callback must return an integer value being either zero for continuing
+ * or an other value for stopping exploration.
+ */
+typedef int (*path_entry_for_each_cb_t)(void *closure, path_entry_t *entry, const char *path, size_t length);
+
+/**
  * @brief iterate over entries until function returns a not zero value
  *
  * @param flags for to control iteration (see PATH_ENTRY_FORALL_...)
@@ -264,7 +279,7 @@ extern
 int path_entry_for_each(
 	unsigned flags,
 	path_entry_t *root,
-	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length),
+	path_entry_for_each_cb_t fun,
 	void *closure
 );
 
@@ -283,7 +298,7 @@ extern
 int path_entry_for_each_in_buffer(
 	unsigned flags,
 	path_entry_t *root,
-	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length),
+	path_entry_for_each_cb_t fun,
 	void *closure,
 	char *buffer,
 	size_t size
