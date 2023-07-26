@@ -178,25 +178,35 @@ extern size_t path_entry_get_relpath(const path_entry_t *entry, char *buffer, si
  */
 enum {
 	/**
+	 * If set, no slash is emitted at head
+	 */
+	PATH_ENTRY_NO_LEADING_SLASH    = 1,
+
+	/**
+	 * If set, slash is emitted at head always
+	 */
+	PATH_ENTRY_FORCE_LEADING_SLASH = 2,
+
+	/**
 	 * If set, the callback function is called only for added
 	 * entries
 	 * Otherwise, when unset, callback function is also called
 	 * for intermediate directories
 	 */
-	PATH_ENTRY_FORALL_ONLY_ADDED  =  1,
+	PATH_ENTRY_FORALL_ONLY_ADDED   = 4,
 
 	/**
 	 * If set, the callback function receives paths of length 0
 	 * and of inaccurate value. In that case, it is safe to pass
 	 * a NULL pointer as buffer value for "path_entry_for_each_in_buffer"
 	 */
-	PATH_ENTRY_FORALL_NO_PATH     =  2,
+	PATH_ENTRY_FORALL_NO_PATH      = 8,
 
 	/**
 	 * If set, the callback function is called for directories before
 	 * their content.
 	 */
-	PATH_ENTRY_FORALL_BEFORE      =  4,
+	PATH_ENTRY_FORALL_BEFORE       = 16,
 
 	/**
 	 * If set, the callback function is called for directories after
@@ -204,19 +214,42 @@ enum {
 	 * When neither PATH_ENTRY_FORALL_AFTER nor PATH_ENTRY_FORALL_BEFORE
 	 * are set, this is the default behaviour
 	 */
-	PATH_ENTRY_FORALL_AFTER       =  8,
+	PATH_ENTRY_FORALL_AFTER        = 32,
 
 	/**
 	 * Expects absolute path, not relatives to the root entry
 	 * given to the for-each function
 	 */
-	PATH_ENTRY_FORALL_ABSOLUTE    = 16,
+	PATH_ENTRY_FORALL_ABSOLUTE     = 64,
 
 	/**
 	 * If set, the callback function is NOT called for the root entry
 	 */
-	PATH_ENTRY_FORALL_SILENT_ROOT = 32
+	PATH_ENTRY_FORALL_SILENT_ROOT  = 128
 };
+
+/**
+ * @brief get in buffer the path of the given entry
+ *
+ * @param entry the entry to get
+ * @param buffer the buffer for storing path (can be NULL when length == 0)
+ * @param length the length of the buffer
+ * @param flags 0 or PATH_ENTRY_NO_LEADING_SLASH or PATH_ENTRY_FORCE_LEADING_SLASH
+ * @return the length of the path (excluding trailing nul) as if length was enough
+ */
+extern size_t path_entry_path(const path_entry_t *entry, char *buffer, size_t length, unsigned flags);
+
+/**
+ * @brief get in buffer the relative path of the given entry from root
+ *
+ * @param entry the entry to get
+ * @param buffer the buffer for storing path (can be NULL when length == 0)
+ * @param length the length of the buffer
+ * @param root the relative root, can be NULL
+ * @param flags 0 or PATH_ENTRY_NO_LEADING_SLASH or PATH_ENTRY_FORCE_LEADING_SLASH
+ * @return the length of the path (excluding trailing nul) as if length was enough
+ */
+extern size_t path_entry_relpath(const path_entry_t *entry, char *buffer, size_t length, const path_entry_t *root, unsigned flags);
 
 /**
  * @brief iterate over entries until function returns a not zero value

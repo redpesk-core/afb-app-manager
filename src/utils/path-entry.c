@@ -25,6 +25,7 @@
 #define _GNU_SOURCE
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
@@ -262,40 +263,67 @@ int path_entry_has_child(const path_entry_t *entry)
 	return entry->children != NULL;
 }
 
-size_t path_entry_get_relpath(const path_entry_t *entry, char *buffer, size_t length, const path_entry_t *root)
+size_t path_entry_relpath(const path_entry_t *entry, char *buffer, size_t length, const path_entry_t *root, unsigned flags)
 {
+	const path_entry_t *parent;
 	size_t result, offset;
+	bool slash;
 
-	if (entry == NULL || entry == root)
-		result = 0;
-	else {
-		offset = path_entry_get_relpath(entry->parent, buffer, length, root);
-		if (entry->length == 0)
-			result = offset;
+	if (entry == NULL || entry == root) {
+		if (!(flags & PATH_ENTRY_FORCE_LEADING_SLASH))
+			result = 0;
 		else {
-			result = offset + entry->length;
-			if (offset > 0 || (entry->flags & FLAGS_HAS_SLASH) != 0) {
-				result++;
-				if (offset < length)
-					buffer[offset++] = '/';
-			}
-			if (offset < length) {
-				length -= offset;
-				if (entry->length >= length)
-					length = length - 1;
-				else
-					length = entry->length;
-				memcpy(&buffer[offset], entry->name, length);
-				buffer[offset + length] = 0;
-			}
+			if (entry->length > 0)
+				buffer[0] = '/';
+			result = 1;
+		}
+	}
+	else if (entry->length == 0) {
+		return path_entry_relpath(entry->parent, buffer, length, root, flags);
+	}
+	else {
+		parent = entry->parent;
+		while (parent != NULL && parent != root && parent->length == 0)
+			parent = parent->parent;
+		if (parent == NULL || parent == root || parent->length == 0) {
+			offset = 0;
+			slash = (flags & PATH_ENTRY_FORCE_LEADING_SLASH) != 0
+			      || ((flags & PATH_ENTRY_NO_LEADING_SLASH) == 0
+			             && (entry->flags & FLAGS_HAS_SLASH) != 0);
+		}
+		else {
+			offset = path_entry_relpath(entry->parent, buffer, length, root, flags);
+			slash = true;
+		}
+		result = offset + entry->length;
+		if (slash) {
+			result++;
+			if (offset < length)
+				buffer[offset++] = '/';
+		}
+		if (offset < length) {
+			if (result < length)
+				memcpy(&buffer[offset], entry->name, entry->length + 1);
+			else
+				memcpy(&buffer[offset], entry->name, length - offset);
 		}
 	}
 	return result;
 }
 
+size_t path_entry_path(const path_entry_t *entry, char *buffer, size_t length, unsigned flags)
+{
+	return path_entry_relpath(entry, buffer, length, NULL, flags);
+}
+
+size_t path_entry_get_relpath(const path_entry_t *entry, char *buffer, size_t length, const path_entry_t *root)
+{
+	return path_entry_relpath(entry, buffer, length, root, 0);
+}
+
 size_t path_entry_get_path(const path_entry_t *entry, char *buffer, size_t length)
 {
-	return path_entry_get_relpath(entry, buffer, length, NULL);
+	return path_entry_relpath(entry, buffer, length, NULL, 0);
 }
 
 struct foreach {
