@@ -32,25 +32,7 @@
 #include <rp-utils/rp-yaml.h>
 #include <rp-utils/rp-jsonc.h>
 
-
-#define MANIFEST_REQUIRED_PERMISSIONS		"required-permissions"
-#define MANIFEST_FILE_PROPERTIES		"file-properties"
-#define MANIFEST_TARGETS			"targets"
-#define MANIFEST_NAME				"name"
-#define MANIFEST_VALUE				"value"
-
-#define MANIFEST_RP_MANIFEST			"rp-manifest"
-#define MANIFEST_ID				"id"
-#define MANIFEST_VERSION			"version"
-#define MANIFEST_ID_UNDERSCORE			"id-underscore"
-#define MANIFEST_VER				"ver"
-#define MANIFEST_IDAVER				"idaver"
-
-#define MANIFEST_VALUE_OPTIONAL			"optional"
-#define MANIFEST_VALUE_REQUIRED			"required"
-
-#define MANIFEST_TARGET				"target"
-#define MANIFEST_SHARP_TARGET			"#target"
+#include "manifest.h"
 
 static void make_lowercase(char *s)
 {

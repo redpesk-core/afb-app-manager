@@ -34,10 +34,15 @@
 #define MANIFEST_RP_MANIFEST			"rp-manifest"
 #define MANIFEST_ID				"id"
 #define MANIFEST_VERSION			"version"
+#define MANIFEST_ID_UNDERSCORE			"id-underscore"
+#define MANIFEST_VER				"ver"
+#define MANIFEST_IDAVER				"idaver"
 
 #define MANIFEST_VALUE_OPTIONAL			"optional"
 #define MANIFEST_VALUE_REQUIRED			"required"
 
+#define MANIFEST_TARGET				"target"
+#define MANIFEST_SHARP_TARGET			"#target"
 
 extern int manifest_check(json_object *jso);
 
