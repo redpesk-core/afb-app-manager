@@ -142,6 +142,147 @@ static int retargets(json_object *jso)
 	return rc;
 }
 
+/*
+* adapt permissions because permissions can be given as:
+*
+* - string
+* - [string]
+* - [{name:string,value:string}]
+* - {name:string}
+* - {name:{name:string,value:string}}
+*
+* for later processing, the canonical state is {name:{name:string,value:string}}
+*/
+static int add_perm_from_string(json_object *perms, json_object *permstring)
+{
+	json_object *obj;
+	int rc = rp_jsonc_pack(&obj, "{sO ss}", "name", permstring, "value", MANIFEST_VALUE_REQUIRED);
+	if (rc >= 0) {
+		rc = json_object_object_add(perms, json_object_get_string(permstring), obj);
+		if (rc < 0)
+			json_object_put(obj);
+	}
+	return rc;
+}
+
+static int process_array_perm_cb(void *clo, json_object *item)
+{
+	int rc = -EINVAL;
+	json_object *name, *perms = clo;
+
+	switch (json_object_get_type(item)) {
+	case json_type_object:
+		if (json_object_object_get_ex(item, MANIFEST_NAME, &name)
+		 && json_object_object_get_ex(item, MANIFEST_VALUE, NULL)) {
+			rc = json_object_object_add(perms, json_object_get_string(name), item);
+			if (rc >= 0)
+				json_object_get(item);
+		}
+		break;
+	case json_type_string:
+		rc = add_perm_from_string(perms, item);
+		break;
+	default:
+		break;
+	}
+	return rc;
+}
+
+static int process_object_perm_cb(void *clo, json_object *item, const char *key)
+{
+	int rc = -EINVAL;
+	json_object *obj, *name, *perms = clo;
+
+	switch (json_object_get_type(item)) {
+	case json_type_object:
+		if (json_object_object_get_ex(item, MANIFEST_NAME, &name)
+		 && 0 == strcmp(key, json_object_get_string(name))
+		 && json_object_object_get_ex(item, MANIFEST_VALUE, NULL)) {
+			rc = json_object_object_add(perms, key, item);
+			if (rc >= 0)
+				json_object_get(item);
+		 }
+		break;
+	case json_type_string:
+		rc = rp_jsonc_pack(&obj, "{ss sO}", "name", key, "value", item);
+		if (rc >= 0) {
+			rc = json_object_object_add(perms, key, obj);
+			if(rc >= 0)
+				json_object_get(obj);
+		}
+		break;
+	default:
+		break;
+	}
+	return rc;
+}
+
+static int adapt_permissions_of(json_object *jso)
+{
+	json_object *in, *out;
+	int rc = -EINVAL;
+	if (json_object_is_type(jso, json_type_object)) {
+		if (!json_object_object_get_ex(jso, MANIFEST_REQUIRED_PERMISSIONS, &in))
+			rc = 0;
+		else {
+			out = NULL;
+			switch (json_object_get_type(in)) {
+			case json_type_array:
+				out = json_object_new_object();
+				if (out == NULL)
+					rc = -ENOMEM;
+				else
+					rc = rp_jsonc_array_until(in, process_array_perm_cb, out);
+				break;
+			case json_type_object:
+				out = json_object_new_object();
+				if (out == NULL)
+					rc = -ENOMEM;
+				else
+					rc = rp_jsonc_object_until(in, process_object_perm_cb, out);
+				break;
+			case json_type_string:
+				out = json_object_new_object();
+				if (out == NULL)
+					rc = -ENOMEM;
+				else
+					rc = add_perm_from_string(out, in);
+				break;
+			default:
+				break;
+			}
+			if (out != NULL) {
+				if (rc < 0)
+					json_object_put(out);
+				else
+					json_object_object_add(jso, MANIFEST_REQUIRED_PERMISSIONS, out);
+			}
+		}
+	}
+	return rc;
+}
+
+static int adapt_target_permissions_cb(void *clo, json_object *item)
+{
+	return adapt_permissions_of(item);
+}
+
+static int adapt_all_permissions(json_object *jso)
+{
+	json_object *targets;
+	int rc;
+
+	rc = adapt_permissions_of(jso);
+	if (rc >= 0) {
+		if (!json_object_object_get_ex(jso, MANIFEST_TARGETS, &targets)
+		|| !json_object_is_type(targets, json_type_array))
+			rc = -EINVAL;
+		else
+			rc = rp_jsonc_array_until(targets, adapt_target_permissions_cb, NULL);
+	}
+	return rc;
+}
+
 static int fulfill(json_object *jso)
 {
 	int rc = -EINVAL;
@@ -252,6 +393,11 @@ manifest_read_and_check(
 				rc = retargets(*obj);
 				if (rc < 0)
 					RP_ERROR("can't retarget manifest %s", path);
+				else {
+					rc = adapt_all_permissions(*obj);
+					if (rc < 0)
+						RP_ERROR("can't adapt manifest %s", path);
+				}
 			}
 		}
 		if (rc < 0) {

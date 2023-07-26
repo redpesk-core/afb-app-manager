@@ -25,7 +25,7 @@
 #pragma once
 
 
-#define MANIFEST_REQUIRED_PERMISSIONS		"required-permissions"
+#define MANIFEST_REQUIRED_PERMISSIONS		"required-permission"
 #define MANIFEST_FILE_PROPERTIES		"file-properties"
 #define MANIFEST_TARGETS			"targets"
 #define MANIFEST_NAME				"name"
