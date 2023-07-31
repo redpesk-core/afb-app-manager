@@ -24,7 +24,6 @@
 
 add_library(utils STATIC
 	apply-mustach.c
-	detect-packtype.c
 	domain-spec.c
 	manage-afid.c
 	manifest.c

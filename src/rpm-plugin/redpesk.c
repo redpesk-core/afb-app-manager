@@ -40,7 +40,6 @@
 #include <sys/un.h>
 
 #include "afmpkg-common.h"
-#include "detect-packtype.h"
 
 /***************************************************
 * RPM plugins MUST have a NAME following C naming
@@ -462,25 +461,6 @@ static int number_adds(record_t *record, void *closure)
 	return 0;
 }
 
-/**
- * Checks if the content has to be communicated to the framework
- */
-static int should_tell_framework(rpmfiles files, const char *packname)
-{
-	const char *filename;
-	size_t flen, plen = strlen(packname);
-	int answer = 0;
-	rpmfi fi = rpmfilesIter(files, RPMFI_ITER_FWD);
-	while (!answer && rpmfiNext(fi) >= 0) {
-		/* check the current filename */
-		filename = rpmfiFN(fi);
-		flen = strlen(filename);
-		answer = detect_packtype(packname, plen, filename, flen, NULL) != packtype_Unknown;
-	}
-	rpmfiFree(fi);
-	return answer;
-}
-
 rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 {
 	record_t *it;
@@ -502,24 +482,19 @@ rpmRC tsm_pre_cb(rpmPlugin plugin, rpmts ts)
 		case TR_ADDED:
 		case TR_REMOVED:
 			files = rpmteFiles(te);
-			if (!should_tell_framework(files, rpmteN(te))) {
-				rpmfilesFree(files);
+			it = malloc(sizeof *it);
+			if (it == NULL) {
+				rpmlog(RPMLOG_ERR, "malloc failed");
+				for_each_record(ts, NULL, NULL);
+				return RPMRC_FAIL;
 			}
-			else {
-				it = malloc(sizeof *it);
-				if (it == NULL) {
-					rpmlog(RPMLOG_ERR, "malloc failed");
-					for_each_record(ts, NULL, NULL);
-					return RPMRC_FAIL;
-				}
-				it->ts = ts;
-				it->te = te;
-				it->files = files;
-				it->type = type;
-				it->next = records;
-				records = it;
-				elecnt++;
-			}
+			it->ts = ts;
+			it->te = te;
+			it->files = files;
+			it->type = type;
+			it->next = records;
+			records = it;
+			elecnt++;
 			break;
 		default:
 			break;
