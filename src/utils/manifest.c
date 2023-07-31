@@ -148,7 +148,7 @@ static int retargets(json_object *jso)
 * - string
 * - [string]
 * - [{name:string,value:string}]
-* - {name:string}
+* - {name:value}
 * - {name:{name:string,value:string}}
 *
 * for later processing, the canonical state is {name:{name:string,value:string}}
