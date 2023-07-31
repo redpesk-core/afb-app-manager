@@ -35,6 +35,16 @@
 #include <sec-lsm-manager.h>
 #endif
 
+const char secmgr_pathtype_conf[] = "conf";
+const char secmgr_pathtype_data[] = "data";
+const char secmgr_pathtype_exec[] = "exec";
+const char secmgr_pathtype_http[] = "http";
+const char secmgr_pathtype_icon[] = "icon";
+const char secmgr_pathtype_lib[] = "lib";
+const char secmgr_pathtype_public[] = "public";
+const char secmgr_pathtype_id[] = "id";
+const char secmgr_pathtype_default[] = "default";
+
 static sec_lsm_manager_t *sm_handle = NULL;
 
 static int retcode(int rc)
@@ -114,11 +124,11 @@ int secmgr_permit(const char *permission)
 	return retcode(rc);
 }
 
-static int addpath(const char *pathname, const char *path_type)
+int secmgr_path(const char *pathname, const char *pathtype)
 {
 	int rc;
 	assert(sm_handle != NULL);
-	rc = sec_lsm_manager_add_path(sm_handle, pathname, path_type);
+	rc = sec_lsm_manager_add_path(sm_handle, pathname, pathtype);
 	if (rc < 0)
 		RP_ERROR("sec_lsm_manager_add_path %s failed", pathname);
 	return retcode(rc);
@@ -126,50 +136,50 @@ static int addpath(const char *pathname, const char *path_type)
 
 int secmgr_path_conf(const char *pathname)
 {
-	return addpath(pathname, "conf");
+	return secmgr_path(pathname, secmgr_pathtype_conf);
 }
 
 int secmgr_path_data(const char *pathname)
 {
-	return addpath(pathname, "data");
+	return secmgr_path(pathname, secmgr_pathtype_data);
 }
 
 int secmgr_path_exec(const char *pathname)
 {
-	return addpath(pathname, "exec");
+	return secmgr_path(pathname, secmgr_pathtype_exec);
 }
 
 int secmgr_path_http(const char *pathname)
 {
-	return addpath(pathname, "http");
+	return secmgr_path(pathname, secmgr_pathtype_http);
 }
 
 int secmgr_path_icon(const char *pathname)
 {
-	return addpath(pathname, "icon");
+	return secmgr_path(pathname, secmgr_pathtype_icon);
 }
 
 int secmgr_path_lib(const char *pathname)
 {
-	return addpath(pathname, "lib");
+	return secmgr_path(pathname, secmgr_pathtype_lib);
 }
 
 int secmgr_path_public(const char *pathname)
 {
-	return addpath(pathname, "public");
+	return secmgr_path(pathname, secmgr_pathtype_public);
 }
 
 int secmgr_path_id(const char *pathname)
 {
-	return addpath(pathname, "id");
+	return secmgr_path(pathname, secmgr_pathtype_id);
 }
 
 int secmgr_path_remove(const char *pathname)
 {
-	return addpath(pathname, "id");
+	return secmgr_path(pathname, secmgr_pathtype_id);
 }
 
 int secmgr_path_default(const char *pathname)
 {
-	return addpath(pathname, "default");
+	return secmgr_path(pathname, secmgr_pathtype_default);
 }
