@@ -43,7 +43,6 @@
 #include "cert/signed-digest.h"
 #include "cert/signature-name.h"
 
-#include "detect-packtype.h"
 #include "manage-afid.h"
 #include "manifest.h"
 #include "mime-type.h"
@@ -144,29 +143,28 @@ int set_entry_type(path_entry_t *entry, path_type_t type)
 /*********************************************************************************************/
 
 /**
-* Iterate over items of the array at key in jso
+* Iterate over items of the array at key in manifest
 *
-* @param jso the root object
+* @param state the state object
 * @param key the key indexing the array to iterate
 * @param fun callback function called for each entry of the array
-* @param clo closure of the function
 *
 * The callback function 'fun' receives 2 parameters:
 *   - the closure value 'clo'
 *   - the json-c object under iteration
 */
 static
-void for_each_of(json_object *jso, const char *key, void (*fun)(void*, json_object*), void *clo)
+void for_each_of_manifest(process_state_t *state, const char *key, void (*fun)(process_state_t*, json_object*))
 {
 	json_object *item;
-	if (json_object_object_get_ex(jso, key, &item))
-		rp_jsonc_array_for_all(item, fun, clo);
+	if (json_object_object_get_ex(state->manifest, key, &item))
+		rp_jsonc_array_for_all(item, (void(*)(void*,json_object*))fun, state);
 }
 
 static
-void for_each_target(process_state_t *state, void (*fun)(void*, json_object*), void *clo)
+void for_each_target(process_state_t *state, void (*fun)(process_state_t*, json_object*))
 {
-	for_each_of(state->manifest, MANIFEST_TARGETS, fun, clo);
+	for_each_of_manifest(state, MANIFEST_TARGETS, fun);
 }
 
 /*********************************************************************************************/
@@ -175,13 +173,34 @@ void for_each_target(process_state_t *state, void (*fun)(void*, json_object*), v
 
 /** iterate over the entries of the package */
 static
-int for_each_file_entry(
+int for_each_entry(
 	process_state_t *state,
 	unsigned flags,
-	int (*fun)(void *closure, path_entry_t *entry, const char *path, size_t length)
+	int (*fun)(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 ) {
-	return path_entry_for_each_in_buffer(flags | PATH_ENTRY_FORALL_SILENT_ROOT, state->packdir, fun, state,
+	return path_entry_for_each_in_buffer(flags, state->packdir, (path_entry_for_each_cb_t)fun, state,
 			&state->path[state->offset_pack], PATH_MAX - state->offset_pack);
+}
+
+/** iterate over the entries of the package */
+static
+int for_each_content_entry(
+	process_state_t *state,
+	unsigned flags,
+	int (*fun)(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
+) {
+	return for_each_entry(state, flags | PATH_ENTRY_FORALL_SILENT_ROOT, fun);
+}
+
+/*********************************************************************************************/
+/*** MANAGE STATE RC *************************************************************************/
+/*********************************************************************************************/
+
+static inline
+void put_state_rc(process_state_t *state, int rc)
+{
+	if (rc < 0 && state->rc >= 0)
+		state->rc = rc;
 }
 
 /*********************************************************************************************/
@@ -239,19 +258,23 @@ static void check_one_permission_cb(void * closure, json_object *jso, const char
 	}
 }
 
-static void check_permissions_cb(void * clo, json_object *jso)
+static void check_permissions_cb(process_state_t *state, json_object *jso)
 {
 	json_object *perms;
 	if (json_object_object_get_ex(jso, MANIFEST_REQUIRED_PERMISSIONS, &perms))
-		rp_jsonc_object_for_all(perms, check_one_permission_cb, clo);
+		rp_jsonc_object_for_all(perms, check_one_permission_cb, state);
 }
 
 static int check_permissions(process_state_t *state)
 {
 	check_permissions_cb(state, state->manifest);
-	for_each_target(state, check_permissions_cb, state);
+	for_each_target(state, check_permissions_cb);
 	return 0;
 }
+
+/*********************************************************************************************/
+/*** CHECKING CONTENT ************************************************************************/
+/*********************************************************************************************/
 
 /*
 * check the src and type of one target
@@ -304,10 +327,9 @@ static int check_src_type_definition(process_state_t *state, const char *src, co
 /*
 * check definition of one target
 */
-static void check_target_content_cb(void *closure, json_object *jso)
+static void check_target_content_cb(process_state_t *state, json_object *jso)
 {
 	json_object *content, *src, *type;
-	process_state_t *state = closure;
 	int rc = -EINVAL;
 
 	/* check if has a content */
@@ -337,8 +359,7 @@ static void check_target_content_cb(void *closure, json_object *jso)
 	else
 		rc = check_src_type_definition(state, json_object_get_string(src), json_object_get_string(type));
 
-	if (rc < 0 && state->rc == 0)
-		state->rc = rc;
+	put_state_rc(state, rc);
 }
 
 /*
@@ -346,33 +367,53 @@ static void check_target_content_cb(void *closure, json_object *jso)
 */
 static int check_contents(process_state_t *state)
 {
-	for_each_target(state, check_target_content_cb, state);
+	for_each_target(state, check_target_content_cb);
 	return state->rc;
 }
 
-static void set_file_type(void *closure, json_object *jso)
+/*********************************************************************************************/
+/*** COMPUTE FILE PROPERTIES  ****************************************************************/
+/*********************************************************************************************/
+
+/* callback for resetting the path type to UNKNOWN */
+static int reset_type_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
-	process_state_t *state = closure;
+	int rc = set_entry_type(entry, path_type_Unknown);
+	put_state_rc(state, rc);
+	return 0;
+}
+
+/* callback for implementing file-properties configuration */
+static void compute_explicit_file_properties_cb(process_state_t *state, json_object *jso)
+{
 	path_entry_t *entry;
-	int rc = 0;
 	json_object *name, *value;
 	const char *strval;
 	path_type_t type;
+	int rc = 0;
 
-	if (json_object_object_get_ex(jso, "name", &name)
-	 && json_object_object_get_ex(jso, "value", &value)) {
+	/* extract the values */
+	if (!json_object_object_get_ex(jso, "name", &name)
+	 || !json_object_object_get_ex(jso, "value", &value)) {
+		RP_ERROR("bad file properties item %s", json_object_get_string(jso));
+		rc = -EINVAL;
+	}
+	else {
+		/* get the path entry matching the name */
 		rc = path_entry_get(state->packdir, &entry, json_object_get_string(name));
 		if (rc < 0) {
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
 			rc = -ENOENT;
 		}
 		else {
+			/* detect duplication of explicit name */
 			type = get_entry_type(entry);
 			if (type != path_type_Unknown) {
 				RP_ERROR("file duplication %s", json_object_get_string(jso));
 				rc = -EEXIST;
 			}
 			else {
+				/* compute the effective path type of value */
 				strval = json_object_get_string(value);
 				type = path_type_of_key(strval);
 				if (type != path_type_Unknown)
@@ -384,71 +425,118 @@ static void set_file_type(void *closure, json_object *jso)
 			}
 		}
 	}
-	else {
-		RP_ERROR("bad file properties item %s", json_object_get_string(jso));
-		rc = -EINVAL;
-	}
-	if (rc < 0 && state->rc == 0)
-		state->rc = rc;
+	put_state_rc(state, rc);
 }
 
-static int fulfill_properties(void *closure, path_entry_t *entry, const char *path, size_t length)
+/* callback possibly deducing file type for contents */
+static void compute_target_file_properties_cb(process_state_t *state, json_object *jso)
 {
-	process_state_t *state = closure;
-	path_type_t curtype;
-
-	curtype = get_entry_type(entry);
-	if (curtype == path_type_Unknown && !path_entry_has_child(entry)) {
-		curtype = path_type_of_entry(entry, state->packdir);
-		if (curtype == path_type_Unknown)
-			curtype = path_type_Id;
-		set_entry_type(entry, curtype);
-	}
-	return 0;
-}
-
-static void set_target_file_properties(void *closure, json_object *jso)
-{
-	process_state_t *state = closure;
 	json_object *content, *src, *type;
 	path_entry_t *entry;
 
+	/* extract the values (note that it normally works because manifest is valid) */
 	if (json_object_object_get_ex(jso, "content", &content)
 	 && json_object_object_get_ex(content, "src", &src)
 	 && json_object_object_get_ex(content, "type", &type)) {
+		/* check that the source exists */
 		if (path_entry_get(state->packdir, &entry, json_object_get_string(src)) < 0) {
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
-			if (state->rc == 0)
-				state->rc = -ENOENT;
+			put_state_rc(state, -ENOENT);
 		}
-		else if (get_entry_type(entry) == path_type_Unknown
-		     && mime_type_is_executable(json_object_get_string(type)))
-			set_entry_type(entry, path_type_Exec);
+		else if (get_entry_type(entry) == path_type_Unknown) {
+			/* the file exists but is of unknown type */
+			if (mime_type_is_executable(json_object_get_string(type)))
+				/* set as executable for known mime-type */
+				set_entry_type(entry, path_type_Exec);
+		}
 	}
 }
 
-static int reset_type_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+/* callback for computing default file properties */
+static int compute_default_files_properties_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
-	process_state_t *state = closure;
-	int rc = set_entry_type(entry, path_type_Unknown);
-	if (rc < 0 && state->rc >= 0)
-		state->rc = rc;
+	int rc;
+	struct stat s;
+	path_type_t curtype;
+
+	/* get path information */
+	rc = fstatat(AT_FDCWD, state->path, &s, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
+	if (rc < 0) {
+		rc = -errno;
+		RP_ERROR("can't get status of src %s: %s", state->path, strerror(errno));
+	}
+
+	/* check conformity */
+	else if (!S_ISREG(s.st_mode) && !S_ISDIR(s.st_mode)) {
+		RP_ERROR("src isn't a regular file or a directory %s", state->path);
+		rc = -EINVAL;
+	}
+
+	/* extract type */
+	else {
+		curtype = get_entry_type(entry);
+		if (curtype != path_type_Unknown)
+			rc = 0;
+		else {
+			if (S_ISDIR(s.st_mode))
+				curtype = path_type_of_dirname(path_entry_name(entry));
+			if (curtype == path_type_Unknown)
+				curtype = get_entry_type(path_entry_parent(entry));
+			if (curtype == path_type_Unknown)
+				curtype = path_type_Id;
+			rc = set_entry_type(entry, curtype);
+		}
+	}
+	put_state_rc(state, rc);
+	return rc;
+}
+
+/* callback for propagation of public status */
+static int compute_public_files_properties_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
+{
+	path_type_t curtype = get_entry_type(entry);
+	switch (curtype) {
+	case path_type_Public:
+	case path_type_Public_Exec:
+	case path_type_Public_Lib:
+		if (entry != state->packdir) {
+			entry = path_entry_parent(entry);
+			set_entry_type(entry, path_type_Public);
+		}
+		break;
+	default:
+		break;
+	}
 	return 0;
 }
 
+/* compute security properties of files */
 static int compute_files_properties(process_state_t *state)
 {
+	/* reset any type */
+	state->rc = set_entry_type(state->packdir, path_type_Id);
 	if (state->rc >= 0)
-		for_each_file_entry(state, PATH_ENTRY_FORALL_NO_PATH, reset_type_cb);
+		for_each_content_entry(state, PATH_ENTRY_FORALL_NO_PATH, reset_type_cb);
+	/* set explicit types */
 	if (state->rc >= 0)
-		for_each_of(state->manifest, MANIFEST_FILE_PROPERTIES, set_file_type, state);
+		for_each_of_manifest(state, MANIFEST_FILE_PROPERTIES, compute_explicit_file_properties_cb);
+	/* set types of targets */
 	if (state->rc >= 0)
-		for_each_target(state, set_target_file_properties, state);
+		for_each_target(state, compute_target_file_properties_cb);
+	/* all other files */
 	if (state->rc >= 0)
-		for_each_file_entry(state, PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_ONLY_ADDED, fulfill_properties);
+		for_each_content_entry(state, PATH_ENTRY_FORALL_BEFORE, compute_default_files_properties_cb);
+	/* propagate public status */
+	if (state->rc >= 0)
+		for_each_entry(state, PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_NO_PATH, compute_public_files_properties_cb);
 	return state->rc;
 }
 
+/*********************************************************************************************/
+/*** MAKE FILE PROPERTIES EFFECTIVE **********************************************************/
+/*********************************************************************************************/
+
+/* set execution property of files */
 static int make_file_executable(const char *filename)
 {
 	int rc = chmod(filename, 0755);
@@ -459,16 +547,15 @@ static int make_file_executable(const char *filename)
 	return rc;
 }
 
-static int set_one_file_properties_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+/* callback for applying DAC properties accordingly to path types */
+static int setup_file_properties_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
-	process_state_t *state = closure;
 	int rc;
 	switch (get_entry_type(entry)) {
 	case path_type_Public_Exec:
 	case path_type_Exec:
 		rc = make_file_executable(state->path);
-		if (rc < 0 && state->rc == 0)
-			state->rc = rc;
+		put_state_rc(state, rc);
 		break;
 	default:
 		break;
@@ -476,70 +563,60 @@ static int set_one_file_properties_cb(void *closure, path_entry_t *entry, const 
 	return 0;
 }
 
-static int set_files_properties(process_state_t *state)
+/* apply DAC properties accordingly to path types */
+static int setup_files_properties(process_state_t *state)
 {
-	for_each_file_entry(state, 0, set_one_file_properties_cb);
+	for_each_content_entry(state, 0, setup_file_properties_cb);
 	return state->rc;
 }
-
 
 /*********************************************************************************************/
 /*** SETTING OF THE SECURITY ITEMS ***********************************************************/
 /*********************************************************************************************/
 
-static int setup_security_file_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+static const char * const type_types[] = {
+    [path_type_Unset] = NULL,
+    [path_type_Unknown] = NULL,
+    [path_type_Conf] = secmgr_pathtype_conf,
+    [path_type_Data] = secmgr_pathtype_data,
+    [path_type_Exec] = secmgr_pathtype_exec,
+    [path_type_Http] = secmgr_pathtype_http,
+    [path_type_Icon] = secmgr_pathtype_icon,
+    [path_type_Id] = secmgr_pathtype_id,
+    [path_type_Lib] = secmgr_pathtype_lib,
+    [path_type_Public] = secmgr_pathtype_public,
+    [path_type_Public_Exec] = secmgr_pathtype_public,
+    [path_type_Public_Lib] = secmgr_pathtype_public
+};
+
+static int setup_security_file_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
-	process_state_t *state = closure;
+	const char *typath = NULL;
 	const char *realpath = state->path;
 	int rc = 0;
+	unsigned idxpty;
 
-	switch (get_entry_type(entry)) {
-	case path_type_Unset:
-		break;
-	case path_type_Public:
-	case path_type_Public_Exec:
-	case path_type_Public_Lib:
-		rc = secmgr_path_public(realpath);
-		break;
-	case path_type_Id:
-		rc = secmgr_path_id(realpath);
-		break;
-	case path_type_Lib:
-		rc = secmgr_path_lib(realpath);
-		break;
-	case path_type_Conf:
-		rc = secmgr_path_conf(realpath);
-		break;
-	case path_type_Exec:
-		rc = secmgr_path_exec(realpath);
-		break;
-	case path_type_Icon:
-		rc = secmgr_path_icon(realpath);
-		break;
-	case path_type_Data:
-		rc = secmgr_path_data(realpath);
-		break;
-	case path_type_Http:
-		rc = secmgr_path_http(realpath);
-		break;
-	case path_type_Unknown:
-	default:
+	idxpty = (unsigned)get_entry_type(entry);
+	if (idxpty < (unsigned)(sizeof type_types / sizeof *type_types))
+		typath = type_types[idxpty];
+	if (typath == NULL) {
 		RP_DEBUG("unknown path type: %s", realpath);
-		rc = secmgr_path_conf(realpath);
-		break;
+		typath = secmgr_pathtype_conf;
 	}
-	if (rc < 0 && state->rc >= 0)
-		state->rc = rc;
+	rc = secmgr_path(realpath, typath);
+	put_state_rc(state, rc);
 	return 0;
 }
 
 static int permit(process_state_t *state, const char *perm)
 {
-	int rc = secmgr_permit(perm);
+	int rc;
+
+	RP_INFO("Permits %s", perm);
+
+	rc = secmgr_permit(perm);
 	if (rc < 0)
 		RP_ERROR("Fails to permit %s", perm);
-	else
-		RP_INFO("Permits %s", perm);
 	return rc;
 }
 
@@ -556,7 +633,7 @@ static int setup_security(process_state_t *state)
 	}
 
 	/* setup file security */
-	for_each_file_entry(state, PATH_ENTRY_FORALL_AFTER, setup_security_file_cb);
+	for_each_entry(state, PATH_ENTRY_FORALL_AFTER, setup_security_file_cb);
 	rc = state->rc;
 	if (rc < 0)
 		goto end;
@@ -589,7 +666,7 @@ end:
 	return rc;
 }
 
-static int setdown_security_file_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
+static int setdown_security_file_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
 	/* before uninstalling, set the id for making files inaccessible */
 	secmgr_path_id(path);
@@ -603,9 +680,7 @@ static int setdown_security(
 	if (rc < 0)
 		RP_ERROR("can't init sec lsm manager context");
 	else {
-		path_entry_for_each(PATH_ENTRY_FORALL_ONLY_ADDED | PATH_ENTRY_FORALL_ABSOLUTE,
-			state->packdir, setdown_security_file_cb, NULL);
-
+		for_each_entry(state, 0, setdown_security_file_cb);
 		rc = secmgr_uninstall();
 		secmgr_end();
 		if (rc < 0)
@@ -720,7 +795,7 @@ install_afmpkg(
 	}
 
 	/* setup specific file properties */
-	rc = set_files_properties(state);
+	rc = setup_files_properties(state);
 	if (rc < 0) {
 		RP_ERROR("failed to setup afm pkg %s", state->appid);
 		goto error4;
@@ -782,7 +857,8 @@ static int process_manifest(process_state_t *state)
 	if (rc < 0)
 		RP_ERROR("Unable to get or validate manifest %s --", state->path);
 	else {
-		RP_DEBUG("processing manifest %s", json_object_to_json_string_ext(state->manifest, JSON_C_TO_STRING_PRETTY));
+		RP_DEBUG("processing manifest %s", json_object_to_json_string_ext(state->manifest,
+		                             JSON_C_TO_STRING_PRETTY|JSON_C_TO_STRING_NOSLASHESCAPE));
 
 		state->appid = json_object_get_string(json_object_object_get(state->manifest, "id"));
 		if (state->install)
