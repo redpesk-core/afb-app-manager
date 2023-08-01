@@ -1,0 +1,2 @@
+%__transaction_redpesk %{__plugindir}/redpesk.so
+

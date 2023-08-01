@@ -62,6 +62,7 @@ set(afm_platform_rundir     "/run/platform"                                CACHE
 set(afm_users_rundir        "/run/user"                                    CACHE STRING "Path to location of users runtime sockets")
 set(afm_scope_platform_dir  "/var/scope-platform"                          CACHE STRING "Path to home of scope-platform apps")
 set(rpm_plugin_dir          "${CMAKE_INSTALL_FULL_LIBDIR}/rpm-plugins"     CACHE STRING "Path to rpm plugins")
+set(rpm_macros_dir          "${CMAKE_INSTALL_PREFIX}/lib/rpm/macros.d"     CACHE STRING "Path to rpm macro files")
 set(AFMPKG_SOCKET_ADDRESS   "@afmpkg-installer.socket"                     CACHE STRING "specification of afmpkg installer socket")
 set(SYSCONFDIR_DBUS_SYSTEM  "${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1/system.d"  CACHE STRING "Path to dbus system configuration files")
 set(SYSCONFDIR_PAMD         "${CMAKE_INSTALL_FULL_SYSCONFDIR}/pam.d"       CACHE STRING "Path to pam configuration files")
