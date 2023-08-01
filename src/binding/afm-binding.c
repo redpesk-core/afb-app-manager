@@ -42,11 +42,6 @@
 #include "afm-urun.h"
 #include "wgt-info.h"
 
-#if WITH_WIDGETS
-# include "wgtpkg-install.h"
-# include "wgtpkg-uninstall.h"
-#endif
-
 /*
  * constant strings
  */
@@ -138,47 +133,6 @@ static const struct afb_auth
 	}
 ;
 
-#if WITH_WIDGETS
-static const char _added_[]     = "added";
-static const char _install_[]   = "install";
-static const char _uninstall_[] = "uninstall";
-static const char _wgt_[]       = "wgt";
-
-static const struct afb_auth
-	auth_perm_widget_install = {
-		.type = afb_auth_Permission,
-		.text = FWK_PREFIX"permission:afm:system:widget:install"
-	},
-	auth_perm_widget_uninstall = {
-		.type = afb_auth_Permission,
-		.text = FWK_PREFIX"permission:afm:system:widget:uninstall"
-	},
-	auth_install = {
-		.type = afb_auth_Or,
-		.first = &auth_perm_widget,
-		.next = &auth_perm_widget_install
-	},
-	auth_uninstall = {
-		.type = afb_auth_Or,
-		.first = &auth_perm_widget,
-		.next = &auth_perm_widget_uninstall
-	};
-
-/*
- * default root
- */
-static const char rootdir[] = FWK_APP_DIR;
-#endif
-
-/* add legacy widget's verbs if needed */
-#if !WITH_WIDGETS && !defined(WITH_LEGACY_WIDGET_VERBS)
-#  define WITH_LEGACY_WIDGET_VERBS 0
-#endif
-#if WITH_LEGACY_WIDGET_VERBS
-static const char _install_[]   = "install";
-static const char _uninstall_[] = "uninstall";
-#endif
-
 /**
  * Enumerate the possible arguments
  * This is intended to be used as a mask of bits
@@ -192,10 +146,7 @@ enum {
 	Param_Reload = 8,
 	Param_Id     = 16,
 	Param_RunId  = 32,
-#if WITH_WIDGETS
-	Param_WGT    = 64,
-#endif
-	Param_Root   = 128
+	Param_Root   = 64
 };
 
 /**
@@ -349,12 +300,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 			params->id = json_object_get_string(args);
 			found |= Param_Id;
 		}
-#if WITH_WIDGETS
-		else if (expected & Param_WGT) {
-			params->wgt = json_object_get_string(args);
-			found |= Param_WGT;
-		}
-#endif
 	}
 
 	/* args is a object value: inspect it */
@@ -414,16 +359,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 			params->root = json_object_get_string(obj);
 			found |= Param_Root;
 		}
-
-#if WITH_WIDGETS
-		/* get WGT */
-		if (expected & Param_WGT) {
-			if (json_object_object_get_ex(args, _wgt_, &obj)) {
-				params->wgt = json_object_get_string(obj);
-				found |= Param_WGT;
-			}
-		}
-#endif
 
 		/* get appid */
 		if (expected & (Param_Id | Param_RunId)) {
@@ -688,96 +623,6 @@ static void v_state(afb_req_t req)
 	}
 }
 
-#if WITH_WIDGETS
-/* enforce daemon reload */
-static void do_reloads()
-{
-	systemd_daemon_reload(0);
-	systemd_unit_restart_name(0, "sockets.target", NULL);
-}
-
-/*
- * On querying installation of widget(s)
- */
-static void v_install(afb_req_t req)
-{
-	struct params params;
-	struct wgt_info *ifo;
-	struct json_object *resp;
-
-	/* scan the request */
-	if (!get_params(req, Param_WGT, Param_Root|Param_Force|Param_Reload, &params))
-		return;
-
-	/* check if force is allowed */
-	if (params.force) {
-		if (!has_auth(req, &auth_uninstall)) {
-			forbidden_request(req);
-			return;
-		 }
-	}
-
-	/* supply default values */
-	if (!(params.found & Param_Reload))
-		params.reload = 1;
-	if (!(params.found & Param_Root))
-		params.root = rootdir;
-
-	/* install the widget */
-	ifo = install_widget(params.wgt, params.root, params.force);
-	if (ifo == NULL)
-		afb_req_fail_f(req, "failed", "installation failed: %m");
-	else {
-		afm_udb_update(afudb);
-		/* reload if needed */
-		if (params.reload)
-			do_reloads();
-
-		/* build the response */
-		rp_jsonc_pack(&resp, "{ss}", _added_, wgt_info_desc(ifo)->idaver);
-		afb_req_success(req, resp, NULL);
-		application_list_changed(_install_, wgt_info_desc(ifo)->idaver);
-
-		/* clean-up */
-		wgt_info_unref(ifo);
-	}
-}
-
-/*
- * On querying uninstallation of widget(s)
- */
-static void v_uninstall(afb_req_t req)
-{
-	struct params params;
-	int rc;
-
-	/* scan the request */
-	if (!get_params(req, Param_Id, Param_Root|Param_Reload, &params))
-		return;
-	if (!(params.found & Param_Reload))
-		params.reload = 1;
-	if (!(params.found & Param_Root))
-		params.root = rootdir;
-
-	/* install the widget */
-	rc = uninstall_widget(params.id, params.root);
-	if (rc)
-		afb_req_fail_f(req, "failed", "uninstallation failed: %m");
-	else {
-		afm_udb_update(afudb);
-		afb_req_success(req, NULL, NULL);
-		application_list_changed(_uninstall_, params.id);
-	}
-}
-#endif
-
-#if WITH_LEGACY_WIDGET_VERBS
-static void __unimplemented_legacy__(afb_req_t req)
-	{ afb_req_fail(req, "unimplemented-legacy", NULL); }
-static void v_install(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
-static void v_uninstall(afb_req_t req) __attribute__((alias("__unimplemented_legacy__")));
-#endif
-
 static void onsighup(int signal)
 {
 	afm_udb_update(afudb);
@@ -814,14 +659,6 @@ static const afb_verb_t verbs[] =
 	{.verb=_resume_   , .callback=v_resume,    .auth=&auth_kill,      .info="Resume a paused application",                .session=AFB_SESSION_CHECK },
 	{.verb=_runners_  , .callback=v_runners,   .auth=&auth_state,     .info="Get the list of running applications",       .session=AFB_SESSION_CHECK },
 	{.verb=_state_    , .callback=v_state,     .auth=&auth_state,     .info="Get the state of a running application",     .session=AFB_SESSION_CHECK },
-#if WITH_WIDGETS
-	{.verb=_install_  , .callback=v_install,   .auth=&auth_install,   .info="Install an application using a widget file", .session=AFB_SESSION_CHECK },
-	{.verb=_uninstall_, .callback=v_uninstall, .auth=&auth_uninstall, .info="Uninstall an application",                   .session=AFB_SESSION_CHECK },
-#endif
-#if WITH_LEGACY_WIDGET_VERBS
-	{.verb=_install_  , .callback=v_install,   .auth=NULL,            .info="Install a widget (legacy, unimplmented)",    .session=0 },
-	{.verb=_uninstall_, .callback=v_uninstall, .auth=NULL,            .info="Install an application (legacy, unimplmented)", .session=0 },
-#endif
 	{.verb=NULL }
 };
 

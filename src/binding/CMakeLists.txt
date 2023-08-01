@@ -45,8 +45,6 @@ if(libsystemd_FOUND AND AFB_FOUND)
 	)
 	target_link_libraries(
 		afm-binding
-		wgtpkg
-		wgt
 		secwrp
 		utils
 		${AFB_LIBRARIES}
