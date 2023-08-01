@@ -23,3 +23,8 @@
 ###########################################################################
 
 add_library(afmpkg STATIC afmpkg.c afmpkg-request.c)
+target_link_libraries(afmpkg utils secwrp)
+
+if(WITH_WIDGETS)
+	target_link_libraries(afmpkg wgtpkg)
+endif(WITH_WIDGETS)

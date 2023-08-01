@@ -48,13 +48,8 @@ endif()
 # check other modules
 pkg_check_modules(gnutls gnutls)
 pkg_check_modules(libsystemd libsystemd>=222)
+pkg_check_modules(libjsonc REQUIRED json-c)
 pkg_check_modules(libxml libxml-2.0)
-pkg_check_modules(libjsonc json-c)
-if(WITH_OPENSSL)
-	pkg_check_modules(xmlsec xmlsec1-openssl)
-else()
-	pkg_check_modules(xmlsec xmlsec1-gnutls)
-endif()
 
 # definitions
 add_definitions(

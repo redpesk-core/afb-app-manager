@@ -43,7 +43,8 @@
 #include "utils-systemd.h"
 
 #include "unit-generator.h"
-#include "wgt-strings.h"
+
+static const char string_targets[] = "targets";
 
 #if 0
 #include <ctype.h>

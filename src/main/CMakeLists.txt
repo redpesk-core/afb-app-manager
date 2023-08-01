@@ -27,7 +27,7 @@ add_link_options(-Wl,--as-needed -Wl,--gc-sections)
 MESSAGE(STATUS "Creating afmpkg-installer and afmpkg-status")
 add_executable(afmpkg-installer main-afmpkg-installer.c)
 target_compile_options(afmpkg-installer PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
-target_link_libraries(afmpkg-installer afmpkg wgtpkg wgt secwrp utils pthread)
+target_link_libraries(afmpkg-installer afmpkg pthread)
 install(TARGETS afmpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_executable(afmpkg-status main-afmpkg-status.c)
@@ -53,12 +53,10 @@ if(WITH_TOOLS)
 	add_executable(afm-domain-spec main-domain-spec.c)
 	target_link_libraries(afm-domain-spec utils)
 
-	add_executable(wgt-migrate main-migrate-config.c)
-	target_link_libraries(wgt-migrate wgt utils)
-
 	add_executable(afm-check-pkg main-afmpkg-check.c)
-	target_link_libraries(afm-check-pkg afmpkg wgtpkg wgt secwrp utils)
-	install(TARGETS wgt-migrate afm-domain-spec afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
+	target_link_libraries(afm-check-pkg afmpkg)
+
+	install(TARGETS afm-domain-spec afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 	if(${gnutls_FOUND})
 		# TODO: these programs are compiled but not installed
@@ -76,6 +74,13 @@ if(WITH_TOOLS)
 		install(TARGETS afm-check-signature afm-signed-digest afm-digest DESTINATION ${CMAKE_INSTALL_BINDIR})
 	else()
 		MESSAGE("WARNING, No gnutls, not creating afm cryptographic tools!")
+	endif()
+
+	if(libxml_FOUND)
+		MESSAGE(STATUS "Creating tools for migrating widgets")
+		add_executable(wgt-migrate main-migrate-config.c)
+		target_link_libraries(wgt-migrate wgt utils)
+		install(TARGETS wgt-migrate DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 
 	if(WITH_WIDGETS)

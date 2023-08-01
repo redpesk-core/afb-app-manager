@@ -1080,6 +1080,7 @@ int afmpkg_uninstall(
 /*********************************************************************************************/
 /*** LEGACY WIDGETS **************************************************************************/
 /*********************************************************************************************/
+#if WITH_WIDGETS
 
 #include "wgt-info.h"
 #include "wgtpkg-install.h"
@@ -1126,3 +1127,17 @@ process_legacy_config(
 	}
 	return rc;
 }
+
+#else /* WITH_WIDGETS */
+
+static
+int
+process_legacy_config(
+	process_state_t *state
+) {
+	RP_ERROR("Failed to (un)install widget %s: widgets aren't supported anymore", state->path);
+	return -ENOTSUP;
+}
+
+#endif /* WITH_WIDGETS */
+

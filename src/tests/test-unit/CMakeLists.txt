@@ -22,7 +22,9 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-include_directories(../..)
-add_executable(test-unit test-unit.c)
-target_link_libraries(test-unit wgtpkg wgt utils)
-add_test(NAME test-unit COMMAND test-unit ${CMAKE_CURRENT_SOURCE_DIR}/sample.unit ${CMAKE_CURRENT_SOURCE_DIR})
+if(WITH_WIDGETS)
+	include_directories(../..)
+	add_executable(test-unit test-unit.c)
+	target_link_libraries(test-unit wgtpkg wgt utils)
+	add_test(NAME test-unit COMMAND test-unit ${CMAKE_CURRENT_SOURCE_DIR}/sample.unit ${CMAKE_CURRENT_SOURCE_DIR})
+endif(WITH_WIDGETS)

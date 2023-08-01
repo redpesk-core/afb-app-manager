@@ -33,7 +33,7 @@ if(WITH_RPM_REDPESK_PLUGIN)
 
 	target_include_directories(redpesk PRIVATE ${CMAKE_SOURCE_DIR}/external-includes)
 	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS})
-	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES} utils)
+	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES})
 	install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
 else()
 	MESSAGE(STATUS "Not creating rpm plugin for redpesk")
