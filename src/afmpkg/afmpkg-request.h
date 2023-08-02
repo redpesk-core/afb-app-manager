@@ -26,7 +26,26 @@
 #include "afmpkg.h"
 
 /**
- * @brief kind of transaction
+ * @brief state of request
+ */
+typedef enum afmpkg_request_state
+{
+	/** request being composed */
+	Request_Pending,
+
+	/** request composed and ready */
+	Request_Ready,
+
+	/** request processed correctly */
+	Request_Ok,
+
+	/** request processed with error */
+	Request_Error
+}
+	afmpkg_request_state_t;
+
+/**
+ * @brief kind of request
  */
 typedef enum afmpkg_request_kind
 {
@@ -55,11 +74,14 @@ typedef enum afmpkg_request_kind
  */
 typedef struct afmpkg_request
 {
+	/** the state of the request */
+	afmpkg_request_state_t state;
+
 	/** the kind of the request */
 	afmpkg_request_kind_t kind;
 
-	/** end status of the request */
-	int ended;
+	/** status code */
+	int scode;
 
 	/** index of the request in the transaction set */
 	unsigned index;
@@ -70,8 +92,11 @@ typedef struct afmpkg_request
 	/** identifier of the transaction */
 	char *transid;
 
-	/** argument of the reply */
-	char *reply;
+	/** scratch buffer */
+	char *scratch;
+
+	/** reply  message */
+	const char *msg;
 
 	/** the packaging request */
 	afmpkg_t apkg;
@@ -96,6 +121,17 @@ extern int afmpkg_request_init(afmpkg_request_t *req);
 extern void afmpkg_request_deinit(afmpkg_request_t *req);
 
 /**
+ * @brief set the status of the request
+ *
+ * @param req the request to set
+ * @param scode the code to set
+ * @param msg an associated message
+ *
+ * @return the value scode
+ */
+extern int afmpkg_request_error(afmpkg_request_t *req, int scode, const char *msg);
+
+/**
  * @brief process a request
  *
  * @param req the request to be processed
@@ -112,3 +148,20 @@ extern int afmpkg_request_process(afmpkg_request_t *req);
  * @return 0 on success or a negative error code
  */
 extern int afmpkg_request_add_line(afmpkg_request_t *req, const char *line, size_t length);
+
+/**
+ * @brief get the reply line of request
+ *
+ * @param req the request
+ * @param line the line to set
+ * @param length length of the line
+ * @return 0 on success or a negative error code
+ */
+extern size_t afmpkg_request_make_reply_line(afmpkg_request_t *req, char *line, size_t length);
+
+/**
+ * @brief check if stopping is possible
+ *
+ * @return 0 if transactions are pending or a non zero value when stop is possible
+ */
+extern int afmpkg_request_can_stop();

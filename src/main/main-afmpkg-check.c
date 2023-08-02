@@ -93,7 +93,8 @@ static int check(const char *file)
 		rc = afmpkg_request_process(&request);
 
 	/* reply to the request */
-	printf ("rc=%d reply=%s\n", rc, request.reply ?: "");
+	length = afmpkg_request_make_reply_line(&request, buffer, sizeof buffer);
+	printf ("%.*s\n", (int)(length <= sizeof buffer ? length - 1 : sizeof buffer),  buffer);
 
 	/* reset the memory */
 	afmpkg_request_deinit(&request);

@@ -147,7 +147,7 @@ static struct transaction *get_transaction(const char *transid, unsigned count)
 }
 
 /**
- * @brief remove the transaction from the list and free its memory2a1ced824fcf36f3dfe676129e3d4b76317cb751
+ * @brief remove the transaction from the list and free its memory
  *
  * The mutex must be taken.
  *
@@ -175,17 +175,38 @@ static void put_transaction(struct transaction *trans)
 int afmpkg_request_init(afmpkg_request_t *req)
 {
 	int rc;
+	req->state = Request_Pending;
 	req->kind = Request_Unset;
-	req->ended = 0;
+	req->scode = 0;
 	req->index = 0;
 	req->count = 0;
 	req->transid = NULL;
-	req->reply = NULL;
+	req->scratch = NULL;
+	req->msg = NULL;
 	req->apkg.package = NULL;
 	req->apkg.root = NULL;
 	req->apkg.redpakid = NULL;
 	rc = path_entry_create_root(&req->apkg.files);
 	return rc;
+}
+
+/**
+ * @brief set the status of the request
+ *
+ * @param req the request to set
+ * @param scode the code to set
+ * @param msg an associated message
+ *
+ * @return the value scode
+ */
+int afmpkg_request_error(afmpkg_request_t *req, int scode, const char *msg)
+{
+	if (req->scode == 0) {
+		req->state = Request_Error;
+		req->scode = scode;
+		req->msg = msg;
+	}
+	return scode;
 }
 
 /**
@@ -196,7 +217,7 @@ int afmpkg_request_init(afmpkg_request_t *req)
 void afmpkg_request_deinit(afmpkg_request_t *req)
 {
 	free(req->transid);
-	free(req->reply);
+	free(req->scratch);
 	free(req->apkg.package);
 	free(req->apkg.root);
 	free(req->apkg.redpakid);
@@ -227,8 +248,14 @@ int dump_one_file(void *closure, path_entry_t *entry, const char *path, size_t l
  * @param req the request to be printed
  * @param file output file
  */
-static void dump_request(afmpkg_request_t *req, FILE *file)
+void afmpkg_request_dump(afmpkg_request_t *req, FILE *file)
 {
+	static const char *snames[] = {
+		[Request_Pending] = "pending",
+		[Request_Ready] = "ready",
+		[Request_Ok] = "ok",
+		[Request_Error] = "error"
+	};
 	static const char *knames[] = {
 		[Request_Unset] = "?unset?",
 		[Request_Add_Package] = AFMPKG_OPERATION_ADD,
@@ -240,7 +267,9 @@ static void dump_request(afmpkg_request_t *req, FILE *file)
 
 	file = file == NULL ? stderr : file;
 	dump(file, "BEGIN\n");
+	dump(file, "  state     %s\n", snames[req->state]);
 	dump(file, "  kind      %s\n", knames[req->kind]);
+	dump(file, "  scode     %d\n", req->scode);
 	dump(file, "  order     %u/%u\n", req->index, req->count);
 	dump(file, "  transid   %s\n", req->transid ?: "");
 	dump(file, "  package   %s\n", req->apkg.package ?: "");
@@ -265,13 +294,13 @@ int afmpkg_request_process(afmpkg_request_t *req)
 	int rc = 0;
 
 	if (rp_verbose_wants(rp_Log_Level_Info))
-		dump_request(req, NULL);
+		afmpkg_request_dump(req, NULL);
 
 	switch(req->kind) {
 	default:
 	case Request_Unset:
 		/* invalid request */
-		rc = -EINVAL;
+		rc = afmpkg_request_error(req, -EINVAL, "invalid state");
 		break;
 
 	case Request_Add_Package:
@@ -282,13 +311,15 @@ int afmpkg_request_process(afmpkg_request_t *req)
 				rc = afmpkg_install(&req->apkg);
 			else
 				rc = afmpkg_uninstall(&req->apkg);
+			if (rc < 0)
+				afmpkg_request_error(req, rc, req->kind == Request_Add_Package ? "can't install" : "can't uninstall");
 		}
 		/* record status for transaction */
 		if (req->transid != NULL) {
 			pthread_mutex_lock(&mutex);
 			trans = get_transaction(req->transid, req->count);
 			if (trans == NULL)
-				rc = -ENOMEM;
+				rc = afmpkg_request_error(req, -ENOMEM, "out of memory");
 			else if (rc >= 0)
 				trans->success++;
 			else
@@ -304,16 +335,19 @@ int afmpkg_request_process(afmpkg_request_t *req)
 	case Request_Get_Status:
 		/* request for status of a transaction */
 		if (req->transid == NULL)
-			rc = -EINVAL;
+			rc = afmpkg_request_error(req, -EINVAL, "invalid state");
 		else {
 			pthread_mutex_lock(&mutex);
 			trans = get_transaction(req->transid, 0);
 			if (trans == NULL)
-				rc = -ENOMEM;
+				rc = afmpkg_request_error(req, -ENOMEM, "out of memory");
 			else {
-				rc = asprintf(&req->reply, "%d %d %d", trans->count, trans->success, trans->fail);
+				rc = asprintf(&req->scratch, "%d %d %d", trans->count, trans->success, trans->fail);
 				put_transaction(trans);
-				rc = rc < 0 ? -errno : 0;
+				if (rc < 0)
+					rc = afmpkg_request_error(req, -errno, "out of memory");
+				else
+					req->msg = req->scratch;
 			}
 			pthread_mutex_unlock(&mutex);
 		}
@@ -365,104 +399,104 @@ int afmpkg_request_add_line(afmpkg_request_t *req, const char *line, size_t leng
 #define ELSE  }else{
 #define ELSEIF(key) }else IF(key)
 
-	/* should not be ended */
-	if (req->ended != 0)
-		return -1000;
+	/* should be pending */
+	if (req->state != Request_Pending)
+		return afmpkg_request_error(req, -1000, "line after end");
 
 	IF(BEGIN)
 		/* BEGIN [ADD|REMOVE] */
 		if (req->kind != Request_Unset)
-			return -1001;
+			return afmpkg_request_error(req, -1001, "unexpected BEGIN");
 		req->kind = get_operation_kind(line);
 		if (req->kind == Request_Unset)
-			return -1002;
+			return afmpkg_request_error(req, -1002, "invalid BEGIN");
 
 	ELSEIF(COUNT)
 		/* COUNT VALUE */
 		if (req->count != 0 || req->kind == Request_Unset)
-			return -1003;
+			return afmpkg_request_error(req, -1003, "unexpected COUNT");
 		errno = 0;
 		val = strtol(line, &str, 10);
 		if (*str)
-			return -1004;
+			return afmpkg_request_error(req, -1004, "invalid COUNT");
 		if (val < 1 || val > UINT_MAX || (val == LONG_MAX && errno == ERANGE))
-			return -1005;
+			return afmpkg_request_error(req, -1005, "COUNT out of range");
 		if (req->index != 0 && (unsigned)val < req->index)
-			return -1006;
+			return afmpkg_request_error(req, -1006, "COUNT out of INDEX");
 		req->count = (unsigned)val;
 
 	ELSEIF(END)
 		/* END [ADD|REMOVE] */
 		if (req->kind != get_operation_kind(line))
-			return -1008;
-		req->ended = 1;
+			return afmpkg_request_error(req, -1008, "invalid END");
+		req->state = Request_Ready;
 
 	ELSEIF(FILE)
 		/* FILE PATH */
 		if (req->kind == Request_Unset)
-			return -1009;
+			return afmpkg_request_error(req, -1009, "unexpected FILE");
 		rc = path_entry_add_length(req->apkg.files, NULL, line, length);
 		if (rc < 0)
-			return -1010;
+			return afmpkg_request_error(req, -1010, "can't add FILE");
 
 	ELSEIF(INDEX)
 		/* INDEX VALUE */
 		if (req->index != 0 || req->kind == Request_Unset)
-			return -1011;
+			return afmpkg_request_error(req, -1011, "unexpected INDEX");
 		errno = 0;
 		val = strtol(line, &str, 10);
 		if (*str)
-			return -1012;
+			return afmpkg_request_error(req, -1012, "invalid INDEX");
 		if (val < 1 || val > UINT_MAX || (val == LONG_MAX && errno == ERANGE))
-			return -1013;
+			return afmpkg_request_error(req, -1013, "INDEX out of range");
 		if (req->count != 0 && (unsigned)val > req->count)
-			return -1014;
+			return afmpkg_request_error(req, -1014, "INDEX out of COUNT");
 		req->index = (unsigned)val;
 
 	ELSEIF(PACKAGE)
 		/* PACKAGE NAME */
 		if (req->apkg.package != NULL || req->kind == Request_Unset)
-			return -1015;
+			return afmpkg_request_error(req, -1015, "unexpected PACKAGE");
 		req->apkg.package = strdup(line);
 		if (req->apkg.package == NULL)
-			return -1016;
+			return afmpkg_request_error(req, -1016, "out of memory");
 
 	ELSEIF(REDPAKID)
 		/* REDPAKID REDPAKID */
 		if (req->apkg.redpakid != NULL || req->kind == Request_Unset)
-			return -1017;
+			return afmpkg_request_error(req, -1017, "unexpected REDPAKID");
 		req->apkg.redpakid = strdup(line);
 		if (req->apkg.redpakid == NULL)
-			return -1016;
+			return afmpkg_request_error(req, -1016, "out of memory");
 
 	ELSEIF(ROOT)
 		/* ROOT NAME */
 		if (req->apkg.root != NULL || req->kind == Request_Unset)
-			return -1018;
+			return afmpkg_request_error(req, -1018, "unexpected ROOT");
 		req->apkg.root = strdup(line);
 		if (req->apkg.root == NULL)
-			return -1016;
+			return afmpkg_request_error(req, -1016, "out of memory");
 
 	ELSEIF(TRANSID)
 		/* TRANSID TRANSID */
 		if (req->transid != NULL || req->kind == Request_Unset)
-			return -1019;
+			return afmpkg_request_error(req, -1019, "unexpected TRANSID");
 		req->transid = strdup(line);
 		if (req->transid == NULL)
-			return -1016;
+			return afmpkg_request_error(req, -1016, "out of memory");
 
 	ELSEIF(STATUS)
 		/* STATUS TRANSID */
 		if (req->kind != Request_Unset || req->transid != NULL)
-			return -1020;
+			return afmpkg_request_error(req, -1020, "unexpected STATUS");
 		req->transid = strdup(line);
 		if (req->transid == NULL)
-			return -1016;
+			return afmpkg_request_error(req, -1016, "out of memory");
 		req->kind = Request_Get_Status;
-		req->ended = 1;
+		req->state = Request_Ready;
 
 	ELSE
-		return -1021;
+		return afmpkg_request_error(req, -1021, "bad line");
 
 	ENDIF
 	return 0;
@@ -471,5 +505,66 @@ int afmpkg_request_add_line(afmpkg_request_t *req, const char *line, size_t leng
 #undef ELSE
 #undef ELSEIF
 #undef ENDIF
+}
+
+/**
+ * @brief get the reply line of request
+ *
+ * @param req the request
+ * @param line the line to set
+ * @param length length of the line
+ * @return the length of the line
+ */
+size_t afmpkg_request_make_reply_line(afmpkg_request_t *req, char *line, size_t length)
+{
+	const char *tag;
+	size_t idx = 0;
+
+	/* make the head */
+	tag = req->scode >= 0 ? AFMPKG_KEY_OK : AFMPKG_KEY_ERROR;
+	while (*tag) {
+		if (idx < length)
+			line[idx] = *tag;
+		idx++;
+		tag++;
+	}
+
+	/* add message */
+	tag = req->msg;
+	if (tag != NULL && *tag) {
+		if (idx < length)
+			line[idx] = ' ';
+		idx++;
+		while (*tag) {
+			if (idx < length)
+				line[idx] = *tag;
+			idx++;
+			tag++;
+		}
+	}
+
+	/* ends the line */
+	if (idx < length)
+		line[idx] = '\n';
+	idx++;
+	if (idx < length)
+		line[idx] = 0;
+	return idx;
+}
+
+/**
+ * @brief check if stopping is possible
+ *
+ * @return 0 if transactions are pending or a non zero value when stop is possible
+ */
+int afmpkg_request_can_stop()
+{
+	int result;
+
+	pthread_mutex_lock(&mutex);
+	cleanup_transactions();
+	result = all_transactions == NULL;
+	pthread_mutex_unlock(&mutex);
+	return result;
 }
 
