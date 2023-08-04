@@ -28,7 +28,7 @@ add_library(secwrp STATIC
 	)
 
 if(NOT SIMULATE_SECMGR)
-	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager)
+	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager>=2.4)
 endif()
 
 target_compile_options(secwrp PRIVATE ${SECMGR_CFLAGS} -DSIMULATE_SEC_LSM_MANAGER=$<BOOL:${SIMULATE_SECMGR}>)

@@ -31,6 +31,7 @@ extern int secmgr_uninstall();
 extern int secmgr_permit(const char *permission);
 
 extern int secmgr_path(const char *pathname, const char *pathtype);
+extern int secmgr_plug(const char *expdir, const char *impid, const char *impdir);
 
 extern const char secmgr_pathtype_conf[];
 extern const char secmgr_pathtype_data[];
@@ -38,6 +39,7 @@ extern const char secmgr_pathtype_exec[];
 extern const char secmgr_pathtype_http[];
 extern const char secmgr_pathtype_icon[];
 extern const char secmgr_pathtype_lib[];
+extern const char secmgr_pathtype_plug[];
 extern const char secmgr_pathtype_public[];
 extern const char secmgr_pathtype_id[];
 extern const char secmgr_pathtype_default[];
@@ -49,6 +51,7 @@ extern int secmgr_path_data(const char *pathname);
 extern int secmgr_path_exec(const char *pathname);
 extern int secmgr_path_http(const char *pathname);
 extern int secmgr_path_icon(const char *pathname);
+extern int secmgr_path_plug(const char *pathname);
 extern int secmgr_path_public(const char *pathname);
 extern int secmgr_path_remove(const char *pathname);
 extern int secmgr_path_default(const char *pathname);

@@ -41,6 +41,7 @@ const char secmgr_pathtype_exec[] = "exec";
 const char secmgr_pathtype_http[] = "http";
 const char secmgr_pathtype_icon[] = "icon";
 const char secmgr_pathtype_lib[] = "lib";
+const char secmgr_pathtype_plug[] = "plug";
 const char secmgr_pathtype_public[] = "public";
 const char secmgr_pathtype_id[] = "id";
 const char secmgr_pathtype_default[] = "default";
@@ -134,6 +135,18 @@ int secmgr_path(const char *pathname, const char *pathtype)
 	return retcode(rc);
 }
 
+
+int secmgr_plug(const char *expdir, const char *impid, const char *impdir)
+{
+	int rc;
+	assert(sm_handle != NULL);
+	rc = sec_lsm_manager_add_plug(sm_handle, expdir, impid, impdir);
+	if (rc < 0)
+		RP_ERROR("sec_lsm_manager_add_plug %s for %s failed", expdir, impid);
+	return retcode(rc);
+}
+
+
 int secmgr_path_conf(const char *pathname)
 {
 	return secmgr_path(pathname, secmgr_pathtype_conf);
@@ -162,6 +175,11 @@ int secmgr_path_icon(const char *pathname)
 int secmgr_path_lib(const char *pathname)
 {
 	return secmgr_path(pathname, secmgr_pathtype_lib);
+}
+
+int secmgr_path_plug(const char *pathname)
+{
+	return secmgr_path(pathname, secmgr_pathtype_plug);
 }
 
 int secmgr_path_public(const char *pathname)

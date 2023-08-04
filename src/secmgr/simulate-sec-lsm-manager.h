@@ -42,6 +42,9 @@ static int ptr_ = 0;
 #define sec_lsm_manager_add_path(sm_handle, path, path_type) \
     (printf("sec_lsm_manager_add_path(%p,%s,%s)\n", sm_handle, path, path_type), 0)
 
+#define sec_lsm_manager_add_plug(sm_handle, expdir, impid, impdir) \
+    (printf("sec_lsm_manager_add_plug(%p,%s,%s,%s)\n", sm_handle, expdir, impid, impdir), 0)
+
 #define sec_lsm_manager_add_permission(sm_handle, permission) \
     (printf("sec_lsm_manager_add_permission(%p,%s)\n", sm_handle, permission), 0)
 
