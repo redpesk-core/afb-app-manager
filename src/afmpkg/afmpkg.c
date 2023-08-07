@@ -209,8 +209,8 @@ static void for_each_plug_cb(void *closure, json_object *desc)
 				RP_ERROR("invalid plug path %s", expdir);
 			else {
 				/* get import path directory */
-				snprintf(&state->path[state->offset_root],
-					sizeof state->path - state->offset_root,
+				snprintf(&state->path[state->offset_pack],
+					sizeof state->path - state->offset_pack,
 					"/%s", expdir);
 
 				/* get import path directory */
@@ -244,7 +244,6 @@ static void for_each_plug(process_state_t *state, void (*fun)(process_state_t*, 
 		rp_jsonc_array_for_all(item, for_each_plug_cb, &pcb);
 	}
 }
-
 
 /*********************************************************************************************/
 /*** ITERATION OVER FILES ********************************************************************/
@@ -760,7 +759,7 @@ static int setup_security(process_state_t *state)
 	}
 
 	/* setup file security */
-	for_each_entry(state, PATH_ENTRY_FORALL_AFTER, setup_security_file_cb);
+	for_each_entry(state, PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_SILENT_ROOT, setup_security_file_cb);
 	rc = state->rc;
 	if (rc < 0)
 		goto end;
