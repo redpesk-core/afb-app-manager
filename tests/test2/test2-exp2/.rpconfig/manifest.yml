@@ -1,0 +1,22 @@
+rp-manifest: 1
+
+id: test2-exp2
+version: 1
+author: iot team
+license: none
+
+description: >
+  This is a tiny example for testing plugins.
+
+targets:
+  - target: main
+    content:
+       src: bin/start
+       type: application/x-executable
+
+plugs:
+  - name: export
+    value: test2-main
+
+required-permission:
+  - urn:redpesk:permission:test2-main:partner:export:plug
