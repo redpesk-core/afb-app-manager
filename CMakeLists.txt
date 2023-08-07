@@ -42,7 +42,8 @@ option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
-option(ALLOW_WIDGETS      "Allow widgets even if WITH_RPM_REDPESK_PLUGIN is ON" OFF)
+option(WITH_WIDGETS       "Supports widget format" ON)
+option(WITH_WIDGET_TOOLS  "Allow widget tools even if WITH_RPM_REDPESK_PLUGIN is ON" OFF)
 option(WITH_OPENSSL       "Use openssl instead of gnutls" OFF)
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 
@@ -71,12 +72,6 @@ set(UNITDIR_SYSTEM          "${CMAKE_INSTALL_PREFIX}/lib/systemd/system"   CACHE
 if(USE_SIMULATION)
     set(SIMULATE_SECMGR ON)
 endif(USE_SIMULATION)
-
-if(ALLOW_WIDGETS)
-    set(WITH_WIDGETS ON)
-else(ALLOW_WIDGETS)
-    set(WITH_WIDGETS OFF)
-endif(ALLOW_WIDGETS)
 
 add_subdirectory(src)
 add_subdirectory(conf)

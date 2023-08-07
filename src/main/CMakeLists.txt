@@ -83,7 +83,7 @@ if(WITH_TOOLS)
 		install(TARGETS wgt-migrate DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 
-	if(WITH_WIDGETS)
+	if(WITH_WIDGETS AND WITH_WIDGET_TOOLS)
 		MESSAGE(STATUS "Creating tools for legacy widgets")
 
 		add_executable(wgtpkg-sign main-wgtpkg-sign.c)
