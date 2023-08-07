@@ -174,6 +174,26 @@ The value is either:
 - required: the permission is required
 - optional: the permission is optional
 
+### plugs
+
+Use this feature for exporting files to applications
+able to receive plugins.
+
+Example:
+
+```yaml
+plugs:
+  - name: canbus/plug
+    value: canbus-binding
+```
+
+The name is the name of the exported directory.
+
+The value is the identifier of the application
+to which the files are exported.
+
+
+
 ## Targets part of the manifest file
 
 Targets are startable units of the package.

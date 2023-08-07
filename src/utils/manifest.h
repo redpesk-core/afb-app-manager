@@ -43,6 +43,7 @@
 
 #define MANIFEST_TARGET				"target"
 #define MANIFEST_SHARP_TARGET			"#target"
+#define MANIFEST_PLUGS				"plugs"
 
 /**
 * Validates the given manifest object

@@ -168,6 +168,85 @@ void for_each_target(process_state_t *state, void (*fun)(process_state_t*, json_
 }
 
 /*********************************************************************************************/
+/*** ITERATION OVER PLUGS ********************************************************************/
+/*********************************************************************************************/
+
+struct plug_cb {
+	process_state_t *state;
+	void (*fun)(process_state_t*, path_entry_t*, const char*, const char*);
+};
+
+static void for_each_plug_cb(void *closure, json_object *desc)
+{
+	int rc = 0;
+	json_object *item;
+	const char *expdir;
+	const char *impid;
+	path_entry_t *entry;
+	char path[PATH_MAX + 1];
+	struct plug_cb *pcb = closure;
+	process_state_t *state = pcb->state;
+
+	/* get the id (name) */
+	if (!json_object_object_get_ex(desc, MANIFEST_NAME, &item)) {
+		rc = -EINVAL;
+		RP_ERROR("name missing in plug");
+	}
+	else {
+		expdir = json_object_get_string(item);
+
+		/* get exported directory (value) */
+		if (!json_object_object_get_ex(desc, MANIFEST_VALUE, &item)) {
+			rc = -EINVAL;
+			RP_ERROR("value missing in plug");
+		}
+		else {
+			impid = json_object_get_string(item);
+
+			/* get entry of exported directory */
+			rc = path_entry_get(state->packdir, &entry, expdir);
+			if (rc < 0)
+				RP_ERROR("invalid plug path %s", expdir);
+			else {
+				/* get import path directory */
+				snprintf(&state->path[state->offset_root],
+					sizeof state->path - state->offset_root,
+					"/%s", expdir);
+
+				/* get import path directory */
+				rc = snprintf(path, sizeof path,
+					"%.*s%s/%s/plugins",
+					state->offset_root, state->path,
+					FWK_APP_DIR, impid);
+				if (rc <= 0 || rc >= (int)sizeof path) {
+					rc = -ENAMETOOLONG;
+					RP_ERROR("can't set impdir path");
+				}
+				else {
+					pcb->fun(state, entry, impid, path);
+				}
+			}
+		}
+	}
+	if (rc < 0 && state->rc >= 0)
+		state->rc = rc;
+}
+
+/** iterate over the plugs of the package */
+static void for_each_plug(process_state_t *state, void (*fun)(process_state_t*, path_entry_t*, const char*, const char*))
+{
+	struct plug_cb pcb;
+	json_object *item;
+
+	if (json_object_object_get_ex(state->manifest, MANIFEST_PLUGS, &item)) {
+		pcb.state = state;
+		pcb.fun = fun;
+		rp_jsonc_array_for_all(item, for_each_plug_cb, &pcb);
+	}
+}
+
+
+/*********************************************************************************************/
 /*** ITERATION OVER FILES ********************************************************************/
 /*********************************************************************************************/
 
@@ -428,6 +507,33 @@ static void compute_explicit_file_properties_cb(process_state_t *state, json_obj
 	put_state_rc(state, rc);
 }
 
+/* callback for implementing plug exporting property */
+static void compute_implicit_plug_property_cb(process_state_t *state, json_object *jso)
+{
+	path_entry_t *entry;
+	json_object *name;
+	int rc = 0;
+
+	/* extract the values */
+	if (!json_object_object_get_ex(jso, "name", &name)) {
+		RP_ERROR("bad plug properties %s", json_object_get_string(jso));
+		rc = -EINVAL;
+	}
+	else {
+		/* get the path entry matching the name */
+		rc = path_entry_get(state->packdir, &entry, json_object_get_string(name));
+		if (rc < 0) {
+			RP_ERROR("entry doesn't exist %s", json_object_get_string(jso));
+			rc = -ENOENT;
+		}
+		else {
+			/* set type "plug" */
+			set_entry_type(entry, path_type_Plug);
+		}
+	}
+	put_state_rc(state, rc);
+}
+
 /* callback possibly deducing file type for contents */
 static void compute_target_file_properties_cb(process_state_t *state, json_object *jso)
 {
@@ -496,6 +602,13 @@ static int compute_public_files_properties_cb(process_state_t *state, path_entry
 {
 	path_type_t curtype = get_entry_type(entry);
 	switch (curtype) {
+	case path_type_Plug:
+		if (entry != state->packdir) {
+			entry = path_entry_parent(entry);
+			if (get_entry_type(entry) != path_type_Public)
+				set_entry_type(entry, path_type_Plug);
+		}
+		break;
 	case path_type_Public:
 	case path_type_Public_Exec:
 	case path_type_Public_Lib:
@@ -517,6 +630,9 @@ static int compute_files_properties(process_state_t *state)
 	state->rc = set_entry_type(state->packdir, path_type_Id);
 	if (state->rc >= 0)
 		for_each_content_entry(state, PATH_ENTRY_FORALL_NO_PATH, reset_type_cb);
+	/* set implicit plugin types */
+	if (state->rc >= 0)
+		for_each_of_manifest(state, MANIFEST_PLUGS, compute_implicit_plug_property_cb);
 	/* set explicit types */
 	if (state->rc >= 0)
 		for_each_of_manifest(state, MANIFEST_FILE_PROPERTIES, compute_explicit_file_properties_cb);
@@ -621,6 +737,16 @@ static int permit(process_state_t *state, const char *perm)
 	return rc;
 }
 
+static void set_secmgr_plug(process_state_t *state, path_entry_t *entry, const char *impid, const char *impdir)
+{
+	int rc = secmgr_plug(state->path, impid, impdir);
+	if (rc < 0) {
+		RP_ERROR("can't add plug");
+		if (state->rc >= 0)
+			state->rc = rc;
+	}
+}
+
 static int setup_security(process_state_t *state)
 {
 	int rc;
@@ -656,6 +782,12 @@ static int setup_security(process_state_t *state)
 			goto cancel;
 	}
 
+	/* setup the plugs */
+	for_each_plug(state, set_secmgr_plug);
+	rc = state->rc;
+	if (rc < 0)
+		goto end;
+
 	/* installs the setting now, it commits the transaction */
 	rc = secmgr_install();
 
@@ -682,6 +814,7 @@ static int setdown_security(
 		RP_ERROR("can't init sec lsm manager context");
 	else {
 		for_each_entry(state, 0, setdown_security_file_cb);
+		for_each_plug(state, set_secmgr_plug);
 		rc = secmgr_uninstall();
 		secmgr_end();
 		if (rc < 0)
