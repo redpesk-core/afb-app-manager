@@ -584,6 +584,7 @@ static const char * const type_types[] = {
     [path_type_Icon] = secmgr_pathtype_icon,
     [path_type_Id] = secmgr_pathtype_id,
     [path_type_Lib] = secmgr_pathtype_lib,
+    [path_type_Plug] = secmgr_pathtype_plug,
     [path_type_Public] = secmgr_pathtype_public,
     [path_type_Public_Exec] = secmgr_pathtype_public,
     [path_type_Public_Lib] = secmgr_pathtype_public

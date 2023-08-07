@@ -38,6 +38,7 @@ enum path_type
     path_type_Icon,
     path_type_Id,
     path_type_Lib,
+    path_type_Plug,
     path_type_Public,
     path_type_Public_Exec,
     path_type_Public_Lib

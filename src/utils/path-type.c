@@ -39,6 +39,7 @@ filetypes[] = {
 	{ path_type_Exec,		"executable",		"bin" },
 	{ path_type_Http,		"www",			"htdocs" },
 	{ path_type_Lib,		"library",		"lib" },
+	{ path_type_Plug,		"plug",			NULL },
 	{ path_type_Public,		"public",		"public" },
 	{ path_type_Public_Exec,	"public-executable",	NULL },
 	{ path_type_Public_Lib,		"public-library",	NULL },
