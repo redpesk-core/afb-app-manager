@@ -61,16 +61,19 @@ static int add(permset_t *permset, const char *name, size_t length, int grant, i
 {
 	struct permission *p = get(permset, name, length);
 	if (p == NULL) {
-		p = realloc(permset->permissions,
-			((permset->count + 8) & ~(unsigned)7) * sizeof(*p));
-		if (p == NULL)
-			return -ENOMEM;
-		permset->permissions = p;
+		if ((permset->count & 7) == 0) {
+			p = realloc(permset->permissions,
+				(permset->count + 8) * sizeof(*p));
+			if (p == NULL)
+				return -ENOMEM;
+			permset->permissions = p;
+		}
 		p = permset->permissions + permset->count;
-		p->name = malloc(length);
+		p->name = malloc(length + 1);
 		if (p->name == NULL)
 			return -ENOMEM;
 		memcpy(p->name, name, length);
+		p->name[length] = '\0';
 		p->length = length;
 		p->granted = 0;
 		p->requested = 0;
