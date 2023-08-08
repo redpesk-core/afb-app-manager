@@ -9,7 +9,7 @@ INDEX 1
 COUNT 1
 TRANSID $dir
 PACKAGE $dir
-ROOT $PWD
-$(find $dir|sed 's:^:FILE /:')
+ROOT /
+$(find $dir|sed "s:^:FILE $PWD/:")
 END $op
 EOC

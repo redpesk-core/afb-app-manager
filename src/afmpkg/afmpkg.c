@@ -256,8 +256,14 @@ int for_each_entry(
 	unsigned flags,
 	int (*fun)(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 ) {
+	unsigned offset = state->offset_pack;
+	if (!(flags & PATH_ENTRY_FORALL_SILENT_ROOT)) {
+		unsigned toplen = path_entry_length(state->packdir);
+		if (offset > toplen)
+			offset -= toplen + 1;
+	}
 	return path_entry_for_each_in_buffer(flags, state->packdir, (path_entry_for_each_cb_t)fun, state,
-			&state->path[state->offset_pack], PATH_MAX - state->offset_pack);
+			&state->path[offset], sizeof state->path - offset);
 }
 
 /** iterate over the entries of the package */
@@ -759,7 +765,7 @@ static int setup_security(process_state_t *state)
 	}
 
 	/* setup file security */
-	for_each_entry(state, PATH_ENTRY_FORALL_AFTER | PATH_ENTRY_FORALL_SILENT_ROOT, setup_security_file_cb);
+	for_each_entry(state, PATH_ENTRY_FORALL_AFTER, setup_security_file_cb);
 	rc = state->rc;
 	if (rc < 0)
 		goto end;
@@ -801,7 +807,7 @@ end:
 static int setdown_security_file_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
 	/* before uninstalling, set the id for making files inaccessible */
-	secmgr_path_id(path);
+	secmgr_path_id(state->path);
 	return 0;
 }
 
