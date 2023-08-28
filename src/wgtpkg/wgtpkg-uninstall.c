@@ -71,7 +71,7 @@ static int setdown_files_and_security(const struct wgt_desc *desc)
 	}
 
 #if DISTINCT_VERSIONS
-	rc = secmgr_begin(desc->id);
+	rc = secmgr_begin(desc->id_lower);
 #else
 	rc = secmgr_begin(desc->idaver);
 #endif

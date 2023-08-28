@@ -34,6 +34,7 @@ extern const char string_height[];
 extern const char string_href[];
 extern const char string_icon[];
 extern const char string_id[];
+extern const char string_id_lower[];
 extern const char string_id_underscore[];
 extern const char string_license[];
 extern const char string_name[];

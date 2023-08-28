@@ -109,7 +109,7 @@ static int check_temporary_constraints(const struct wgt_desc *desc)
 {
 	int result;
 
-	result  = check_valid_string(desc->id, "id");
+	result  = check_valid_string(desc->id_lower, "id");
 	result |= check_valid_string(desc->version, "version");
 	result |= check_valid_string(desc->ver, "ver");
 	result |= check_defined(desc->content_src, "content");
@@ -446,7 +446,7 @@ static int install_security(const struct wgt_desc *desc)
 	struct pathent *pe0, *pe2, *ppe;
 
 	pe0 = NULL;
-	rc = secmgr_begin(desc->id);
+	rc = secmgr_begin(desc->id_lower);
 	if (rc < 0)
 		goto end;
 
@@ -699,9 +699,9 @@ static int get_target_directory(char target[PATH_MAX], const char *root, const s
 	int rc;
 
 #if DISTINCT_VERSIONS
-	rc = snprintf(target, PATH_MAX, "%s/%s/%s", root, desc->id, desc->ver);
+	rc = snprintf(target, PATH_MAX, "%s/%s/%s", root, desc->id_lower, desc->ver);
 #else
-	rc = snprintf(target, PATH_MAX, "%s/%s", root, desc->id);
+	rc = snprintf(target, PATH_MAX, "%s/%s", root, desc->id_lower);
 #endif
 	if (rc < PATH_MAX)
 		rc = 0;

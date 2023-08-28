@@ -172,8 +172,9 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 		errno = EINVAL;
 		return -1;
 	}
-	make_lowercase(desc->id);
-	desc->id_underscore = strdup(desc->id);
+	desc->id_lower = strdup(desc->id);
+	make_lowercase(desc->id_lower);
+	desc->id_underscore = strdup(desc->id_lower);
 	dash_to_underscore(desc->id_underscore);
 
 	desc->version = (char*)xmlGetProp(node, (const xmlChar*)string_version);
@@ -184,7 +185,7 @@ static int fill_desc(struct wgt_desc *desc, int want_icons, int want_features, i
 	}
 	desc->ver = mkver(desc->version);
 	make_lowercase(desc->ver);
-	desc->idaver = mkidaver(desc->id, desc->ver);
+	desc->idaver = mkidaver(desc->id_lower, desc->ver);
 	desc->width = getpropnum(node, string_width, 0);
 	desc->height = getpropnum(node, string_height, 0);
 	desc->viewmodes = (char*)xmlGetProp(node, (const xmlChar*)string_viewmodes);
@@ -330,6 +331,7 @@ static void free_desc(struct wgt_desc *desc)
 	struct wgt_desc_param *param;
 
 	xmlFree(desc->id);
+	free(desc->id_lower);
 	free(desc->id_underscore);
 	xmlFree(desc->version);
 	free(desc->ver);
@@ -386,6 +388,7 @@ static void dump_desc(struct wgt_desc *desc, FILE *f, const char *prefix)
 	struct wgt_desc_param *param;
 
 	if (desc->id) fprintf(f, "%sid: %s\n", prefix, desc->id);
+	if (desc->id_lower) fprintf(f, "%sid-lower: %s\n", prefix, desc->id_lower);
 	if (desc->id_underscore) fprintf(f, "%sid-underscore: %s\n", prefix, desc->id_underscore);
 	if (desc->version) fprintf(f, "%sversion: %s\n", prefix, desc->version);
 	if (desc->ver) fprintf(f, "%sver: %s\n", prefix, desc->ver);
