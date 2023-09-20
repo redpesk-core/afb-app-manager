@@ -24,8 +24,9 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+option(WITH_LEGACY_AFM_UTIL "Really want the really legacy afm-util" OFF)
 if(NOT USE_SDK)
-	if(WITH_WIDGETS)
+	if(WITH_LEGACY_AFM_UTIL)
 		configure_file(afm-util-legacy.in afm-util @ONLY)
 	else()
 		configure_file(afm-util.in afm-util @ONLY)
