@@ -510,7 +510,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 
 	/* fills the main */
 	rc2 = j_add_many_strings_m(result,
-		//string_id, desc->id,
+		string_id, desc->id_lower,
 		string_id_lower, desc->id_lower,
 		string_id_underscore, desc->id_underscore,
 		string_idaver, desc->idaver,
