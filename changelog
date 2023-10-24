@@ -1,0 +1,5 @@
+version 12.1.1
+--------------
+- fix in legacy afm-util
+- fix installation of packages with config.xml
+- fix afm-user-session permissions
