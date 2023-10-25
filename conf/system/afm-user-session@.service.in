@@ -6,4 +6,5 @@ After=systemd-user-sessions.service
 User=%i
 PAMName=afm-user-session
 ExecStart=@afm_libexecdir@/afm-user-session
+AmbientCapabilities=CAP_MAC_OVERRIDE
 SecureBits=no-setuid-fixup
