@@ -23,7 +23,7 @@
 ###########################################################################
 
 if(NOT USE_SDK)
-	install(DIRECTORY DESTINATION ${wgtpkg_trusted_certs_dir})
+	install(DIRECTORY DESTINATION ${crypto_trusted_certs_dir})
 endif()
 
 if(INSTALL_SAMPLE_KEYS)
@@ -31,17 +31,17 @@ if(INSTALL_SAMPLE_KEYS)
 		#foreach(f root) TODO: install only root certificate
 		foreach(f root developer partner platform public)
 			install(FILES sample/${f}.cert.pem
-			        DESTINATION ${wgtpkg_trusted_certs_dir}
+			        DESTINATION ${crypto_trusted_certs_dir}
 			        RENAME sample-cert-${f}.pem
 			)
 		endforeach(f)
 	endif()
 	foreach(f developer partner platform public)
 		install(FILES sample/${f}.cert.pem
-		        DESTINATION ${wgtpkg_sample_certs_dir}
+		        DESTINATION ${crypto_sample_certs_dir}
 		)
 		install(FILES sample/${f}.key.pem
-		        DESTINATION ${wgtpkg_sample_keys_dir}
+		        DESTINATION ${crypto_sample_keys_dir}
 		)
 	endforeach(f)
 endif()

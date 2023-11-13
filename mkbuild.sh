@@ -44,9 +44,9 @@ cmake \
 	${afm_icondir+-Dafm_icondir="${afm_icondir}"} \
 	${afm_prefix+-Dafm_prefix="${afm_prefix}"} \
 	${afm_units_root+-Dafm_units_root="${afm_units_root}"} \
-	${wgtpkg_trusted_certs_dir+-Dwgtpkg_trusted_certs_dir="${wgtpkg_trusted_certs_dir}"} \
-	${wgtpkg_sample_keys_dir+-Dwgtpkg_sample_keys_dir="${wgtpkg_sample_keys_dir}"} \
-	${wgtpkg_sample_certs_dir+-Dwgtpkg_sample_certs_dir="${wgtpkg_sample_certs_dir}"} \
+	${crypto_trusted_certs_dir+-Dcrypto_trusted_certs_dir="${crypto_trusted_certs_dir}"} \
+	${crypto_sample_keys_dir+-Dcrypto_sample_keys_dir="${crypto_sample_keys_dir}"} \
+	${crypto_sample_certs_dir+-Dcrypto_sample_certs_dir="${crypto_sample_certs_dir}"} \
 	${afm_platform_rundir+-Dafm_platform_rundir="${afm_platform_rundir}"} \
 	${afm_users_rundir+-Dafm_users_rundir="${afm_users_rundir}"} \
 	${afm_scope_platform_dir+-Dafm_scope_platform_dir="${afm_scope_platform_dir}"} \

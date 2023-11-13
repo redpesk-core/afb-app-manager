@@ -57,7 +57,7 @@ add_definitions(
 	-DFWK_PREFIX="${afm_prefix}"
 	-DFWK_ICON_DIR="${afm_icondir}"
 	-DFWK_APP_DIR="${afm_appdir}"
-	-DWGTPKG_TRUSTED_CERT_DIR="${wgtpkg_trusted_certs_dir}"
+	-DWGTPKG_TRUSTED_CERT_DIR="${crypto_trusted_certs_dir}"
 	-DFWK_LAUNCH_CONF="${afm_confdir}/afm-launch.conf"
 	-DFWK_UNIT_CONF="${afm_confdir}/afm-unit.conf"
 	-DAFM_UNITS_ROOT="${afm_units_root}"

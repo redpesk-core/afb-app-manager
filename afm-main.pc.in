@@ -25,9 +25,9 @@
 
 icondir=@afm_icondir@
 installdir=@afm_appdir@
-trusted_certs_dir=@wgtpkg_trusted_certs_dir@
-sample_certs_dir=@wgtpkg_sample_certs_dir@
-sample_keys_dir=@wgtpkg_sample_keys_dir@
+trusted_certs_dir=@crypto_trusted_certs_dir@
+sample_certs_dir=@crypto_sample_certs_dir@
+sample_keys_dir=@crypto_sample_keys_dir@
 
 Name: @PROJECT_PRETTY_NAME@
 Description: @PROJECT_DESCRIPTION@
