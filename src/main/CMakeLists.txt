@@ -22,8 +22,6 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_link_options(-Wl,--as-needed -Wl,--gc-sections)
-
 MESSAGE(STATUS "Creating afmpkg-installer and afmpkg-status")
 add_executable(afmpkg-installer main-afmpkg-installer.c)
 target_compile_options(afmpkg-installer PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
@@ -82,25 +80,4 @@ if(WITH_TOOLS)
 		target_link_libraries(wgt-migrate wgt utils)
 		install(TARGETS wgt-migrate DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
-
-	if(WITH_WIDGETS AND WITH_WIDGET_TOOLS)
-		MESSAGE(STATUS "Creating tools for legacy widgets")
-
-		add_executable(wgtpkg-sign main-wgtpkg-sign.c)
-		target_link_libraries(wgtpkg-sign wgtpkg utils)
-		install(TARGETS wgtpkg-sign DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-		add_executable(wgtpkg-pack main-wgtpkg-pack.c)
-		target_link_libraries(wgtpkg-pack wgtpkg utils)
-		install(TARGETS wgtpkg-pack DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-		add_executable(wgtpkg-info main-wgtpkg-info.c)
-		target_link_libraries(wgtpkg-info wgtpkg wgt utils)
-		install(TARGETS wgtpkg-info DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-		add_executable(wgtpkg-install main-wgtpkg-install.c)
-		target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
-		install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
-	endif()
 endif()
-

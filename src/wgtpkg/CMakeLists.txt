@@ -25,7 +25,6 @@
 # library for handling the content of the widgets
 
 if(libxml_FOUND)
-
 	add_library(wgt STATIC
 		wgt-config.c
 		wgt-info.c
@@ -38,7 +37,9 @@ if(libxml_FOUND)
 	target_include_directories(wgt PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS})
 	target_link_libraries(wgt PUBLIC ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} utils)
 	target_link_directories(wgt PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS})
+endif(libxml_FOUND)
 
+if(libxml_FOUND)
 	if(WITH_WIDGETS)
 		if(WITH_OPENSSL)
 			pkg_check_modules(xmlsec xmlsec1-openssl)
@@ -71,3 +72,5 @@ if(libxml_FOUND)
 		endif(USE_LIBZIP)
 	endif(WITH_WIDGETS)
 endif(libxml_FOUND)
+
+add_subdirectory(legacy)

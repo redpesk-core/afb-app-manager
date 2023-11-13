@@ -52,7 +52,6 @@
 #include "permset.h"
 
 #include "unit-generator.h"
-#include "wgtpkg-unit.h"
 
 #include "secmgr-wrap.h"
 
