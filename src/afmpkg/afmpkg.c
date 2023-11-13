@@ -1220,48 +1220,53 @@ int afmpkg_uninstall(
 /*********************************************************************************************/
 #if WITH_WIDGETS
 
-#include "wgt-info.h"
-#include "wgtpkg-install.h"
-#include "wgtpkg-uninstall.h"
+#include "wgt-json.h"
 
-static
-int
-process_legacy_config(
-	process_state_t *state
-) {
+static int config_read_and_check(struct json_object **obj, const char *path)
+{
 	int rc = 0;
+	*obj = wgt_config_to_json(path);
 
-	if (state->uninstall) {
-		/*
-		** UNINSTALL
-		*/
-		RP_NOTICE("-- Uninstall legacy widget from %s --", state->path);
-		rc = uninstall_redpesk(state->path);
-		if (rc < 0)
-			RP_ERROR("Failed to uninstall %s", state->path);
+	if (*obj == NULL) {
+		RP_ERROR("can't read config file %s", path);
+		rc = -errno;
 	}
-	else if (state->install) {
-		/*
-		** INSTALL
-		*/
-		json_object *metadata;
-		struct wgt_info *ifo;
-
-		RP_NOTICE("-- Install legacy widget from %s --", state->path);
-
-		rc = make_install_metadata(&metadata, state->apkg, &state->path[state->offset_root]);
-		if (rc == 0) {
-			ifo = install_redpesk_with_meta(state->path, metadata);
-			if (!ifo) {
-				RP_ERROR("Fail to install %s", state->path);
-				rc = -errno;
-			}
-			else {
-				wgt_info_unref(ifo);
-				rc = 0;
-			}
-			json_object_put(metadata);
+	else {
+		json_object_object_add(*obj, MANIFEST_RP_MANIFEST, json_object_new_int(1));
+		rc = manifest_check(*obj);
+		if (rc >= 0)
+			rc = manifest_normalize(*obj, path);
+		else
+			RP_ERROR("constraints of manifest not fulfilled for %s", path);
+		if (rc < 0) {
+			json_object_put(*obj);
+			*obj = NULL;
 		}
+	}
+	return rc;
+}
+
+static int process_legacy_config(process_state_t *state)
+{
+	int rc;
+
+	/* TODO: process signatures */
+	/* read the manifest */
+	state->path[state->offset_pack] = '/';
+	strncpy(&state->path[state->offset_pack + 1], name_manifest, sizeof state->path - 1  - state->offset_pack);
+	rc = config_read_and_check(&state->manifest, state->path);
+	if (rc < 0)
+		RP_ERROR("Unable to get or validate config %s --", state->path);
+	else {
+		RP_DEBUG("processing config %s", json_object_to_json_string_ext(state->manifest,
+		                             JSON_C_TO_STRING_PRETTY|JSON_C_TO_STRING_NOSLASHESCAPE));
+
+		state->appid = json_object_get_string(json_object_object_get(state->manifest, "id"));
+		if (state->install)
+			return install_afmpkg(state);
+		if (state->uninstall)
+			return uninstall_afmpkg(state);
+		json_object_put(state->manifest);
 	}
 	return rc;
 }

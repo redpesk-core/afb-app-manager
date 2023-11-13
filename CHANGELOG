@@ -1,3 +1,13 @@
+Version 12.2.0
+--------------
+- Internal renaming
+- Isolate legacy code
+- Replace wgtpkg install/uninstall with afmpkg
+- Renaming of build variables
+  - crypto_trusted_certs_dir ->  wgtpkg_trusted_certs_dir
+  - crypto_sample_keys_dir   ->  wgtpkg_sample_keys_dir
+  - crypto_sample_certs_dir  ->  wgtpkg_sample_certs_dir
+
 Version 12.1.2
 --------------
 - Set ambient capabilities of afm-user-session@.service to CAP_MAC_OVERRIDE
