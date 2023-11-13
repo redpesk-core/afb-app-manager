@@ -42,8 +42,9 @@ option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
-option(WITH_WIDGETS       "Supports widget format" ON)
-option(WITH_WIDGET_TOOLS  "Allow widget tools even if WITH_RPM_REDPESK_PLUGIN is ON" OFF)
+option(WITH_CONFIG_XML    "Allow use of legacy config.xml instead of manifest" ON)
+option(WITH_LEGACY_WGTPKG "Supports legacy widget" OFF)
+
 option(WITH_OPENSSL       "Use openssl instead of gnutls" OFF)
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 

@@ -33,23 +33,15 @@ include_directories(${rputils_INCLUDE_DIRS})
 link_libraries(${rputils_LIBRARIES})
 link_directories(${rputils_LIBRARY_DIRS})
 
-# check availability of libzip
-if(USE_LIBZIP)
-	pkg_check_modules(libzip libzip>=0.11)
-	set(USE_LIBZIP ${libzip_FOUND})
-endif()
-
-# check availability of openssl
-if(WITH_OPENSSL)
-	pkg_check_modules(openssl openssl)
-	set(WITH_OPENSSL ${openssl_FOUND})
-endif()
-
 # check other modules
 pkg_check_modules(gnutls gnutls)
 pkg_check_modules(libsystemd libsystemd>=222)
 pkg_check_modules(libjsonc REQUIRED json-c)
-pkg_check_modules(libxml libxml-2.0)
+if(WITH_CONFIG_XML OR WITH_LEGACY_WGTPKG)
+	pkg_check_modules(libxml REQUIRED libxml-2.0)
+else()
+	pkg_check_modules(libxml libxml-2.0)
+endif()
 
 # definitions
 add_definitions(
@@ -63,11 +55,8 @@ add_definitions(
 	-DAFM_UNITS_ROOT="${afm_units_root}"
 	-DAFM_VERSION="${PROJECT_VERSION}"
 	-DAFMPKG_SOCKET_ADDRESS="${AFMPKG_SOCKET_ADDRESS}"
-	-DWITH_WIDGETS=$<BOOL:${WITH_WIDGETS}>
 	-DALLOW_NO_SIGNATURE=$<BOOL:${ALLOW_NO_SIGNATURE}>
 	-DDISTINCT_VERSIONS=$<BOOL:${DISTINCT_VERSIONS}>
-	-DWITH_OPENSSL=$<BOOL:${WITH_OPENSSL}>
-	-DUSE_LIBZIP=$<BOOL:${USE_LIBZIP}>
 	-DNO_LIBSYSTEMD=$<BOOL:$<NOT:$<BOOL:${libsystemd_FOUND}>>>
 )
 

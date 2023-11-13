@@ -25,6 +25,7 @@
 add_library(afmpkg STATIC afmpkg.c afmpkg-request.c)
 target_link_libraries(afmpkg utils secwrp)
 
-if(WITH_WIDGETS)
+if(WITH_CONFIG_XML)
+	target_compile_definitions(afmpkg PRIVATE -DWITH_CONFIG_XML=1)
 	target_link_libraries(afmpkg wgt)
-endif(WITH_WIDGETS)
+endif(WITH_CONFIG_XML)

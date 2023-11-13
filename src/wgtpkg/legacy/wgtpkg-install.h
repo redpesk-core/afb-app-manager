@@ -29,8 +29,6 @@ struct json_object;
 */
 extern int tcp_port_base;
 
-#if WITH_WIDGETS
 extern struct wgt_info *install_widget(const char *wgtfile, const char *root, int force);
-#endif
 extern struct wgt_info *install_redpesk(const char *installdir);
 extern struct wgt_info *install_redpesk_with_meta(const char *installdir, struct json_object *metadata);

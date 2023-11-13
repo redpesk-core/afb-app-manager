@@ -3,10 +3,13 @@ Version 12.2.0
 - Internal renaming
 - Isolate legacy code
 - Replace wgtpkg install/uninstall with afmpkg
-- Renaming of build variables
+- Renaming of build configuration variables
   - crypto_trusted_certs_dir ->  wgtpkg_trusted_certs_dir
   - crypto_sample_keys_dir   ->  wgtpkg_sample_keys_dir
   - crypto_sample_certs_dir  ->  wgtpkg_sample_certs_dir
+  - WITH_WIDGETS and WITH_WIDGET_TOOLS are deprecated
+  - introduce WITH_CONFIG_XML for supporting config.xml files
+  - introduce WITH_LEGACY_WGTPKG for compiling legacy code
 
 Version 12.1.2
 --------------

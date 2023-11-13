@@ -1216,9 +1216,9 @@ int afmpkg_uninstall(
 }
 
 /*********************************************************************************************/
-/*** LEGACY WIDGETS **************************************************************************/
+/*** LEGACY WIDGETS WITH CONFIG.XML **********************************************************/
 /*********************************************************************************************/
-#if WITH_WIDGETS
+#if WITH_CONFIG_XML
 
 #include "wgt-json.h"
 
@@ -1271,7 +1271,7 @@ static int process_legacy_config(process_state_t *state)
 	return rc;
 }
 
-#else /* WITH_WIDGETS */
+#else /* WITH_CONFIG_XML */
 
 static
 int
@@ -1282,5 +1282,5 @@ process_legacy_config(
 	return -ENOTSUP;
 }
 
-#endif /* WITH_WIDGETS */
+#endif /* WITH_CONFIG_XML */
 

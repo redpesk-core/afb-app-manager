@@ -22,8 +22,26 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
+# check availability of libzip
+if(USE_LIBZIP)
+	pkg_check_modules(libzip libzip>=0.11)
+	set(USE_LIBZIP ${libzip_FOUND})
+endif()
+
+# check availability of openssl
+if(WITH_OPENSSL)
+	pkg_check_modules(openssl openssl)
+	set(WITH_OPENSSL ${openssl_FOUND})
+endif()
+
+# definitions
+add_definitions(
+	-DWITH_OPENSSL=$<BOOL:${WITH_OPENSSL}>
+	-DUSE_LIBZIP=$<BOOL:${USE_LIBZIP}>
+)
+
 if(libxml_FOUND)
-	if(WITH_WIDGETS)
+	if(WITH_LEGACY_WGTPKG)
 		if(WITH_OPENSSL)
 			pkg_check_modules(xmlsec xmlsec1-openssl)
 		else()
@@ -53,11 +71,11 @@ if(libxml_FOUND)
 			target_link_libraries(wgtpkg PUBLIC ${libzip_LIBRARIES})
 			target_link_directories(wgtpkg PUBLIC ${libzip_LIBRARY_DIRS})
 		endif(USE_LIBZIP)
-	endif(WITH_WIDGETS)
+	endif(WITH_LEGACY_WGTPKG)
 endif(libxml_FOUND)
 
 if(WITH_TOOLS)
-	if(WITH_WIDGETS AND WITH_WIDGET_TOOLS)
+	if(WITH_LEGACY_WGTPKG AND WITH_TOOLS)
 		MESSAGE(STATUS "Creating legacy tools for legacy widgets")
 
 		add_executable(wgtpkg-sign main-wgtpkg-sign.c)

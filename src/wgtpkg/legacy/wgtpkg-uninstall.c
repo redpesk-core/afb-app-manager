@@ -115,7 +115,6 @@ static int uninstall_at(const char *installdir)
 	return 0;
 }
 
-#if WITH_WIDGETS
 /* uninstall the widget of idaver */
 int uninstall_widget(const char *idaver, const char *root)
 {
@@ -174,7 +173,6 @@ int uninstall_widget(const char *idaver, const char *root)
 
 	return 0;
 }
-#endif
 
 /* uninstall the widget of installdir */
 int uninstall_redpesk(const char *installdir)
