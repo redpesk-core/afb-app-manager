@@ -77,3 +77,5 @@ if(WITH_TOOLS)
 		install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 endif()
+
+add_subdirectory(test-unit)
