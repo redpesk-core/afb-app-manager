@@ -46,6 +46,16 @@
 #define MANIFEST_PLUGS				"plugs"
 
 /**
+* Normalize the given manifest object
+*
+* @param obj    the manifest object to normalize
+* @param path   path for error reports
+*
+* @return 0 if normalized or a negative code if failed
+*/
+extern int manifest_normalize(json_object *obj, const char *path);
+
+/**
 * Validates the given manifest object
 *
 * @param jso    pointer where to store the readen object

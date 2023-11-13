@@ -345,6 +345,27 @@ static int check_valid_string(json_object *jso, const char *key)
 	return 0;
 }
 
+int
+manifest_normalize(
+	json_object *obj,
+	const char *path
+) {
+	int rc = fulfill(obj);
+	if (rc < 0)
+		RP_ERROR("can't fulfill manifest %s", path);
+	else {
+		rc = retargets(obj);
+		if (rc < 0)
+			RP_ERROR("can't retarget manifest %s", path);
+		else {
+			rc = adapt_all_permissions(obj);
+			if (rc < 0)
+				RP_ERROR("can't adapt manifest %s", path);
+		}
+	}
+	return rc;
+}
+
 int manifest_check(json_object *jso)
 {
 	json_object *jval;
@@ -385,21 +406,8 @@ manifest_read_and_check(
 		rc = manifest_check(*obj);
 		if (rc < 0)
 			RP_ERROR("constraints of manifest not fulfilled for %s", path);
-		else {
-			rc = fulfill(*obj);
-			if (rc < 0)
-				RP_ERROR("can't fulfill manifest %s", path);
-			else {
-				rc = retargets(*obj);
-				if (rc < 0)
-					RP_ERROR("can't retarget manifest %s", path);
-				else {
-					rc = adapt_all_permissions(*obj);
-					if (rc < 0)
-						RP_ERROR("can't adapt manifest %s", path);
-				}
-			}
-		}
+		else
+			rc = manifest_normalize(*obj, path);
 		if (rc < 0) {
 			json_object_put(*obj);
 			*obj = NULL;
