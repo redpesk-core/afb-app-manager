@@ -22,6 +22,40 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
+if(libxml_FOUND)
+	if(WITH_WIDGETS)
+		if(WITH_OPENSSL)
+			pkg_check_modules(xmlsec xmlsec1-openssl)
+		else()
+			pkg_check_modules(xmlsec xmlsec1-gnutls)
+		endif()
+		add_library(wgtpkg STATIC
+			wgtpkg-certs.c
+			wgtpkg-digsig.c
+			wgtpkg-files.c
+			wgtpkg-install.c
+			wgtpkg-permissions.c
+			wgtpkg-uninstall.c
+			wgtpkg-unit.c
+			wgtpkg-workdir.c
+			wgtpkg-xmlsec.c
+			wgtpkg-zip.c
+			)
+
+		target_compile_options(wgtpkg PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
+		target_include_directories(wgtpkg PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS} ${xmlsec_INCLUDE_DIRS})
+		target_link_libraries(wgtpkg PUBLIC wgt ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} ${xmlsec_LIBRARIES})
+		target_link_directories(wgtpkg PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS} ${xmlsec_LIBRARY_DIRS})
+
+		if(USE_LIBZIP)
+			target_compile_options(wgtpkg PRIVATE ${libzip_CFLAGS})
+			target_include_directories(wgtpkg PRIVATE ${libzip_INCLUDE_DIRS})
+			target_link_libraries(wgtpkg PUBLIC ${libzip_LIBRARIES})
+			target_link_directories(wgtpkg PUBLIC ${libzip_LIBRARY_DIRS})
+		endif(USE_LIBZIP)
+	endif(WITH_WIDGETS)
+endif(libxml_FOUND)
+
 if(WITH_TOOLS)
 	if(WITH_WIDGETS AND WITH_WIDGET_TOOLS)
 		MESSAGE(STATUS "Creating legacy tools for legacy widgets")
