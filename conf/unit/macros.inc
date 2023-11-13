@@ -71,7 +71,7 @@ DEFPATH( `DEBUGGING_DIR', `AFM_PLATFORM_RUNDIR/debug')
 DEFPATH( `PLATFORM_RUN_DIR', `AFM_PLATFORM_RUNDIR')
 DEFPATH( `CONF_DIR', `AFM_CONFDIR')
 DEFPATH( `ICONS_DIR', `{{:#metadata.icons-dir}}')
-DEFPATH( `WIDGET_DIR', `{{:#metadata.install-dir}}')
+DEFPATH( `APP_INSTALL_DIR', `{{:#metadata.install-dir}}')
 
 DEFPATH( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
 DEFPATH( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')

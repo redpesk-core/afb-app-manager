@@ -43,6 +43,6 @@ After=afm-system-setup.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/ln -sf FULL_WIDGET_DIR/{{value}} FLOOR_PLATFORM_API_PATH_LINK/{{name}}
+ExecStart=/bin/ln -sf FULL_APP_INSTALL_DIR/{{value}} FLOOR_PLATFORM_API_PATH_LINK/{{name}}
 
 %end systemd-unit

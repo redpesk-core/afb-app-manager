@@ -26,14 +26,14 @@ X-AFM-author-email={{author.email}}
 X-AFM-width={{width}}
 X-AFM-height={{height}}
 {{#icon}}
-X-AFM-icon=FULL_WIDGET_DIR/{{:src}}
+X-AFM-icon=FULL_APP_INSTALL_DIR/{{:src}}
 {{/icon}}
 X-AFM--ID=AFID
 IF_REDPAK
 X-AFM--redpak-id=REDPAK_ID
 ENDIF
 X-AFM--rootdir=ROOT_DIR
-X-AFM--wgtdir=FULL_WIDGET_DIR
+X-AFM--wgtdir=FULL_APP_INSTALL_DIR
 X-AFM--workdir=FULL_APP_WORK_DIR
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
@@ -132,9 +132,9 @@ ON_NOT_PERM(:public:syscall:clock, SystemCallFilter=~@clock)
 %nl
 
 Environment=AFM_ID=TARGET
-Environment=AFM_APP_INSTALL_DIR=WIDGET_DIR
-Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:WIDGET_DIR/bin
-Environment=LD_LIBRARY_PATH=WIDGET_DIR/lib
+Environment=AFM_APP_INSTALL_DIR=APP_INSTALL_DIR
+Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:APP_INSTALL_DIR/bin
+Environment=LD_LIBRARY_PATH=APP_INSTALL_DIR/lib
 Environment=AFM_WORKDIR=APP_WORK_DIR
 Environment=AFM_WSAPI_DIR=API_PATH_WS
 Environment=XDG_DATA_HOME=APP_WORK_DIR
@@ -164,7 +164,7 @@ include(binder.inc)
 ;----                 application/x-executable                              ----
 ;-------------------------------------------------------------------------------
 {{#content.type=application/x-executable}}
-ExecStart=REDWRAP WIDGET_DIR/{{content.src}}
+ExecStart=REDWRAP APP_INSTALL_DIR/{{content.src}}
 {{/content.type=application/x-executable}}
 
 ;-------------------------------------------------------------------------------
