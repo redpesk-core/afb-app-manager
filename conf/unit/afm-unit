@@ -13,7 +13,7 @@ divert(0)dnl
 ;
 ; Mode:
 ;
-;    ON_AGL_DEVEL(DEVEL, RELEASE)
+;    ON_REDPESK_DEVEL(DEVEL, RELEASE)
 ;
 ; Role:
 ;
@@ -123,5 +123,5 @@ include(provided-binding-user.inc)
 ENDIF
 {{/targets}}
 ;-------------------------------------------------------------------------------
-; End of file afm-unit.conf mode ON_AGL_DEVEL(DEVEL, RELEASE)
+; End of file afm-unit.conf mode ON_REDPESK_DEVEL(DEVEL, RELEASE)
 ;-------------------------------------------------------------------------------

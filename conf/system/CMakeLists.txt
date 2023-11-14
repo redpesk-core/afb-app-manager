@@ -24,7 +24,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-if(AGL_DEVEL)
+if(REDPESK_DEVEL)
   set(create_platform_debug "true")
 endif()
 

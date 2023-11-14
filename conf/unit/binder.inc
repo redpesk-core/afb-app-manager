@@ -1,6 +1,6 @@
 dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
-IF_AGL_DEVEL
+IF_REDPESK_DEVEL
 X-AFM-http-port=HTTP_PORT
 ELSE
 IF_NOT_CONTENT(application/vnd.agl.service)
@@ -15,7 +15,7 @@ ExecStart=REDWRAP \
 	--name afbd-TARGET \
 	--rootdir=APP_INSTALL_DIR \
 	--workdir=APP_WORK_DIR \
-IF_AGL_DEVEL \
+IF_REDPESK_DEVEL \
 	--verbose \
 	--verbose \
 	--monitoring \

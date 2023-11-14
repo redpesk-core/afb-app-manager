@@ -27,8 +27,8 @@ cmake_minimum_required(VERSION 3.10)
 find_program(M4EXEC m4)
 mark_as_advanced(M4EXEC)
 
-if(AGL_DEVEL)
-	set(optm4 -DAGL_DEVEL)
+if(REDPESK_DEVEL)
+	set(optm4 -DREDPESK_DEVEL)
 endif()
 
 set(m4defs

@@ -94,10 +94,10 @@ define( `LOCALUSERAPP', `ON_PERM(`:partner:scope-platform', `localuser---AFID', 
 
 define( `HTTP_PORT', `{{:#metatarget.http-port}}')
 --------------------------------------------------------------------------------
--- AGL_DEVEL SPECIFIC PARTS
+-- REDPESK_DEVEL SPECIFIC PARTS
 --------------------------------------------------------------------------------
-define( `ON_AGL_DEVEL', `ifdef(`AGL_DEVEL', $1, $2)')
-define( `ON_NOT_AGL_DEVEL', `ifdef(`AGL_DEVEL', $2, $1)')
-define( `IF_AGL_DEVEL', `IF(ON_AGL_DEVEL(1,0))')
-define( `IF_NOT_AGL_DEVEL', `IF(ON_AGL_DEVEL(0,1))')
+define( `ON_REDPESK_DEVEL', `ifdef(`REDPESK_DEVEL', $1, $2)')
+define( `ON_NOT_REDPESK_DEVEL', `ifdef(`REDPESK_DEVEL', $2, $1)')
+define( `IF_REDPESK_DEVEL', `IF(ON_REDPESK_DEVEL(1,0))')
+define( `IF_NOT_REDPESK_DEVEL', `IF(ON_REDPESK_DEVEL(0,1))')
 --------------------------------------------------------------------------------

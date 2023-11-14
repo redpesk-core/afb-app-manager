@@ -9,9 +9,11 @@ Version 12.2.0
   - crypto_sample_certs_dir  ->  wgtpkg_sample_certs_dir
   - introduce WITH_CONFIG_XML for supporting config.xml files
   - introduce WITH_LEGACY_WGTPKG for compiling legacy code
+  - introduce REDPESK_DEVEL for adding devel features in services
   - WITH_WIDGETS is removed
   - WITH_WIDGET_TOOLS is removed
   - USE_SIMULATION is removed, use SIMULATE_SECMGR now
+  - AGL_DEVEL is removed, use REDPESK_DEVEL now
 
 Version 12.1.2
 --------------

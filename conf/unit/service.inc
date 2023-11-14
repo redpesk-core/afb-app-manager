@@ -143,7 +143,7 @@ Environment=XDG_CACHE_HOME=APP_WORK_DIR
 Environment=XDG_RUNTIME_DIR=RUN_DIR
 ON_CONTENT(text/html, Environment=WAIT_FOR_HOST_SERVICE="1")
 
-IF_AGL_DEVEL
+IF_REDPESK_DEVEL
 ; Needed to enable debug
 EnvironmentFile=-FULL_DEBUGGING_DIR/TARGET.env
 ENDIF
