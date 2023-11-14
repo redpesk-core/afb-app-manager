@@ -34,19 +34,15 @@ include(FindPkgConfig)
 include(GNUInstallDirs)
 include(CTest)
 
-option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
-option(USE_LIBZIP         "Should try to use libzip?" ON)
-option(USE_SIMULATION     "If set simulates sec-lsm-manager" OFF)
+############################################################
+# options and settings
 option(USE_SDK            "If set, avoids installating system runtime files" OFF)
-option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
-option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
 option(WITH_CONFIG_XML    "Allow use of legacy config.xml instead of manifest" ON)
-option(WITH_LEGACY_WGTPKG "Supports legacy widget" OFF)
-
-option(WITH_OPENSSL       "Use openssl instead of gnutls" OFF)
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
+option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
+option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
 
 set(afm_name                "afm"                                          CACHE STRING "Name for application framework user")
 set(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}" CACHE STRING "Directory for configuration files")
@@ -70,10 +66,15 @@ set(SYSCONFDIR_DBUS_SYSTEM  "${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1/system.d"  
 set(SYSCONFDIR_PAMD         "${CMAKE_INSTALL_FULL_SYSCONFDIR}/pam.d"       CACHE STRING "Path to pam configuration files")
 set(UNITDIR_SYSTEM          "${CMAKE_INSTALL_PREFIX}/lib/systemd/system"   CACHE STRING "Path to systemd system unit files")
 
-if(USE_SIMULATION)
-    set(SIMULATE_SECMGR ON)
-endif(USE_SIMULATION)
+############################################################
+# legacy options
+option(WITH_LEGACY_WGTPKG "Supports legacy widget" OFF)
+option(WITH_OPENSSL       "Use openssl instead of gnutls" OFF)
+option(USE_LIBZIP         "Should try to use libzip?" ON)
+option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
 
+############################################################
+# content
 add_subdirectory(src)
 add_subdirectory(conf)
 add_subdirectory(scripts)
@@ -81,10 +82,10 @@ add_subdirectory(certs)
 
 ############################################################
 # installs the pkgconfig files
-
 CONFIGURE_FILE(afm-main.pc.in afm-main.pc @ONLY)
 INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/afm-main.pc
     DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
+
