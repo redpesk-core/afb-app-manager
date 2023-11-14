@@ -37,6 +37,8 @@ cmake \
 	-DWITH_OPENSSL=${WITH_OPENSSL:=OFF} \
 	-DUSE_LIBZIP=${USE_LIBZIP:=ON} \
 	-DDISTINCT_VERSIONS=${DISTINCT_VERSIONS:=OFF} \
+	-DWITH_LEGACY_AFM_UTIL=${WITH_LEGACY_AFM_UTIL:=OFF} \
+	-DWITH_LEGACY_MIGRATION=${WITH_LEGACY_MIGRATION:=OFF} \
 	${afm_name+-Dafm_name="${afm_name}"} \
 	${afm_confdir+-Dafm_confdir="${afm_confdir}"} \
 	${afm_datadir+-Dafm_datadir="${afm_datadir}"} \

@@ -73,6 +73,8 @@ option(WITH_LEGACY_WGTPKG "Supports legacy widget" OFF)
 option(WITH_OPENSSL       "Use openssl instead of gnutls" OFF)
 option(USE_LIBZIP         "Should try to use libzip?" ON)
 option(DISTINCT_VERSIONS  "Should the version of application be distinguished" OFF)
+option(WITH_LEGACY_AFM_UTIL "Really want the really legacy afm-util" OFF)
+option(WITH_LEGACY_MIGRATION "Installs the legacy migration scripts" OFF)
 
 ############################################################
 # content
