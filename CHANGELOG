@@ -11,10 +11,12 @@ Version 12.2.0
   - introduce WITH_LEGACY_WGTPKG for compiling legacy code
   - introduce REDPESK_DEVEL for adding devel features in services
   - introduce WITH_LEGACY_MIGRATION for adding legacy migration script
+  - introduce ONLY_SDK for compiling and installing only SDK files
   - WITH_WIDGETS is removed
   - WITH_WIDGET_TOOLS is removed
   - USE_SIMULATION is removed, use SIMULATE_SECMGR now
   - AGL_DEVEL is removed, use REDPESK_DEVEL now
+  - USE_SDK is removed, use ONLY_SDK now
 
 Version 12.1.2
 --------------

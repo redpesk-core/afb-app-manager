@@ -22,12 +22,12 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(NOT USE_SDK)
+if(NOT ONLY_SDK)
 	install(DIRECTORY DESTINATION ${crypto_trusted_certs_dir})
 endif()
 
 if(INSTALL_SAMPLE_KEYS)
-	if(NOT USE_SDK)
+	if(NOT ONLY_SDK)
 		#foreach(f root) TODO: install only root certificate
 		foreach(f root developer partner platform public)
 			install(FILES sample/${f}.cert.pem

@@ -22,25 +22,23 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 3.10)
+if(NOT ONLY_SDK)
 
-if(REDPESK_DEVEL)
-  set(create_platform_debug "true")
-endif()
+	if(REDPESK_DEVEL)
+	  set(create_platform_debug "true")
+	endif()
 
-configure_file(afm-system-daemon.service.in afm-system-daemon.service  @ONLY)
-configure_file(afm-system-daemon.socket.in  afm-system-daemon.socket   @ONLY)
-configure_file(afm-system-setup.service.in  afm-system-setup.service   @ONLY)
-configure_file(afm-system-setup.sh.in       afm-system-setup.sh        @ONLY)
-configure_file(afm-api-afm-main@.service.in afm-api-afm-main@.service  @ONLY)
-configure_file(afm-create-user.sh.in        afm-create-user.sh         @ONLY)
-configure_file(afm-user-session@.service.in afm-user-session@.service  @ONLY)
-configure_file(afm-user-setup@.service.in   afm-user-setup@.service    @ONLY)
-configure_file(afm-user-setup.sh.in         afm-user-setup.sh          @ONLY)
-configure_file(afmpkg-installer.service.in  afmpkg-installer.service   @ONLY)
-configure_file(afmpkg-installer.socket.in   afmpkg-installer.socket    @ONLY)
-
-if(NOT USE_SDK)
+	configure_file(afm-system-daemon.service.in afm-system-daemon.service  @ONLY)
+	configure_file(afm-system-daemon.socket.in  afm-system-daemon.socket   @ONLY)
+	configure_file(afm-system-setup.service.in  afm-system-setup.service   @ONLY)
+	configure_file(afm-system-setup.sh.in       afm-system-setup.sh        @ONLY)
+	configure_file(afm-api-afm-main@.service.in afm-api-afm-main@.service  @ONLY)
+	configure_file(afm-create-user.sh.in        afm-create-user.sh         @ONLY)
+	configure_file(afm-user-session@.service.in afm-user-session@.service  @ONLY)
+	configure_file(afm-user-setup@.service.in   afm-user-setup@.service    @ONLY)
+	configure_file(afm-user-setup.sh.in         afm-user-setup.sh          @ONLY)
+	configure_file(afmpkg-installer.service.in  afmpkg-installer.service   @ONLY)
+	configure_file(afmpkg-installer.socket.in   afmpkg-installer.socket    @ONLY)
 
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-system-daemon.conf    DESTINATION ${SYSCONFDIR_DBUS_SYSTEM})
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/afm-user-session.pamd     DESTINATION ${SYSCONFDIR_PAMD} RENAME afm-user-session)

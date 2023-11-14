@@ -22,39 +22,41 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-MESSAGE(STATUS "Creating afmpkg-installer and afmpkg-status")
-add_executable(afmpkg-installer main-afmpkg-installer.c)
-target_compile_options(afmpkg-installer PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
-target_link_libraries(afmpkg-installer afmpkg pthread)
-install(TARGETS afmpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(NOT ONLY_SDK)
+	MESSAGE(STATUS "Creating afmpkg-installer and afmpkg-status")
+	add_executable(afmpkg-installer main-afmpkg-installer.c)
+	target_compile_options(afmpkg-installer PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
+	target_link_libraries(afmpkg-installer afmpkg pthread)
+	install(TARGETS afmpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(afmpkg-status main-afmpkg-status.c)
-install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_executable(afmpkg-status main-afmpkg-status.c)
+	install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-if(libsystemd_FOUND AND AFB_FOUND)
-	MESSAGE(STATUS "Creating afm-user-session")
+	if(libsystemd_FOUND AND AFB_FOUND)
+		MESSAGE(STATUS "Creating afm-user-session")
 
-	add_executable(afm-user-session main-afm-user-session.c)
-	target_compile_options(afm-user-session PRIVATE ${libsystemd_CFLAGS})
-	target_include_directories(afm-user-session PRIVATE ${libsystemd_INCLUDE_DIRS})
-	target_link_libraries(afm-user-session PUBLIC ${libsystemd_LIBRARIES})
-	target_link_directories(afm-user-session PUBLIC ${libsystemd_LIBRARY_DIRS})
-	install(TARGETS afm-user-session DESTINATION ${afm_libexecdir}
-			PERMISSIONS SETUID OWNER_READ OWNER_WRITE OWNER_EXECUTE
-					GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-else()
-	MESSAGE("WARNING, Not creating afm-user-session!")
+		add_executable(afm-user-session main-afm-user-session.c)
+		target_compile_options(afm-user-session PRIVATE ${libsystemd_CFLAGS})
+		target_include_directories(afm-user-session PRIVATE ${libsystemd_INCLUDE_DIRS})
+		target_link_libraries(afm-user-session PUBLIC ${libsystemd_LIBRARIES})
+		target_link_directories(afm-user-session PUBLIC ${libsystemd_LIBRARY_DIRS})
+		install(TARGETS afm-user-session DESTINATION ${afm_libexecdir}
+				PERMISSIONS SETUID OWNER_READ OWNER_WRITE OWNER_EXECUTE
+						GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+	add_executable(afm-check-pkg main-afmpkg-check.c)
+	target_link_libraries(afm-check-pkg afmpkg)
+	install(TARGETS afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
+	else()
+		MESSAGE("WARNING, Not creating afm-user-session!")
+	endif()
 endif()
 
 if(WITH_TOOLS)
 	MESSAGE(STATUS "Creating tools")
 	add_executable(afm-domain-spec main-domain-spec.c)
 	target_link_libraries(afm-domain-spec utils)
-
-	add_executable(afm-check-pkg main-afmpkg-check.c)
-	target_link_libraries(afm-check-pkg afmpkg)
-
-	install(TARGETS afm-domain-spec afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(TARGETS afm-domain-spec DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 	if(${gnutls_FOUND})
 		# TODO: these programs are compiled but not installed

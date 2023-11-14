@@ -22,9 +22,9 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(WITH_LEGACY_WGTPKG)
+if(WITH_LEGACY_WGTPKG AND NOT ONLY_SDK)
 	include_directories(../..)
 	add_executable(test-unit test-unit.c)
 	target_link_libraries(test-unit wgtpkg wgt utils)
 	add_test(NAME test-unit COMMAND test-unit ${CMAKE_CURRENT_SOURCE_DIR}/sample.unit ${CMAKE_CURRENT_SOURCE_DIR})
-endif(WITH_LEGACY_WGTPKG)
+endif()

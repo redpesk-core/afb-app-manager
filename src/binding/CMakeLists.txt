@@ -22,8 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-pkg_check_modules(AFB afb-binding>=4)
-if(libsystemd_FOUND AND AFB_FOUND)
+if(libsystemd_FOUND AND AFB_FOUND AND NOT ONLY_SDK)
 	MESSAGE(STATUS "Creating afm-binding")
 
 	add_library(

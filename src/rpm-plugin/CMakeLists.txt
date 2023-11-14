@@ -22,7 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(WITH_RPM_REDPESK_PLUGIN)
+if(WITH_RPM_REDPESK_PLUGIN AND NOT ONLY_SDK)
 
 	MESSAGE(STATUS "Creating rpm plugin for redpesk")
 

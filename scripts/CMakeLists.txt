@@ -22,9 +22,7 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 3.10)
-
-if(NOT USE_SDK)
+if(NOT ONLY_SDK)
 	if(WITH_LEGACY_AFM_UTIL)
 		configure_file(afm-util-legacy.in afm-util @ONLY)
 	else()
@@ -35,15 +33,15 @@ if(NOT USE_SDK)
 		configure_file(afm-debug.in afm-debug)
 		install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/afm-debug DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
-endif()
 
-if(WITH_LEGACY_MIGRATION)
-	# migration from before 10 to 10
-	configure_file(afb-appmgr-migration-services.sh.in afb-appmgr-migration-services.sh @ONLY)
-	install(
-		PROGRAMS
-			${CMAKE_CURRENT_BINARY_DIR}/afb-appmgr-migration-services.sh
-		DESTINATION
-			${afm_libexecdir}
-	)
+	if(WITH_LEGACY_MIGRATION)
+		# migration from before 10 to 10
+		configure_file(afb-appmgr-migration-services.sh.in afb-appmgr-migration-services.sh @ONLY)
+		install(
+			PROGRAMS
+				${CMAKE_CURRENT_BINARY_DIR}/afb-appmgr-migration-services.sh
+			DESTINATION
+				${afm_libexecdir}
+		)
+	endif()
 endif()

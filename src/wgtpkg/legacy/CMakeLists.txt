@@ -22,60 +22,63 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-# check availability of libzip
-if(USE_LIBZIP)
-	pkg_check_modules(libzip libzip>=0.11)
-	set(USE_LIBZIP ${libzip_FOUND})
-endif()
+if(libxml_FOUND AND WITH_LEGACY_WGTPKG)
+	# check availability of libzip
+	if(USE_LIBZIP)
+		pkg_check_modules(libzip libzip>=0.11)
+		set(USE_LIBZIP ${libzip_FOUND})
+	endif()
 
-# check availability of openssl
-if(WITH_OPENSSL)
-	pkg_check_modules(openssl openssl)
-	set(WITH_OPENSSL ${openssl_FOUND})
-endif()
+	# check availability of openssl
+	if(WITH_OPENSSL)
+		pkg_check_modules(openssl openssl)
+		set(WITH_OPENSSL ${openssl_FOUND})
+	endif()
 
-# definitions
-add_definitions(
-	-DWITH_OPENSSL=$<BOOL:${WITH_OPENSSL}>
-	-DUSE_LIBZIP=$<BOOL:${USE_LIBZIP}>
-)
+	# definitions
+	add_definitions(
+		-DWITH_OPENSSL=$<BOOL:${WITH_OPENSSL}>
+		-DUSE_LIBZIP=$<BOOL:${USE_LIBZIP}>
+	)
 
-if(libxml_FOUND)
-	if(WITH_LEGACY_WGTPKG)
-		if(WITH_OPENSSL)
-			pkg_check_modules(xmlsec xmlsec1-openssl)
-		else()
-			pkg_check_modules(xmlsec xmlsec1-gnutls)
-		endif()
-		add_library(wgtpkg STATIC
-			wgtpkg-certs.c
-			wgtpkg-digsig.c
-			wgtpkg-files.c
-			wgtpkg-install.c
-			wgtpkg-permissions.c
-			wgtpkg-uninstall.c
-			wgtpkg-unit.c
-			wgtpkg-workdir.c
-			wgtpkg-xmlsec.c
-			wgtpkg-zip.c
-			)
+	if(WITH_OPENSSL)
+		pkg_check_modules(xmlsec xmlsec1-openssl)
+	else()
+		pkg_check_modules(xmlsec xmlsec1-gnutls)
+	endif()
+	add_library(wgtpkg STATIC
+		wgtpkg-certs.c
+		wgtpkg-digsig.c
+		wgtpkg-files.c
+		wgtpkg-install.c
+		wgtpkg-permissions.c
+		wgtpkg-uninstall.c
+		wgtpkg-unit.c
+		wgtpkg-workdir.c
+		wgtpkg-xmlsec.c
+		wgtpkg-zip.c
+		)
 
-		target_compile_options(wgtpkg PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
-		target_include_directories(wgtpkg PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS} ${xmlsec_INCLUDE_DIRS})
-		target_link_libraries(wgtpkg PUBLIC wgt ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} ${xmlsec_LIBRARIES})
-		target_link_directories(wgtpkg PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS} ${xmlsec_LIBRARY_DIRS})
+	target_compile_options(wgtpkg PUBLIC ${libxml_CFLAGS} ${libjsonc_CFLAGS} ${xmlsec_CFLAGS})
+	target_include_directories(wgtpkg PUBLIC ${libxml_INCLUDE_DIRS} ${libjsonc_INCLUDE_DIRS} ${xmlsec_INCLUDE_DIRS})
+	target_link_libraries(wgtpkg PUBLIC wgt ${libjsonc_LIBRARIES} ${libxml_LIBRARIES} ${xmlsec_LIBRARIES})
+	target_link_directories(wgtpkg PUBLIC ${libjsonc_LIBRARY_DIRS} ${libxml_LIBRARY_DIRS} ${xmlsec_LIBRARY_DIRS})
 
-		if(USE_LIBZIP)
-			target_compile_options(wgtpkg PRIVATE ${libzip_CFLAGS})
-			target_include_directories(wgtpkg PRIVATE ${libzip_INCLUDE_DIRS})
-			target_link_libraries(wgtpkg PUBLIC ${libzip_LIBRARIES})
-			target_link_directories(wgtpkg PUBLIC ${libzip_LIBRARY_DIRS})
-		endif(USE_LIBZIP)
-	endif(WITH_LEGACY_WGTPKG)
-endif(libxml_FOUND)
+	if(USE_LIBZIP)
+		target_compile_options(wgtpkg PRIVATE ${libzip_CFLAGS})
+		target_include_directories(wgtpkg PRIVATE ${libzip_INCLUDE_DIRS})
+		target_link_libraries(wgtpkg PUBLIC ${libzip_LIBRARIES})
+		target_link_directories(wgtpkg PUBLIC ${libzip_LIBRARY_DIRS})
+	endif(USE_LIBZIP)
 
-if(WITH_TOOLS)
-	if(WITH_LEGACY_WGTPKG AND WITH_TOOLS)
+	if(NOT ONLY_SDK)
+		MESSAGE(STATUS "Creating legacy installer for legacy widgets")
+		add_executable(wgtpkg-install main-wgtpkg-install.c)
+		target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
+		install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
+
+	if(WITH_TOOLS AND WITH_LEGACY_WGTPKG)
 		MESSAGE(STATUS "Creating legacy tools for legacy widgets")
 
 		add_executable(wgtpkg-sign main-wgtpkg-sign.c)
@@ -89,10 +92,6 @@ if(WITH_TOOLS)
 		add_executable(wgtpkg-info main-wgtpkg-info.c)
 		target_link_libraries(wgtpkg-info wgtpkg wgt utils)
 		install(TARGETS wgtpkg-info DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-		add_executable(wgtpkg-install main-wgtpkg-install.c)
-		target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
-		install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 endif()
 

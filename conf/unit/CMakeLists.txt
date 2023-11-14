@@ -22,42 +22,41 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 3.10)
+if(NOT ONLY_SDK)
 
-find_program(M4EXEC m4)
-mark_as_advanced(M4EXEC)
+	find_program(M4EXEC m4)
+	mark_as_advanced(M4EXEC)
 
-if(REDPESK_DEVEL)
-	set(optm4 -DREDPESK_DEVEL)
-endif()
+	if(REDPESK_DEVEL)
+		set(optm4 -DREDPESK_DEVEL)
+	endif()
 
-set(m4defs
-	-DAFM_PERM_PREFIX=${afm_prefix}
-	-DAFM_USERS_RUNDIR=${afm_users_rundir}
-	-DAFM_PLATFORM_RUNDIR=${afm_platform_rundir}
-	-DAFM_SCOPE_PLATFORM_HOMEDIR=${afm_scope_platform_dir}
-	-DAFM_CONFDIR=${afm_confdir}
-)
+	set(m4defs
+		-DAFM_PERM_PREFIX=${afm_prefix}
+		-DAFM_USERS_RUNDIR=${afm_users_rundir}
+		-DAFM_PLATFORM_RUNDIR=${afm_platform_rundir}
+		-DAFM_SCOPE_PLATFORM_HOMEDIR=${afm_scope_platform_dir}
+		-DAFM_CONFDIR=${afm_confdir}
+	)
 
-set(m4sources
-	afm-unit
-	provided-api-platform.inc
-	provided-binding-platform.inc
-	service.inc
-	binder.inc
-	macros.inc
-	provided-api-user.inc
-	provided-binding-user.inc
-)
+	set(m4sources
+		afm-unit
+		provided-api-platform.inc
+		provided-binding-platform.inc
+		service.inc
+		binder.inc
+		macros.inc
+		provided-api-user.inc
+		provided-binding-user.inc
+	)
 
-add_custom_command(
-	OUTPUT afm-unit.conf
-	COMMAND ${M4EXEC} ${optm4} ${m4defs} -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/afm-unit > afm-unit.conf
-	DEPENDS ${m4sources}
-)
-add_custom_target(unitconf ALL DEPENDS afm-unit.conf)
+	add_custom_command(
+		OUTPUT afm-unit.conf
+		COMMAND ${M4EXEC} ${optm4} ${m4defs} -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/afm-unit > afm-unit.conf
+		DEPENDS ${m4sources}
+	)
+	add_custom_target(unitconf ALL DEPENDS afm-unit.conf)
 
-if(NOT USE_SDK)
 	install(DIRECTORY DESTINATION ${afm_confdir}/unit.env.d)
 	install(DIRECTORY DESTINATION ${afm_confdir}/widget.env.d)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/afm-unit.conf DESTINATION ${afm_confdir})

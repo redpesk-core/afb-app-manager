@@ -36,7 +36,7 @@ include(CTest)
 
 ############################################################
 # options and settings
-option(USE_SDK            "If set, avoids installating system runtime files" OFF)
+option(ONLY_SDK           "If set, avoids installating system runtime files" OFF)
 option(WITH_RPM_REDPESK_PLUGIN "Compile and install the rpm plugin for redpesk" ON)
 option(WITH_TOOLS         "Compile and install the tools" ON)
 option(REDPESK_DEVEL      "Add developement features" OFF)
