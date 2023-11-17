@@ -1253,7 +1253,7 @@ static int process_legacy_config(process_state_t *state)
 	/* TODO: process signatures */
 	/* read the manifest */
 	state->path[state->offset_pack] = '/';
-	strncpy(&state->path[state->offset_pack + 1], name_manifest, sizeof state->path - 1  - state->offset_pack);
+	strncpy(&state->path[state->offset_pack + 1], name_config, sizeof state->path - 1  - state->offset_pack);
 	rc = config_read_and_check(&state->manifest, state->path);
 	if (rc < 0)
 		RP_ERROR("Unable to get or validate config %s --", state->path);
