@@ -56,6 +56,7 @@ extern const char string_config_dot_xml[];
 extern const char string_AGL_widget_prefix[];
 extern const char string_defined_permission[];
 extern const char string_dict[];
+extern const char string_file_properties[];
 extern const char string_idaver[];
 extern const char string_index[];
 extern const char string_level[];
@@ -73,4 +74,3 @@ extern const char string_targets[];
 
 extern const char feature_required_api[];
 extern const char feature_required_permission[];
-

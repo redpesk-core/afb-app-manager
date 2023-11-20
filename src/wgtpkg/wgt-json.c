@@ -434,6 +434,41 @@ static int add_defined_permission(struct json_object *defperm, const struct wgt_
 	return apply_params(defperm, feat->params, actions);
 }
 
+/* Treats the feature "file-properties" */
+static int add_file_properties(struct json_object *fileprops, const struct wgt_desc_feature *feat)
+{
+	static struct paramaction actions[] = {
+		{ .name = NULL, .action = add_param_array, .closure = NULL }
+	};
+	return apply_params(fileprops, feat->params, actions);
+}
+
+/* add a param object to an array of param objects */
+static int add_param_array_compat(struct json_object *obj, const struct wgt_desc_param *param, void *closure)
+{
+	const char *type = closure;
+	struct json_object *array = obj;
+	struct json_object *value = json_object_new_object();
+
+	if (value
+	 && j_add_string(value, string_name, param->value)
+	 && j_add_string(value, string_value, type)
+	 && j_add(array, NULL, value))
+		return 0;
+
+	json_object_put(value);
+	return -ENOMEM;
+}
+
+/* Treats legacy features setting file properties */
+static int add_file_properties_compat(struct json_object *fileprops, const struct wgt_desc_feature *feat, const char *type)
+{
+	struct paramaction actions[] = {
+		{ .name = NULL, .action = add_param_array_compat, .closure = (void*)type }
+	};
+	return apply_params(fileprops, feat->params, actions);
+}
+
 /***********************************************************************************************************/
 
 /*
@@ -444,13 +479,14 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 	size_t prefixlen;
 	const struct wgt_desc_feature *feat;
 	const char *featname;
-	struct json_object *result, *targets, *permissions;
+	struct json_object *result, *targets, *permissions, *file_properties;
 	int rc, rc2;
 
 	/* create the application structure */
 	if(!(result = json_object_new_object())
 	|| !(targets = j_add_new_array(result, string_targets))
 	|| !(permissions = j_add_new_array(result, string_defined_permission))
+	|| !(file_properties = j_add_new_array(result, string_file_properties))
 	)
 		goto error;
 
@@ -482,6 +518,9 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 			if (!strcmp(featname, string_defined_permission)) {
 				rc2 = add_defined_permission(permissions, feat);
 			}
+			else if (!strcmp(featname, string_file_properties)) {
+				rc2 = add_file_properties(file_properties, feat);
+			}
 			else if (!strcmp(featname, string_provided_unit)) {
 				rc2 = add_provided_unit(targets, feat);
 			}
@@ -499,7 +538,26 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 			}
 			else if (!strcmp(featname, string_required_permission)) {
 				rc2 = add_required_permission(targets, feat);
-			} else {
+			}
+			else if (!strcmp(featname, "public-files")) {
+				rc2 = add_file_properties_compat(file_properties, feat, "public");
+			}
+			else if (!strcmp(featname, "lib-files")) {
+				rc2 = add_file_properties_compat(file_properties, feat, "library");
+			}
+			else if (!strcmp(featname, "conf-files")) {
+				rc2 = add_file_properties_compat(file_properties, feat, "config");
+			}
+			else if (!strcmp(featname, "exec-files")) {
+				rc2 = add_file_properties_compat(file_properties, feat, "executable");
+			}
+			else if (!strcmp(featname, "data-files")) {
+				rc2 = add_file_properties_compat(file_properties, feat, "data");
+			}
+			else if (!strcmp(featname, "http-files")) {
+				rc2 = add_file_properties_compat(file_properties, feat, "www");
+			}
+			else {
 				/* gently ignore other features */
 				rc2 = 0;
 			}

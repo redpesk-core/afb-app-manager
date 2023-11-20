@@ -58,6 +58,7 @@ const char string_AGL_permission_prefix[] = FWK_PREFIX "permission:";
 const char string_AGL_widget_prefix[] = FWK_PREFIX "widget:";
 const char string_defined_permission[] = "defined-permission";
 const char string_dict[] = "dict";
+const char string_file_properties[] = "file-properties";
 const char string_idaver[] = "idaver";
 const char string_index[] = "index";
 const char string_level[] = "level";

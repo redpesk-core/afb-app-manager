@@ -538,6 +538,33 @@ static void compute_implicit_plug_property_cb(process_state_t *state, json_objec
 	put_state_rc(state, rc);
 }
 
+/* callback for implementing plug exporting property */
+static void compute_provided_binding_property_cb(process_state_t *state, json_object *jso)
+{
+	path_entry_t *entry;
+	json_object *path;
+	int rc = 0;
+
+	/* extract the values */
+	if (!json_object_object_get_ex(jso, "value", &path)) {
+		RP_ERROR("bad provided-binding property %s", json_object_get_string(jso));
+		rc = -EINVAL;
+	}
+	else {
+		/* get the path entry matching the name */
+		rc = path_entry_get(state->packdir, &entry, json_object_get_string(path));
+		if (rc < 0) {
+			RP_ERROR("entry doesn't exist %s", json_object_get_string(jso));
+			rc = -ENOENT;
+		}
+		else {
+			/* set type "plug" */
+			set_entry_type(entry, path_type_Public_Lib);
+		}
+	}
+	put_state_rc(state, rc);
+}
+
 /* callback possibly deducing file type for contents */
 static void compute_target_file_properties_cb(process_state_t *state, json_object *jso)
 {
@@ -637,6 +664,9 @@ static int compute_files_properties(process_state_t *state)
 	/* set implicit plugin types */
 	if (state->rc >= 0)
 		for_each_of_manifest(state, MANIFEST_PLUGS, compute_implicit_plug_property_cb);
+	/* export provided binding */
+	if (state->rc >= 0)
+		for_each_of_manifest(state, MANIFEST_PROVIDED_BINDING, compute_provided_binding_property_cb);
 	/* set explicit types */
 	if (state->rc >= 0)
 		for_each_of_manifest(state, MANIFEST_FILE_PROPERTIES, compute_explicit_file_properties_cb);

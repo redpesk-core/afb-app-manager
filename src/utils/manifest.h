@@ -26,6 +26,7 @@
 
 
 #define MANIFEST_REQUIRED_PERMISSIONS		"required-permission"
+#define MANIFEST_PROVIDED_BINDING		"provided-binding"
 #define MANIFEST_FILE_PROPERTIES		"file-properties"
 #define MANIFEST_TARGETS			"targets"
 #define MANIFEST_NAME				"name"
