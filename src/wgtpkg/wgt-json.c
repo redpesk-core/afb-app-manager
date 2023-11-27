@@ -396,13 +396,12 @@ static int add_required_api(struct json_object *targets, const struct wgt_desc_f
 }
 
 /* Treats the feature "provided_binding" */
-static int add_provided_binding(struct json_object *targets, const struct wgt_desc_feature *feat)
+static int add_provided_binding(struct json_object *provided_binding, const struct wgt_desc_feature *feat)
 {
 	static struct paramaction actions[] = {
-		{ .name = string_sharp_target, .action = NULL, .closure = NULL }, /* TODO: should be an error! */
-		{ .name = NULL, .action = add_param_array, .closure = (void*)string_provided_binding }
+		{ .name = NULL, .action = add_param_array, .closure = NULL }
 	};
-	return add_targeted_params(targets, feat, actions);
+	return apply_params(provided_binding, feat->params, actions);
 }
 
 /* Treats the feature "required_binding" */
@@ -416,13 +415,12 @@ static int add_required_binding(struct json_object *targets, const struct wgt_de
 }
 
 /* Treats the feature "required_permission" */
-static int add_required_permission(struct json_object *targets, const struct wgt_desc_feature *feat)
+static int add_required_permission(struct json_object *required_perms, const struct wgt_desc_feature *feat)
 {
 	static struct paramaction actions[] = {
-		{ .name = string_sharp_target, .action = NULL, .closure = NULL }, /* skip #target */
-		{ .name = NULL, .action = add_param_object, .closure = (void*)string_required_permission }
+		{ .name = NULL, .action = add_param_object, .closure = NULL }
 	};
-	return add_targeted_params(targets, feat, actions);
+	return apply_params(required_perms, feat->params, actions);
 }
 
 /* Treats the feature "defined_permission" */
@@ -479,14 +477,16 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 	size_t prefixlen;
 	const struct wgt_desc_feature *feat;
 	const char *featname;
-	struct json_object *result, *targets, *permissions, *file_properties;
+	struct json_object *result, *targets, *defined_perms, *required_perms, *file_properties, *provided_binding;
 	int rc, rc2;
 
 	/* create the application structure */
 	if(!(result = json_object_new_object())
 	|| !(targets = j_add_new_array(result, string_targets))
-	|| !(permissions = j_add_new_array(result, string_defined_permission))
+	|| !(defined_perms = j_add_new_array(result, string_defined_permission))
+	|| !(required_perms = j_add_new_object(result, string_required_permission))
 	|| !(file_properties = j_add_new_array(result, string_file_properties))
+	|| !(provided_binding = j_add_new_array(result, string_provided_binding))
 	)
 		goto error;
 
@@ -516,7 +516,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 		if (!memcmp(featname, string_AGL_widget_prefix, prefixlen)) {
 			featname += prefixlen;
 			if (!strcmp(featname, string_defined_permission)) {
-				rc2 = add_defined_permission(permissions, feat);
+				rc2 = add_defined_permission(defined_perms, feat);
 			}
 			else if (!strcmp(featname, string_file_properties)) {
 				rc2 = add_file_properties(file_properties, feat);
@@ -528,7 +528,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 				rc2 = add_provided_api(targets, feat);
 			}
 			else if (!strcmp(featname, string_provided_binding)) {
-				rc2 = add_provided_binding(targets, feat);
+				rc2 = add_provided_binding(provided_binding, feat);
 			}
 			else if (!strcmp(featname, string_required_api)) {
 				rc2 = add_required_api(targets, feat);
@@ -537,7 +537,7 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 				rc2 = add_required_binding(targets, feat);
 			}
 			else if (!strcmp(featname, string_required_permission)) {
-				rc2 = add_required_permission(targets, feat);
+				rc2 = add_required_permission(required_perms, feat);
 			}
 			else if (!strcmp(featname, "public-files")) {
 				rc2 = add_file_properties_compat(file_properties, feat, "public");
