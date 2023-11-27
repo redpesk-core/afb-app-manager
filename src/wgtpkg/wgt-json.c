@@ -566,6 +566,16 @@ static struct json_object *to_json(const struct wgt_desc *desc)
 		}
 	}
 
+	/* remove empty arrays */
+	if (json_object_array_length(defined_perms) == 0)
+		json_object_object_del(result, string_defined_permission);
+	if (json_object_object_length(required_perms) == 0)
+		json_object_object_del(result, string_required_permission);
+	if (json_object_array_length(file_properties) == 0)
+		json_object_object_del(result, string_file_properties);
+	if (json_object_array_length(provided_binding) == 0)
+		json_object_object_del(result, string_provided_binding);
+
 	/* fills the main */
 	rc2 = j_add_many_strings_m(result,
 		string_id, desc->id_lower,
