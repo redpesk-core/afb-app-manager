@@ -115,7 +115,7 @@ static const char *default_permissions[] = {
 };
 
 /* predeclaration of legacy functions (avoids including legacy headers at top) */
-static int process_legacy_config(process_state_t *state);
+static int config_read_and_check(struct json_object **obj, const char *path);
 
 /*********************************************************************************************/
 /*** MANAGE ENTRY TYPE ***********************************************************************/
@@ -1013,15 +1013,23 @@ uninstall_afmpkg(
 	return rc;
 }
 
-static int process_manifest(process_state_t *state)
+static int process_package(process_state_t *state, const char *curpkg)
 {
 	int rc;
 
+	RP_DEBUG("Processing AFMPKG package type %s found at %s", curpkg, state->path);
+
 	/* TODO: process signatures */
+
 	/* read the manifest */
 	state->path[state->offset_pack] = '/';
-	strncpy(&state->path[state->offset_pack + 1], name_manifest, sizeof state->path - 1  - state->offset_pack);
-	rc = manifest_read_and_check(&state->manifest, state->path);
+	strncpy(&state->path[state->offset_pack + 1], curpkg, sizeof state->path - 1  - state->offset_pack);
+
+	/* read and check the manifest */
+	if (curpkg == name_manifest)
+		rc = manifest_read_and_check(&state->manifest, state->path);
+	else
+		rc = config_read_and_check(&state->manifest, state->path);
 	if (rc < 0)
 		RP_ERROR("Unable to get or validate manifest %s --", state->path);
 	else {
@@ -1030,9 +1038,9 @@ static int process_manifest(process_state_t *state)
 
 		state->appid = json_object_get_string(json_object_object_get(state->manifest, "id"));
 		if (state->install)
-			return install_afmpkg(state);
-		if (state->uninstall)
-			return uninstall_afmpkg(state);
+			rc = install_afmpkg(state);
+		else if (state->uninstall)
+			rc = uninstall_afmpkg(state);
 		json_object_put(state->manifest);
 	}
 	return rc;
@@ -1209,11 +1217,7 @@ int afmpkg_process(
 
 		/* process the package subtree */
 		curpkg = path_entry_var(state.packdir, key_pkg);
-		RP_DEBUG("Processing AFMPKG package type %s found at %s", curpkg, state.path);
-		if (curpkg == name_manifest)
-			rc = process_manifest(&state);
-		else
-			rc = process_legacy_config(&state);
+		rc = process_package(&state, curpkg);
 
 		/* remove processed subtree */
 		path_entry_destroy(state.packdir);
@@ -1276,39 +1280,11 @@ static int config_read_and_check(struct json_object **obj, const char *path)
 	return rc;
 }
 
-static int process_legacy_config(process_state_t *state)
-{
-	int rc;
-
-	/* TODO: process signatures */
-	/* read the manifest */
-	state->path[state->offset_pack] = '/';
-	strncpy(&state->path[state->offset_pack + 1], name_config, sizeof state->path - 1  - state->offset_pack);
-	rc = config_read_and_check(&state->manifest, state->path);
-	if (rc < 0)
-		RP_ERROR("Unable to get or validate config %s --", state->path);
-	else {
-		RP_DEBUG("processing config %s", json_object_to_json_string_ext(state->manifest,
-		                             JSON_C_TO_STRING_PRETTY|JSON_C_TO_STRING_NOSLASHESCAPE));
-
-		state->appid = json_object_get_string(json_object_object_get(state->manifest, "id"));
-		if (state->install)
-			return install_afmpkg(state);
-		if (state->uninstall)
-			return uninstall_afmpkg(state);
-		json_object_put(state->manifest);
-	}
-	return rc;
-}
-
 #else /* WITH_CONFIG_XML */
 
-static
-int
-process_legacy_config(
-	process_state_t *state
-) {
-	RP_ERROR("Failed to (un)install widget %s: widgets aren't supported anymore", state->path);
+static int config_read_and_check(struct json_object **obj, const char *path)
+{
+	RP_ERROR("config.xml panifest aren't supported anymore", state->path);
 	return -ENOTSUP;
 }
 
