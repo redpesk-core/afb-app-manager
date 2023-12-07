@@ -24,29 +24,48 @@
 
 #pragma once
 
-#include "path-entry.h"
-
+/**
+* Definition of the managed path types
+*/
 typedef
 enum path_type
 {
-    path_type_Unset = 0,
-    path_type_Unknown,
-    path_type_Conf,
-    path_type_Data,
-    path_type_Exec,
-    path_type_Http,
-    path_type_Icon,
-    path_type_Id,
-    path_type_Lib,
-    path_type_Plug,
-    path_type_Public,
-    path_type_Public_Exec,
-    path_type_Public_Lib
+    path_type_Unset = 0,	/**< special unset value, don't use it */
+    path_type_Unknown,		/**< special unknown value */
+    path_type_Conf,		/**< for configuration */
+    path_type_Data,		/**< for data */
+    path_type_Exec,		/**< for executable */
+    path_type_Http,		/**< for file served by HTTP */
+    path_type_Icon,		/**< for icon or public image */
+    path_type_Id,		/**< for private data */
+    path_type_Lib,		/**< for private library */
+    path_type_Plug,		/**< for exported plug */
+    path_type_Public,		/**< for public data */
+    path_type_Public_Exec,	/**< for public executable */
+    path_type_Public_Lib	/**< for public library */
 }
 	path_type_t;
 
-extern path_type_t path_type_of_key(const char *key);
+/**
+* Get the path type of the given property key or path_type_Unknown
+* if the key is unknown.
+*
+* @param key   the key whose type is searched
+*
+* @return the found path_type or path_type_Unknown when the
+*         key is not known
+*/
+extern path_type_t path_type_of_property_key(const char *key);
 
-extern path_type_t path_type_of_dirname(const char *dir);
+/**
+* Search if there is a predefined path_type for a directory of
+* the given name and return it or return path_type_Unknown if
+* no predefined directory name matches.
+*
+* @param dirname   the name of the directory to search
+*
+* @return the found path_type or path_type_Unknown when there
+*         is no predefined valu for that name
+*/
+extern path_type_t path_type_of_dirname(const char *dirname);
 
-extern path_type_t path_type_of_entry(const path_entry_t *entry, const path_entry_t *root);

@@ -27,13 +27,18 @@
 #include "path-type.h"
 #include "path-entry.h"
 
+/**
+* Definition of the names of the path types
+* Defines also the default type of some directories
+*/
 static
 struct {
-	path_type_t type;
-	const char *key;
-	const char *dir;
+	path_type_t type; /* the path type */
+	const char *key;  /* key name of the path type */
+	const char *dir;  /* dirname when getting path type of directories */
 }
 filetypes[] = {
+	/*== type ==			== key ==		== dir ==*/
 	{ path_type_Conf,		"config",		"etc" },
 	{ path_type_Data,		"data",			NULL },
 	{ path_type_Exec,		"executable",		"bin" },
@@ -45,7 +50,8 @@ filetypes[] = {
 	{ path_type_Public_Lib,		"public-library",	NULL },
 };
 
-path_type_t path_type_of_key(const char *key)
+/* see path-type.h */
+path_type_t path_type_of_property_key(const char *key)
 {
 	unsigned i = sizeof filetypes / sizeof *filetypes;
 	while (i)
@@ -54,6 +60,8 @@ path_type_t path_type_of_key(const char *key)
 	return path_type_Unknown;
 }
 
+/* see path-type.h */
+/* TODO: remove that function or review its integration */
 path_type_t path_type_of_dirname(const char *dir)
 {
 	unsigned i = sizeof filetypes / sizeof *filetypes;
@@ -64,16 +72,3 @@ path_type_t path_type_of_dirname(const char *dir)
 	return path_type_Unknown;
 }
 
-path_type_t path_type_of_entry(const path_entry_t *entry, const path_entry_t *root)
-{
-	path_type_t type = path_type_Unknown;
-
-	if (!path_entry_has_child(entry))
-		entry = path_entry_parent(entry);
-
-	while (type == path_type_Unknown && entry != root) {
-		type = path_type_of_dirname(path_entry_name(entry));
-		entry = path_entry_parent(entry);
-	}
-	return type;
-}

@@ -491,7 +491,7 @@ static void compute_explicit_file_properties_cb(process_state_t *state, json_obj
 		else {
 			/* compute the effective path type of value */
 			strval = json_object_get_string(value);
-			type = path_type_of_key(strval);
+			type = path_type_of_property_key(strval);
 			if (type == path_type_Unknown) {
 				RP_ERROR("invalid value %s", json_object_get_string(jso));
 				rc = -EINVAL;
