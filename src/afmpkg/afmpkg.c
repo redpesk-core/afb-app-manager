@@ -472,7 +472,7 @@ static void compute_explicit_file_properties_cb(process_state_t *state, json_obj
 	path_entry_t *entry;
 	json_object *name, *value;
 	const char *strval;
-	path_type_t type;
+	path_type_t type, prvtype;
 	int rc = 0;
 
 	/* extract the values */
@@ -489,21 +489,21 @@ static void compute_explicit_file_properties_cb(process_state_t *state, json_obj
 			rc = -ENOENT;
 		}
 		else {
-			/* detect duplication of explicit name */
-			type = get_entry_type(entry);
-			if (type != path_type_Unknown) {
-				RP_ERROR("file duplication %s", json_object_get_string(jso));
-				rc = -EEXIST;
+			/* compute the effective path type of value */
+			strval = json_object_get_string(value);
+			type = path_type_of_key(strval);
+			if (type == path_type_Unknown) {
+				RP_ERROR("invalid value %s", json_object_get_string(jso));
+				rc = -EINVAL;
 			}
 			else {
-				/* compute the effective path type of value */
-				strval = json_object_get_string(value);
-				type = path_type_of_key(strval);
-				if (type != path_type_Unknown)
+				/* set the value if not conflicting */
+				prvtype = get_entry_type(entry);
+				if (prvtype == path_type_Unknown)
 					set_entry_type(entry, type);
-				else {
-					RP_ERROR("invalid value %s", json_object_get_string(jso));
-					rc = -EINVAL;
+				else if (prvtype != type) {
+					RP_ERROR("file property conflict %s", json_object_get_string(jso));
+					rc = -EEXIST;
 				}
 			}
 		}
