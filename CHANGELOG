@@ -1,3 +1,9 @@
+Version 12.2.3
+--------------
+
+- Allows not conflicting file property duplication
+- Add documentation of plug behaviour
+
 Version 12.2.2
 --------------
 

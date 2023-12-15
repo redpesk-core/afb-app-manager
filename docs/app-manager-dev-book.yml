@@ -7,6 +7,8 @@ books:
     chapters:
         - name: redpesk packages
           url: redpesk-packages.md
+        - name: Using plug within redpesk framework
+          url: plugs.md
         - name: Packaging applications
           children:
             - name: Metadata manifest
