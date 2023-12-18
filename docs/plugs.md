@@ -1,30 +1,30 @@
-# Using plug within redpesk framework
+# Using plugs within redpesk framework
 
-Redpesk framework installs applications it manages in
-separate directories and isolates them from each others
-using linux security behaviors like Smack or SELinux.
+Redpesk framework installs applications which it manages in
+separate directories and isolates them from each other
+using Linux security modules like Smack or SELinux.
 
 The plug mechanism allows an application to export parts
 of it to specific applications, breaking the isolation rules
 on purpose.
 
 This document gives use cases, explains how it works,
-details how to use it.
+and how to use it.
 
 ## Plugins use case
 
 The main use case, but not the only one, is plugins.
 
-A plugin is a piece of data and/or code that the use
-of plugins to add features to some other component.
+A plugin is a piece of data and/or code used to add features
+to some other component.
 In other words, a plugin is an extension mechanism
-that allows to add features to an application.
+that allows the addition of features to an application.
 
-In the history of redpesk framework, the case occurred
-for CAN (Controller Area Network). Redpesk provides an
-application dedicated the handling CAN bus for its clients.
+In the history of redpesk framework, the need emerged
+for the CAN (Controller Area Network) implementation. Redpesk provides an
+application dedicated to handling the CAN bus for its clients.
 It wraps control of the bus within a single point and
-brings an high level API to its clients.
+provides a high level API.
 
 To offer the high level API to its clients, an API where
 binary encoding of data is hidden and where data are
@@ -32,9 +32,9 @@ named, it receives extensions (plugins) that describe
 the currently connected equipment and the encoding of
 data sent on CAN.
 
-For example, if you install an equipment (hardware) on the CAN
+For example, if you install equipment (hardware) on the CAN
 bus, you also install its related plugin (software) that
-describe it to the CAN bus application.
+describes it to the CAN bus application.
 
 As it could be deduced from the description, the CAN bus
 application is installed once and the plugins that describe
@@ -42,68 +42,68 @@ the equipment are installed independently afterwards.
 
 Since canbus-binding 2.0.3, the application CAN bus
 installed in the directory `/usr/redpesk/canbus-binding`
-has a directory for plugging plugins, that directory
-is `/usr/redpesk/canbus-binding/plugins`. At start, the
-application canbus-binding 2 scans recursively the content
+has a directory for plugging plugins which
+is `/usr/redpesk/canbus-binding/plugins`. On startup, the
+application canbus-binding 2 scans recursively the contents
 of the directories:
 
-- ${AFB_ROOTDIR}/etc
-- ${AFB_ROOTDIR}/plugins
-- ${CANBUS_PLUGINS_PATH}
+- `${AFB_ROOTDIR}/etc`
+- `${AFB_ROOTDIR}/plugins`
+- `${CANBUS_PLUGINS_PATH}`
 
-It loads every file with extension `.json` and every file with
-extension `.so`, presuming it to be configuration and extension.
-The found items compatible with canbus-binding are then activated
-and made available to clients of canbus-binding application.
+It loads every file with `.json` or `.so` as an extension,
+presuming them to be configuration and extension.
+Items deemed compatible with canbus-binding are then activated
+and made available to clients of the canbus-binding application.
 
-## How plug works?
+## How plugs work?
 
 The plug mechanism creates a symbolic link to an exported
 directory in a directory.
 
-Example: The plugin vcar-signals is an application installed in
+Example: the plugin vcar-signals is an application installed in
 `/usr/redpesk/vcar-signals`. It contains the plugin library
 `/usr/redpesk/vcar-signals/lib/plugin-vcar-signals.so`. To make
 that plugin available to canbus-binding, the manifest file
 of vcar-signals declares that it plugs its lib directory in
-the plugin directory of canbus-binding. That declaration ask
-the framework to create the below symbolic link during installation
+the plugin directory of canbus-binding. That declaration asks
+the framework to create the symbolic link below during installation
 of vcar-signals.
 
 ```
 /usr/redpesk/canbus-binding/plugins/vcar-signals -> /usr/redpesk/vcar-signals/lib
 ```
 
-Using this example, it is possible to introduce little terminology.
+Using this example, it is possible to introduce some terminology.
 
 - **exported directory**: the exported directory is the directory
-  that the installed application exports (for the example, the
+  that the installed application exports (in the example, the
   exported directory is `/usr/redpesk/vcar-signals/lib`)
 
-- **import directory**: the directory where is plugged the exported
-  directory, or said with other words, the directory where the
-  symbolic link is created (for the example, the import
+- **import directory**: the directory where the exported directory
+  is plugged, or in other words, the directory where the
+  symbolic link is created (in the example, the import
   directory is `/usr/redpesk/canbus-binding/plugins`)
 
-- **exporting application**: the application that export a directory
-  (for the example, vcar-signals)
+- **exporting application**: the application that exports a directory
+  (in the example, vcar-signals)
 
 - **import application**: the application that receives access to the
-  exported directory (for the example, canbus-binding)
+  exported directory (in the example, canbus-binding)
 
 ### The created link
 
-The import directory is deduced from the id of the import application
+The import directory is deduced from the ID of the import application
 (`<importid>`), it is `/redpesk/<importid>/plugins`.
 
 The exported directory is given by the path (`<expdir>`)
 that must be relative to the root dir of the installed application
 (`<rootdir>`), it is `<rootdir>/<expdir>`.
 
-The name of the link is the application id of the exporting application
+The name of the link is the application ID of the exporting application
 (`<exportid>`).
 
-So at the end, the following link is created:
+So in the end, the following link is created:
 
 ```
 /redpesk/<importid>/plugins/<exportid> -> <rootdir>/<expdir>
@@ -112,55 +112,50 @@ So at the end, the following link is created:
 ### Security
 
 Installing an extension should be under control in order to avoid
-a malicious actor to install an extension that breaks the system.
+a malicious actor introducing a vulnerability in the system.
 
-When plug is used for exporting to the import application of id
+When plugs are used for exporting to the import application of ID
 `<importid>`, the exporting application must have the permission
-
-```
-urn:redpesk:permission:<importid>:partner:export:plug
-```
-
-If the import application has not the permission
+`urn:redpesk:permission:<importid>:partner:export:plug` if the import
+application does not have the permission
 `urn:redpesk:permission::public:plugs`.
 
 Otherwise, if the import application has the permission
 `urn:redpesk:permission::public:plugs`, the exporting application
 must have the permission
-
-```
-urn:redpesk:permission:<importid>:public:export:plug
-```
+`urn:redpesk:permission:<importid>:public:export:plug`.
 
 ### Rules of use
 
-1. An application can export any of its directory
-2. An application can export only one directory to an other application
-3. An application can export a same directory to many applications
+1. An application can export any of its directories
+2. An application can export only one directory to another application
+3. An application can export the same directory to many applications
 4. An application can export more than a single directory
-5. the content of the directory is made recursively available to import
+5. The contents of the directory is recursively made available to import
    applications
 6. An import application must have the directory `/redpesk/<importid>/plugins`
 
-## How to use plug?
+## How to use plugs?
 
 Plug behaviour is only available in `manifest.yml` files.
 
-The  `manifest.yml` file accept a root entry named `plugs`
-that contain a list of objects having the entries `name`
+The `manifest.yml` file accepts a root entry named `plugs`
+that contains a list of objects having the entries `name`
 and `value`. The name is the relative path of the exported
-directory and the value is the application id of the import
+directory and the value is the application ID of the import
 application.
 
 Example:
 
-```
+```yaml
 plugs:
    - name: lib
      value: canbus-binding
 ```
 
 ## History
+
+- 2023-12-18, Louis-Baptiste Sobolewski & Frances Thompson, proofreading
 
 - 2023-12-15, José Bollo, Creation for version afb-app-manager 12.2.2 and
   sec-lsm-manager 2.6.1
