@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2015-2023 IoT.bzh Company
+ Copyright (C) 2015-2024 IoT.bzh Company
 
  Author: José Bollo <jose.bollo@iot.bzh>
 
@@ -47,7 +47,7 @@ static void version()
 		"\n"
 		"  %s  version="AFM_VERSION"\n"
 		"\n"
-		"  Copyright (C) 2015-2023 IoT.bzh Company\n"
+		"  Copyright (C) 2015-2024 IoT.bzh Company\n"
 		"  AFB comes with ABSOLUTELY NO WARRANTY.\n"
 		"  Licence Apache 2\n"
 		"\n",
