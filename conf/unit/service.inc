@@ -38,7 +38,7 @@ X-AFM--workdir=FULL_APP_WORK_DIR
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
-X-AFM--visibility=ON_PERM(`:public:hidden', `hidden', `visible')
+X-AFM--visibility=ON_CONTENT(application/vnd.redpesk.resource,hidden,ON_PERM(:public:hidden,hidden,visible))
 %nl
 
 IF_PERM(:partner:scope-platform)
@@ -168,12 +168,12 @@ ExecStart=REDWRAP APP_INSTALL_DIR/{{content.src}}
 {{/content.type=application/x-executable}}
 
 ;-------------------------------------------------------------------------------
-;----                 application/vnd.agl.resource                          ----
+;----                 application/vnd.redpesk.resource                      ----
 ;-------------------------------------------------------------------------------
-{{#content.type=application/vnd.agl.resource}}
+{{#content.type=application/vnd.agl.resource|application/vnd.redpesk.resource}}
 Type=oneshot
 ExecStart=/bin/true
-{{/content.type=application/vnd.agl.resource}}
+{{/content.type=application/vnd.agl.resource|application/vnd.redpesk.resource}}
 
 IF_PERM(:system:run-by-default)
 ;-------------------------------------------------------------------------------

@@ -15,13 +15,13 @@ Known types for the type of content are:
   content.src designates the relative path of the binary.
 
 - ***application/vnd.agl.service***:
-  AGL service, content.src is not used.
+  AGL service, content.src is not used but must exist.
 
 - ***application/x-executable***:
   Native application,
   content.src designates the relative path of the binary.
   For such application, only security setup is made.
 
-Adding more types is easy, it just need to edit the configuration
-file ***afm-unit.conf***.
-
+- ***application/vnd.redpesk.resource***:
+  Resource, not an application.
+  content.src is not used but must exist.
