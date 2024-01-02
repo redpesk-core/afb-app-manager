@@ -408,16 +408,16 @@ static int check_src_type_definition(process_state_t *state, const char *src, co
 }
 
 /*
-* check definition of one target
+* check definition of content of a target
 */
-static void check_target_content_cb(process_state_t *state, json_object *jso)
+static void check_target_content(process_state_t *state, json_object *target)
 {
 	json_object *content, *src, *type;
 	int rc = -EINVAL;
 
 	/* check if has a content */
-	if (!json_object_object_get_ex(jso, "content", &content))
-		RP_ERROR("no content %s", json_object_get_string(jso));
+	if (!json_object_object_get_ex(target, "content", &content))
+		RP_ERROR("no content %s", json_object_get_string(target));
 
 	/* check that the content is an object */
 	else if (!json_object_is_type(content, json_type_object))
@@ -441,8 +441,19 @@ static void check_target_content_cb(process_state_t *state, json_object *jso)
 
 	else
 		rc = check_src_type_definition(state, json_object_get_string(src), json_object_get_string(type));
-
 	put_state_rc(state, rc);
+}
+
+/*********************************************************************************************/
+/*** CHECKING TARGETS ************************************************************************/
+/*********************************************************************************************/
+
+/*
+* check definition of one target
+*/
+static void check_target_cb(process_state_t *state, json_object *target)
+{
+	check_target_content(state, target);
 }
 
 /*
@@ -450,7 +461,7 @@ static void check_target_content_cb(process_state_t *state, json_object *jso)
 */
 static int check_contents(process_state_t *state)
 {
-	for_each_target(state, check_target_content_cb);
+	for_each_target(state, check_target_cb);
 	return state->rc;
 }
 
