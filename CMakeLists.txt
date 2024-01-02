@@ -25,7 +25,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(afb-app-manager
-        VERSION 12.2.2
+        VERSION 12.2.3
         DESCRIPTION "Secured Application framework, Daemons, Tools, Configuratioon"
         HOMEPAGE_URL "https://github.com/redpesk-core/afb-app-manager"
         LANGUAGES C)
