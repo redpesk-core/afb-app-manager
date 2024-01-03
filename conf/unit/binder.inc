@@ -32,6 +32,9 @@ ELSE \
 	ENDIF \
 ENDIF \
 	ON_PERM(:public:applications:read, --alias=/icons:ICONS_DIR) \
+	{{#required-config}} \
+		--config={{.}} \
+	{{/required-config}} \
 	{{#required-api}} \
 		ON_VALUE(auto|ws,	--ws-client=unix:API_PATH_WS/{{name}}) \
 		ON_VALUE(dbus,		--dbus-client={{name}}) \

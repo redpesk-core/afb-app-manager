@@ -234,6 +234,19 @@ The attribute *description* is optional.
 
 This attribute is used for describing the target.
 
+### required-config
+
+List of configuration files for the binder.
+
+Example:
+
+```yaml
+required-config:
+   - etc/config-main.json
+   - etc/config-aux1.json
+   - etc/config-aux2.json
+```
+
 ### required-api
 
 List of the api required by the target.

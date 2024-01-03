@@ -445,6 +445,78 @@ static void check_target_content(process_state_t *state, json_object *target)
 }
 
 /*********************************************************************************************/
+/*** CHECKING CONFIGS ************************************************************************/
+/*********************************************************************************************/
+
+/*
+* check the src and type of one target
+*/
+static int check_config_file(process_state_t *state, const char *src)
+{
+	int rc;
+	struct stat s;
+	size_t length;
+	path_entry_t *entry;
+
+	/* get the entry for the src */
+	rc = path_entry_get(state->packdir, &entry, src);
+	if (rc < 0) {
+		RP_ERROR("file not installed %s", src);
+		return -ENOENT;
+	}
+
+	/* get the full name of the entry on disk */
+	length = path_entry_relpath(entry, &state->path[state->offset_pack],
+	                            PATH_MAX - state->offset_pack, state->packdir,
+				    PATH_ENTRY_FORCE_LEADING_SLASH);
+	if (length + state->offset_root > PATH_MAX) {
+		RP_ERROR("filename too long %s", src);
+		return -ENAMETOOLONG;
+	}
+
+	/* get src path information */
+	rc = fstatat(AT_FDCWD, state->path, &s, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
+	if (rc < 0) {
+		rc = -errno;
+		RP_ERROR("can't get status of %s: %s", state->path, strerror(errno));
+		return rc;
+	}
+	/* check src conformity */
+	if (!S_ISREG(s.st_mode)) {
+		RP_ERROR("config isn't a regular file %s", state->path);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/*
+* check one config of a target
+*/
+static void check_one_target_config_cb(void *closure, json_object *jso)
+{
+	process_state_t *state = closure;
+	int rc = -EINVAL;
+
+	/* check that the object is a string */
+	if (!json_object_is_type(jso, json_type_string))
+		RP_ERROR("config isn't an string %s", json_object_get_string(jso));
+	else
+		rc = check_config_file(state, json_object_get_string(jso));
+	put_state_rc(state, rc);
+}
+
+/*
+* check config of a target
+*/
+static void check_target_config(process_state_t *state, json_object *target)
+{
+	json_object *configs;
+	if (json_object_object_get_ex(target, MANIFEST_REQUIRED_CONFIGS, &configs))
+		rp_jsonc_optarray_for_all(configs, check_one_target_config_cb, state);
+}
+
+/*********************************************************************************************/
 /*** CHECKING TARGETS ************************************************************************/
 /*********************************************************************************************/
 
@@ -454,6 +526,7 @@ static void check_target_content(process_state_t *state, json_object *target)
 static void check_target_cb(process_state_t *state, json_object *target)
 {
 	check_target_content(state, target);
+	check_target_config(state, target);
 }
 
 /*
