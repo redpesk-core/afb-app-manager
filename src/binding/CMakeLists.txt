@@ -25,6 +25,8 @@
 if(libsystemd_FOUND AND AFB_FOUND AND NOT ONLY_SDK)
 	MESSAGE(STATUS "Creating afm-binding")
 
+	pkg_get_variable(VSCRIPT afb-binding version_script)
+
 	add_library(
 		afm-binding
 		MODULE
@@ -57,7 +59,7 @@ if(libsystemd_FOUND AND AFB_FOUND AND NOT ONLY_SDK)
 		afm-binding
 		PROPERTIES
 		PREFIX ""
-		LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/afm-binding.export-map"
+		LINK_FLAGS "-Wl,--version-script=${VSCRIPT}"
 	)
 	install(
 		TARGETS afm-binding
