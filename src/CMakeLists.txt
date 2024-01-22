@@ -73,5 +73,6 @@ add_subdirectory(rpm-plugin)
 add_subdirectory(secmgr)
 add_subdirectory(tests)
 add_subdirectory(utils)
+add_subdirectory(mustach)
 add_subdirectory(wgtpkg)
 

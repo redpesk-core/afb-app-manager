@@ -26,5 +26,3 @@
 struct json_object;
 
 extern int apply_mustach(const char *template, struct json_object *root, char **result, size_t *size);
-
-

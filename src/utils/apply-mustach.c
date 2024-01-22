@@ -31,7 +31,7 @@
 
 #include <json-c/json.h>
 
-#include "mustach.h"
+#include "mustach/mustach.h"
 #include "apply-mustach.h"
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-jsonc.h>
@@ -190,44 +190,51 @@ static struct json_object *find(struct expl *e, const char *name)
 	/* extract its value */
 	v = keyval(n, isptr);
 
-	/* search the first component for each valid globalisation */
-	i = e->depth;
-	c = first(&n, isptr);
-	while (c) {
-		if (i < 0) {
-			/* next globalisation */
-			i = e->depth;
-			c = globalize(c);
-		}
-		else if (json_object_object_get_ex(e->stack[i].obj, c, &o)) {
-
-			/* found the root, search the subcomponents */
-			c = first(&n, isptr);
-			while(c) {
-				while (!json_object_object_get_ex(o, c, &r)) {
-					c = globalize(c);
-					if (!c)
-						return NULL;
-				}
-				o = r;
-				c = first(&n, isptr);
-			}
-
-			/* check the value if requested */
-			if (v) {
-				i = v[0] == '!';
-				v += i;
-				do {
-					c = value(&v);
-				} while (c && strcmp(c, json_object_get_string(o)));
-				if (i != !c)
-					o = NULL;
-			}
-			return o;
-		}
-		i--;
+	/* case of dot */
+	if (n[0] == '.' && n[1] == 0) {
+		o = e->stack[e->depth].obj;
 	}
-	return NULL;
+	else {
+		/* search the first component for each valid globalisation */
+		c = first(&n, isptr);
+		for(i = e->depth ; ;) {
+			if (c == NULL)
+				return NULL;
+			if (i < 0) {
+				/* next globalisation */
+				i = e->depth;
+				c = globalize(c);
+			}
+			else if (json_object_object_get_ex(e->stack[i].obj, c, &o)) {
+				break;
+			}
+			else {
+				i--;
+			}
+		}
+		/* found the root, search the subcomponents */
+		c = first(&n, isptr);
+		while(c) {
+			while (!json_object_object_get_ex(o, c, &r)) {
+				c = globalize(c);
+				if (!c)
+					return NULL;
+			}
+			o = r;
+			c = first(&n, isptr);
+		}
+	}
+	/* check the value if requested */
+	if (v) {
+		i = v[0] == '!';
+		v += i;
+		do {
+			c = value(&v);
+		} while (c && strcmp(c, json_object_get_string(o)));
+		if (i != !c)
+			o = NULL;
+	}
+	return o;
 }
 
 static int start(void *closure)
@@ -269,7 +276,7 @@ static int enter(void *closure, const char *name)
 	struct expl *e = closure;
 	struct json_object *o = find(e, name);
 	if (++e->depth >= MAX_DEPTH)
-		return MUSTACH_ERROR_TOO_DEPTH;
+		return MUSTACH_ERROR_TOO_DEEP;
 	if (json_object_is_type(o, json_type_array)) {
 		e->stack[e->depth].count = json_object_array_length(o);
 		if (e->stack[e->depth].count == 0) {
@@ -335,22 +342,28 @@ int apply_mustach(const char *template, struct json_object *root, char **result,
 	struct expl e;
 
 	e.root = root;
-	rc = mustach(template, &itf, &e, result, size);
+	rc = mustach_mem(template, 0, &itf, &e, Mustach_With_AllExtensions, result, size);
 	if (rc < 0) {
 		static const char *msgs[] = {
+			"???",
 			"SYSTEM",
 			"UNEXPECTED_END",
 			"EMPTY_TAG",
 			"TAG_TOO_LONG",
 			"BAD_SEPARATORS",
-			"TOO_DEPTH",
+			"TOO_DEEP",
 			"CLOSING",
-			"BAD_UNESCAPE_TAG"
+			"BAD_UNESCAPE_TAG",
+			"INVALID_ITF",
+			"ITEM_NOT_FOUND",
+			"PARTIAL_NOT_FOUND",
+			"UNDEFINED_TAG"
 		};
 
-		rc = -(rc + 1);
-		RP_ERROR("mustach error found: MUSTACH_ERROR_%s",
-			rc < 0 || rc >= (int)(sizeof msgs / sizeof * msgs) ? "???" : msgs[rc]);
+		rc = -rc;
+		if (rc >= (int)(sizeof msgs / sizeof * msgs))
+			rc = 0;
+		RP_ERROR("mustach error found: MUSTACH_ERROR_%s", msgs[rc]);
 		rc = -1;
 		errno = EINVAL;
 	}

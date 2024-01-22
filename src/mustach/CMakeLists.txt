@@ -22,24 +22,11 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_library(utils STATIC
-	apply-mustach.c
-	domain-spec.c
-	manage-afid.c
-	manifest.c
-	mime-type.c
-	normalize-unit-file.c
-	path-entry.c
-	path-type.c
-	permset.c
-	sighup-framework.c
-	unit-generator.c
-	utils-dir.c
-	utils-json.c
-	utils-systemd.c
+add_library(mustach STATIC
+	mustach.c
 )
 
-target_compile_options(utils PRIVATE ${libjsonc_CFLAGS} ${libsystemd_CFLAGS})
-target_include_directories(utils PRIVATE ${libjsonc_INCLUDE_DIRS} ${libsystemd_INCLUDE_DIRS})
-target_link_libraries(utils PUBLIC mustach ${libjsonc_LIBRARIES} ${libsystemd_LIBRARIES})
-target_link_directories(utils PUBLIC ${libjsonc_LIBRARY_DIRS} ${libsystemd_LIBRARY_DIRS})
+target_compile_options(mustach PRIVATE ${libjsonc_CFLAGS})
+target_include_directories(mustach PRIVATE ${libjsonc_INCLUDE_DIRS})
+target_link_libraries(mustach PUBLIC ${libjsonc_LIBRARIES})
+target_link_directories(mustach PUBLIC ${libjsonc_LIBRARY_DIRS})

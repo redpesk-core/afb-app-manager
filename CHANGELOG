@@ -1,6 +1,7 @@
 Version 12.2.5
 --------------
 
+- switch to newer version of mustach
 - use version script from afb-binding package
 
 Version 12.2.4
