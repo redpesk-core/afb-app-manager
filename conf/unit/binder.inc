@@ -33,7 +33,7 @@ ELSE \
 ENDIF \
 	ON_PERM(:public:applications:read, --alias=/icons:ICONS_DIR) \
 	{{#required-config}} \
-		--config={{.}} \
+		--config=APP_INSTALL_DIR/{{.}} \
 	{{/required-config}} \
 	{{#required-api}} \
 		ON_VALUE(auto|ws,	--ws-client=unix:API_PATH_WS/{{name}}) \
