@@ -33,22 +33,25 @@ If legacy widgets are to be supported
 - ***xmlsec1-gcrypt***
 - either ***libzip*** (version >= 0.11) or the binaries ***zip*** and ***unzip***
 
-
 ### Compiling
 
 The main scheme for compiling the project is:
 
+```bash
 > cmake .
 >
 > make
 >
 > sudo make install
+```
 
 By default, the installation is made in ***/usr/local***.
 To change this behaviour, you should set the variable
 CMAKE_INSTALL_PREFIX as in the below example:
 
+```bash
 > cmake -DCMAKE_INSTALL_PREFIX=/some/where .
+```
 
 You could check the documentation of the standard CMake module
 [GNUInstallDirs](https://cmake.org/cmake/help/v3.4/module/GNUInstallDirs.html).
@@ -56,5 +59,6 @@ You could check the documentation of the standard CMake module
 To forbid the use of ***libzip*** and replace it with the
 use of programs ***zip*** and ***unzip***, type:
 
+```bash
 > cmake -DUSE_LIBZIP=0 .
-
+```
