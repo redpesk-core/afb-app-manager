@@ -356,6 +356,39 @@ The value is one of the following values:
 This attribute is the same than the global one but allows to require
 specific permissions for specific target.
 
+### required-systemd
+
+These settings establishe a requirement of the application to
+systemd's units (socket, target, service, mount, ...).
+
+It enforce the application to start after the listed dependencies.
+
+The setting lists the required units. For each 2 fields
+are required:
+
+- `unit`: the name of the required unit with its extension
+- `mode`: the mode of the dependency
+
+Valid values for modes are:
+
+- `weak`: translated to systemd's directive *Wants*
+- `strong`: translated to systemd's directive *Requires*
+- `strict`: translated to systemd's directive *BindsTo*
+
+
+Example:
+
+```yaml
+required-systemd:
+   - unit: base.target
+     mode: strict
+   - unit: foo.socket
+     mode: strong
+   - unit: bar.service
+     mode: weak
+```
+
+
 
 
 [known-content]:    ./known-content-types.html                                        "Known content types"

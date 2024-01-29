@@ -91,6 +91,11 @@ After=UNIT_NAME_API_SOCKET({{name}})
 {{/value=ws|auto}}
 {{/provided-api}}
 
+{{#required-systemd}}
+MUSTACH_ON(mode=strict,BindsTo,MUSTACH_ON(mode=weak,Wants,Requires))={{unit}}
+After={{unit}}
+{{/required-systemd}}
+
 %nl
 
 [Service]

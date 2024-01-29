@@ -1,9 +1,14 @@
+Version 12.2.6
+--------------
+
+- Add properties `required-systemd` in manifest files
+
 Version 12.2.5
 --------------
 
-- switch to newer version of mustach
-- use version script from afb-binding package
-- fix config relative to install directory
+- Switch to newer version of mustach
+- Use version script from afb-binding package
+- Fix config relative to install directory
 
 Version 12.2.4
 --------------
