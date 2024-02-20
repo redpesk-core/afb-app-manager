@@ -160,10 +160,11 @@ StandardError=journal
 
 ;-------------------------------------------------------------------------------
 ;----   text/html  application/vnd.agl.native  application/vnd.agl.service  ----
+;----   application/vnd.redpesk.httpd                                       ----
 ;-------------------------------------------------------------------------------
-{{#content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
+{{#content.type=text/html|application/vnd.agl.native|application/vnd.agl.service|application/vnd.redpesk.httpd}}
 include(binder.inc)
-{{/content.type=text/html|application/vnd.agl.native|application/vnd.agl.service}}
+{{/content.type=text/html|application/vnd.agl.native|application/vnd.agl.service|application/vnd.redpesk.httpd}}
 
 ;-------------------------------------------------------------------------------
 ;----                 application/x-executable                              ----

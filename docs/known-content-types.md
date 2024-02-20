@@ -7,8 +7,9 @@ how to create systemd units for packages.
 Known types for the type of content are:
 
 - ***text/html***:
-  HTML application,
+  HTML application, start a graphical client,
   content.src designates the home page of the application
+  **(don't use it)**
 
 - ***application/vnd.agl.native***
   AGL compatible native,
@@ -25,3 +26,8 @@ Known types for the type of content are:
 - ***application/vnd.redpesk.resource***:
   Resource, not an application.
   content.src is not used but must exist.
+
+- ***application/vnd.redpesk.httpd***:
+  HTTP server only,
+  content.src must exist but is not used
+
