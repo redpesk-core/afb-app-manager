@@ -22,6 +22,41 @@ do
   esac
 done
 
+if $help
+then
+    cat << EOC
+
+usage: $(basename $0) [-u UID] CMD [arg]
+
+The command CMD is of of the below commands:
+
+  list
+  runnables      list the runnable widgets installed
+                 option -a or --all for all instances
+                 option -s or --short for a synthetic output
+
+  info id
+  detail id      print detail about the installed widget of id
+
+  ps
+  runners        list the running instance
+                 option -a or --all for all instances
+                 option -s or --short for a synthetic output
+
+  run id
+  start id       start an instance of the widget of id
+
+  once id        run once an instance of the widget of id
+
+  kill rid
+  terminate rid  terminate the running instance rid
+
+  status rid
+  state rid      get status of the running instance rid
+
+EOC
+fi
+
 case "$1" in
 
   list|runnables)
@@ -65,39 +100,6 @@ case "$1" in
     else
       send state  "{\"id\":\"$i\",\"uid\":$uid}"
     fi
-    ;;
-
-  -h|--help|help)
-
-    cat << EOC
-
-usage: $(basename $0) [-u UID] CMD [arg]
-
-The command CMD is of of the below commands:
-
-  list
-  runnables      list the runnable widgets installed
-                 option -a or --all for all instances
-
-  info id
-  detail id      print detail about the installed widget of id
-
-  ps
-  runners        list the running instance
-                 option -a or --all for all instances
-
-  run id
-  start id       start an instance of the widget of id
-
-  once id        run once an instance of the widget of id
-
-  kill rid
-  terminate rid  terminate the running instance rid
-
-  status rid
-  state rid      get status of the running instance rid
-
-EOC
     ;;
 
   *)
