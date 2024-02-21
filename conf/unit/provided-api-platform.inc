@@ -13,7 +13,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 Description=Provides api {{name}} for user %i
 X-AFM-API-TYPE={{value}}
 
-Requires=afm-user-setup@%i.service
+BindsTo=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
 
 Requires=UNIT_NAME_API_BASE({{name}}).socket

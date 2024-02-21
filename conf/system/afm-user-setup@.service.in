@@ -2,6 +2,7 @@
 Description=Initiate afm-user-setup %i
 After=user-runtime-dir@%i.service
 Before=user@%i.service
+BindsTo=user@%i.service
 [Service]
 Type=oneshot
 StartLimitInterval=0

@@ -12,7 +12,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 [Unit]
 Description=Provides binding {{name}} for user %i
 
-Requires=afm-user-setup@%i.service
+BindsTo=afm-user-setup@%i.service
 After=afm-user-setup@%i.service
 
 [Service]

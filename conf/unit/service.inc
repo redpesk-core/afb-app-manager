@@ -46,7 +46,7 @@ X-AFM--scope=platform
 After=afm-system-setup.service
 ELSE
 X-AFM--scope=user
-Requires=afm-user-session@%i.target
+BindsTo=afm-user-session@%i.target
 After=user@%i.service
 ENDIF
 
