@@ -2,6 +2,12 @@ Version 12.2.6
 --------------
 
 - Add properties `required-systemd` in manifest files
+- Remove cynagora rules for dbus (check policy)
+- Introduce application type application/vnd.redpesk.httpd
+- Fix help in afm-util
+- Fix documentation formating
+- Fix of configuration unit afm-user-setup and its script
+- Binds generated units to configuration units
 
 Version 12.2.5
 --------------
