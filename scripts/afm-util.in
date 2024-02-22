@@ -22,9 +22,10 @@ do
   esac
 done
 
+[[ "$1" = help ]] && help=true
 if $help
 then
-    cat << EOC
+  cat << EOC
 
 usage: $(basename $0) [-u UID] CMD [arg]
 
@@ -55,6 +56,7 @@ The command CMD is of of the below commands:
   state rid      get status of the running instance rid
 
 EOC
+  exit 0
 fi
 
 case "$1" in
