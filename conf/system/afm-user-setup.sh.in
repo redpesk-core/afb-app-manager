@@ -49,3 +49,5 @@ dodir "-t -a System:Shared" "$udir/apis/ws" "$udir/apis/link"
 
 # Create link /run/user/$uid/wayland-0 => /run/plaform/display/wayland-0
 doln '@afm_platform_rundir@/display/wayland-0' "$udir/wayland-0"
+
+exit 0
