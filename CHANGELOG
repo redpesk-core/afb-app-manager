@@ -8,6 +8,7 @@ Version 12.2.6
 - Fix documentation formating
 - Fix of configuration unit afm-user-setup and its script
 - Binds generated units to configuration units
+- Add option --short in afm-util
 
 Version 12.2.5
 --------------

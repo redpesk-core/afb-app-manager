@@ -1,21 +1,17 @@
 #!/bin/bash
 
-send() {
-  local verb="$1"
-  afb-client -u afm-util -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$verb" "$2" |
-  awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
-}
-
 all=false
+short=false
 uid="$UID"
 help=false
 
-eval set -- $(getopt -n afm-util -s bash -l all,help,uid: -o ahu: -- "$@")
+eval set -- $(getopt -n afm-util -s bash -l all,help,short,uid: -o ahsu: -- "$@")
 while :
 do
   case "$1" in
   -a|--all) all=true; shift;;
   -h|--help) help=true; shift;;
+  -s|--short) short=true; shift;;
   -u|--uid) uid="$2"; shift 2;;
   --) shift; break;;
   *) help=true; break;;
@@ -59,10 +55,26 @@ EOC
   exit 0
 fi
 
+send() {
+  local verb="$1"
+  afb-client -u afm-util -H -d unix:@afm_platform_rundir@/apis/ws/afm-main "$verb" "$2" |
+  awk '$1=="ON-REPLY" && $3!="success"{$1="ERROR:";$2="";print > "/dev/stderr";exit 1;}NR>1'
+}
+
+show() {
+  if $short && [[ -n "$(type -p jq)" ]]
+  then
+    jq -r "$1" | sort -n
+  else
+    cat
+  fi
+}
+
 case "$1" in
 
   list|runnables)
-    send runnables "{\"all\":$all,\"uid\":$uid}"
+    send runnables "{\"all\":$all,\"uid\":$uid}" |
+    show '.[]|@text "\(.id)\t\(.description)"'
     ;;
 
   info|detail)
@@ -71,7 +83,8 @@ case "$1" in
     ;;
 
   ps|runners)
-    send runners  "{\"all\":$all,\"uid\":$uid}"
+    send runners  "{\"all\":$all,\"uid\":$uid}" |
+    show '.[]|@text "\(.runid)\t\(.id)"'
     ;;
 
   run|start)
