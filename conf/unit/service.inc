@@ -38,7 +38,7 @@ X-AFM--workdir=FULL_APP_WORK_DIR
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
-X-AFM--visibility=ON_CONTENT(application/vnd.redpesk.resource,hidden,ON_PERM(:public:hidden,hidden,visible))
+X-AFM--visibility=ON_CONTENT(application/vnd.agl.resource|application/vnd.redpesk.resource,hidden,ON_PERM(:public:hidden,hidden,visible))
 %nl
 
 IF_PERM(:partner:scope-platform)

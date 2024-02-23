@@ -9,6 +9,7 @@ Version 12.2.6
 - Fix of configuration unit afm-user-setup and its script
 - Binds generated units to configuration units
 - Add option --short in afm-util
+- Make invisible applications of type application/vnd.agl.resource
 
 Version 12.2.5
 --------------
