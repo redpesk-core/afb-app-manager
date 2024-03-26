@@ -125,5 +125,3 @@ Here caution has to be taken because two kinds of bindings exist:
 
 [1]: https://docs.redpesk.bzh/docs/en/master/developer-guides/reference-v4/types-and-globals.html#the-type-afb_binding_t
 
-
-

@@ -77,7 +77,8 @@ In all cases, unknown attributes are silently ignored.
 
 ### rp-manifest
 
-The attribute *rp-manifest* is mandatory. It must be set to the value `1.0`.
+The attribute *rp-manifest* is mandatory. It is a number and
+it must be set to the value `1`.
 
 ### id
 
