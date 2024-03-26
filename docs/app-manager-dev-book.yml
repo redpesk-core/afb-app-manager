@@ -7,6 +7,8 @@ books:
     chapters:
         - name: redpesk packages
           url: redpesk-packages.md
+        - name: resource bindings
+          url: resource-bindings.md
         - name: Using plug within redpesk framework
           url: plugs.md
         - name: Packaging applications
