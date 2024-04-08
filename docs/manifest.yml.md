@@ -149,6 +149,9 @@ Exports a local binding to other applications.
 
 The value must contain the path of the exported binding.
 
+The exported binding must be set public using the `file-properties`
+ setting (see above) otherwise it can not be used by other applications.
+
 
 ### required-permission
 

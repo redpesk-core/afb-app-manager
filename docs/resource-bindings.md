@@ -29,10 +29,15 @@ To achieve it the manifest file must include the
 provided-binding:
    - name: extra
      value: lib/extra-binding.so
+file-properties:
+   - name: lib/extra-binding.so
+     value: public
 ```
 
 On that example, the binding `lib/extra-binding.so`
 (a shared library) is exported under the name `extra`.
+Note well that the provided binding must be exported
+publicly using the file-properties section.
 
 Such provided bindings can be imported by applications
 by requiring it in the manifest. This is achieved by
