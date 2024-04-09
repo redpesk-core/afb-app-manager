@@ -32,7 +32,8 @@ pdir=@afm_platform_rundir@
 spdir=@afm_scope_platform_dir@
 
 # Create /run/* directories
-dodir "-T -a System:Shared" "/run/user" "$pdir" "$pdir/display" "$pdir/apis" "$pdir/apis/ws" "$pdir/apis/link"
+dodir "-T -a System:Shared" "/run/user" "$pdir" "$pdir/display" "$pdir/apis"
+dodir "-t -a System:Shared" "$pdir/display" "$pdir/apis/ws" "$pdir/apis/link"
 
 # Create debug directory
 test -z "@create_platform_debug@" || dodir "-T -a System:Shared" "$pdir/debug"
