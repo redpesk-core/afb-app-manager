@@ -8,6 +8,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
 %systemd-unit system
 %systemd-unit service UNIT_NAME_API_BASE({{name}})@
+%systemd-unit wanted-by afm-user-session@.target
 
 [Unit]
 Description=Provides api {{name}} for user %i
@@ -40,6 +41,7 @@ ExecStart=/bin/ln -sf FLOOR_PLATFORM_API_PATH_WS/{{name}} FLOOR_USER_API_PATH_WS
 
 %systemd-unit system
 %systemd-unit service UNIT_NAME_API_BASE({{name}})
+%systemd-unit wanted-by multi-user.target
 
 [Unit]
 Description=Provides api {{name}} for platform

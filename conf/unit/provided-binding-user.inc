@@ -8,6 +8,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 
 %systemd-unit system
 %systemd-unit service UNIT_NAME_BINDING_BASE({{name}})@
+%systemd-unit wanted-by afm-user-session@.target
 
 [Unit]
 Description=Provides binding {{name}} for user %i
