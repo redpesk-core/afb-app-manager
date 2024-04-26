@@ -22,6 +22,7 @@
  $RP_END_LICENSE$
 */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <rp-utils/rp-verbose.h>
