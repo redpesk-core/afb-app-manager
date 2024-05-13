@@ -85,7 +85,7 @@ it must be set to the value `1`.
 The attribute *id* is mandatory.
 
 Values for *id* are any non empty string containing only latin letters,
-arabic digits, and the three characters '.' (dot), '-' (dash) and
+Arabic digits, and the three characters '.' (dot), '-' (dash) and
 '\_' (underscore).
 
 ### version
@@ -93,7 +93,7 @@ arabic digits, and the three characters '.' (dot), '-' (dash) and
 The attribute *version* is mandatory.
 
 Values for *version* are any non empty string containing only latin letters,
-arabic digits, and the three characters '.' (dot), '-' (dash) and
+Arabic digits, and the three characters '.' (dot), '-' (dash) and
 '\_' (underscore).
 
 Version values are dot separated fields MAJOR.MINOR.REVISION.
@@ -155,7 +155,7 @@ The exported binding must be set public using the `file-properties`
 
 ### required-permission
 
-Dictionnary of the permissions required globally, meaning by each target.
+Dictionary of the permissions required globally, meaning by each target.
 
 Example:
 
@@ -362,7 +362,7 @@ specific permissions for specific target.
 
 ### required-systemd
 
-These settings establishe a requirement of the application to
+These settings establish a requirement of the application to
 systemd's units (socket, target, service, mount, ...).
 
 It enforce the application to start after the listed dependencies.

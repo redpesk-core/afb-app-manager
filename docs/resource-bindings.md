@@ -10,7 +10,7 @@ requires a configuration file describing connected
 hardwares.
 
 Because bindings and configurations are coming from
-differents sources and are developed by different
+different sources and are developed by different
 teams, there is a need for guidelines on how to assemble
 them.
 
@@ -25,16 +25,21 @@ to third parties. It is in the framework since 2018.
 To achieve it the manifest file must include the
 `provided-binding` declaration, as on the example:
 
-```
-provided-binding:
-   - name: extra
-     value: lib/extra-binding.so
+```yaml
+targets:
+  - target: main
+    content:
+      src: lib/extra-binding.so
+      type: application/vnd.redpesk.resource
+    provided-binding:
+      - name: extra
+        value: lib/extra-binding.so
 file-properties:
    - name: lib/extra-binding.so
      value: public
 ```
 
-On that example, the binding `lib/extra-binding.so`
+On that example, the resource binding `lib/extra-binding.so`
 (a shared library) is exported under the name `extra`.
 Note well that the provided binding must be exported
 publicly using the file-properties section.
@@ -44,7 +49,7 @@ by requiring it in the manifest. This is achieved by
 adding `required-binding` to the target that requires it,
 as on the below example:
 
-```
+```yaml
 targets:
   - target: main
     content:
@@ -57,6 +62,13 @@ targets:
 
 On that example, the service imports the binding exported
 as extra.
+
+A resource binding with no further configuration than shown
+here is run as a user binding and can only be used by bindings
+of the same user. A resource binding installed platform-wide
+(with the `urn:AGL:permission::partner:scope-platform` permission)
+can be used by bindings from all users and by other platform-wide
+bindings.
 
 ## Using a resource binding with a config
 
@@ -74,7 +86,7 @@ what configuration files are to required to be loaded.
 This is done using `required-config` at target level,
 as on the below example:
 
-```
+```yaml
 targets:
   - target: main
     content:
@@ -98,7 +110,7 @@ binder command lines. Then for setting the configuration of a binding
 it is the afb-binder's option `--set`. Here is the manual extract of
 this option:
 
-```
+```man
    -s, --set VALUE
        Set parameters values for APIs.  The  value  can  be  of  the  form
        [API]/[KEY]:JSON or {"API":{"KEY":JSON},...}
@@ -107,7 +119,7 @@ this option:
 So as explained in the manual, the configuration file should look
 as below:
 
-```
+```json
 {
    "set": {
       "API": {
