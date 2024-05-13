@@ -1,8 +1,10 @@
-Next
-----
+Version 12.2.7
+--------------
 
 - Add documentation on resource bindings
+- Documentation improvements
 - Change transmutation rights on /run/platform
+- Fix of automatic start of services through socket activation
 
 Version 12.2.6
 --------------
