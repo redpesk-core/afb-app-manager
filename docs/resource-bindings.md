@@ -31,9 +31,9 @@ targets:
     content:
       src: lib/extra-binding.so
       type: application/vnd.redpesk.resource
-    provided-binding:
-      - name: extra
-        value: lib/extra-binding.so
+provided-binding:
+  - name: extra
+    value: lib/extra-binding.so
 file-properties:
    - name: lib/extra-binding.so
      value: public

@@ -119,7 +119,8 @@ file-properties:
 ```
 
 The name is the relative path of the file whose property
-must be set.
+must be set, even when an absolute path is given. This means the
+example above applies to the files `/usr/redpesk/<id>/usr/bin/xxx`.
 
 The value must be one of:
 
@@ -129,12 +130,14 @@ The value must be one of:
 - config: the file is a private configuration
 - data: the file is a private data (default)
 - www: the file is world wide read only
-
+- plug
+- public-executable
+- public-library
 
 ### provided-binding
 
-This feature allows to export a binding to other binders.
-The bindings whose relative name is given as value is exported to
+This feature allows to export a binding to other binders/applications.
+The binding whose relative path is given as value is exported to
 other binders under the given name.
 
 Example:
@@ -145,13 +148,10 @@ provided-binding:
      value: export/binding-gps.so
 ```
 
-Exports a local binding to other applications.
-
 The value must contain the path of the exported binding.
 
 The exported binding must be set public using the `file-properties`
  setting (see above) otherwise it can not be used by other applications.
-
 
 ### required-permission
 
@@ -215,7 +215,7 @@ At least one target must be named **main**.
 ### content
 
 The attribute *content* is mandatory and must designate a file
-(subject to localization) with its mandatories attributes *src* and *type*.
+(subject to localization) with its mandatory attributes *src* and *type*.
 
 The content designed depends on its type. See [the known types][known-content].
 
@@ -392,8 +392,5 @@ required-systemd:
      mode: weak
 ```
 
-
-
-
+[semantic-version]: https://semver.org/                                               "Semantic versioning"
 [known-content]:    ./known-content-types.html                                        "Known content types"
-
