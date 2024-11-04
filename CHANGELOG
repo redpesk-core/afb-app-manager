@@ -1,3 +1,9 @@
+Version 12.3.0
+--------------
+
+- Improve documentation of manifest
+- Fix installation of provided bindings
+
 Version 12.2.7
 --------------
 
