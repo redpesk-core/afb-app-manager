@@ -1,0 +1,163 @@
+# unit generation in the framework
+
+## Principle
+
+The data of manifest of installed applications are structurally
+equivalent and representable by JSON data.
+
+That fact is used to leverage mustache templating in order
+to create systemd units.
+
+To achives it, it is necessary to add to the data of the manifest
+some other data, below denoted metadata, related to framework
+behaviour.
+
+However, mustache templating generates one big output from
+its template and data. That big text is the concatenation of
+the generated units. That big text also has its grammar that
+includes markers for specifying how to split the big file
+files.
+
+That last step, spliting is done by the splitter.
+
+The below diagram shows the process:
+
+```
+    manifest   metadata          template
+         \      /                  /
+          \    /                  /
+           JSON                  /
+             \                  /
+              `--> (mustach) <-'
+                      |
+                      v
+                   big-text
+                      |
+                      v
+                   (splitter)
+                      |
+                      +--> unit1
+                      +--> unit2
+                      :
+                      :
+                      :
+                      :
+                      +--> unitX
+
+```
+
+## Metadata
+
+Small example. The original YAML representing the manifest is:
+
+```yaml
+rp-manifest: 1
+id: useful
+version: 1
+
+targets:
+  - target: main
+    content:
+	src: lib/useful.so
+	type: application/vnd.agl.service
+    required-binding:
+      - name: lib/useful.so
+        value: local
+```
+
+It is internally translated to
+
+```yaml
+rp-manifest: 1
+id: useful
+version: 1
+
+#metadata:
+  root-dir: $HOME/app-data/useful
+  install-dir: /usr/redpesk/useful
+  redpak:
+  redpak-id:
+
+targets:
+  - target: main
+    content:
+	src: lib/useful.so
+	type: application/vnd.agl.service
+    required-binding:
+      - name: lib/useful.so
+        value: local
+    #metatarget:
+        id: useful
+        http-port: 15123
+```
+
+so the added metadata are:
+
+```yaml
+#metadata:
+  root-dir: $HOME/app-data/useful
+  install-dir: /usr/redpesk/useful
+  icons-dir: /usr/redpesk/useful
+  redpak: true
+  redpak-id:
+
+targets:
+    #metatarget:
+        id: useful
+        http-port: 15123
+```
+
+The entry `#metadata` is at root. It contains the global metadata.
+
+The entry `#metatarget` is in each target and it contains target's metadata.
+
+### global metadata
+
+The global metadata are:
+
+- root-dir: root directory of transaction (ex: /)
+
+- install-dir: directory of installation, the directory that contains
+  .rpconfig/manifest.yml (ex: /usr/redpesk/myapp)
+
+- redpak: true or false, depending on being installed for redpak or not
+
+- redpak-id: the redpak identifier as given by the environment variable
+   AFMPKG_ENVVAR_REDPAKID
+
+- icons-dir: optional and obsolet, points to the icon directory
+
+### target's metadata
+
+The metadata for targets are:
+
+- afid: id of the target
+
+- http-port: port allocated to the target
+
+## Splitter
+
+As explained in afm-unit main file,
+https://github.com/redpesk-core/afb-app-manager/blob/master/conf/unit/afm-unit#L37,
+the directives %begin and %end are delimiting the begin and the end of
+the parts.
+
+Within the part, the directives %systemd-unit are telling what file to generate.
+
+The splitter looks at these directives and creates the required files.
+
+
+## Location of items of that algorithm in source files
+
+
+Templating mustach is made by source file in `src/mustach/mustach.c`.
+This is a snapshot extract of the project https://gitlab.com/jobol/mustach.
+
+Invocation of mustach and spliting is made in source file
+`src/utils/unit-generator.c`
+
+The generation of global metadata is made function `make_install_metadata` in `src/afmpkg/afmpkg.c`
+https://github.com/redpesk-core/afb-app-manager/blob/master/src/afmpkg/afmpkg.c#L968
+
+The splitter is generated in function `process_all_units`of `src/utils/unit-generator.c`
+https://github.com/redpesk-core/afb-app-manager/blob/master/src/utils/unit-generator.c#L303

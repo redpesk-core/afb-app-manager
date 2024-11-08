@@ -951,7 +951,7 @@ static int setdown_security(
 *
 * The created object will contain the keys:
 *
-*  - root-dir: pathe of the root dir if any
+*  - root-dir: path of the root dir if any
 *  - install-dir: path of installation directory relative to root directory
 *  - icons-dir: path of the icon directory
 *  - redpak: boolean indicating if installation occurs within a redpak container
