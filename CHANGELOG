@@ -1,3 +1,9 @@
+Version 12.3.1
+--------------
+
+- Add tool afm-translate (#7171)
+- Improve documentation of installation process
+
 Version 12.3.0
 --------------
 
