@@ -27,7 +27,12 @@ add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 add_link_options(-Wl,--as-needed -Wl,--gc-sections)
 
 # rputils
-pkg_check_modules(rputils REQUIRED librp-utils-static>=0.0.1)
+pkg_check_modules(rputils REQUIRED
+	librp-utils-socket-static>=0.2
+	librp-utils-file-static>=0.2
+	librp-utils-json-c-static>=0.2
+	librp-utils-yaml-static>=0.2
+)
 add_compile_options(${rputils_CFLAGS})
 include_directories(${rputils_INCLUDE_DIRS})
 link_libraries(${rputils_LIBRARIES})
