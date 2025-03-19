@@ -1,3 +1,12 @@
+Version 12.3.2
+--------------
+
+- Ignore failure on creation work directory in generated services
+- Adapt to splitted librp-utils
+- Clear separation of AGL and redpesk prefixes
+- Add permission urn:redpesk:permission::partner:cgroup-manager
+  for using cgroups through Delegate=yes
+
 Version 12.3.1
 --------------
 
