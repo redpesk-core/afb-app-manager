@@ -216,7 +216,7 @@ int permset_is_current_granted(permset_t *permset)
 
 int permset_create(permset_t **permset)
 {
-	return (*permset = calloc(sizeof **permset, 1)) == NULL ? -ENOMEM : 0;
+	return (*permset = calloc(1, sizeof **permset)) == NULL ? -ENOMEM : 0;
 }
 
 void permset_destroy(permset_t *permset)

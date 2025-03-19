@@ -445,7 +445,7 @@ static int info_of_config(struct wgt_info **result, int icons, int features, int
 	int rc;
 	struct wgt_info *info;
 
-	info = calloc(sizeof * info, 1);
+	info = calloc(1, sizeof * info);
 	if (info == NULL) {
 		rc = -1;
 		errno = ENOMEM;
