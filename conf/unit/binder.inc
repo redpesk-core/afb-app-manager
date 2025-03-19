@@ -21,17 +21,17 @@ IF_REDPESK_DEVEL \
 	--monitoring \
 	--port=HTTP_PORT \
 	--interface=tcp:LOCALUSERAPP:8080 \
-	--roothttp=ON_CONTENT(application/vnd.agl.service, ., ON_PERM(:public:no-htdocs, ., htdocs)) \
+	--roothttp=ON_CONTENT(application/vnd.agl.service, ., ON_AGL_PERM(:public:no-htdocs, ., htdocs)) \
 ELSE \
 	IF_CONTENT(application/vnd.agl.service) \
 		--no-httpd \
 	ELSE \
 		--port=HTTP_PORT \
 		--interface=tcp:LOCALUSERAPP:8080 \
-		--roothttp=ON_PERM(:public:no-htdocs, ., htdocs) \
+		--roothttp=ON_AGL_PERM(:public:no-htdocs, ., htdocs) \
 	ENDIF \
 ENDIF \
-	ON_PERM(:public:applications:read, --alias=/icons:ICONS_DIR) \
+	ON_AGL_PERM(:public:applications:read, --alias=/icons:ICONS_DIR) \
 	{{#required-config}} \
 		--config=APP_INSTALL_DIR/{{.}} \
 	{{/required-config}} \
@@ -51,7 +51,7 @@ ENDIF \
 		ON_VALUE(dbus,		--dbus-server={{name}}) \
 		ON_VALUE(tcp,		--ws-server=tcp:{{name}}) \
 	{{/provided-api}} \
-	ON_PERM(:platform:apis:auto-ws, --auto-api=API_PATH_WS) \
+	ON_AGL_PERM(:platform:apis:auto-ws, --auto-api=API_PATH_WS) \
 	ON_CONTENT(text/html,			--exec /usr/bin/cynagoauth-launch /usr/bin/web-runtime http://LOCALUSERAPP:8080/{{content.src}}) \
 	ON_CONTENT(application/vnd.agl.native,	--exec APP_INSTALL_DIR/{{content.src}} @p @t)
 %nl

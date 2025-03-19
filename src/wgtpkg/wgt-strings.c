@@ -53,9 +53,9 @@ const char string_width[] = "width";
 const char string_config_dot_xml[] = "config.xml";
 
 /* other strings */
-const char string_AGL_prefix[] = FWK_PREFIX;
-const char string_AGL_permission_prefix[] = FWK_PREFIX "permission:";
-const char string_AGL_widget_prefix[] = FWK_PREFIX "widget:";
+const char string_AGL_prefix[] = FWK_AGL_PREFIX;
+const char string_AGL_permission_prefix[] = FWK_AGL_PREFIX "permission:";
+const char string_AGL_widget_prefix[] = FWK_AGL_PREFIX "widget:";
 const char string_defined_permission[] = "defined-permission";
 const char string_dict[] = "dict";
 const char string_file_properties[] = "file-properties";
@@ -75,7 +75,7 @@ const char string_targets[] = "targets";
 const char string_sharp_target[] = "#target";
 
 
-const char feature_required_api[] = FWK_PREFIX "widget:required-api";
-const char feature_required_permission[] = FWK_PREFIX "widget:required-permission";
+const char feature_required_api[] = FWK_AGL_PREFIX "widget:required-api";
+const char feature_required_permission[] = FWK_AGL_PREFIX "widget:required-permission";
 
 

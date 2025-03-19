@@ -82,7 +82,7 @@ divert(0)dnl
 ;              Records the installation directory path in the field "wgtdir"
 ;              of the private object only.
 ;
-IF_PERM(:partner:scope-platform)
+IF_AGL_PERM(:partner:scope-platform)
 ;-------------------------------------------------------------------------------
 ;----        F O R E A C H   P R O V I D E D   B I N D I N G     (PLATFORM) ----
 ;-------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ ENDIF
 {{#targets}}
 ;-------------------------------------------------------------------------------
 include(service.inc)
-IF_PERM(:partner:scope-platform)
+IF_AGL_PERM(:partner:scope-platform)
 ;-------------------------------------------------------------------------------
 ;----        F O R E A C H   P R O V I D E D   A P I S           (PLATFORM) ----
 ;-------------------------------------------------------------------------------

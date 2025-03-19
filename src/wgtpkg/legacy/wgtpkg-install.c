@@ -183,7 +183,7 @@ static int for_all_content(const struct wgt_desc *desc, int (*action)(const char
 	rc = action(desc->content_src, desc->content_type);
 	feat = desc->features;
 	while (feat) {
-		if (!strcmp(feat->name, FWK_PREFIX"widget:provided-unit")) {
+		if (!strcmp(feat->name, FWK_AGL_PREFIX"widget:provided-unit")) {
 			src = wgt_info_param(feat, "content.src");
 			type = wgt_info_param(feat, "content.type");
 			rc2 = action(src, type);
@@ -305,7 +305,7 @@ static int install_file_properties(const struct wgt_desc *desc)
 	rc = 0;
 	feat = desc->features;
 	while (feat) {
-		if (!strcmp(feat->name, FWK_PREFIX"widget:file-properties")) {
+		if (!strcmp(feat->name, FWK_AGL_PREFIX"widget:file-properties")) {
 			param = feat->params;
 			while (param) {
 				if (!strcmp(param->value, "executable")) {

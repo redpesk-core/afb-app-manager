@@ -52,7 +52,8 @@ endif()
 # definitions
 add_definitions(
 	-DFWK_CONFIG_DIR="${afm_confdir}"
-	-DFWK_PREFIX="${afm_prefix}"
+	-DFWK_REDPESK_PREFIX="${afm_redpesk_prefix}"
+	-DFWK_AGL_PREFIX="${afm_agl_prefix}"
 	-DFWK_ICON_DIR="${afm_icondir}"
 	-DFWK_APP_DIR="${afm_appdir}"
 	-DWGTPKG_TRUSTED_CERT_DIR="${crypto_trusted_certs_dir}"
