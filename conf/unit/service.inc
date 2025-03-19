@@ -126,6 +126,8 @@ ELSE
 CapabilityBoundingSet=
 ENDIF
 
+ON_REDPESK_PERM(:partner:cgroup-manager, Delegate=yes)
+
 ON_AGL_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
 ON_AGL_PERM(:partner:real-time, IOSchedulingClass=realtime)
 ON_AGL_PERM(:partner:tty,       SupplementaryGroups=tty)
