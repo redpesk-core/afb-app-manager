@@ -116,7 +116,7 @@ ELSE
 User=%i
 Slice=user-%i.slice
 WorkingDirectory=-FULL_APP_WORK_DIR
-ExecStartPre=REDWRAP /bin/mkdir -p APP_WORK_DIR
+ExecStartPre=-REDWRAP /bin/mkdir -p APP_WORK_DIR
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 ENDIF
 IF_PERM(:system:capability:keep-all)
