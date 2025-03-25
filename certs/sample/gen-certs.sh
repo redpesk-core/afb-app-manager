@@ -49,7 +49,6 @@ then
 			-days 3653 \
 			-sha256 \
 			-extfile extensions \
-			-trustout \
 			$sig \
 			-set_serial $s \
 			-setalias "$cn" \
