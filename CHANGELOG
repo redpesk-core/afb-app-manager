@@ -1,3 +1,9 @@
+Version 12.3.3
+--------------
+
+- Remove Homedir creation if Delegate=yes
+- Remove option trustout when creating certificates
+
 Version 12.3.2
 --------------
 
