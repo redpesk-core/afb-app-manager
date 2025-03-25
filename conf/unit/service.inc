@@ -116,7 +116,6 @@ ELSE
 User=%i
 Slice=user-%i.slice
 WorkingDirectory=-FULL_APP_WORK_DIR
-ExecStartPre=-REDWRAP /bin/mkdir -p APP_WORK_DIR
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 ENDIF
 IF_AGL_PERM(:system:capability:keep-all)
@@ -126,7 +125,11 @@ ELSE
 CapabilityBoundingSet=
 ENDIF
 
-ON_REDPESK_PERM(:partner:cgroup-manager, Delegate=yes)
+IF_REDPESK_PERM(:partner:cgroup-manager)
+Delegate=yes
+ELSE
+ExecStartPre=-REDWRAP /bin/mkdir -p APP_WORK_DIR
+ENDIF
 
 ON_AGL_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
 ON_AGL_PERM(:partner:real-time, IOSchedulingClass=realtime)
