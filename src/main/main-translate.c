@@ -41,14 +41,52 @@
 static void usage(const char *name)
 {
 	name = strrchr(name, '/') == NULL ? name : 1 + strrchr(name, '/');
-	printf("usage: %s [-t template] manifest [extra...]\n", name);
+	printf("usage: %s [-t template] manifest [meta...]\n", name);
+	printf("(default template is %s)\n", FWK_UNIT_CONF);
 	exit(EXIT_FAILURE);
+}
+
+static void mergadd(struct json_object *dest, const char *name, struct json_object *obj)
+{
+	struct json_object *fld;
+
+	if (json_object_object_get_ex(dest, name, &fld))
+		rp_jsonc_object_merge(fld, obj, rp_jsonc_merge_option_replace);
+	else
+		json_object_object_add(dest, name, rp_jsonc_clone(obj));
+}
+
+static void add_metadata(struct json_object *manif, struct json_object *meta)
+{
+	struct json_object *metaglob;
+	struct json_object *metatarg, *manitarg, *name, *targ, *mtar;
+	unsigned idx, length;
+
+	/* if global metadata is given */
+	if (json_object_object_get_ex(meta, "#metadata", &metaglob))
+		mergadd(manif, "#metadata", metaglob);
+
+	/* if target metadata is given */
+	if (json_object_object_get_ex(meta, "#metatarget", &metatarg)
+	 && json_object_object_get_ex(manif, MANIFEST_TARGETS, &manitarg)) {
+		/* iterate over targets */
+		length = (unsigned)json_object_array_length(manitarg);
+		for (idx = 0 ; idx < length ; idx++) {
+			targ = json_object_array_get_idx(manitarg, idx);
+			if (json_object_object_get_ex(targ,
+						MANIFEST_SHARP_TARGET, &name)
+			 && json_object_is_type(name, json_type_string)
+			 && json_object_object_get_ex(metatarg,
+				json_object_get_string(name), &mtar))
+				mergadd(targ, "#metatarget", mtar);
+		}
+	}
 }
 
 int main(int ac, char **av)
 {
 	int rc, idx;
-	struct json_object *manif, *extra;
+	struct json_object *manif, *meta;
 	const char *ftempl;
 	char *templ, *prod;
 	size_t szprod;
@@ -74,7 +112,7 @@ int main(int ac, char **av)
 		exit(EXIT_FAILURE);
 	}
 
-	/* read first manifest */
+	/* read the manifest */
 	manif = NULL;
 	rc = manifest_read_and_check(&manif, av[idx]);
 	if (rc < 0) {
@@ -82,16 +120,16 @@ int main(int ac, char **av)
 		exit(EXIT_FAILURE);
 	}
 
-	/* read complements of manifest and merge it */
+	/* read meta data of the manifest and merge them to the manifest */
 	while (++idx < ac) {
-		extra = NULL;
-		rc = rp_yaml_path_to_json_c(&extra, av[idx], NULL);
+		meta = NULL;
+		rc = rp_yaml_path_to_json_c(&meta, av[idx], NULL);
 		if (rc < 0) {
-			fprintf(stderr, "can't read extra file %s: %s", av[idx], strerror(errno));
+			fprintf(stderr, "can't read meta file %s: %s", av[idx], strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-		if (extra != NULL)
-			rp_jsonc_object_merge(manif, extra, rp_jsonc_merge_option_replace);
+		if (meta != NULL)
+			add_metadata(manif, meta);
 	}
 
 	/* process mustach templating now */

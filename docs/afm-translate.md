@@ -3,7 +3,7 @@
 This document the use of the tiny program `afm-translate`.
 
 At time of writing this documentation, the future of this
-command is no clear. It is a valuable program but might evolve
+command is not clear. It is a valuable program but might evolve
 to become a more valuable tool.
 
 ## Goal of afm-translate
@@ -61,7 +61,8 @@ So the diagram showing  `afm-translate` process is:
 ```
 
 The big text on the output contains the below directives,
-each directive occupying one whole line starting with %
+each directive occupying one whole line starting with `%`:
+
 - %nl
         produce an empty line at the end
 
@@ -105,6 +106,66 @@ Caution, the metadata are using field name starting with a hash
 sign that implies that the keys have to be in quotes if the file
 is YAML encoded.
 
+## Metadata
+
+The used metadata are depending of the template. The default
+template provided by afb-app-manager expects two kinds of
+metadata:
+
+- the global metadata
+- the metadata per target
+
+### Global metadata
+
+The entry `#metadata` is at root. It contains the global metadata.
+
+The global metadata are:
+
+- root-dir: root directory of transaction (ex: /)
+
+- install-dir: directory of installation, the directory that contains
+  .rpconfig/manifest.yml (ex: /usr/redpesk/myapp)
+
+- redpak: true or false, depending on being installed for redpak or not
+
+- redpak-id: the redpak identifier (given by the environment variable
+   AFMPKG\_ENVVAR\_REDPAKID on standard flow)
+
+- icons-dir: optional and obsolete, points to the icon directory
+
+### Target's metadata
+
+The entry `#metatarget` is for targets. It is a dictionnary
+containing target's metadata indexed by the target name.
+
+The metadata for each targets are:
+
+- afid: numeric id of the target
+
+- http-port: port allocated to the target
+
+
+### Example of metadata
+
+So sample of metadata below
+
+```yaml
+"#metadata":
+  root-dir: $HOME/app-data/useful
+  install-dir: /usr/redpesk/useful
+  icons-dir: /usr/redpesk/useful
+  redpak: true
+  redpak-id:
+
+"#metatarget":
+  main:
+    afid: 123
+    http-port: 15123
+```
+
+It defines the port 15123 and the afid 123 for the target `main`
+
+
 ## Example
 
 With the file **manifest.yml** and **meta.yaml** below,
@@ -146,13 +207,13 @@ file-properties:
   root-dir: $HOME/app-data/useful
   install-dir: /usr/redpesk/useful
   icons-dir: /usr/redpesk/useful
-  redpak: true
+  redpak: false
   redpak-id:
 
-targets:
-    "#metatarget":
-        id: useful
-        http-port: 15123
+"#metatarget":
+  main:
+    afid: 123
+    http-port: 15123
 ```
 
 ### output
@@ -161,64 +222,62 @@ targets:
 %begin systemd-unit
 %nl
 %systemd-unit system
-%systemd-unit service afm-appli-spawn-binding--@
+%systemd-unit service afm-appli-spawn-binding--main
 [Unit]
 Description=Sandboxed execution of predefined commands
 X-AFM-description=Sandboxed execution of predefined commands
 X-AFM-name=
 X-AFM-shortname=
-X-AFM-id=spawn-binding--
+X-AFM-id=spawn-binding
 X-AFM-version=2.0.0
 X-AFM-author=
 X-AFM-author-email=
 X-AFM-width=
 X-AFM-height=
-X-AFM--ID=
-X-AFM--redpak-id=0
+X-AFM--ID=123
 X-AFM--rootdir=$HOME/app-data/useful
 X-AFM--wgtdir=$HOME/app-data/useful//usr/redpesk/useful
-X-AFM--workdir=$HOME/app-data/useful//home/%i/app-data/spawn-binding
-X-AFM--target-name=
-X-AFM--content=
-X-AFM--type=
-X-AFM--visibility=visible
+X-AFM--workdir=$HOME/app-data/useful//var/scope-platform/spawn-binding
+X-AFM--target-name=main
+X-AFM--content=lib/spawn-binding.so
+X-AFM--type=application/vnd.redpesk.resource
+X-AFM--visibility=hidden
 %nl
-X-AFM--scope=user
-BindsTo=afm-user-session@%i.target
-After=user@%i.service
+X-AFM--scope=platform
+After=afm-system-setup.service
 After=Network.target
 ConditionSecurity=|smack
 ConditionSecurity=|selinux
 %nl
 %nl
 [Service]
-EnvironmentFile=-$HOME/app-data/useful//home/jobol/.locenv/afb/etc/afm/unit.env.d/*
-EnvironmentFile=-$HOME/app-data/useful//home/jobol/.locenv/afb/etc/afm/widget.env.d/spawn-binding/*
+EnvironmentFile=-$HOME/app-data/useful//home/jobol/.locenv/afm/etc/afm/unit.env.d/*
+EnvironmentFile=-$HOME/app-data/useful//home/jobol/.locenv/afm/etc/afm/widget.env.d/spawn-binding/*
 SmackProcessLabel=App:spawn-binding
 SELinuxContext=system_u:system_r:spawn_binding_t:s0
 SuccessExitStatus=0 SIGKILL
 UMask=0077
-User=%i
-Slice=user-%i.slice
-WorkingDirectory=-$HOME/app-data/useful//home/%i/app-data/spawn-binding
-ExecStartPre=/usr/bin/redwrap --redpath $HOME/app-data/useful --  /bin/mkdir -p /home/%i/app-data/spawn-binding
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%i/bus
+User=daemon
+Group=nobody
+Slice=platform.slice
 CapabilityBoundingSet=
 SystemCallFilter=~@clock
 %nl
-Environment=AFM_ID=spawn-binding--
-Environment=AFM_APP_INSTALL_DIR=/usr/redpesk/useful
-Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:/usr/redpesk/useful/bin
-Environment=LD_LIBRARY_PATH=/usr/redpesk/useful/lib
-Environment=AFM_WORKDIR=/home/%i/app-data/spawn-binding
-Environment=AFM_WSAPI_DIR=/run/user/%i/apis/ws
-Environment=XDG_DATA_HOME=/home/%i/app-data/spawn-binding
-Environment=XDG_CONFIG_HOME=/home/%i/app-data/spawn-binding
-Environment=XDG_CACHE_HOME=/home/%i/app-data/spawn-binding
-Environment=XDG_RUNTIME_DIR=/run/user/%i
-SyslogIdentifier=afbd-spawn-binding--
+Environment=AFM_ID=spawn-binding
+Environment=AFM_APP_INSTALL_DIR=$HOME/app-data/useful//usr/redpesk/useful
+Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin:$HOME/app-data/useful//usr/redpesk/useful/bin
+Environment=LD_LIBRARY_PATH=$HOME/app-data/useful//usr/redpesk/useful/lib
+Environment=AFM_WORKDIR=$HOME/app-data/useful//var/scope-platform/spawn-binding
+Environment=AFM_WSAPI_DIR=$HOME/app-data/useful/$HOME/app-data/useful//run/platform/apis/ws
+Environment=XDG_DATA_HOME=$HOME/app-data/useful//var/scope-platform/spawn-binding
+Environment=XDG_CONFIG_HOME=$HOME/app-data/useful//var/scope-platform/spawn-binding
+Environment=XDG_CACHE_HOME=$HOME/app-data/useful//var/scope-platform/spawn-binding
+Environment=XDG_RUNTIME_DIR=$HOME/app-data/useful/$HOME/app-data/useful//run/platform
+SyslogIdentifier=afbd-spawn-binding
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
+Type=oneshot
+ExecStart=/bin/true
 %end systemd-unit
 ```

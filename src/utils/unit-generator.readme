@@ -72,7 +72,7 @@ rp-manifest: 1
 id: useful
 version: 1
 
-#metadata:
+"#metadata":
   root-dir: $HOME/app-data/useful
   install-dir: /usr/redpesk/useful
   redpak:
@@ -86,15 +86,15 @@ targets:
     required-binding:
       - name: lib/useful.so
         value: local
-    #metatarget:
-        id: useful
+    "#metatarget":
+        afid: 123
         http-port: 15123
 ```
 
 so the added metadata are:
 
 ```yaml
-#metadata:
+"#metadata":
   root-dir: $HOME/app-data/useful
   install-dir: /usr/redpesk/useful
   icons-dir: /usr/redpesk/useful
@@ -102,8 +102,9 @@ so the added metadata are:
   redpak-id:
 
 targets:
-    #metatarget:
-        id: useful
+  - (target: main)
+    "#metatarget":
+        afid: 123
         http-port: 15123
 ```
 
@@ -131,7 +132,7 @@ The global metadata are:
 
 The metadata for targets are:
 
-- afid: id of the target
+- afid: numeric id of the target
 
 - http-port: port allocated to the target
 
