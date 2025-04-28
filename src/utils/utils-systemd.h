@@ -74,10 +74,6 @@ struct sd_bus;
 extern int systemd_get_bus(int isuser, struct sd_bus **ret);
 extern void systemd_set_bus(int isuser, struct sd_bus *bus);
 
-extern int systemd_get_afm_units_dir(char *path, size_t pathlen, int isuser);
-extern int systemd_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
-extern int systemd_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
-extern int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
 extern int systemd_daemon_reload(int isuser);
 
 extern char *systemd_unit_dpath_by_name(int isuser, const char *name, int load);
@@ -94,10 +90,6 @@ extern int systemd_unit_stop_pid(int isuser, unsigned pid, char **job);
 
 extern int systemd_unit_pid_of_dpath(int isuser, const char *dpath);
 extern enum SysD_State systemd_unit_state_of_dpath(int isuser, const char *dpath);
-
-extern int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
-extern int systemd_unit_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
-
 extern const char *systemd_name_of_state(enum SysD_State state);
 extern enum SysD_State systemd_state_of_name(const char *name);
 

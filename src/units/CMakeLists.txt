@@ -22,10 +22,14 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_library(afmpkg STATIC afmpkg.c afmpkg-request.c)
-target_link_libraries(afmpkg units utils secwrp)
+add_library(units STATIC
+	apply-mustach.c
+	normalize-unit-file.c
+	unit-process.c
+	unit-utils.c
+)
 
-if(WITH_CONFIG_XML)
-	target_compile_definitions(afmpkg PRIVATE -DWITH_CONFIG_XML=1)
-	target_link_libraries(afmpkg wgt)
-endif(WITH_CONFIG_XML)
+target_compile_options(units PRIVATE ${libjsonc_CFLAGS})
+target_include_directories(units PRIVATE ${libjsonc_INCLUDE_DIRS})
+target_link_libraries(units PUBLIC mustach ${libjsonc_LIBRARIES})
+target_link_directories(units PUBLIC ${libjsonc_LIBRARY_DIRS})

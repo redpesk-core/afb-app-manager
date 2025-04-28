@@ -23,12 +23,10 @@
 ###########################################################################
 
 add_library(utils STATIC
-	apply-mustach.c
 	domain-spec.c
 	manage-afid.c
 	manifest.c
 	mime-type.c
-	normalize-unit-file.c
 	path-entry.c
 	path-type.c
 	permset.c
@@ -41,5 +39,5 @@ add_library(utils STATIC
 
 target_compile_options(utils PRIVATE ${libjsonc_CFLAGS} ${libsystemd_CFLAGS})
 target_include_directories(utils PRIVATE ${libjsonc_INCLUDE_DIRS} ${libsystemd_INCLUDE_DIRS})
-target_link_libraries(utils PUBLIC mustach ${libjsonc_LIBRARIES} ${libsystemd_LIBRARIES})
+target_link_libraries(utils PUBLIC units ${libjsonc_LIBRARIES} ${libsystemd_LIBRARIES})
 target_link_directories(utils PUBLIC ${libjsonc_LIBRARY_DIRS} ${libsystemd_LIBRARY_DIRS})

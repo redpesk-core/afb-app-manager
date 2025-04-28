@@ -53,10 +53,6 @@
 
 #include "utils-systemd.h"
 
-#if !defined(AFM_UNITS_ROOT)
-# define AFM_UNITS_ROOT "/usr/local/lib/systemd"
-#endif
-
 static const char sdb_destination[] = "org.freedesktop.systemd1";
 static const char sdb_path[]        = "/org/freedesktop/systemd1";
 
@@ -409,51 +405,6 @@ static int job_is_pending(struct sd_bus *bus, const char *job)
 /********************************************************************
  *
  *******************************************************************/
-
-static int check_snprintf_result(int rc, size_t buflen)
-{
-	return (rc >= 0 && (size_t)rc >= buflen) ? seterrno(ENAMETOOLONG) : rc;
-}
-
-int systemd_get_afm_units_dir(char *path, size_t pathlen, int isuser)
-{
-	int rc = snprintf(path, pathlen, "%s/%s",
-			AFM_UNITS_ROOT,
-			isuser ? "user" : "system");
-
-	return check_snprintf_result(rc, pathlen);
-}
-
-int systemd_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
-{
-	int rc = snprintf(path, pathlen, "%s/%s/%s.%s",
-			AFM_UNITS_ROOT,
-			isuser ? "user" : "system",
-			unit,
-			uext);
-
-	return check_snprintf_result(rc, pathlen);
-}
-
-int systemd_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext)
-{
-	int rc = snprintf(path, pathlen, "%s/%s/%s.wants/%s.%s",
-			AFM_UNITS_ROOT,
-			isuser ? "user" : "system",
-			wanter,
-			unit,
-			uext);
-
-	return check_snprintf_result(rc, pathlen);
-}
-
-int systemd_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext)
-{
-	int rc = snprintf(path, pathlen, "../%s.%s", unit, uext);
-
-	return check_snprintf_result(rc, pathlen);
-}
-
 int systemd_daemon_reload(int isuser)
 {
 	int rc;
@@ -469,74 +420,6 @@ int systemd_daemon_reload(int isuser)
 		sd_bus_message_unref(ret);
 	}
 	return rc;
-}
-
-int systemd_unit_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
-{
-	DIR *dir;
-	char path[PATH_MAX + 1];
-	struct dirent *dent;
-	int rc, isfile;
-	size_t offset, len;
-	struct stat st;
-
-	/* get the path */
-	rc = systemd_get_afm_units_dir(path, sizeof path - 1, isuser);
-	if (rc < 0)
-		return rc;
-	offset = (size_t)rc;
-
-	/* open the directory */
-	dir = opendir(path);
-	if (!dir)
-		return -1;
-
-	/* prepare path */
-	path[offset++] = '/';
-
-	/* read the directory */
-	for(;;) {
-		/* get next entry */
-		errno = 0;
-		dent = readdir(dir);
-		if (dent == NULL) {
-			/* end or error */
-			rc = (!errno) - 1;
-			break;
-		}
-
-		/* is a file? */
-		if (dent->d_type == DT_REG)
-			isfile = 1;
-		else if (dent->d_type != DT_UNKNOWN)
-			isfile = 0;
-		else {
-			rc = fstatat(dirfd(dir), dent->d_name, &st, AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT);
-			if (rc < 0)
-				break;
-			isfile = S_ISREG(st.st_mode);
-		}
-
-		/* calls the callback if is a file */
-		if (isfile) {
-			len = strlen(dent->d_name);
-			if (offset + len >= sizeof path) {
-				rc = seterrno(ENAMETOOLONG);
-				break;
-			}
-			memcpy(&path[offset], dent->d_name, 1 + len);
-			rc = callback(closure, &path[offset], path, isuser);
-			if (rc)
-				break;
-		}
-	}
-	closedir(dir);
-	return rc;
-}
-
-int systemd_unit_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
-{
-	return systemd_unit_list(1, callback, closure) ? : systemd_unit_list(0, callback, closure);
 }
 
 char *systemd_unit_dpath_by_name(int isuser, const char *name, int load)

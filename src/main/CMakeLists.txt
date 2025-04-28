@@ -58,7 +58,7 @@ if(WITH_TOOLS)
 	target_link_libraries(afm-domain-spec utils)
 	install(TARGETS afm-domain-spec DESTINATION ${CMAKE_INSTALL_BINDIR})
 	add_executable(afm-translate main-translate.c)
-	target_link_libraries(afm-translate utils)
+	target_link_libraries(afm-translate units utils)
 	install(TARGETS afm-translate DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 	if(${gnutls_FOUND})

@@ -24,9 +24,10 @@
 
 #pragma once
 
-#include "unit-process.h"
-
-extern int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure);
-extern int unit_generator_install(struct json_object *manifest, const struct unitconf *conf);
-extern int unit_generator_uninstall(struct json_object *manifest, const struct unitconf *conf);
+extern int units_get_afm_units_dir(char *path, size_t pathlen, int isuser);
+extern int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
+extern int units_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
+extern int units_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
+extern int units_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
+extern int units_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 

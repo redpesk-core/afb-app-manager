@@ -69,7 +69,7 @@ add_definitions(
 
 ###########################################################################
 
-include_directories(. afmpkg cert utils secmgr wgtpkg)
+include_directories(. afmpkg cert utils units secmgr wgtpkg)
 
 add_subdirectory(afmpkg)
 add_subdirectory(binding)
@@ -79,6 +79,7 @@ add_subdirectory(rpm-plugin)
 add_subdirectory(secmgr)
 add_subdirectory(tests)
 add_subdirectory(utils)
+add_subdirectory(units)
 add_subdirectory(mustach)
 add_subdirectory(wgtpkg)
 

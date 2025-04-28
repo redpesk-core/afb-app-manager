@@ -36,6 +36,7 @@
 
 #include "utils-json.h"
 #include "utils-systemd.h"
+#include "unit-utils.h"
 #include <rp-utils/rp-file.h>
 
 #include "afm-udb.h"
@@ -507,9 +508,9 @@ int afm_udb_update(struct afm_udb *afudb)
 		result = -1;
 	else {
 		/* scan the units */
-		if (afudb->user && systemd_unit_list(1, update_cb, &updt) < 0)
+		if (afudb->user && units_list(1, update_cb, &updt) < 0)
 			result = -1;
-		else if (afudb->system && systemd_unit_list(0, update_cb, &updt) < 0)
+		else if (afudb->system && units_list(0, update_cb, &updt) < 0)
 			result = -1;
 		else {
 			/* commit the result */

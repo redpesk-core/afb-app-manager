@@ -24,4 +24,4 @@
 
 
 add_executable(test-mustach test-mustach.c)
-target_link_libraries(test-mustach PUBLIC utils)
+target_link_libraries(test-mustach PUBLIC units)
