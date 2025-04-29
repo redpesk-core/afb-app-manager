@@ -22,14 +22,23 @@
  $RP_END_LICENSE$
 */
 
+#include <string.h>
+#include "normalize-unit-file.h"
+
 /*
  * normalize unit files: remove comments, remove heading blanks,
  * make single lines
  */
-void normalize_unit_file(char *content)
+size_t normalize_unit_file(char *content)
+{
+	return normalize_unit_file_cmtchrs(content, ";#");
+}
+
+size_t normalize_unit_file_cmtchrs(char *content, const char *cmtchrs)
 {
 	char *read, *write, c;
 
+	cmtchrs = cmtchrs ? cmtchrs : "";
 	read = write = content;
 	c = *read++;
 	while (c) {
@@ -37,15 +46,15 @@ void normalize_unit_file(char *content)
 		case '\n':
 		case ' ':
 		case '\t':
-			/* remove blank lines and blanck at line begin */
+			/* remove blank lines and blanks at line begin */
 			c = *read++;
 			break;
-		case '#':
-		case ';':
-			/* remove comments until end of line */
-			do { c = *read++; } while(c && c != '\n');
-			break;
 		default:
+			if (strchr(cmtchrs, c)) {
+				/* remove comments until end of line */
+				do { c = *read++; } while(c && c != '\n');
+				break;
+			}
 			/* read the line */
 			*write++ = c;
 			do { *write++ = c = *read++; } while(c && c != '\n');
@@ -55,4 +64,6 @@ void normalize_unit_file(char *content)
 		}
 	}
 	*write = c;
+	return (size_t)(write - content);
 }
+

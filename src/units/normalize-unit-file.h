@@ -24,4 +24,5 @@
 
 #pragma once
 
-extern void normalize_unit_file(char *content);
+extern size_t normalize_unit_file_cmtchrs(char *content, const char *cmtchrs);
+extern size_t normalize_unit_file(char *content);
