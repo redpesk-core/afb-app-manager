@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 #include <json-c/json.h>
 
@@ -37,12 +40,252 @@
 #include <manifest.h>
 #include <apply-mustach.h>
 #include <normalize-unit-file.h>
+#include <unit-process.h>
+#include <unit-utils.h>
+
+static const char version[] = "0.2";
+
+/*************************************************************************/
+/* the legacy method is anterior to version 0.2 */
+static void method_legacy(const char *ftempl, struct json_object *manif)
+{
+	int rc;
+	char *templ, *prod;
+	size_t szprod;
+
+	/* read template */
+	rc = rp_file_get(ftempl, &templ, NULL);
+	if (rc < 0) {
+		fprintf(stderr, "can't read template file %s: %s\n",
+						ftempl, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* process mustach templating now */
+	rc = apply_mustach(templ, manif, &prod, &szprod);
+	if (rc < 0) {
+		fprintf(stderr, "expansion of template failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* normalize the result */
+	normalize_unit_file(prod);
+	fputs(prod, stdout);
+}
+
+/*************************************************************************/
+/* the modern method is the standard output since version 0.2 */
+static int modern_cb(void *closure, char *text, size_t size)
+{
+	fputs(text, stdout);
+	return 0;
+}
+
+static void method_modern(const char *ftempl, struct json_object *manif)
+{
+	int rc;
+
+	/* read template */
+	rc = unit_process_open_template(ftempl);
+	if (rc < 0) {
+		fprintf(stderr, "can't read template file %s: %s\n",
+						ftempl, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* process mustach templating now */
+	rc = unit_process_raw(manif, modern_cb, NULL);
+	if (rc < 0) {
+		fprintf(stderr, "expansion of template failed\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+/*************************************************************************/
+/* the split method is here since version 0.2 */
+
+static int runcmdX(const char *argv[])
+{
+	int rc;
+	pid_t pid = vfork();
+	if (pid == 0) {
+		execv(argv[0], (char**)argv);
+		_exit(EXIT_FAILURE);
+	}
+	waitpid(pid, &rc, 0);
+	return (WIFEXITED(rc) && WEXITSTATUS(rc) == 0) - 1;
+}
+
+static int runcmd2(const char *cmd, const char *arg1, const char *arg2)
+{
+	const char *argv[] = { cmd, arg1, arg2, NULL };
+	return runcmdX(argv);
+}
+
+static int purgedir(const char *dir)
+{
+	return runcmd2("/usr/bin/rm", "-r", dir);
+}
+
+static int makedir(const char *dir)
+{
+	return runcmd2("/usr/bin/mkdir", "-p", dir);
+}
+
+static int makefiledir(char *path)
+{
+	int rc = 0;
+	char *p = strrchr(path, '/');
+	if (p) {
+		*p = 0;
+		rc = makedir(path);
+		*p = '/';
+	}
+	return rc;
+}
+
+static int writefile(char *path, const char *content)
+{
+	int rc;
+	rc = makefiledir(path);
+	if (rc == 0)
+		rc = open(path, O_WRONLY|O_CREAT,
+			S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+	if (rc >= 0) {
+		size_t len = strlen(content);
+		ssize_t wlen = write(rc, content, len);
+		close(rc);
+		rc = (wlen == (ssize_t)len) - 1;
+	}
+	return rc;
+}
+
+static int writelink(char *path, const char *content)
+{
+	int rc = makefiledir(path);
+	return rc == 0 ? symlink(content, path) : rc;
+}
+
+static int split_cb(void *closure, const struct unitdesc *units, int nrunits)
+{
+	const struct unitdesc *u;
+	const char *tmpdir = closure;
+	char upath[2000], wpath[2000], targ[2000];
+	const char *ext;
+	int rc, idx, isuser;
+	size_t ldir;
+
+	ldir = strlen(tmpdir);
+	strcpy(upath, tmpdir);
+	strcpy(wpath, tmpdir);
+	upath[ldir] = wpath[ldir] = '/';
+	ldir++;
+	for (idx = 0 ; idx < nrunits ; idx++) {
+		u = &units[idx];
+		if (u->name == NULL) {
+			fprintf(stderr, "name error, a unit has no name");
+			return -1;
+		}
+		if (u->type == unittype_unknown) {
+			fprintf(stderr, "type error, unit %s has unknown type", u->name);
+			return -1;
+		}
+		if (u->scope == unitscope_unknown) {
+			fprintf(stderr, "scope error, unit %s has unknown scope", u->name);
+			return -1;
+		}
+
+		isuser = u->scope == unitscope_user;
+		ext = u->type == unittype_socket ? "socket" : "service";
+		units_get_afm_unit_path(&upath[ldir], (sizeof upath) - ldir,
+					isuser, u->name, ext);
+		wpath[ldir] = targ[ldir] = 0;
+		if (u->wanted_by) {
+			units_get_afm_wants_unit_path(&wpath[ldir], (sizeof wpath) - ldir,
+						isuser, u->wanted_by, u->name, ext);
+			units_get_wants_target(targ, sizeof targ, u->name, ext);
+		}
+
+		rc = writefile(upath, u->content);
+		if (rc < 0) {
+			fprintf(stderr, "failed to write file %s\n", upath);
+			return -1;
+		}
+		if (u->wanted_by) {
+			rc = writelink(wpath, targ);
+			if (rc < 0) {
+				fprintf(stderr, "failed to write link %s\n", wpath);
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void method_split(const char *ftempl, struct json_object *manif)
+{
+	int rc;
+	char tempdir[50];
+	const char *argv[8];
+
+	/* read template */
+	rc = unit_process_open_template(ftempl);
+	if (rc < 0) {
+		fprintf(stderr, "can't read template file %s: %s\n",
+						ftempl, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* create temporary directory */
+	strcpy(tempdir, "./@trXXXXXX");
+	if (mkdtemp(tempdir) == NULL) {
+		fprintf(stderr, "unable to create temporary directory: %s\n",
+					strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* process mustach templating now */
+	rc = unit_process_split(manif, split_cb, tempdir);
+	if (rc < 0) {
+		purgedir(tempdir);
+		fprintf(stderr, "expansion of template failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	argv[0] = "/usr/bin/tar";
+	argv[1] = "-C";
+	argv[2] = tempdir;
+	argv[3] = "--owner=root:0";
+	argv[4] = "--group=root:0";
+	argv[5] = "-c";
+	argv[6] = ".";
+	argv[7] = NULL;
+
+	rc = runcmdX(argv);
+	purgedir(tempdir);
+	if (rc < 0) {
+		fprintf(stderr, "failed to create tar file\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+/*************************************************************************/
 
 static void usage(const char *name)
 {
-	name = strrchr(name, '/') == NULL ? name : 1 + strrchr(name, '/');
-	printf("usage: %s [-t template] manifest [meta...]\n", name);
-	printf("(default template is %s)\n", FWK_UNIT_CONF);
+	printf("usage: %s (-h | --help)\n", name);
+	printf("  or   %s (-v | --version)\n", name);
+	printf("  or   %s [OPTION...] manifest [meta...]\n", name);
+	printf("where OPTION in:\n"
+	       " -l        use legacy translation\n"
+	       " -m        use modern translation\n"
+	       " -s        use split translation (produce tar file)\n"
+	       " -o FILE   names the output FILE\n"
+	       " -t FILE   use the template FILE (default %s)\n"
+	       " -u DIR    unit destination for split (default %s)\n",
+		FWK_UNIT_CONF,
+		units_set_root_dir(NULL));
 	exit(EXIT_FAILURE);
 }
 
@@ -87,28 +330,54 @@ int main(int ac, char **av)
 {
 	int rc, idx;
 	struct json_object *manif, *meta;
-	const char *ftempl;
-	char *templ, *prod;
-	size_t szprod;
+	const char *ftempl, *me, *unitdir, *fileout;
+	enum { Legacy, Modern, Split } method = Modern;
 
-	/* compute template name */
-	if (ac > 1 && strcmp(av[1], "-t") != 0) {
-		idx = 1;
-		ftempl = FWK_UNIT_CONF;
-	}
-	else {
-		idx = 3;
-		ftempl = av[2];
+	/* name of current program */
+	me = strrchr(av[0], '/') == NULL ? av[0] : 1 + strrchr(av[0], '/');
+
+	/* default settings */
+	ftempl = FWK_UNIT_CONF;
+	fileout = unitdir = NULL;
+
+	/* scan options */
+	while((rc = getopt(ac, av, "?hlmo:st:u:v")) > 0) {
+		switch((char)rc) {
+		default:
+			fprintf(stderr, "unrecognized option '%c'\n", (char)rc);
+			/*@fallthrough@*/
+		case '?':
+		case 'h':
+			usage(me);
+			break;
+		case 'l':
+			method = Legacy;
+			break;
+		case 'm':
+			method = Modern;
+			break;
+		case 'o':
+			fileout = optarg;
+			break;
+		case 's':
+			method = Split;
+			break;
+		case 't':
+			ftempl = optarg;
+			break;
+		case 'u':
+			unitdir = optarg;
+			break;
+		case 'v':
+			printf("%s v%s\n", me, version);
+			return EXIT_SUCCESS;
+		}
 	}
 
 	/* check argument count */
-	if (ac < idx)
-		usage(av[0]);
-
-	/* read template */
-	rc = rp_file_get(ftempl, &templ, NULL);
-	if (rc < 0) {
-		fprintf(stderr, "can't read template file %s: %s", ftempl, strerror(errno));
+	idx = optind;
+	if (ac <= idx) {
+		fprintf(stderr, "no manifest given\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -116,7 +385,8 @@ int main(int ac, char **av)
 	manif = NULL;
 	rc = manifest_read_and_check(&manif, av[idx]);
 	if (rc < 0) {
-		fprintf(stderr, "can't read manifest file %s: %s", av[idx], strerror(errno));
+		fprintf(stderr, "can't read manifest file %s: %s\n",
+						av[idx], strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -125,23 +395,34 @@ int main(int ac, char **av)
 		meta = NULL;
 		rc = rp_yaml_path_to_json_c(&meta, av[idx], NULL);
 		if (rc < 0) {
-			fprintf(stderr, "can't read meta file %s: %s", av[idx], strerror(errno));
+			fprintf(stderr, "can't read meta file %s: %s\n",
+						av[idx], strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		if (meta != NULL)
 			add_metadata(manif, meta);
 	}
 
-	/* process mustach templating now */
-	rc = apply_mustach(templ, manif, &prod, &szprod);
-	if (rc < 0) {
-		fprintf(stderr, "expansion of template failed");
-		exit(EXIT_FAILURE);
+	/* check, opens the output */
+	if (fileout != NULL) {
+		stdout = freopen(fileout, "w", stdout);
+		if (stdout == NULL) {
+			fprintf(stderr, "can't create output file %s\n", fileout);
+			exit(EXIT_FAILURE);
+		}
 	}
 
-	/* normalize the result */
-	normalize_unit_file(prod);
-	fputs(prod, stdout);
+	/* set the unit dir if required */
+	if (unitdir != NULL)
+		units_set_root_dir(unitdir);
+
+	/* process */
+	if (method == Legacy)
+		method_legacy(ftempl, manif);
+	else if (method == Split)
+		method_split(ftempl, manif);
+	else
+		method_modern(ftempl, manif);
 
 	return EXIT_SUCCESS;
 }

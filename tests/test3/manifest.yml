@@ -1,0 +1,17 @@
+rp-manifest: 1
+
+id: example3
+version: "1.0"
+
+description: >
+  tiny example
+
+targets:
+  - target: main
+    content:
+       src: /usr/share/example3/a/f2
+       type: application/x-executable
+    provided-api:
+      - name: toto
+        value: auto
+

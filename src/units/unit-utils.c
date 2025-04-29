@@ -36,6 +36,8 @@
 # define AFM_UNITS_ROOT "/usr/local/lib/systemd"
 #endif
 
+static const char *afm_units_root = AFM_UNITS_ROOT;
+
 /********************************************************************
  *
  *******************************************************************/
@@ -48,10 +50,18 @@ static int check_snprintf_result(int rc, size_t buflen)
 	return -1;
 }
 
+const char *units_set_root_dir(const char *dir)
+{
+	const char *prev = afm_units_root;
+	if (dir)
+		afm_units_root = dir;
+	return prev;
+}
+
 int units_get_afm_units_dir(char *path, size_t pathlen, int isuser)
 {
 	int rc = snprintf(path, pathlen, "%s/%s",
-			AFM_UNITS_ROOT,
+			afm_units_root,
 			isuser ? "user" : "system");
 
 	return check_snprintf_result(rc, pathlen);
@@ -60,7 +70,7 @@ int units_get_afm_units_dir(char *path, size_t pathlen, int isuser)
 int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.%s",
-			AFM_UNITS_ROOT,
+			afm_units_root,
 			isuser ? "user" : "system",
 			unit,
 			uext);
@@ -71,7 +81,7 @@ int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *
 int units_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.wants/%s.%s",
-			AFM_UNITS_ROOT,
+			afm_units_root,
 			isuser ? "user" : "system",
 			wanter,
 			unit,

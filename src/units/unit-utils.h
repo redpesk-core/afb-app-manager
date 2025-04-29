@@ -24,6 +24,7 @@
 
 #pragma once
 
+extern const char *units_set_root_dir(const char *dir);
 extern int units_get_afm_units_dir(char *path, size_t pathlen, int isuser);
 extern int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
 extern int units_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);

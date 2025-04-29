@@ -1,0 +1,12 @@
+
+"#metadata":
+  root-dir: "[ROOTDIR]"
+  install-dir: "[INSTALLDIR]"
+  icons-dir: "[ICONDIR]"
+  redpak: true
+  redpak-id: "[REDPAKID]"
+
+"#metatarget":
+  main:
+    afid: 11111
+    http-port: 22222

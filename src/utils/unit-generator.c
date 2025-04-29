@@ -101,7 +101,7 @@ int unit_generator_process(
 	if (rc)
 		RP_ERROR("can't set the metadata. %m");
 	else
-		rc = unit_process(jdesc, config, process, closure);
+		rc = unit_process_legacy(jdesc, config, process, closure);
 	return rc;
 }
 

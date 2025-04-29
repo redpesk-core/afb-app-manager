@@ -58,7 +58,7 @@ static char *template;
  * Search for the 'pattern' in 'text'.
  * Returns 1 if 'text' matches the 'pattern' or else returns 0.
  * When returning 1 and 'after' isn't NULL, the pointer to the
- * first character after the pettern in 'text' is stored in 'after'.
+ * first character after the pattern in 'text' is stored in 'after'.
  * The characters '\n' and ' ' have a special meaning in the search:
  *  * '\n': matches any space or tabs (including none) followed
  *          either by '\n' or '\0' (end of the string)
@@ -174,6 +174,16 @@ static size_t pack(char *text, char purge)
  */
 static size_t dedup_slashes(char *text)
 {
+#ifndef NO_BLANK_LINE
+#  define NO_BLANK_LINE 1
+#endif
+#if !NO_BLANK_LINE
+#  define NRNLMAX 2
+#else
+#  define NRNLMAX 1
+#endif
+
+	int nrnl = NRNLMAX;  /* count of successives new line (drop first empty lines) */
 	int nrs;       /* count of successives slashes */
 	int acnt;      /* allowed count of successives slashes */
 	char *read;    /* read iterator */
@@ -183,26 +193,34 @@ static size_t dedup_slashes(char *text)
 	/* iteration over lines */
 	c = *(write = read = text);
 	while (c) {
-		if (c != '/') {
-			*write++ = c;
+		if (c == '\n') {
+			if (++nrnl <= NRNLMAX)
+				*write++ = c;
 			c = *++read;
 		}
 		else {
-			/* compute the allowed count of successive slashes */
-#define PRECEDED_BY(txt) ((size_t)(write - text) >= strlen(txt) && !memcmp(txt, write - strlen(txt), strlen(txt)))
-			if (PRECEDED_BY("http:") || PRECEDED_BY("https:"))
-				acnt = 2;
-			else if (PRECEDED_BY("file:"))
-				acnt = 3;
-			else
-				acnt = 1;
-#undef PRECEDED_BY
-			for (nrs = 0 ; c == '/' && nrs < acnt ; nrs++) {
-				*write++ = '/';
+			nrnl = 0;
+			if (c != '/') {
+				*write++ = c;
 				c = *++read;
 			}
-			while (c == '/')
-				c = *++read;
+			else {
+				/* compute the allowed count of successive slashes */
+#define PRECEDED_BY(txt) ((size_t)(write - text) >= strlen(txt) && !memcmp(txt, write - strlen(txt), strlen(txt)))
+				if (PRECEDED_BY("http:") || PRECEDED_BY("https:"))
+					acnt = 2;
+				else if (PRECEDED_BY("file:"))
+					acnt = 3;
+				else
+					acnt = 1;
+#undef PRECEDED_BY
+				for (nrs = 0 ; c == '/' && nrs < acnt ; nrs++) {
+					*write++ = '/';
+					c = *++read;
+				}
+				while (c == '/')
+					c = *++read;
+			}
 		}
 	}
 	*write = 0;
@@ -274,6 +292,7 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 		desc->name_length = 0;
 	}
 
+	/* check if wanted-by */
 	if (iswanted) {
 		len = strcspn(wanted, " \t\n");
 		desc->wanted_by = strndup(wanted, len);
@@ -283,93 +302,105 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
 		desc->wanted_by_length = 0;
 	}
 
+	/* record the normalized content */
 	desc->content = spec;
-	pack(spec, '%');
-	desc->content_length = dedup_slashes(spec);
+	desc->content_length = pack(spec, '%');
 
 	return 0;
 }
 
 /*
- * Processes all the units of the 'corpus'.
+ * split the 'corpus' to its units (change the corpus by inserting nuls)
  * Each unit of the corpus is separated and packed and its
  * charactistics are stored in a descriptor.
- * At the end if no error was found, calls the function 'process'
- * with its given 'closure' and the array descripbing the units.
- * Return 0 in case of success or a negative value in case of error.
+ * At the end if no error was found, returns the count of units found and
+ * store them descriptor in units.
+ * A negative value is returned in case of error.
  */
-static
-int process_all_units(
+int unit_corpus_split(
 	char *corpus,
-	const struct unitconf *config,
-	int (*process)(void *closure, const struct generatedesc *desc),
-	void *closure,
-	struct json_object *jdesc
+	struct unitdesc **units
 ) {
-	int rc, rc2;
+	int rc, rc2, nrunits;
 	char *beg, *end, *befbeg, *aftend;
-	struct unitdesc *u;
-	struct generatedesc gdesc;
+	struct unitdesc *u, *arrunits;
+	size_t size;
 
-	gdesc.conf = config;
-	gdesc.desc = jdesc;
-	gdesc.units = NULL;
-	gdesc.nunits = 0;
+	/* initialize */
+	arrunits = NULL;
+	nrunits = 0;
 	rc = rc2 = 0;
 
 	/* while there is a unit in the corpus */
-	for(;;) {
+	while(corpus != NULL) {
+		/* locate the %begin / %end tags */
 		befbeg = offset(corpus, "%begin ", &beg);
 		end = offset(corpus, "%end ", &aftend);
 		if (!befbeg) {
 			if (end) {
 				/* %end detected without %begin */
 				RP_ERROR("unexpected %%end at end");
-				rc = rc ? :-EINVAL;
+				rc2 = -EINVAL;
 			}
-			break;
+			corpus = NULL;
 		}
-		if (!end) {
+		else if (!end) {
 			/* unterminated unit !! */
 			RP_ERROR("unterminated unit description!!");
 			corpus = beg;
 			rc2 = -EINVAL;
-		} else if (end < befbeg) {
+			corpus = NULL;
+		}
+		else if (end < befbeg) {
 			/* sequence %end ... %begin detected !! */
 			RP_ERROR("unexpected %%end before %%begin");
 			corpus = aftend;
 			rc2 = -EINVAL;
-		} else {
+			corpus = NULL;
+		}
+		else {
 			befbeg =  offset(beg, "%begin ", NULL);
 			if (befbeg && befbeg < end) {
 				/* sequence %begin ... %begin ... %end detected !! */
 				RP_ERROR("unexpected %%begin after %%begin");
 				corpus = beg;
 				rc2 = -EINVAL;
-			} else {
+				corpus = NULL;
+			}
+			else {
+				/* looks good, extract the unit from the corpus */
 				*end = 0;
 				corpus = aftend;
+
+				/* process systemd sprcific values */
 				if (matches("systemd-unit\n", beg, &beg)) {
 					if (!matches("systemd-unit\n", aftend, &corpus)) {
 						/* end doesnt match */
 						RP_ERROR("unmatched %%begin systemd-unit (matching end mismatch)");
 						rc2 = -EINVAL;
-					} else {
+					}
+					else {
 						/* allocates a descriptor for the unit */
-						u = realloc((void*)gdesc.units, ((unsigned)gdesc.nunits + 1) * sizeof *gdesc.units);
-						if (u == NULL)
+						size = ((unsigned)nrunits + 1) * sizeof *u;
+						u = realloc(arrunits, size);
+						if (u == NULL) {
 							rc2 = -ENOMEM;
+							corpus = NULL;
+						}
 						else {
 							/* creates the unit description */
-							gdesc.units = u;
-							u = &u[gdesc.nunits];
+							arrunits = u;
+							u = &u[nrunits];
 							memset(u, 0, sizeof *u);
 							rc2 = process_one_unit(beg, u);
 							if (rc2 >= 0)
-								gdesc.nunits++;
+								nrunits++;
 						}
 					}
-				} else {
+				}
+
+				/* process other values */
+				else {
 					RP_ERROR("unexpected %%begin name");
 					rc2 = -EINVAL;
 				}
@@ -377,27 +408,23 @@ int process_all_units(
 		}
 		/* records the error if there is an error */
 		if (rc2 < 0) {
-			rc = rc ? : rc2;
+			rc = rc ? rc : rc2;
 			rc2 = 0;
 		}
 	}
-
-	/* call the function that processes the units */
-	if (rc == 0 && process)
-		rc = process(closure, &gdesc);
-
-	/* cleanup and frees */
-	while(gdesc.nunits) {
-		free((void*)(gdesc.units[--gdesc.nunits].name));
-		free((void*)(gdesc.units[gdesc.nunits].wanted_by));
+	if (rc >= 0) {
+		*units = arrunits;
+		rc = nrunits;
 	}
-	free((void*)gdesc.units);
-
+	else {
+		free(arrunits);
+		*units = NULL;
+	}
 	return rc;
 }
 
 /*
- * Clear the unit generator
+ * Clear the unit processor template
  */
 void unit_process_close_template()
 {
@@ -406,7 +433,8 @@ void unit_process_close_template()
 }
 
 /*
- * Initialises the unit generator with the content of the file of path 'filename'.
+ * Initialises the unit processor template
+ * with the content of the file of path 'filename'.
  * Returns 0 in case of success or a negative number in case of error.
  */
 int unit_process_open_template(const char *filename)
@@ -427,33 +455,179 @@ int unit_process_open_template(const char *filename)
 }
 
 /*
- * Applies the object 'jdesc' augmented of meta data coming
- * from 'config' to the current unit generator.
- * The current unit generator will be set to the default one if not unit
- * was previously set using the function 'unit_generator_open_template'.
- * The callback function 'process' is then called with the
- * unit descriptors array and the expected closure.
- * Return what returned process in case of success or a negative
- * error code.
+ * calls the process with template instance using jdesc
  */
-int unit_process(
+int unit_process_raw(
 	struct json_object *jdesc,
-	const struct unitconf *config,
-	int (*process)(void *closure, const struct generatedesc *desc),
+	int (*process)(void *closure, char *text, size_t size),
 	void *closure
 ) {
 	int rc;
 	size_t size;
 	char *instance;
 
+	/* ensure template */
 	rc = template ? 0 : unit_process_open_template(NULL);
 	if (!rc) {
+		/* apply mustach template to jdesc */
+		size = 0;
 		instance = NULL;
 		rc = apply_mustach(template, jdesc, &instance, &size);
-		if (!rc)
-			rc = process_all_units(instance, config, process, closure, jdesc);
+		if (!rc) {
+			/* process instanciated template as units */
+			size = dedup_slashes(instance);
+			rc = process(closure, instance, size);
+		}
 		free(instance);
 	}
 	return rc;
+}
+
+/******************************************************************************/
+
+/**
+ * Structure used by `unit_process_split` in its callback
+ * for unit_process_raw
+ */
+struct for_split
+{
+	/** callback for processing splitted units */
+	int (*process)(void *closure, const struct unitdesc *units, int nrunits);
+	/** closures for the callback */
+	void *closure;
+};
+
+/*
+ * Processes all the units of the 'corpus'.
+ * Each unit of the corpus is separated and packed and its
+ * charactistics are stored in a descriptor.
+ * At the end if no error was found, calls the function 'process'
+ * with its given 'closure' and the array descripbing the units.
+ * Return 0 in case of success or a negative value in case of error.
+ */
+static
+int internal_for_split(
+	void *closure,
+	char *corpus,
+	size_t size
+) {
+	int rc, nru;
+	struct unitdesc *units;
+	struct for_split *fspl = closure;
+
+	/* split the corpus */
+	rc = nru = unit_corpus_split(corpus, &units);
+	if (rc >= 0) {
+		/* call the function that processes the units */
+		if (rc > 0 && fspl->process)
+			rc = fspl->process(fspl->closure, units, nru);
+
+		/* cleanup and frees */
+		while(nru) {
+			nru--;
+			free((void*)(units[nru].name));
+			free((void*)(units[nru].wanted_by));
+		}
+		free(units);
+	}
+
+	return rc;
+}
+
+/*
+ * calls the process with splitted files from template instance using jdesc
+ */
+int unit_process_split(
+	struct json_object *jdesc,
+	int (*process)(void *closure, const struct unitdesc *units, int nrunits),
+	void *closure
+) {
+	struct for_split fspl = {
+			.process = process,
+			.closure = closure
+		};
+
+	return unit_process_raw(jdesc, internal_for_split, &fspl);
+}
+
+/******************************************************************************/
+
+/**
+ * Structure used by `unit_process_legacy` in its callback
+ * for unit_process_raw
+ */
+struct for_legacy
+{
+	/** descriptor to pass in generatdesc */
+	struct json_object *jdesc;
+	/** config to pass in generatdesc */
+	const struct unitconf *config;
+	/** callback receiving the generatdesc */
+	int (*process)(void *closure, const struct generatedesc *desc);
+	/** closure for the callback */
+	void *closure;
+};
+
+/*
+ * Processes all the units of the 'corpus'.
+ * Each unit of the corpus is separated and packed and its
+ * charactistics are stored in a descriptor.
+ * At the end if no error was found, calls the function 'process'
+ * with its given 'closure' and the array descripbing the units.
+ * Return 0 in case of success or a negative value in case of error.
+ */
+static
+int internal_legacy(
+	void *closure,
+	char *corpus,
+	size_t size
+) {
+	int rc, nru;
+	struct generatedesc gdesc;
+	struct unitdesc *units;
+	struct for_legacy *fleg = closure;
+
+	/* split the corpus */
+	rc = nru = unit_corpus_split(corpus, &units);
+	if (rc >= 0) {
+		/* call the function that processes the units */
+		if (rc > 0 && fleg->process) {
+			gdesc.nunits = nru;
+			gdesc.units = units;
+			gdesc.conf = fleg->config;
+			gdesc.desc = fleg->jdesc;
+			rc = fleg->process(fleg->closure, &gdesc);
+		}
+
+		/* cleanup and frees */
+		while(nru) {
+			nru--;
+			free((void*)(units[nru].name));
+			free((void*)(units[nru].wanted_by));
+		}
+		free(units);
+	}
+
+	return rc;
+}
+
+/*
+ * calls the process with splitted files from template instance using jdesc
+ * and some other data
+ */
+int unit_process_legacy(
+	struct json_object *jdesc,
+	const struct unitconf *config,
+	int (*process)(void *closure, const struct generatedesc *desc),
+	void *closure
+) {
+	struct for_legacy fleg = {
+			.jdesc = jdesc,
+			.config = config,
+			.process = process,
+			.closure = closure
+		};
+
+	return unit_process_raw(jdesc, internal_legacy, &fleg);
 }
 
