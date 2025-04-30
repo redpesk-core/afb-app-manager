@@ -256,7 +256,7 @@ static void print(FILE *file, const char *string, int escape)
 		do {
 			switch(*string) {
 			case '%': fputs("%%", file); break;
-			case '\n': fputs("\\n\\\n", file); break;
+			case '\n': fputs("\\n", file); break;
 			default: putc(*string, file); break;
 			}
 		} while(*++string);
