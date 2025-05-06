@@ -48,7 +48,6 @@
 
 static const char string_targets[] = "targets";
 
-
 static int add_metadata(struct json_object *jdesc, const struct unitconf *config)
 {
 	struct json_object *targets, *targ, *obj;
@@ -79,6 +78,85 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *config
 	 && !rp_jsonc_add(jdesc, "#metadata", json_object_get(config->metadata)))
 		return -1;
 	return 0;
+}
+
+/**
+ * Structure used by `unit_process_legacy` in its callback
+ * for unit_process_raw
+ */
+struct for_legacy
+{
+	/** descriptor to pass in generatdesc */
+	struct json_object *jdesc;
+	/** config to pass in generatdesc */
+	const struct unitconf *config;
+	/** callback receiving the generatdesc */
+	int (*process)(void *closure, const struct generatedesc *desc);
+	/** closure for the callback */
+	void *closure;
+};
+
+/*
+ * Processes all the units of the 'corpus'.
+ * Each unit of the corpus is separated and packed and its
+ * charactistics are stored in a descriptor.
+ * At the end if no error was found, calls the function 'process'
+ * with its given 'closure' and the array descripbing the units.
+ * Return 0 in case of success or a negative value in case of error.
+ */
+static
+int internal_legacy(
+	void *closure,
+	char *corpus,
+	size_t size
+) {
+	int rc, nru;
+	struct generatedesc gdesc;
+	struct unitdesc *units;
+	struct for_legacy *fleg = closure;
+
+	/* split the corpus */
+	rc = nru = unit_corpus_split(corpus, &units);
+	if (rc >= 0) {
+		/* call the function that processes the units */
+		if (rc > 0 && fleg->process) {
+			gdesc.nunits = nru;
+			gdesc.units = units;
+			gdesc.conf = fleg->config;
+			gdesc.desc = fleg->jdesc;
+			rc = fleg->process(fleg->closure, &gdesc);
+		}
+
+		/* cleanup and frees */
+		while(nru) {
+			nru--;
+			free((void*)(units[nru].name));
+			free((void*)(units[nru].wanted_by));
+		}
+		free(units);
+	}
+
+	return rc;
+}
+
+/*
+ * calls the process with splitted files from template instance using jdesc
+ * and some other data
+ */
+int unit_process_legacy(
+	struct json_object *jdesc,
+	const struct unitconf *config,
+	int (*process)(void *closure, const struct generatedesc *desc),
+	void *closure
+) {
+	struct for_legacy fleg = {
+			.jdesc = jdesc,
+			.config = config,
+			.process = process,
+			.closure = closure
+		};
+
+	return unit_process_raw(jdesc, internal_legacy, &fleg);
 }
 
 /*

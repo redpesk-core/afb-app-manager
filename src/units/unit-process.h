@@ -128,35 +128,3 @@ extern int unit_process_split(
 		void *closure);
 
 
-struct unitconf {
-	json_object *metadata;
-	int (*new_afid)();
-	int base_http_ports;
-};
-
-struct generatedesc {
-	const struct unitconf *conf;
-	struct json_object *desc;
-	const struct unitdesc *units;
-	int nunits;
-};
-
-/**
- * Instanciate the currently opened template (or the default one if none
- * were opened) with the values of `jdesc`. Call the function process
- * were opened) with the values of `jdesc`. Split the instantiation
- * in its unit files. Call the function process with description of the
- * generated files and other parameters.
- *
- * @param jdesc    the actual values for the template
- * @param process  the callback receiving the splitted files
- * @param closure  closure of the callback
- *
- * @return 0 on sucess or a negative value on error
- */
-extern int unit_process_legacy(
-		struct json_object *jdesc,
-		const struct unitconf *conf,
-		int (*process)(void *closure, const struct generatedesc *desc),
-		void *closure);
-
