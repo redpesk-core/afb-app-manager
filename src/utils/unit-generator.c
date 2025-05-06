@@ -140,7 +140,7 @@ int internal_legacy(
  * calls the process with splitted files from template instance using jdesc
  * and some other data
  */
-int unit_process_legacy(
+static int unit_process_legacy(
 	struct json_object *jdesc,
 	int (*process)(void *closure, const struct generatedesc *desc),
 	void *closure
