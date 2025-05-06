@@ -33,7 +33,6 @@ struct unitconf {
 };
 
 struct generatedesc {
-	const struct unitconf *conf;
 	struct json_object *desc;
 	const struct unitdesc *units;
 	int nunits;
@@ -54,7 +53,6 @@ struct generatedesc {
  */
 extern int unit_process_legacy(
 		struct json_object *jdesc,
-		const struct unitconf *conf,
 		int (*process)(void *closure, const struct generatedesc *desc),
 		void *closure);
 

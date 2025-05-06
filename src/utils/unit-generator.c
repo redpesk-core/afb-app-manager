@@ -88,8 +88,6 @@ struct for_legacy
 {
 	/** descriptor to pass in generatdesc */
 	struct json_object *jdesc;
-	/** config to pass in generatdesc */
-	const struct unitconf *config;
 	/** callback receiving the generatdesc */
 	int (*process)(void *closure, const struct generatedesc *desc);
 	/** closure for the callback */
@@ -122,7 +120,6 @@ int internal_legacy(
 		if (rc > 0 && fleg->process) {
 			gdesc.nunits = nru;
 			gdesc.units = units;
-			gdesc.conf = fleg->config;
 			gdesc.desc = fleg->jdesc;
 			rc = fleg->process(fleg->closure, &gdesc);
 		}
@@ -145,13 +142,11 @@ int internal_legacy(
  */
 int unit_process_legacy(
 	struct json_object *jdesc,
-	const struct unitconf *config,
 	int (*process)(void *closure, const struct generatedesc *desc),
 	void *closure
 ) {
 	struct for_legacy fleg = {
 			.jdesc = jdesc,
-			.config = config,
 			.process = process,
 			.closure = closure
 		};
@@ -179,7 +174,7 @@ int unit_generator_process(
 	if (rc)
 		RP_ERROR("can't set the metadata. %m");
 	else
-		rc = unit_process_legacy(jdesc, config, process, closure);
+		rc = unit_process_legacy(jdesc, process, closure);
 	return rc;
 }
 
