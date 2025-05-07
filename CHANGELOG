@@ -1,9 +1,12 @@
-next
+next 12.4.0
 
 - Fix potential unlimited string in sighup-framework.c
 - Fix redwrap invocation
 - Fix build equirements
 - Fix metadata of afm-translate and fix the doc
+- Improve afm-translate default output
+- Add split method to afm-translate
+- refactor of unit file generation
 
 Version 12.3.3
 --------------
