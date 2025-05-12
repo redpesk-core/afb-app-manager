@@ -56,6 +56,7 @@ void sighup_afm_main()
 				if (fd >= 0) {
 					do { ssz = read(fd, buffer, sizeof buffer); } while (ssz < 0 && errno == EINTR);
 					close(fd);
+					buffer[sizeof buffer - 1] = 0;
 					if(strstr(buffer, afm_system_daemon)) {
 						kill((pid_t)pid, SIGHUP);
 						break;
