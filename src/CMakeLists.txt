@@ -39,8 +39,8 @@ link_libraries(${rputils_LIBRARIES})
 link_directories(${rputils_LIBRARY_DIRS})
 
 # check other modules
-pkg_check_modules(AFB afb-binding>=4)
-pkg_check_modules(gnutls gnutls)
+pkg_check_modules(AFB REQUIRED afb-binding>=4)
+pkg_check_modules(gnutls REQUIRED gnutls)
 pkg_check_modules(libsystemd libsystemd>=222)
 pkg_check_modules(libjsonc REQUIRED json-c)
 if(WITH_CONFIG_XML OR WITH_LEGACY_WGTPKG)

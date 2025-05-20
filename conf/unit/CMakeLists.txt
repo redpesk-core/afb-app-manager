@@ -24,7 +24,7 @@
 
 if(NOT ONLY_SDK)
 
-	find_program(M4EXEC m4)
+	find_program(M4EXEC m4 REQUIRED)
 	mark_as_advanced(M4EXEC)
 
 	if(REDPESK_DEVEL)
