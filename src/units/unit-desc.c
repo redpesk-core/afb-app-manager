@@ -24,14 +24,8 @@
 
 #define _GNU_SOURCE
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-#include <limits.h>
 
 #include <rp-utils/rp-verbose.h>
 

@@ -24,23 +24,12 @@
 
 #define _GNU_SOURCE
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-#include <limits.h>
 
 #include <json-c/json.h>
 
 #include <rp-utils/rp-verbose.h>
-#include <rp-utils/rp-file.h>
 #include <rp-utils/rp-jsonc.h>
-
-#include "apply-mustach.h"
-#include "utils-systemd.h"
 
 #include "unit-generator.h"
 #include "unit-process.h"
