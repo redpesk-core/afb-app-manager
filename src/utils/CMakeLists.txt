@@ -31,6 +31,7 @@ add_library(utils STATIC
 	path-type.c
 	permset.c
 	sighup-framework.c
+	unit-oper.c
 	unit-generator.c
 	utils-dir.c
 	utils-json.c

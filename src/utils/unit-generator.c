@@ -43,8 +43,8 @@
 #include "utils-systemd.h"
 
 #include "unit-generator.h"
-#include "unit-fs.h"
 #include "unit-process.h"
+#include "unit-oper.h"
 
 static const char string_targets[] = "targets";
 
@@ -156,132 +156,14 @@ int unit_generator_process(
 
 /**************** SPECIALIZED PART *****************************/
 
-/**
- * check the unit: verify that scope, type and name are set
- *
- * @param desc  unit description
- * @param tells output errors if existing
- *
- * @return 0 if the unit is valid or else -1
- */
-static int check_unit_desc(const struct unitdesc *desc, int tells)
-{
-	if (desc->scope != unitscope_unknown && desc->type != unittype_unknown && desc->name != NULL)
-		return 0;
-
-	if (tells) {
-		if (desc->scope == unitscope_unknown)
-			RP_ERROR("unit of unknown scope");
-		if (desc->type == unittype_unknown)
-			RP_ERROR("unit of unknown type");
-		if (desc->name == NULL)
-			RP_ERROR("unit of unknown name");
-	}
-	errno = EINVAL;
-	return -1;
-}
-
-static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
-{
-	int rc = units_fs_get_afm_unit_path(
-			path, pathlen, desc->scope == unitscope_user,
-			desc->name, desc->type == unittype_socket ? "socket" : "service");
-
-	if (rc < 0)
-		RP_ERROR("can't get the unit path for %s", desc->name);
-
-	return rc;
-}
-
-static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *desc)
-{
-	int rc = units_fs_get_afm_wants_unit_path(
-			path, pathlen, desc->scope == unitscope_user, desc->wanted_by,
-			desc->name, desc->type == unittype_socket ? "socket" : "service");
-
-	if (rc < 0)
-		RP_ERROR("can't get the wants path for %s and %s", desc->name, desc->wanted_by);
-
-	return rc;
-}
-
-static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *desc)
-{
-	int rc = units_fs_get_wants_target(
-			path, pathlen,
-			desc->name, desc->type == unittype_socket ? "socket" : "service");
-
-	if (rc < 0)
-		RP_ERROR("can't get the wants target for %s", desc->name);
-
-	return rc;
-}
-
-static void stop_that_unit_cb(void *closure, struct SysD_ListUnitItem *lui)
-{
-	int rc, isuser;
-
-	switch (systemd_state_of_name(lui->active_state)) {
-	case SysD_State_Activating:
-	case SysD_State_Active:
-	case SysD_State_Reloading:
-		isuser = (int)(intptr_t)closure;
-		rc = systemd_unit_stop_dpath(isuser, lui->opath, 0);
-		if (rc < 0)
-			RP_ERROR("can't stop %s", lui->name);
-		break;
-	case SysD_State_INVALID:
-	case SysD_State_Inactive:
-	case SysD_State_Deactivating:
-	case SysD_State_Failed:
-	default:
-		break;
-	}
-}
-
-static int stop_unit(char *buffer, size_t buflen, const struct unitdesc *desc)
-{
-	int rc;
-	int isuser = desc->scope == unitscope_user;
-	char star[2] = { '*', 0 };
-
-	rc = (int)strnlen(desc->name, buflen);
-	rc = snprintf(buffer, buflen, "%s%s.%s",
-		desc->name , &star[rc <= 0 || desc->name[rc - 1] != '@'],
-		desc->type == unittype_socket ? "socket" : "service");
-
-	rc = systemd_list_unit_pattern(isuser, buffer, stop_that_unit_cb, (void*)(intptr_t)isuser);
-	if (rc < 0)
-		RP_ERROR("can't get the unit path for %s", desc->name);
-
-	return rc;
-}
-
 static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 {
 	int rc, rc2;
 	int i;
-	char path[PATH_MAX];
-	const struct unitdesc *u;
 
 	rc = 0;
 	for (i = 0 ; i < desc->nunits ; i++) {
-		u = &desc->units[i];
-		rc2 = check_unit_desc(u, 0);
-		if (rc2 == 0) {
-			stop_unit(path, sizeof path, u);
-			rc2 = get_unit_path(path, sizeof path, u);
-			if (rc2 >= 0) {
-				rc2 = unlink(path);
-			}
-			if (rc2 < 0 && rc == 0)
-				rc = rc2;
-			if (u->wanted_by != NULL) {
-				rc2 = get_wants_path(path, sizeof path, u);
-				if (rc2 >= 0)
-					rc2 = unlink(path);
-			}
-		}
+		rc2 = unit_oper_uninstall(&desc->units[i]);
 		if (rc2 < 0 && rc == 0)
 			rc = rc2;
 	}
@@ -292,31 +174,9 @@ static int do_install_units(void *closure, const struct generatedesc *desc)
 {
 	int rc;
 	int i;
-	char path[PATH_MAX + 1], target[PATH_MAX + 1];
-	const struct unitdesc *u;
 
-	i = 0;
-	while (i < desc->nunits) {
-		u = &desc->units[i];
-		rc = check_unit_desc(u, 1);
-		if (!rc) {
-			rc = get_unit_path(path, sizeof path, u);
-			if (rc >= 0) {
-				RP_INFO("installing unit %s", path);
-				rc = rp_file_put(path, u->content, u->content_length);
-				if (rc >= 0 && u->wanted_by != NULL) {
-					rc = get_wants_path(path, sizeof path, u);
-					if (rc >= 0) {
-						rc = get_wants_target(target, sizeof target, u);
-						if (rc >= 0) {
-							unlink(path); /* TODO? check? */
-							rc = symlink(target, path);
-						}
-					}
-				}
-				i++;
-			}
-		}
+	for (i = 0 ; i < desc->nunits ; i++) {
+		rc = unit_oper_install(&desc->units[i]);
 		if (rc < 0)
 			goto error;
 	}

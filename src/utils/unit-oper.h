@@ -26,19 +26,8 @@
 
 #include "unit-desc.h"
 
-struct unitconf {
-	json_object *metadata;
-	int (*new_afid)();
-	int base_http_ports;
-};
+extern int unit_oper_stop(const struct unitdesc *unit);
 
-struct generatedesc {
-	struct json_object *desc;
-	const struct unitdesc *units;
-	int nunits;
-};
+extern int unit_oper_uninstall(const struct unitdesc *unit);
 
-extern int unit_generator_process(struct json_object *jdesc, const struct unitconf *conf, int (*process)(void *closure, const struct generatedesc *desc), void *closure);
-extern int unit_generator_install(struct json_object *manifest, const struct unitconf *conf);
-extern int unit_generator_uninstall(struct json_object *manifest, const struct unitconf *conf);
-
+extern int unit_oper_install(const struct unitdesc *unit);
