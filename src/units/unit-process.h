@@ -24,47 +24,9 @@
 
 #pragma once
 
+#include "unit-desc.h"
+
 struct json_object;
-
-/** definition of unit's scope */
-enum unitscope {
-	/** unset or unknown scope */
-	unitscope_unknown = 0,
-	/** system scope */
-	unitscope_system,
-	/** user scope */
-	unitscope_user
-};
-
-/** definition of unit's type */
-enum unittype {
-	/** unset or unknown type */
-	unittype_unknown = 0,
-	/** service type */
-	unittype_service,
-	/** socket type */
-	unittype_socket
-};
-
-/** definition of a unit */
-struct unitdesc {
-	/** scope of the unit */
-	enum unitscope scope;
-	/** type of the unit */
-	enum unittype type;
-	/** name of the unit */
-	const char *name;
-	/** length of the name */
-	size_t name_length;
-	/** content of the unit (not zero ended) */
-	const char *content;
-	/** length of the unit */
-	size_t content_length;
-	/** name wanting the unit or NULL */
-	const char *wanted_by;
-	/** length of wanted_by */
-	size_t wanted_by_length;
-};
 
 /**
  * open/select the template file

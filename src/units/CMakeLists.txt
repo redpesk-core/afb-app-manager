@@ -25,6 +25,7 @@
 add_library(units STATIC
 	apply-mustach.c
 	normalize-unit-file.c
+	unit-desc.c
 	unit-fs.c
 	unit-process.c
 )
