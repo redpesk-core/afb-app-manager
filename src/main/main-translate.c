@@ -41,7 +41,7 @@
 #include <apply-mustach.h>
 #include <normalize-unit-file.h>
 #include <unit-process.h>
-#include <unit-utils.h>
+#include <unit-fs.h>
 
 static const char version[] = "0.2";
 
@@ -197,13 +197,13 @@ static int split_cb(void *closure, const struct unitdesc *units, int nrunits)
 
 		isuser = u->scope == unitscope_user;
 		ext = u->type == unittype_socket ? "socket" : "service";
-		units_get_afm_unit_path(&upath[ldir], (sizeof upath) - ldir,
+		units_fs_get_afm_unit_path(&upath[ldir], (sizeof upath) - ldir,
 					isuser, u->name, ext);
 		wpath[ldir] = targ[ldir] = 0;
 		if (u->wanted_by) {
-			units_get_afm_wants_unit_path(&wpath[ldir], (sizeof wpath) - ldir,
+			units_fs_get_afm_wants_unit_path(&wpath[ldir], (sizeof wpath) - ldir,
 						isuser, u->wanted_by, u->name, ext);
-			units_get_wants_target(targ, sizeof targ, u->name, ext);
+			units_fs_get_wants_target(targ, sizeof targ, u->name, ext);
 		}
 
 		rc = writefile(upath, u->content);
@@ -285,7 +285,7 @@ static void usage(const char *name)
 	       " -t FILE   use the template FILE (default %s)\n"
 	       " -u DIR    unit destination for split (default %s)\n",
 		FWK_UNIT_CONF,
-		units_set_root_dir(NULL));
+		units_fs_set_root_dir(NULL));
 	exit(EXIT_FAILURE);
 }
 
@@ -414,7 +414,7 @@ int main(int ac, char **av)
 
 	/* set the unit dir if required */
 	if (unitdir != NULL)
-		units_set_root_dir(unitdir);
+		units_fs_set_root_dir(unitdir);
 
 	/* process */
 	if (method == Legacy)

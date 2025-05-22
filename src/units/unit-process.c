@@ -43,7 +43,6 @@
 #include "utils-systemd.h"
 
 #include "unit-process.h"
-#include "unit-utils.h"
 
 #if 0
 #include <ctype.h>

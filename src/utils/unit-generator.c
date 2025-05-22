@@ -43,7 +43,7 @@
 #include "utils-systemd.h"
 
 #include "unit-generator.h"
-#include "unit-utils.h"
+#include "unit-fs.h"
 #include "unit-process.h"
 
 static const char string_targets[] = "targets";
@@ -183,7 +183,7 @@ static int check_unit_desc(const struct unitdesc *desc, int tells)
 
 static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc = units_get_afm_unit_path(
+	int rc = units_fs_get_afm_unit_path(
 			path, pathlen, desc->scope == unitscope_user,
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
@@ -195,7 +195,7 @@ static int get_unit_path(char *path, size_t pathlen, const struct unitdesc *desc
 
 static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc = units_get_afm_wants_unit_path(
+	int rc = units_fs_get_afm_wants_unit_path(
 			path, pathlen, desc->scope == unitscope_user, desc->wanted_by,
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
@@ -207,7 +207,7 @@ static int get_wants_path(char *path, size_t pathlen, const struct unitdesc *des
 
 static int get_wants_target(char *path, size_t pathlen, const struct unitdesc *desc)
 {
-	int rc = units_get_wants_target(
+	int rc = units_fs_get_wants_target(
 			path, pathlen,
 			desc->name, desc->type == unittype_socket ? "socket" : "service");
 
@@ -256,7 +256,6 @@ static int stop_unit(char *buffer, size_t buflen, const struct unitdesc *desc)
 
 	return rc;
 }
-
 
 static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 {
@@ -340,6 +339,3 @@ int unit_generator_uninstall(json_object *manifest, const struct unitconf *confi
 {
 	return unit_generator_process(manifest, config, do_uninstall_units, NULL);
 }
-
-
-

@@ -33,7 +33,7 @@
 #include <rp-utils/rp-file.h>
 
 #include "normalize-unit-file.h"
-#include "unit-utils.h"
+#include "unit-fs.h"
 
 static const char key_afm_prefix[] = "X-AFM-";
 static const char key_afid[] = "ID";
@@ -93,10 +93,10 @@ static int update_afids(uint32_t *afids)
 	int rcs, rcu;
 
 	memset(afids, 0, AFID_ACNT * sizeof(uint32_t));
-	rcs = units_list(0, get_afid_cb, afids);
+	rcs = units_fs_list(0, get_afid_cb, afids);
 	if (rcs < 0)
 		RP_ERROR("troubles while updating system's afids");
-	rcu = units_list(1, get_afid_cb, afids);
+	rcu = units_fs_list(1, get_afid_cb, afids);
 	if (rcu < 0)
 		RP_ERROR("troubles while updating user's afids");
 

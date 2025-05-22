@@ -24,11 +24,11 @@
 
 #pragma once
 
-extern const char *units_set_root_dir(const char *dir);
-extern int units_get_afm_units_dir(char *path, size_t pathlen, int isuser);
-extern int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
-extern int units_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
-extern int units_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
-extern int units_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
-extern int units_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
+extern const char *units_fs_set_root_dir(const char *dir);
+extern int units_fs_get_afm_units_dir(char *path, size_t pathlen, int isuser);
+extern int units_fs_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
+extern int units_fs_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
+extern int units_fs_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
+extern int units_fs_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
+extern int units_fs_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
 

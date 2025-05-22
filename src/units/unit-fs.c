@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "unit-utils.h"
+#include "unit-fs.h"
 
 #if !defined(AFM_UNITS_ROOT)
 # define AFM_UNITS_ROOT "/usr/local/lib/systemd"
@@ -50,7 +50,7 @@ static int check_snprintf_result(int rc, size_t buflen)
 	return -1;
 }
 
-const char *units_set_root_dir(const char *dir)
+const char *units_fs_set_root_dir(const char *dir)
 {
 	const char *prev = afm_units_root;
 	if (dir)
@@ -58,7 +58,7 @@ const char *units_set_root_dir(const char *dir)
 	return prev;
 }
 
-int units_get_afm_units_dir(char *path, size_t pathlen, int isuser)
+int units_fs_get_afm_units_dir(char *path, size_t pathlen, int isuser)
 {
 	int rc = snprintf(path, pathlen, "%s/%s",
 			afm_units_root,
@@ -67,7 +67,7 @@ int units_get_afm_units_dir(char *path, size_t pathlen, int isuser)
 	return check_snprintf_result(rc, pathlen);
 }
 
-int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
+int units_fs_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.%s",
 			afm_units_root,
@@ -78,7 +78,7 @@ int units_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *
 	return check_snprintf_result(rc, pathlen);
 }
 
-int units_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext)
+int units_fs_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "%s/%s/%s.wants/%s.%s",
 			afm_units_root,
@@ -90,7 +90,7 @@ int units_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const 
 	return check_snprintf_result(rc, pathlen);
 }
 
-int units_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext)
+int units_fs_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext)
 {
 	int rc = snprintf(path, pathlen, "../%s.%s", unit, uext);
 
@@ -98,7 +98,7 @@ int units_get_wants_target(char *path, size_t pathlen, const char *unit, const c
 }
 
 
-int units_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
+int units_fs_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
 {
 	DIR *dir;
 	char path[PATH_MAX + 1];
@@ -108,7 +108,7 @@ int units_list(int isuser, int (*callback)(void *closure, const char *name, cons
 	struct stat st;
 
 	/* get the path */
-	rc = units_get_afm_units_dir(path, sizeof path - 1, isuser);
+	rc = units_fs_get_afm_units_dir(path, sizeof path - 1, isuser);
 	if (rc < 0)
 		return rc;
 	offset = (size_t)rc;
@@ -162,8 +162,8 @@ int units_list(int isuser, int (*callback)(void *closure, const char *name, cons
 	return rc;
 }
 
-int units_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
+int units_fs_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
 {
-	return units_list(1, callback, closure) ? : units_list(0, callback, closure);
+	return units_fs_list(1, callback, closure) ? : units_fs_list(0, callback, closure);
 }
 

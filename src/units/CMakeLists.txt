@@ -25,8 +25,8 @@
 add_library(units STATIC
 	apply-mustach.c
 	normalize-unit-file.c
+	unit-fs.c
 	unit-process.c
-	unit-utils.c
 )
 
 target_compile_options(units PRIVATE ${libjsonc_CFLAGS})
