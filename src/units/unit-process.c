@@ -316,7 +316,7 @@ static int process_one_unit(char *spec, struct unitdesc *desc)
  * store them descriptor in units.
  * A negative value is returned in case of error.
  */
-int unit_corpus_split(
+static int corpus_split(
 	char *corpus,
 	struct unitdesc **units
 ) {
@@ -515,7 +515,7 @@ int internal_for_split(
 	struct for_split *fspl = closure;
 
 	/* split the corpus */
-	rc = nru = unit_corpus_split(corpus, &units);
+	rc = nru = corpus_split(corpus, &units);
 	if (rc >= 0) {
 		/* call the function that processes the units */
 		if (rc > 0 && fspl->process)

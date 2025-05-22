@@ -80,20 +80,6 @@ extern int unit_process_open_template(const char *filename);
  */
 extern void unit_process_close_template();
 
-/*
- * split the 'corpus' to its units (change the corpus by inserting nuls)
- * Each unit of the corpus is separated and packed and its
- * charactistics are stored in a descriptor.
- * At the end if no error was found, returns the count of units found and
- * store them descriptor in units.
- * A negative value is returned in case of error.
- */
-extern
-int unit_corpus_split(
-	char *corpus,
-	struct unitdesc **units
-);
-
 /**
  * Instanciate the currently opened template (or the default one if none
  * were opened) with the values of `jdesc`. Call the function process
