@@ -81,7 +81,7 @@ static int add_metadata(struct json_object *jdesc, const struct unitconf *config
 }
 
 /**
- * Structure used by `unit_process_legacy` in its callback
+ * Structure used by `internal_legacy` in its callback
  * for unit_process_raw
  */
 struct for_legacy
@@ -105,53 +105,22 @@ struct for_legacy
 static
 int internal_legacy(
 	void *closure,
-	char *corpus,
-	size_t size
+	const struct unitdesc *units,
+	int nrunits
 ) {
-	int rc, nru;
 	struct generatedesc gdesc;
-	struct unitdesc *units;
 	struct for_legacy *fleg = closure;
+	int rc = 0;
 
-	/* split the corpus */
-	rc = nru = unit_corpus_split(corpus, &units);
-	if (rc >= 0) {
-		/* call the function that processes the units */
-		if (rc > 0 && fleg->process) {
-			gdesc.nunits = nru;
-			gdesc.units = units;
-			gdesc.desc = fleg->jdesc;
-			rc = fleg->process(fleg->closure, &gdesc);
-		}
-
-		/* cleanup and frees */
-		while(nru) {
-			nru--;
-			free((void*)(units[nru].name));
-			free((void*)(units[nru].wanted_by));
-		}
-		free(units);
+	/* call the function that processes the units */
+	if (fleg->process) {
+		gdesc.nunits = nrunits;
+		gdesc.units = units;
+		gdesc.desc = fleg->jdesc;
+		rc = fleg->process(fleg->closure, &gdesc);
 	}
 
 	return rc;
-}
-
-/*
- * calls the process with splitted files from template instance using jdesc
- * and some other data
- */
-static int unit_process_legacy(
-	struct json_object *jdesc,
-	int (*process)(void *closure, const struct generatedesc *desc),
-	void *closure
-) {
-	struct for_legacy fleg = {
-			.jdesc = jdesc,
-			.process = process,
-			.closure = closure
-		};
-
-	return unit_process_raw(jdesc, internal_legacy, &fleg);
 }
 
 /*
@@ -173,8 +142,15 @@ int unit_generator_process(
 	int rc = add_metadata(jdesc, config);
 	if (rc)
 		RP_ERROR("can't set the metadata. %m");
-	else
-		rc = unit_process_legacy(jdesc, process, closure);
+	else {
+		struct for_legacy fleg = {
+			.jdesc = jdesc,
+			.process = process,
+			.closure = closure
+		};
+
+		rc = unit_process_split(jdesc, internal_legacy, &fleg);
+	}
 	return rc;
 }
 
@@ -364,3 +340,6 @@ int unit_generator_uninstall(json_object *manifest, const struct unitconf *confi
 {
 	return unit_generator_process(manifest, config, do_uninstall_units, NULL);
 }
+
+
+
