@@ -128,7 +128,7 @@ ENDIF
 IF_REDPESK_PERM(:partner:cgroup-manager)
 Delegate=yes
 ELSE
-ExecStartPre=-REDWRAP /bin/mkdir -p APP_WORK_DIR
+ExecStartPre=-REDWRAP`'/bin/mkdir -p APP_WORK_DIR
 ENDIF
 
 ON_AGL_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
@@ -175,7 +175,7 @@ include(binder.inc)
 ;----                 application/x-executable                              ----
 ;-------------------------------------------------------------------------------
 {{#content.type=application/x-executable}}
-ExecStart=REDWRAP APP_INSTALL_DIR/{{content.src}}
+ExecStart=REDWRAP`'APP_INSTALL_DIR/{{content.src}}
 {{/content.type=application/x-executable}}
 
 ;-------------------------------------------------------------------------------

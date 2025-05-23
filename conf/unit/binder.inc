@@ -10,8 +10,7 @@ ENDIF
 
 Type=notify
 NotifyAccess=ON_REDPAK(all,main)
-ExecStart=REDWRAP \
-	BINDER \
+ExecStart=REDWRAP`'BINDER \
 	--name afbd-TARGET \
 	--rootdir=APP_INSTALL_DIR \
 	--workdir=APP_WORK_DIR \
