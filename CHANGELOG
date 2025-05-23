@@ -1,5 +1,8 @@
 next
 
+- Fix potential unlimited string in sighup-framework.c
+- Fix redwrap invocation
+- Fix build equirements
 - Fix metadata of afm-translate and fix the doc
 
 Version 12.3.3
