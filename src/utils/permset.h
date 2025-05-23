@@ -68,6 +68,8 @@ typedef enum permset_reset_e {
 }
 	permset_reset_t;
 
+extern int permset_create(permset_t **permset);
+extern void permset_destroy(permset_t *permset);
 
 extern void permset_reset(permset_t *permset, permset_reset_t it);
 extern int permset_has(permset_t *permset, const char *name);
@@ -83,6 +85,3 @@ extern int permset_select_next(permset_t *permset, permset_select_t it);
 extern const char *permset_current(permset_t *permset);
 extern int permset_is_current_requested(permset_t *permset);
 extern int permset_is_current_granted(permset_t *permset);
-
-extern int permset_create(permset_t **permset);
-extern void permset_destroy(permset_t *permset);

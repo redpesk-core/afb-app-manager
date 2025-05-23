@@ -42,9 +42,18 @@
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-socket.h>
 
-#include "afmpkg-common.h"
-#include "afmpkg.h"
 #include "afmpkg-request.h"
+#include "afmpkg-common.h"
+
+#if WITH_LEGACY_AFMPKG
+#include "afmpkg-legacy.h"
+#define afmpkg_install  afmpkg_legacy_install
+#define afmpkg_uninstall  afmpkg_legacy_uninstall
+#else
+#include "afmpkg-std.h"
+#define afmpkg_install  afmpkg_std_install
+#define afmpkg_uninstall  afmpkg_std_uninstall
+#endif
 
 /**
  * @brief retention time in second for data of transactions

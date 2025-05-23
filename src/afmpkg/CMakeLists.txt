@@ -22,10 +22,14 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_library(afmpkg STATIC afmpkg.c afmpkg-request.c)
+add_library(afmpkg STATIC afmpkg.c afmpkg-request.c afmpkg-std.c)
 target_link_libraries(afmpkg units utils secwrp)
 
+if(WITH_LEGACY_AFMPKG)
+	target_sources(afmpkg PRIVATE afmpkg-legacy.c)
+	target_compile_definitions(afmpkg PRIVATE -DWITH_LEGACY_AFMPK=1)
+endif()
 if(WITH_CONFIG_XML)
 	target_compile_definitions(afmpkg PRIVATE -DWITH_CONFIG_XML=1)
 	target_link_libraries(afmpkg wgt)
-endif(WITH_CONFIG_XML)
+endif()
