@@ -53,7 +53,7 @@ OPERATION  ::= 'ADD' | 'REMOVE'
 It is an error if the OPERATION given at end line doesn't match the operation
 given at begin line.
 
-The operation INSTALL is used for installing packages, the operation REMOVE
+The operation ADD is used for installing packages, the operation REMOVE
 for removing it.
 
 The lines of the body can be send in unspecified order.
