@@ -145,17 +145,25 @@ int unit_generator_process(
 
 /**************** SPECIALIZED PART *****************************/
 
-static int do_uninstall_units(void *closure, const struct generatedesc *desc)
+static int uninstall_units(void *closure, const struct generatedesc *desc, int quiet)
 {
-	int i, rc, rc2;
+	int i, rc, rc2, logmsk = rp_logmask;
 
 	rc = 0;
+	if (quiet)
+		rp_set_logmask(0);
 	for (i = 0 ; i < desc->nunits ; i++) {
 		rc2 = unit_oper_uninstall(&desc->units[i]);
-		if (rc2 < 0 && rc == 0)
+		if (rc2 < 0)
 			rc = rc2;
 	}
+	rp_set_logmask(logmsk);
 	return rc;
+}
+
+static int do_uninstall_units(void *closure, const struct generatedesc *desc)
+{
+	return uninstall_units(closure, desc, 0);
 }
 
 static int do_install_units(void *closure, const struct generatedesc *desc)
@@ -178,7 +186,7 @@ static int do_install_units(void *closure, const struct generatedesc *desc)
 	return 0;
 error:
 	i = errno;
-	do_uninstall_units(closure, desc);
+	uninstall_units(closure, desc, 1);
 	errno = i;
 	return rc;
 }
