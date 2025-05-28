@@ -1,5 +1,7 @@
 next 12.4.0
 
+- Check not existing service at installation (7872)
+- Add strict mode option to afmpkg-installer (related to 7873)
 - Fix potential unlimited string in sighup-framework.c
 - Fix redwrap invocation
 - Fix build equirements

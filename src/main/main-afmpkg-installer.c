@@ -81,6 +81,11 @@ static int living_threads = 0;
 static char run_forever = 0;
 
 /**
+ * @brief is strictly for root?
+ */
+static char strict = 0;
+
+/**
  * @brief receive the request
  *
  * @param sock the input socket
@@ -231,7 +236,7 @@ static void *serve_thread(void *arg)
 /**
  * @brief basic run loop
  */
-void launch_serve_thread(int socli)
+static void launch_serve_thread(int socli)
 {
 	pthread_attr_t tat;
 	pthread_t tid;
@@ -256,7 +261,7 @@ void launch_serve_thread(int socli)
 /**
  * @brief check if stopping is possible
  */
-int can_stop()
+static int can_stop()
 {
 	int result;
 
@@ -277,9 +282,29 @@ static int listen_clients()
 }
 
 /**
+ * @brief check if client is root, otherwise, close it and report error
+ *
+ * @param fd socket file descriptor
+ *
+ * @return the fd socket if granted. Other wise, -1.
+ */
+static int check_strict(int fd)
+{
+	struct ucred cred;
+	socklen_t len = (socklen_t)sizeof(cred);
+	int rc = getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &len);
+	if (rc < 0 || cred.uid != 0) {
+		fprintf(stderr, "strict mode rejects uid %d\n", (int)cred.uid);
+		close(fd);
+		fd = -1;
+	}
+	return fd;
+}
+
+/**
  * @brief prepare run loop
  */
-void prepare_run()
+static void prepare_run()
 {
 	struct sigaction osa;
 
@@ -293,7 +318,7 @@ void prepare_run()
 /**
  * @brief basic run loop
  */
-int run()
+static int run()
 {
 	struct pollfd pfd;
 	int rc;
@@ -309,6 +334,8 @@ int run()
 		rc = poll(&pfd, 1, SHUTDOWN_CHECK_SECONDS * 1000);
 		if (rc == 1) {
 			rc = accept(pfd.fd, NULL, NULL);
+			if (rc >= 0 && strict)
+				rc = check_strict(rc);
 			if (rc >= 0)
 				launch_serve_thread(rc);
 		}
@@ -344,6 +371,7 @@ static void usage()
 		"   -h, --help        help\n"
 		"   -q, --quiet       quiet\n"
 		"   -s, --socket URI  socket URI\n"
+		"   -S, --strict      restrict to root client\n"
 		"   -v, --verbose     verbose\n"
 		"   -V, --version     version\n"
 		"\n",
@@ -356,6 +384,7 @@ static struct option options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "quiet",       no_argument,       NULL, 'q' },
 	{ "socket",      required_argument, NULL, 's' },
+	{ "strict",      no_argument,       NULL, 'S' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "version",     no_argument,       NULL, 'V' },
 	{ NULL, 0, NULL, 0 }
@@ -380,6 +409,9 @@ int main(int ac, char **av)
 			break;
 		case 's':
 			socket_uri = optarg;
+			break;
+		case 'S':
+			strict = 1;
 			break;
 		case 'v':
 			rp_verbose_inc();
