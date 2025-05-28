@@ -26,8 +26,43 @@
 
 #include "unit-desc.h"
 
+/**
+ * Stops the systemd service of the given unit
+ *
+ * @param unit the unit to be stopped
+ *
+ * @return 0 on success or a negative value on error
+ */
 extern int unit_oper_stop(const struct unitdesc *unit);
 
+/**
+ * Stops the systemd service of the given unit
+ * and uninstall it
+ *
+ * @param unit the unit to be uninstalled
+ *
+ * @return 0 on success or a negative value on error
+ */
 extern int unit_oper_uninstall(const struct unitdesc *unit);
 
+/**
+ * Install the service described by the unit
+ *
+ * @param unit the unit to be installed
+ *
+ * @return 0 on success or a negative value on error
+ */
 extern int unit_oper_install(const struct unitdesc *unit);
+
+/**
+ * Check that systemd files for the unit either exist or not
+ *
+ * @param unit          the unit to be checked
+ * @param should_exist  0 for checking that files does not exist
+ *                      not 0 for checking that files exist
+ *
+ * @return 0 on success (files either exist if should_exist, or
+ *         file doesn't exist if not should_exist) or -1 otherwise
+ */
+extern int unit_oper_check_files(const struct unitdesc *unit, int should_exist);
+

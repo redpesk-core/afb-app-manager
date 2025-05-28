@@ -27,12 +27,13 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <limits.h>
+#include <errno.h>
 
 #include <rp-utils/rp-verbose.h>
 #include <rp-utils/rp-file.h>
 
 #include "utils-systemd.h"
-#include "unit-desc.h"
+#include "unit-oper.h"
 
 static void stop_that_unit_cb(void *closure, struct SysD_ListUnitItem *lui)
 {
@@ -125,6 +126,46 @@ int unit_oper_install(const struct unitdesc *unit)
 					}
 				}
 			}
+		}
+	}
+	return rc;
+}
+
+static int check_file(const char *path, int should_exist)
+{
+	int rc = access(path, F_OK);
+	if (should_exist) {
+		if (rc != 0)
+			RP_ERROR("file %s doesn't exist", path);
+	}
+	else {
+		if (rc != 0)
+			rc = 0;
+		else {
+			RP_ERROR("file %s already exist", path);
+			errno = EEXIST;
+			rc = -1;
+		}
+	}
+	return rc;
+}
+
+int unit_oper_check_files(const struct unitdesc *unit, int should_exist)
+{
+	int rc, rc2;
+	char path[PATH_MAX];
+
+	rc = unit_desc_check(unit, 0);
+	if (rc == 0) {
+		rc = unit_desc_get_path(unit, path, sizeof path);
+		if (rc >= 0)
+			rc = check_file(path, should_exist);
+		if (unit->wanted_by != NULL) {
+			rc2 = unit_desc_get_wants_path(unit, path, sizeof path);
+			if (rc2 >= 0)
+				rc2 = check_file(path, should_exist);
+			if (rc2 < 0)
+				rc = rc2;
 		}
 	}
 	return rc;

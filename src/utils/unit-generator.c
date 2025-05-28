@@ -147,8 +147,7 @@ int unit_generator_process(
 
 static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 {
-	int rc, rc2;
-	int i;
+	int i, rc, rc2;
 
 	rc = 0;
 	for (i = 0 ; i < desc->nunits ; i++) {
@@ -161,9 +160,16 @@ static int do_uninstall_units(void *closure, const struct generatedesc *desc)
 
 static int do_install_units(void *closure, const struct generatedesc *desc)
 {
-	int rc;
-	int i;
+	int i, rc;
 
+	/* check that no file is overwritten by the installation */
+	for (i = 0 ; i < desc->nunits ; i++) {
+		rc = unit_oper_check_files(&desc->units[i], 0);
+		if (rc < 0)
+			return rc;
+	}
+
+	/* install the units */
 	for (i = 0 ; i < desc->nunits ; i++) {
 		rc = unit_oper_install(&desc->units[i]);
 		if (rc < 0)
