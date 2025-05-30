@@ -1,0 +1,53 @@
+
+
+dnf install -y git gcc cmake make strace gdb m4
+
+dnf install -y json-c-devel libzip-devel gnutls-devel systemd-devel rpm-plugins-devel libxml2-devel
+
+dnf install -y afb-binding-devel librp-utils-socket-static librp-utils-file-static librp-utils-yaml-static librp-utils-json-c-static sec-lsm-manager-devel
+
+git clone http://git.ovh.iot/redpesk/redpesk-core/afb-app-manager.git
+cd afb-app-manager
+git checkout -t -b tec origin/@jobol/tec
+
+
+mkdir build
+cd build
+
+_sysconfdir=$(rpm --eval '%{_sysconfdir}')
+_prefix=$(rpm --eval '%{_prefix}')
+_libdir=$(rpm --eval '%{_libdir}')
+_datadir=$(rpm --eval '%{_datadir}')
+__plugindir=$(rpm --eval '%{__plugindir}')
+_rpmmacrodir=$(rpm --eval '%{_rpmmacrodir}')
+
+afm_name=afm
+afm_confdir=${_sysconfdir}/${afm_name}
+afm_units_root=${_prefix}/local/lib/systemd
+rpmplugindir=${_libdir}/rpm-plugins
+redpeskdir=${_prefix}/redpesk
+
+afm_datadir=${_datadir}/${afm_name}
+afm_appdir=${redpeskdir}
+afm_icondir=${redpeskdir}/.icons
+
+with_openssl=NO
+
+cmake \
+   -DCMAKE_INSTALL_PREFIX:PATH=${_prefix} \
+   -DCMAKE_INSTALL_SYSCONFDIR:PATH=${_sysconfdir} \
+   -DUSE_LIBZIP=1 \
+   -DWITH_TOOLS=ON \
+   -Dafm_name=${afm_name} \
+   -Dafm_confdir=${afm_confdir} \
+   -Dafm_datadir=${afm_datadir} \
+   -Dafm_units_root=${afm_units_root} \
+   -DUNITDIR_SYSTEM=/usr/lib/systemd/system \
+   -DREDPESK_DEVEL=OFF \
+   -DALLOW_NO_SIGNATURE=ON \
+   -Drpm_plugin_dir=${__plugindir} \
+   -Drpm_macros_dir=${_rpmmacrodir} \
+   -DWITH_OPENSSL=${with_openssl} \
+   ..
+
+
