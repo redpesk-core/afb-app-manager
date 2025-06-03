@@ -31,6 +31,7 @@ typedef
 enum path_type
 {
     path_type_Unset = 0,	/**< special unset value */
+    path_type_Default,		/**< for default */
     path_type_Conf,		/**< for configuration */
     path_type_Data,		/**< for data */
     path_type_Exec,		/**< for executable */
@@ -41,7 +42,8 @@ enum path_type
     path_type_Plug,		/**< for exported plug */
     path_type_Public,		/**< for public data */
     path_type_Public_Exec,	/**< for public executable */
-    path_type_Public_Lib	/**< for public library */
+    path_type_Public_Lib,	/**< for public library */
+    _path_type_count_
 }
 	path_type_t;
 

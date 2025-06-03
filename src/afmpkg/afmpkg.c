@@ -810,6 +810,7 @@ static int setup_files_properties(process_state_t *state)
 
 static const char * const type_types[] = {
     [path_type_Unset] = NULL,
+    [path_type_Default] = secmgr_pathtype_default,
     [path_type_Conf] = secmgr_pathtype_conf,
     [path_type_Data] = secmgr_pathtype_data,
     [path_type_Exec] = secmgr_pathtype_exec,
@@ -919,7 +920,7 @@ end:
 static int setdown_security_file_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
 	/* before uninstalling, set the id for making files inaccessible */
-	secmgr_path_id(state->path);
+	secmgr_path(state->path, secmgr_pathtype_id);
 	return 0;
 }
 
@@ -1138,7 +1139,7 @@ static
 int process_default_tree_add_cb(void *closure, path_entry_t *entry, const char *path, size_t length)
 {
 	process_state_t *state = closure;
-	return secmgr_path_default(state->path);
+	return secmgr_path(state->path, secmgr_pathtype_default);
 }
 
 /** callback for detecting that at least on path exists */
