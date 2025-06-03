@@ -57,7 +57,7 @@ path_type_t path_type_of_property_key(const char *key)
 	while (i)
 		if (!strcmp(key, filetypes[--i].key))
 			return filetypes[i].type;
-	return path_type_Unknown;
+	return path_type_Unset;
 }
 
 /* see path-type.h */
@@ -69,6 +69,6 @@ path_type_t path_type_of_dirname(const char *dir)
 		if (filetypes[--i].dir != NULL)
 			if (!strcmp(dir, filetypes[i].dir))
 				return filetypes[i].type;
-	return path_type_Unknown;
+	return path_type_Unset;
 }
 

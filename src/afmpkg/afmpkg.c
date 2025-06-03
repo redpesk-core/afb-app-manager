@@ -545,7 +545,7 @@ static int check_contents(process_state_t *state)
 /* callback for resetting the path type to UNKNOWN */
 static int reset_type_cb(process_state_t *state, path_entry_t *entry, const char *path, size_t length)
 {
-	int rc = set_entry_type(entry, path_type_Unknown);
+	int rc = set_entry_type(entry, path_type_Unset);
 	put_state_rc(state, rc);
 	return 0;
 }
@@ -576,14 +576,14 @@ static void compute_explicit_file_properties_cb(process_state_t *state, json_obj
 			/* compute the effective path type of value */
 			strval = json_object_get_string(value);
 			type = path_type_of_property_key(strval);
-			if (type == path_type_Unknown) {
+			if (type == path_type_Unset) {
 				RP_ERROR("invalid value %s", json_object_get_string(jso));
 				rc = -EINVAL;
 			}
 			else {
 				/* set the value if not conflicting */
 				prvtype = get_entry_type(entry);
-				if (prvtype == path_type_Unknown)
+				if (prvtype == path_type_Unset)
 					set_entry_type(entry, type);
 				else if (prvtype != type) {
 					RP_ERROR("file property conflict %s", json_object_get_string(jso));
@@ -664,7 +664,7 @@ static void compute_target_file_properties_cb(process_state_t *state, json_objec
 			RP_ERROR("file doesn't exist %s", json_object_get_string(jso));
 			put_state_rc(state, -ENOENT);
 		}
-		else if (get_entry_type(entry) == path_type_Unknown) {
+		else if (get_entry_type(entry) == path_type_Unset) {
 			/* the file exists but is of unknown type */
 			if (mime_type_is_executable(json_object_get_string(type)))
 				/* set as executable for known mime-type */
@@ -696,14 +696,14 @@ static int compute_default_files_properties_cb(process_state_t *state, path_entr
 	/* extract type */
 	else {
 		curtype = get_entry_type(entry);
-		if (curtype != path_type_Unknown)
+		if (curtype != path_type_Unset)
 			rc = 0;
 		else {
 			if (S_ISDIR(s.st_mode))
 				curtype = path_type_of_dirname(path_entry_name(entry));
-			if (curtype == path_type_Unknown)
+			if (curtype == path_type_Unset)
 				curtype = get_entry_type(path_entry_parent(entry));
-			if (curtype == path_type_Unknown)
+			if (curtype == path_type_Unset)
 				curtype = path_type_Id;
 			rc = set_entry_type(entry, curtype);
 		}
@@ -810,7 +810,6 @@ static int setup_files_properties(process_state_t *state)
 
 static const char * const type_types[] = {
     [path_type_Unset] = NULL,
-    [path_type_Unknown] = NULL,
     [path_type_Conf] = secmgr_pathtype_conf,
     [path_type_Data] = secmgr_pathtype_data,
     [path_type_Exec] = secmgr_pathtype_exec,

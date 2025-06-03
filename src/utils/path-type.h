@@ -30,8 +30,7 @@
 typedef
 enum path_type
 {
-    path_type_Unset = 0,	/**< special unset value, don't use it */
-    path_type_Unknown,		/**< special unknown value */
+    path_type_Unset = 0,	/**< special unset value */
     path_type_Conf,		/**< for configuration */
     path_type_Data,		/**< for data */
     path_type_Exec,		/**< for executable */
@@ -52,14 +51,14 @@ enum path_type
 *
 * @param key   the key whose type is searched
 *
-* @return the found path_type or path_type_Unknown when the
+* @return the found path_type or path_type_Unset when the
 *         key is not known
 */
 extern path_type_t path_type_of_property_key(const char *key);
 
 /**
 * Search if there is a predefined path_type for a directory of
-* the given name and return it or return path_type_Unknown if
+* the given name and return it or return path_type_Unset if
 * no predefined directory name matches.
 *
 * @param dirname   the name of the directory to search
