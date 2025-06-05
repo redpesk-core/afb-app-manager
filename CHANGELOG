@@ -1,5 +1,7 @@
 next 12.4.0
 
+- Rework afmpkg for being tunable
+- Rework integration of sec-lsm-manager
 - Check not existing service at installation (7872)
 - Add strict mode option to afmpkg-installer (related to 7873)
 - Fix potential unlimited string in sighup-framework.c
