@@ -28,15 +28,35 @@
 
 #include <stddef.h>
 #include <errno.h>
+#include <string.h>
 
 #include <rp-utils/rp-verbose.h>
 
-#include "path-type.h"
+#if SIMULATE_SEC_LSM_MANAGER
+#include "simulate-sec-lsm-manager.h"
+#else
+#include <sec-lsm-manager.h>
+#endif
 
-#include "secmgr-wrap.h"
+#include "path-type.h"
 #include "unit-oper.h"
 
-#include "afmpkg.h"
+/*************************************************************
+** definition of the local state
+*************************************************************/
+typedef
+struct {
+	/** install/ uninstall mode */
+	afmpkg_mode_t mode;
+
+	/** conection to the security manager */
+	sec_lsm_manager_t *slmhndl;
+}
+	state_t;
+
+/*************************************************************
+** locally defined path types for sec-lsm-manager
+*************************************************************/
 
 static const char * const path_type_names[] = {
 #if defined(SEC_LSM_MANAGER_PATH_TYPE_DEFAULT) /* defined since sec-lsm-manager 2.6.2 */
@@ -70,11 +90,9 @@ static const char * const path_type_names[] = {
 #endif
 };
 
-typedef
-struct {
-	afmpkg_mode_t mode;
-}
-	state_t;
+/*************************************************************
+** local functions for processing units
+*************************************************************/
 
 static int do_uninstall_units(state_t *state, const struct unitdesc *units, int nrunits, int quiet)
 {
@@ -122,6 +140,10 @@ error:
 	return rc;
 }
 
+/*************************************************************
+** local interface functions
+*************************************************************/
+
 static
 int
 begin(
@@ -130,8 +152,21 @@ begin(
 	afmpkg_mode_t mode
 ) {
 	state_t *state = closure;
-	state->mode = mode;
-	return secmgr_begin(NULL);
+	int rc = sec_lsm_manager_create(&state->slmhndl, NULL);
+	if (rc < 0)
+		RP_ERROR("sec_lsm_manager_create failed: %s", strerror(-rc));
+	else if (appid != NULL) {
+		rc = sec_lsm_manager_set_id(state->slmhndl, appid);
+		if (rc >= 0)
+			state->mode = mode;
+		else {
+			RP_ERROR("sec_lsm_manager_set_id %s failed: %s",
+			         appid, strerror(-rc));
+			sec_lsm_manager_destroy(state->slmhndl);
+			state->slmhndl = NULL;
+		}
+	}
+	return rc;
 }
 
 static
@@ -142,6 +177,7 @@ tagfile(
 	path_type_t type
 ) {
 	state_t *state = closure;
+	int rc;
 
 	if (type <= path_type_Unset || type >= _path_type_count_) {
 		RP_ERROR("Invalid path type %d", (int)type);
@@ -152,17 +188,25 @@ tagfile(
 	if (state->mode != Afmpkg_Install)
 		type = path_type_Id;
 
-	return secmgr_path(path, path_type_names[type]);
+	rc = sec_lsm_manager_add_path(state->slmhndl, path, path_type_names[type]);
+	if (rc < 0)
+		RP_ERROR("sec_lsm_manager_add_path %s -> %s failed: %s",
+		         path_type_names[type], path, strerror(-rc));
+	return rc;
 }
 
 static
 int
 setperm(
 	void *closure,
-	const char *perm
+	const char *permission
 ) {
 	state_t *state = closure;
-	return secmgr_permit(perm);
+	int rc = sec_lsm_manager_add_permission(state->slmhndl, permission);
+	if (rc < 0)
+		RP_ERROR("sec_lsm_manager_add_permission %s failed: %s",
+		         permission, strerror(-rc));
+	return rc;
 }
 
 static
@@ -173,7 +217,12 @@ int setplug(
 	const char *importdir
 ) {
 	state_t *state = closure;
-	return secmgr_plug(exportdir, importid, importdir);
+	int rc = sec_lsm_manager_add_plug(state->slmhndl,
+	                                  exportdir, importid, importdir);
+	if (rc < 0)
+		RP_ERROR("sec_lsm_manager_add_plug %s -> %s @ %s failed: %s",
+		         exportdir, importid, importdir, strerror(-rc));
+	return rc;
 }
 
 static
@@ -184,7 +233,10 @@ setunits(
 	int nrunits
 ) {
 	state_t *state = closure;
-	return (state->mode == Afmpkg_Install ? install_units : uninstall_units)(state, units, nrunits);
+	if (state->mode == Afmpkg_Install)
+		return install_units(state, units, nrunits);
+	else
+		return uninstall_units(state, units, nrunits);
 }
 
 static
@@ -195,26 +247,40 @@ end(
 ) {
 	state_t *state = closure;
 	int rc = status;
-	if (status == 0)
-		rc = (state->mode == Afmpkg_Install ? secmgr_install : secmgr_uninstall)();
-	secmgr_end();
+	if (state->slmhndl != NULL) {
+		if (status == 0) {
+			if (state->mode == Afmpkg_Install)
+				rc = sec_lsm_manager_install(state->slmhndl);
+			else
+				rc = sec_lsm_manager_uninstall(state->slmhndl);
+			if (rc < 0)
+				RP_ERROR("sec_lsm_manager_%sinstall failed: %s",
+					state->mode == Afmpkg_Install ? "" : "un",
+					strerror(-rc));
+		}
+		sec_lsm_manager_destroy(state->slmhndl);
+		state->slmhndl = NULL;
+	}
 	return rc;
 }
-
-static afmpkg_operations_t opers = {
-	.begin = begin,
-	.tagfile = tagfile,
-	.setperm = setperm,
-	.setplug = setplug,
-	.setunits = setunits,
-	.end = end
-};
 
 /* install afm package */
 int afmpkg_std_install(
 	const afmpkg_t *apkg
 ) {
-	state_t state = { .mode = Afmpkg_Nop };
+	state_t state = {
+		.mode = Afmpkg_Nop,
+		.slmhndl = NULL
+	};
+	afmpkg_operations_t opers = {
+		.begin = begin,
+		.tagfile = tagfile,
+		.setperm = setperm,
+		.setplug = setplug,
+		.setunits = setunits,
+		.end = end
+	};
+
 	return afmpkg_install(apkg, &opers, &state);
 }
 
@@ -222,7 +288,19 @@ int afmpkg_std_install(
 int afmpkg_std_uninstall(
 	const afmpkg_t *apkg
 ) {
-	state_t state = { .mode = Afmpkg_Nop };
+	state_t state = {
+		.mode = Afmpkg_Nop,
+		.slmhndl = NULL
+	};
+	afmpkg_operations_t opers = {
+		.begin = begin,
+		.tagfile = tagfile,
+		.setperm = setperm,
+		.setplug = setplug,
+		.setunits = setunits,
+		.end = end
+	};
+
 	return afmpkg_uninstall(apkg, &opers, &state);
 }
 

@@ -23,13 +23,19 @@
 ###########################################################################
 
 add_library(afmpkg STATIC afmpkg.c afmpkg-request.c afmpkg-std.c)
-target_link_libraries(afmpkg units utils secwrp)
+target_link_libraries(afmpkg units utils)
 
 if(WITH_LEGACY_AFMPKG)
 	target_sources(afmpkg PRIVATE afmpkg-legacy.c)
 	target_compile_definitions(afmpkg PRIVATE -DWITH_LEGACY_AFMPK=1)
+	target_link_libraries(afmpkg secwrp)
 endif()
 if(WITH_CONFIG_XML)
 	target_compile_definitions(afmpkg PRIVATE -DWITH_CONFIG_XML=1)
 	target_link_libraries(afmpkg wgt)
+endif()
+if(NOT SIMULATE_SECMGR)
+	target_include_directories(afmpkg PRIVATE ${SECMGR_INCLUDE_DIRS})
+	target_link_libraries(afmpkg ${SECMGR_LIBRARIES})
+	target_link_directories(afmpkg PUBLIC ${SECMGR_LIBRARY_DIRS})
 endif()
