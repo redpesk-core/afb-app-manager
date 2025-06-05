@@ -48,6 +48,9 @@ if(WITH_CONFIG_XML OR WITH_LEGACY_WGTPKG)
 else()
 	pkg_check_modules(libxml libxml-2.0)
 endif()
+if(NOT SIMULATE_SECMGR)
+	pkg_check_modules(SECMGR REQUIRED sec-lsm-manager>=2.4)
+endif()
 
 # definitions
 add_definitions(
@@ -65,6 +68,7 @@ add_definitions(
 	-DALLOW_NO_SIGNATURE=$<BOOL:${ALLOW_NO_SIGNATURE}>
 	-DDISTINCT_VERSIONS=$<BOOL:${DISTINCT_VERSIONS}>
 	-DNO_LIBSYSTEMD=$<BOOL:$<NOT:$<BOOL:${libsystemd_FOUND}>>>
+	-DSIMULATE_SEC_LSM_MANAGER=$<BOOL:${SIMULATE_SECMGR}>
 )
 
 ###########################################################################

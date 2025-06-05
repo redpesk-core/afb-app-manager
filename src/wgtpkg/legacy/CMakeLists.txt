@@ -74,8 +74,12 @@ if(libxml_FOUND AND WITH_LEGACY_WGTPKG)
 	if(NOT ONLY_SDK)
 		MESSAGE(STATUS "Creating legacy installer for legacy widgets")
 		add_executable(wgtpkg-install main-wgtpkg-install.c)
-		target_link_libraries(wgtpkg-install wgtpkg wgt secwrp utils)
+		target_link_libraries(wgtpkg-install wgtpkg wgt utils)
 		install(TARGETS wgtpkg-install DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
+
+	if(NOT SIMULATE_SECMGR)
+		target_link_libraries(wgtpkg-install secwrp)
 	endif()
 
 	if(WITH_TOOLS AND WITH_LEGACY_WGTPKG)

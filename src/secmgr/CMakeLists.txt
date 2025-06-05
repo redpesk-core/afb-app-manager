@@ -22,14 +22,9 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-if(NOT ONLY_SDK)
+if(NOT SIMULATE_SECMGR)
 	add_library(secwrp STATIC secmgr-wrap.c)
 
-	if(NOT SIMULATE_SECMGR)
-		pkg_check_modules(SECMGR REQUIRED sec-lsm-manager>=2.4)
-	endif()
-
-	target_compile_options(secwrp PRIVATE ${SECMGR_CFLAGS} -DSIMULATE_SEC_LSM_MANAGER=$<BOOL:${SIMULATE_SECMGR}>)
 	target_include_directories(secwrp PRIVATE ${SECMGR_INCLUDE_DIRS})
 	target_link_libraries(secwrp PUBLIC ${SECMGR_LIBRARIES})
 	target_link_directories(secwrp PUBLIC ${SECMGR_LIBRARY_DIRS})

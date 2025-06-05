@@ -46,7 +46,6 @@ if(libsystemd_FOUND AND AFB_FOUND AND NOT ONLY_SDK)
 	)
 	target_link_libraries(
 		afm-binding
-		secwrp
 		utils
 		${AFB_LIBRARIES}
 	)
