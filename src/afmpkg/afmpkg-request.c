@@ -339,6 +339,7 @@ int afmpkg_request_process(afmpkg_request_t *req)
 
 	case Request_Check_Add_Package:
 	case Request_Check_Remove_Package:
+		RP_WARNING("Check operation isn't implemented");
 		break;
 
 	case Request_Get_Status:
