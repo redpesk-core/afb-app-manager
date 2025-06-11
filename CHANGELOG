@@ -1,5 +1,6 @@
 next 12.4.0
 
+- Add afmpkg-offline tool
 - Rework afmpkg for being tunable
 - Rework integration of sec-lsm-manager
 - Check not existing service at installation (7872)
@@ -10,7 +11,7 @@ next 12.4.0
 - Fix metadata of afm-translate and fix the doc
 - Improve afm-translate default output
 - Add split method to afm-translate
-- refactor of unit file generation
+- Refactor of unit file generation
 
 Version 12.3.3
 --------------
