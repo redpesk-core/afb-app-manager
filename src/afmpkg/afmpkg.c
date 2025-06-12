@@ -1233,7 +1233,7 @@ int
 process_package(afmpkg_state_t *state, const char *manif)
 {
 	struct json_object *id;
-	int rc;
+	int rc, rc2;
 
 	RP_DEBUG("Processing AFMPKG package type %s found at %s", manif, state->path);
 
@@ -1269,7 +1269,9 @@ process_package(afmpkg_state_t *state, const char *manif)
 		else
 			rc = uninstall_afmpkg(state);
 	}
-	rc = state->opers->end(state->closure, rc);
+	rc2 = state->opers->end(state->closure, rc);
+	if (rc2 < 0)
+		rc = rc2;
 
 	/* clean up */
 cleanup:
