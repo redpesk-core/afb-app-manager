@@ -28,6 +28,25 @@
 #include "path-entry.h"
 
 /**
+* Definition of the path types for sec-lsm-manager
+*/
+static const char * const path_type_slm[] = {
+    [path_type_Unset]       = "default",
+    [path_type_Default]     = "default",
+    [path_type_Conf]        = "conf",
+    [path_type_Data]        = "data",
+    [path_type_Exec]        = "exec",
+    [path_type_Http]        = "http",
+    [path_type_Icon]        = "icon",
+    [path_type_Id]          = "id",
+    [path_type_Lib]         = "lib",
+    [path_type_Plug]        = "plug",
+    [path_type_Public]      = "public",
+    [path_type_Public_Exec] = "public",
+    [path_type_Public_Lib]  = "public"
+};
+
+/**
 * Definition of the names of the path types
 * Defines also the default type of some directories
 */
@@ -72,3 +91,9 @@ path_type_t path_type_of_dirname(const char *dir)
 	return path_type_Unset;
 }
 
+/* see path-type.h */
+const char *path_type_for_slm(path_type_t type)
+{
+	return type < path_type_Unset || type >= _path_type_count_
+		? NULL : path_type_slm[type];
+}

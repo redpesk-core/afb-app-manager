@@ -55,42 +55,6 @@ struct {
 	state_t;
 
 /*************************************************************
-** locally defined path types for sec-lsm-manager
-*************************************************************/
-
-static const char * const path_type_names[] = {
-#if defined(SEC_LSM_MANAGER_PATH_TYPE_DEFAULT) /* defined since sec-lsm-manager 2.6.2 */
-    [path_type_Unset]       = SEC_LSM_MANAGER_PATH_TYPE_DEFAULT,
-    [path_type_Default]     = SEC_LSM_MANAGER_PATH_TYPE_DEFAULT,
-    [path_type_Conf]        = SEC_LSM_MANAGER_PATH_TYPE_CONF,
-    [path_type_Data]        = SEC_LSM_MANAGER_PATH_TYPE_DATA,
-    [path_type_Exec]        = SEC_LSM_MANAGER_PATH_TYPE_EXEC,
-    [path_type_Http]        = SEC_LSM_MANAGER_PATH_TYPE_HTTP,
-    [path_type_Icon]        = SEC_LSM_MANAGER_PATH_TYPE_ICON,
-    [path_type_Id]          = SEC_LSM_MANAGER_PATH_TYPE_ID,
-    [path_type_Lib]         = SEC_LSM_MANAGER_PATH_TYPE_LIB,
-    [path_type_Plug]        = SEC_LSM_MANAGER_PATH_TYPE_PLUG,
-    [path_type_Public]      = SEC_LSM_MANAGER_PATH_TYPE_PUBLIC,
-    [path_type_Public_Exec] = SEC_LSM_MANAGER_PATH_TYPE_PUBLIC,
-    [path_type_Public_Lib]  = SEC_LSM_MANAGER_PATH_TYPE_PUBLIC
-#else
-    [path_type_Unset]       = "default",
-    [path_type_Default]     = "default",
-    [path_type_Conf]        = "conf",
-    [path_type_Data]        = "data",
-    [path_type_Exec]        = "exec",
-    [path_type_Http]        = "http",
-    [path_type_Icon]        = "icon",
-    [path_type_Id]          = "id",
-    [path_type_Lib]         = "lib",
-    [path_type_Plug]        = "plug",
-    [path_type_Public]      = "public",
-    [path_type_Public_Exec] = "public",
-    [path_type_Public_Lib]  = "public"
-#endif
-};
-
-/*************************************************************
 ** local functions for processing units
 *************************************************************/
 
@@ -177,6 +141,7 @@ tagfile(
 	path_type_t type
 ) {
 	state_t *state = closure;
+	const char *slm_type;
 	int rc;
 
 	if (type <= path_type_Unset || type >= _path_type_count_) {
@@ -188,10 +153,11 @@ tagfile(
 	if (state->mode != Afmpkg_Install)
 		type = path_type_Id;
 
-	rc = sec_lsm_manager_add_path(state->slmhndl, path, path_type_names[type]);
+	slm_type = path_type_for_slm(type);
+	rc = sec_lsm_manager_add_path(state->slmhndl, path, slm_type);
 	if (rc < 0)
 		RP_ERROR("sec_lsm_manager_add_path %s -> %s failed: %s",
-		         path_type_names[type], path, strerror(-rc));
+		         slm_type, path, strerror(-rc));
 	return rc;
 }
 

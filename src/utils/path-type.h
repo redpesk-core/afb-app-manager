@@ -70,3 +70,12 @@ extern path_type_t path_type_of_property_key(const char *key);
 */
 extern path_type_t path_type_of_dirname(const char *dirname);
 
+/**
+* Get the path-type for of 'type' for the sec-lsm-manager
+*
+* @param type the internal type
+*
+* @return the path type for sec-lsm-manager
+*         or NULL if the given type is invalid
+*/
+extern const char *path_type_for_slm(path_type_t type);
