@@ -1,5 +1,6 @@
 next 12.4.0
 
+- Avoid reporting error when unit directory aren't existing
 - Add afmpkg-offline tool
 - Rework afmpkg for being tunable
 - Rework integration of sec-lsm-manager

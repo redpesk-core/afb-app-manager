@@ -93,10 +93,10 @@ static int update_afids(uint32_t *afids)
 	int rcs, rcu;
 
 	memset(afids, 0, AFID_ACNT * sizeof(uint32_t));
-	rcs = units_fs_list(0, get_afid_cb, afids);
+	rcs = units_fs_list(0, get_afid_cb, NULL, 1);
 	if (rcs < 0)
 		RP_ERROR("troubles while updating system's afids");
-	rcu = units_fs_list(1, get_afid_cb, afids);
+	rcu = units_fs_list(1, get_afid_cb, NULL, 1);
 	if (rcu < 0)
 		RP_ERROR("troubles while updating user's afids");
 

@@ -98,7 +98,7 @@ int units_fs_get_wants_target(char *path, size_t pathlen, const char *unit, cons
 }
 
 
-int units_fs_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
+int units_fs_list(int isuser, unit_cb_t callback, void *closure, int relax)
 {
 	DIR *dir;
 	char path[PATH_MAX + 1];
@@ -116,7 +116,7 @@ int units_fs_list(int isuser, int (*callback)(void *closure, const char *name, c
 	/* open the directory */
 	dir = opendir(path);
 	if (!dir)
-		return -1;
+		return relax && errno == ENOENT ? 0 : -1;
 
 	/* prepare path */
 	path[offset++] = '/';
@@ -162,8 +162,9 @@ int units_fs_list(int isuser, int (*callback)(void *closure, const char *name, c
 	return rc;
 }
 
-int units_fs_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure)
+int units_fs_list_all(unit_cb_t callback, void *closure, int relax)
 {
-	return units_fs_list(1, callback, closure) ? : units_fs_list(0, callback, closure);
+	return units_fs_list(1, callback, closure,relax)
+	    ?: units_fs_list(0, callback, closure, relax);
 }
 

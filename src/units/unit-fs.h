@@ -29,6 +29,9 @@ extern int units_fs_get_afm_units_dir(char *path, size_t pathlen, int isuser);
 extern int units_fs_get_afm_unit_path(char *path, size_t pathlen, int isuser, const char *unit, const char *uext);
 extern int units_fs_get_afm_wants_unit_path(char *path, size_t pathlen, int isuser, const char *wanter, const char *unit, const char *uext);
 extern int units_fs_get_wants_target(char *path, size_t pathlen, const char *unit, const char *uext);
-extern int units_fs_list(int isuser, int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
-extern int units_fs_list_all(int (*callback)(void *closure, const char *name, const char *path, int isuser), void *closure);
+
+typedef int unit_cb_t(void *closure, const char *name, const char *path, int isuser);
+
+extern int units_fs_list(int isuser, unit_cb_t callback, void *closure, int relax);
+extern int units_fs_list_all(unit_cb_t callback, void *closure, int relax);
 

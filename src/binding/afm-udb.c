@@ -508,9 +508,9 @@ int afm_udb_update(struct afm_udb *afudb)
 		result = -1;
 	else {
 		/* scan the units */
-		if (afudb->user && units_fs_list(1, update_cb, &updt) < 0)
+		if (afudb->user && units_fs_list(1, update_cb, &updt, 1) < 0)
 			result = -1;
-		else if (afudb->system && units_fs_list(0, update_cb, &updt) < 0)
+		else if (afudb->system && units_fs_list(0, update_cb, &updt, 1) < 0)
 			result = -1;
 		else {
 			/* commit the result */
