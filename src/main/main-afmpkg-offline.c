@@ -99,8 +99,8 @@ static int setunits(void *closure, const struct unitdesc *units, int nrunits)
 
 static int end(void * closure, int status)
 {
-	fprintf(stdout, "install\n");
-	return 0;
+	fprintf(stdout, "%s\n", status < 0 ? "clear" : "install");
+	return status;
 }
 
 static const afmpkg_operations_t offlineops =
