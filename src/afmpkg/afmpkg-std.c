@@ -58,7 +58,7 @@ struct {
 ** local functions for processing units
 *************************************************************/
 
-static int do_uninstall_units(state_t *state, const struct unitdesc *units, int nrunits, int quiet)
+static int do_uninstall_units(const struct unitdesc *units, int nrunits, int quiet)
 {
 	int i, rc, rc2, logmsk;
 
@@ -74,12 +74,12 @@ static int do_uninstall_units(state_t *state, const struct unitdesc *units, int 
 	return rc;
 }
 
-static int uninstall_units(state_t *state, const struct unitdesc *units, int nrunits)
+static int uninstall_units(const struct unitdesc *units, int nrunits)
 {
-	return do_uninstall_units(state, units, nrunits, 0);
+	return do_uninstall_units(units, nrunits, 0);
 }
 
-static int install_units(state_t *state, const struct unitdesc *units, int nrunits)
+static int install_units(const struct unitdesc *units, int nrunits)
 {
 	int i, rc;
 
@@ -99,7 +99,7 @@ static int install_units(state_t *state, const struct unitdesc *units, int nruni
 	return 0;
 error:
 	i = errno;
-	do_uninstall_units(state, units, nrunits, 1);
+	do_uninstall_units(units, nrunits, 1);
 	errno = i;
 	return rc;
 }
@@ -200,9 +200,9 @@ setunits(
 ) {
 	state_t *state = closure;
 	if (state->mode == Afmpkg_Install)
-		return install_units(state, units, nrunits);
+		return install_units(units, nrunits);
 	else
-		return uninstall_units(state, units, nrunits);
+		return uninstall_units(units, nrunits);
 }
 
 static
