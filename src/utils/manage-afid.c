@@ -25,6 +25,7 @@
 #define _GNU_SOURCE
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -48,7 +49,8 @@ static const char key_afid[] = "ID";
 #define AFID_TEST(array,afid)	((((array)[AFID_AIDX(afid)]) >> AFID_ASFT(afid)) & 1)
 #define AFID_SET(array,afid)	(((array)[AFID_AIDX(afid)]) |= (((uint32_t)1) << AFID_ASFT(afid)))
 
-static uint32_t *afids_array = NULL;
+static bool init_done = false;
+static uint32_t afids_array[AFID_ACNT];
 
 static int get_afid_cb(void *closure, const char *name, const char *path, int isuser)
 {
@@ -79,7 +81,7 @@ static int get_afid_cb(void *closure, const char *name, const char *path, int is
 				while(*++iter == ' ');
 				p = atoi(iter);
 				if (AFID_IS_VALID(p))
-					AFID_SET((uint32_t*)closure, p);
+					AFID_SET(afids_array, p);
 			}
 		}
 		iter = strstr(iter, key_afm_prefix);
@@ -88,57 +90,70 @@ static int get_afid_cb(void *closure, const char *name, const char *path, int is
 	return 0;
 }
 
-static int update_afids(uint32_t *afids)
+static int update_afids(bool strict)
 {
-	int rcs, rcu;
+	int rcs, rcu, loglvl;
 
-	memset(afids, 0, AFID_ACNT * sizeof(uint32_t));
+	loglvl = strict ? rp_Log_Level_Error : rp_Log_Level_Warning;
+	memset(afids_array, 0, sizeof afids_array);
 	rcs = units_fs_list(0, get_afid_cb, NULL, 1);
 	if (rcs < 0)
-		RP_ERROR("troubles while updating system's afids");
+		_RP_VERBOSE_(loglvl, "troubles while updating system's afids");
 	rcu = units_fs_list(1, get_afid_cb, NULL, 1);
 	if (rcu < 0)
-		RP_ERROR("troubles while updating user's afids");
+		_RP_VERBOSE_(loglvl, "troubles while updating user's afids");
 
-	return 0; //rcs < 0 ? rcs : rcu;
+	return !strict ? 0 : rcs < 0 ? rcs : rcu;
 }
 
-static int first_free_afid(uint32_t *afids)
+static int first_free_afid()
 {
 	int afid;
 
 	afid = AFID_MIN;
-	while (afid <= AFID_MAX && !~afids[AFID_AIDX(afid)])
+	while (afid <= AFID_MAX && !~afids_array[AFID_AIDX(afid)])
 		afid += 32;
-	while (afid <= AFID_MAX && AFID_TEST(afids, afid))
+	while (afid <= AFID_MAX && AFID_TEST(afids_array, afid))
 		afid++;
 	if (afid > AFID_MAX) {
-		RP_ERROR("Can't compute a valid afid");
+		RP_ERROR("Can't get a valid afid");
 		errno = EADDRNOTAVAIL;
 		afid = -1;
 	}
 	return afid;
 }
 
+int init_afid_manager(int strict)
+{
+	/* is already done? */
+	if (init_done)
+		return 0;
+
+	/* initialize */
+	init_done = true;
+	return update_afids(strict != 0);
+}
+
 int get_new_afid()
 {
-	int afid;
+	int rc, afid;
 
-	/* ensure existing afid bitmap */
-	if (afids_array == NULL) {
-		afids_array = malloc(AFID_ACNT * sizeof(uint32_t));
-		if (afids_array == NULL || update_afids(afids_array) < 0)
-			return -1;
-	}
+	/* lazy init */
+	rc = init_afid_manager(true);
+	if (rc < 0)
+		return rc;
 
 	/* allocates the afid */
-	afid = first_free_afid(afids_array);
-	if (afid < 0 && errno == EADDRNOTAVAIL) {
+	afid = first_free_afid();
+	if (afid < 0) {
 		/* no more ids, try to rescan */
-		memset(afids_array, 0, AFID_ACNT * sizeof(uint32_t));
-		if (update_afids(afids_array) >= 0)
-			afid = first_free_afid(afids_array);
+		rc = update_afids(true);
+		if (rc < 0)
+			return rc;
+		afid = first_free_afid();
 	}
+
+	/* record allocation */
 	if (afid >= 0)
 		AFID_SET(afids_array, afid);
 

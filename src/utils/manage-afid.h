@@ -24,4 +24,5 @@
 
 #pragma once
 
+extern int init_afid_manager(int strict);
 extern int get_new_afid();
