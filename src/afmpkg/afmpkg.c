@@ -1460,7 +1460,7 @@ rootpkgs_add(
 */
 static
 int
-rootpks_for_each(
+rootpkgs_for_each(
 	rootpkgs_t *roots,
 	int (*callback)(void *closure, path_entry_t *entry, const char *type),
 	void *closure
@@ -1600,7 +1600,7 @@ afmpkg_process(
 
 	/* process each found packages of entries */
 	if (rc >= 0)
-		rc = rootpks_for_each(&roots, process_rootpkg, &state);
+		rc = rootpkgs_for_each(&roots, process_rootpkg, &state);
 	rootpkgs_uninit(&roots);
 
 	/* process remaining files */
