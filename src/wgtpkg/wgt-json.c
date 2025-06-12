@@ -418,6 +418,7 @@ static int add_required_binding(struct json_object *targets, const struct wgt_de
 static int add_required_permission(struct json_object *required_perms, const struct wgt_desc_feature *feat)
 {
 	static struct paramaction actions[] = {
+		{ .name = string_sharp_target, .action = NULL, .closure = NULL }, /* skip #target */
 		{ .name = NULL, .action = add_param_object, .closure = NULL }
 	};
 	return apply_params(required_perms, feat->params, actions);

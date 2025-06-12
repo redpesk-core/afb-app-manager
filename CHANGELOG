@@ -12,6 +12,7 @@ next 12.4.0
 - Improve afm-translate default output
 - Add split method to afm-translate
 - Refactor of unit file generation
+- Fix translation of config's permissions
 
 Version 12.3.3
 --------------
