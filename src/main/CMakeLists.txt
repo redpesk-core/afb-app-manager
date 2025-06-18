@@ -24,10 +24,10 @@
 
 if(NOT ONLY_SDK)
 	MESSAGE(STATUS "Creating afmpkg-installer and afmpkg-status")
-	add_executable(afmpkg-installer main-afmpkg-installer.c)
-	target_compile_options(afmpkg-installer PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
-	target_link_libraries(afmpkg-installer afmpkg pthread)
-	install(TARGETS afmpkg-installer DESTINATION ${CMAKE_INSTALL_BINDIR})
+	add_executable(afmpkg-installerd main-afmpkg-installerd.c)
+	target_compile_options(afmpkg-installerd PRIVATE -DNO_SEND_SIGHUP_ALL=$<BOOL:${SIMULATE_SECMGR}>)
+	target_link_libraries(afmpkg-installerd afmpkg pthread)
+	install(TARGETS afmpkg-installerd DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 	add_executable(afmpkg-status main-afmpkg-status.c)
 	install(TARGETS afmpkg-status DESTINATION ${CMAKE_INSTALL_BINDIR})

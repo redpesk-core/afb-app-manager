@@ -346,7 +346,7 @@ static int run()
 	}
 }
 
-static const char appname[] = "afmpkg-installer";
+static const char appname[] = "afmpkg-installerd";
 
 static void version()
 {

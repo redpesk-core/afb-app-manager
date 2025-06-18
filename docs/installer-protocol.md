@@ -1,6 +1,6 @@
 # Installer protocol
 
-This document describes the protocol used by the daemon **afmpkg-installer**.
+This document describes the protocol used by the daemon **afmpkg-installerd**.
 
 The two main clients of the protocol are:
 
@@ -9,11 +9,11 @@ The two main clients of the protocol are:
 
 When **dnf** is called, it resolves dependencies and install all the packages
 required. This leads to installing possibly more than one package.
-The daemon **afmpkg-installer** handles it with the concept of transaction.
+The daemon **afmpkg-installerd** handles it with the concept of transaction.
 
 So installation can take places
 
-The protocol specifies that only one request is served by **afmpkg-installer**.
+The protocol specifies that only one request is served by **afmpkg-installerd**.
 So the client connects, put an order, wait the answer and disconnect.
 
 So the connection can be summarized by the below synopsis:
@@ -25,7 +25,7 @@ REPLY    (S->C)
 
 The protocol is made of lines of text.
 
-At any time, on any line, if **afmpkg-installer** detects a protocol error, it sends
+At any time, on any line, if **afmpkg-installerd** detects a protocol error, it sends
 an error reply and closes the connection.
 
 There is two kinds of requests:

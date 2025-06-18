@@ -7,7 +7,7 @@ background as daemons.
 They ensure that operations use correctly the security framework
 and that applications are executed in the correct security context.
 
-- **afmpkg-installer**: this daemon installs and removes applications.
+- **afmpkg-installerd**: this daemon installs and removes applications.
 It is automatically called when **dnf** installs or removes applications.
 It automatically stops after an inactivity period.
 
@@ -65,32 +65,32 @@ running instance.
 It can also terminate a given application.
 
 
-## afmpkg-installer
+## afmpkg-installerd
 
-The daemon **afmpkg-installer** is activated by the *dnf*'s plugin
+The daemon **afmpkg-installerd** is activated by the *dnf*'s plugin
 named *redpesk* when it detects that the installed or removed
 package is an afmpkg.
 
-After being used, if **afmpkg-installer** is not used for 5 minutes,
+After being used, if **afmpkg-installerd** is not used for 5 minutes,
 it automatically stops.
 
 ### Installing applications
 
-**afmpkg-installer** reads the metadata of the installed package and
+**afmpkg-installerd** reads the metadata of the installed package and
 check it.
 
 When metadata are wrong, the installation is cancelled.
 
-Otherwise, when metadata are valid, **afmpkg-installer** contacts
+Otherwise, when metadata are valid, **afmpkg-installerd** contacts
 the *security manager* to setup the system security for the installed
 application.
 
-After installing or removing an application, **afmpkg-installer**
+After installing or removing an application, **afmpkg-installerd**
 sends to **afm-system-daemon** a signal telling it to update its
 applications database.
 
 ### Removing applications
 
-**afmpkg-installer** contacts the *security manager* to cleanup the
+**afmpkg-installerd** contacts the *security manager* to cleanup the
 security rules for the removed application and to remove their
 security setup.
