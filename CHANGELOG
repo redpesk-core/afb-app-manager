@@ -1,4 +1,5 @@
-next 12.4.0
+Version 12.4.0
+--------------
 
 - Rename afmpkg-installer as afmpkg-installerd
 - Reworked and improved afid manager
