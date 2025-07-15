@@ -121,15 +121,14 @@ begin(
 		RP_ERROR("sec_lsm_manager_create failed: %s", strerror(-rc));
 	else if (appid != NULL) {
 		rc = sec_lsm_manager_set_id(state->slmhndl, appid);
-		if (rc >= 0)
-			state->mode = mode;
-		else {
+		if (rc < 0) {
 			RP_ERROR("sec_lsm_manager_set_id %s failed: %s",
 			         appid, strerror(-rc));
 			sec_lsm_manager_destroy(state->slmhndl);
 			state->slmhndl = NULL;
 		}
 	}
+	state->mode = rc >= 0 ? mode : Afmpkg_Nop;
 	return rc;
 }
 
