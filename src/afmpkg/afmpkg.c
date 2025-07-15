@@ -1313,7 +1313,8 @@ process_default_tree(afmpkg_state_t *state, path_entry_t *root)
 {
 	int rc = 0;
 
-	if (state->mode != Afmpkg_Nop) {
+	/* setting label on default tree is currently only needed at install */
+	if (state->mode == Afmpkg_Install) {
 
 		/* detect if an entry fits a path of the original set
 		 * the directories that are implied must be ignored */
