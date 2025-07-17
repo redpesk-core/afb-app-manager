@@ -195,6 +195,7 @@ int afmpkg_request_init(afmpkg_request_t *req)
 	req->apkg.package = NULL;
 	req->apkg.root = NULL;
 	req->apkg.redpakid = NULL;
+	req->apkg.redpak_auto = NULL;
 	rc = path_entry_create_root(&req->apkg.files);
 	return rc;
 }

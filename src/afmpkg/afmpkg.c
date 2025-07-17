@@ -1054,6 +1054,59 @@ static void add_meta_to_target(
 }
 
 /**
+ * retrieves the redpakid for the current state
+ */
+static const char *get_redpakid(
+		afmpkg_state_t *state,
+		char path[PATH_MAX]
+) {
+	const char *str;
+	size_t lpa, lau;
+	struct stat s;
+	int rc;
+
+	str = state->apkg->redpakid;
+	if (str != NULL)
+		/* explicit case */
+		return str;
+
+	str = state->apkg->redpak_auto;
+	if (str != NULL) {
+		/* automatic search */
+		lau = strlen(str);
+		lpa = (size_t)(stpcpy(path, state->path) - path);
+		while (lpa >= state->offset_root) {
+			/* check if enougth space */
+			if (lpa + lau + 1 + (lpa && path[lpa -1] != '/')) {
+				/* yes, compute marker path */
+				if (lpa && path[lpa - 1] != '/')
+					path[lpa++] = '/';
+				memcpy(&path[lpa], str, lau + 1);
+
+				/* check marker */
+				rc = fstatat(AT_FDCWD, path, &s,
+						AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW);
+				if (rc == 0 && S_ISREG(s.st_mode)) {
+					/* marker found */
+					path[lpa - (lpa > 0)] = 0;
+					return path;
+				}
+			}
+			/* not found, compute parent directory */
+			while (lpa >= state->offset_root
+			   && lpa > 0 && path[lpa - 1] == '/')
+				lpa--;
+			if (lpa <= state->offset_root)
+				break;
+			while (lpa >= state->offset_root
+			   && lpa > 0 && path[lpa - 1] != '/')
+				lpa--;
+		}
+	}
+	return NULL;
+}
+
+/**
 * Add to the manifest the metadata used when expanding
 * mustache configuration files.
 *
@@ -1074,6 +1127,8 @@ static void add_meta_to_target(
 static int add_meta_to_manifest(
 		afmpkg_state_t *state
 ) {
+	char redpath[PATH_MAX];
+	const char *redpakid;
 	json_object *object;
 	int rc;
 
@@ -1086,11 +1141,12 @@ static int add_meta_to_manifest(
 	}
 
 	/* add global metadata */
+	redpakid = get_redpakid(state, redpath);
 	rc = rp_jsonc_pack(&object, "{ss ss sb ss* ss*}",
 				"install-dir", &state->path[state->offset_root],
 				"icons-dir", FWK_ICON_DIR,
-				"redpak", state->apkg->redpakid != NULL,
-				"redpak-id", state->apkg->redpakid,
+				"redpak", redpakid != NULL,
+				"redpak-id", redpakid,
 				"root-dir", state->apkg->root);
 	if (rc < 0) {
 		RP_ERROR("out of memory");

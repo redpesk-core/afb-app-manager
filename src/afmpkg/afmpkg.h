@@ -42,8 +42,11 @@ typedef struct
 	/** root directory */
 	char *root;
 
-	/** some redpakid */
+	/** the redpakid */
 	char *redpakid;
+
+	/** redpak automatic file */
+	char *redpak_auto;
 }
 	afmpkg_t;
 
