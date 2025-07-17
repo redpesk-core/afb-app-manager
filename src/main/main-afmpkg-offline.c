@@ -135,9 +135,13 @@ static int run()
 	/* read input */
 	while (fgets(buffer, sizeof buffer, stdin) != NULL) {
 		length = strlen(buffer);
+		if (length && buffer[length - 1] == '\n')
+			buffer[--length] = 0;
 		if (length) {
-			if (buffer[length - 1] == '\n')
-				buffer[--length] = 0;
+			if (buffer[0] != '/') {
+				RP_ERROR("Path should be absolute but got %s", buffer);
+				return EXIT_FAILURE;
+			}
 			rc = path_entry_add_length(apkg.files, NULL, buffer, length);
 			if (rc < 0) {
 				RP_ERROR("Init failed");
