@@ -31,6 +31,7 @@
 #include <rp-utils/rp-verbose.h>
 
 #include "afmpkg.h"
+#include "afmpkg-common.h"
 #include "unit-oper.h"
 
 static int begin(void *closure, const char *appid, afmpkg_mode_t mode)
@@ -123,7 +124,7 @@ static int run()
 	/* init */
 	apkg.package = NULL;
 	apkg.root = NULL;
-	apkg.redpakid = NULL;
+	apkg.redpakid = getenv(AFMPKG_ENVVAR_REDPAKID);
 	apkg.redpak_auto = ".rednode.yaml";
 	rc = path_entry_create_root(&apkg.files);
 	if (rc < 0) {
