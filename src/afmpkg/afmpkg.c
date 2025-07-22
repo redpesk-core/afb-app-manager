@@ -1128,7 +1128,7 @@ static int add_meta_to_manifest(
 		afmpkg_state_t *state
 ) {
 	char redpath[PATH_MAX];
-	const char *redpakid;
+	const char *redpakid, *root;
 	json_object *object;
 	int rc;
 
@@ -1142,12 +1142,13 @@ static int add_meta_to_manifest(
 
 	/* add global metadata */
 	redpakid = get_redpakid(state, redpath);
+	root = state->apkg->root == NULL ? "/" : state->apkg->root;
 	rc = rp_jsonc_pack(&object, "{ss ss sb ss* ss*}",
 				"install-dir", &state->path[state->offset_root],
 				"icons-dir", FWK_ICON_DIR,
 				"redpak", redpakid != NULL,
 				"redpak-id", redpakid,
-				"root-dir", state->apkg->root);
+				"root-dir", root);
 	if (rc < 0) {
 		RP_ERROR("out of memory");
 		return -ENOMEM;
