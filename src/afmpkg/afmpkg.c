@@ -1142,9 +1142,12 @@ static int add_meta_to_manifest(
 
 	/* add global metadata */
 	redpakid = get_redpakid(state, redpath);
-	root = state->apkg->root == NULL ? "/" : state->apkg->root;
+	if (redpakid != NULL && state->apkg->redpak_auto != NULL)
+		root = redpakid;
+	else
+		root = state->apkg->root ?: "";
 	rc = rp_jsonc_pack(&object, "{ss ss sb ss* ss*}",
-				"install-dir", &state->path[state->offset_root],
+				"install-dir", &state->path[strlen(root)],
 				"icons-dir", FWK_ICON_DIR,
 				"redpak", redpakid != NULL,
 				"redpak-id", redpakid,

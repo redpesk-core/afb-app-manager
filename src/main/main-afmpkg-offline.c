@@ -123,7 +123,7 @@ static int run()
 
 	/* init */
 	apkg.package = NULL;
-	apkg.root = "/";
+	apkg.root = NULL;
 	apkg.redpakid = getenv(AFMPKG_ENVVAR_REDPAKID);
 	apkg.redpak_auto = ".rednode.yaml";
 	rc = path_entry_create_root(&apkg.files);

@@ -1,0 +1,16 @@
+rp-manifest: 1
+
+id: test-offline-main
+version: 1
+author: iot team
+license: none
+
+description: >
+  This is a tiny example for testing plugins.
+
+targets:
+  - target: main
+    content:
+       src: bin/start
+       type: application/x-executable
+

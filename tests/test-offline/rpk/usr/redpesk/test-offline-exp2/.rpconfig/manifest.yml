@@ -1,0 +1,22 @@
+rp-manifest: 1
+
+id: test-offline-exp2
+version: 1
+author: iot team
+license: none
+
+description: >
+  This is a tiny example for testing plugins.
+
+targets:
+  - target: main
+    content:
+       src: bin/start
+       type: application/x-executable
+
+plugs:
+  - name: export
+    value: test-offline-main
+
+required-permission:
+  - urn:redpesk:permission:test-offline-main:partner:export:plug

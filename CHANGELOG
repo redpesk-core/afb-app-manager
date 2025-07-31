@@ -1,8 +1,13 @@
+Version 12.4.3
+--------------
+
+- Fix compatibility of afmpkg-offline with redpak
+
 Version 12.4.2
 --------------
 
 - Improve compatibility of afmpkg-offline with redpak
-- Enforce absolutre path in afmpkg-offline
+- Enforce absolute path in afmpkg-offline
 - Handle correctly case of afmpkg.root == NULL
 
 Version 12.4.1

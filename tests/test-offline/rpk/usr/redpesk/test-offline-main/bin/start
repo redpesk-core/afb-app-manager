@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "HELLO! (from $0)"
+sleep 5
