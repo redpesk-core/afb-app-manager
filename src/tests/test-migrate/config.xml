@@ -42,7 +42,7 @@
     <param name="#target" value="geoloc" />
     <param name="description" value="binding of name geoloc" />
     <param name="content.src" value="index.html" />
-    <param name="content.type" value="application/vnd.agl.service" />
+    <param name="content.type" value="application/vnd.redpesk.service" />
   </feature>
   <feature name="urn:AGL:widget:required-permission">
     <param name="#target" value="geoloc" />

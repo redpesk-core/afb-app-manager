@@ -316,7 +316,7 @@ Example:
     <param name="#target" value="geoloc" />
     <param name="description" value="binding of name geoloc" />
     <param name="content.src" value="index.html" />
-    <param name="content.type" value="application/vnd.agl.service" />
+    <param name="content.type" value="application/vnd.redpesk.service" />
   </feature>
 ```
 
@@ -328,7 +328,7 @@ This will be *virtually* translated for mustaches to the JSON
       "description":"binding of name geoloc",
       "content":{
         "src":"index.html",
-        "type":"application\/vnd.agl.service"
+        "type":"application\/vnd.redpesk.service"
       },
       ...
     }

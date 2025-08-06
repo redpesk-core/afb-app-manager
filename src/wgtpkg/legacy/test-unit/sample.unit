@@ -62,7 +62,7 @@ ExecStart=/usr/bin/afb-binder --port=%P --random-token \
 
 {{/content.type=text/html}}
 
-{{#content.type=application/vnd.agl.service}}
+{{#content.type=application/vnd.redpesk.service|application/vnd.agl.service}}
 
 %systemd-unit user
 %systemd-unit service afm-api-{{:#target}}
@@ -86,7 +86,7 @@ ExecStart=/usr/bin/afb-binder \
 SmackLabel=*
 ListenStream=%t/bindings/{{:#target}}
 
-{{/content.type=application/vnd.agl.service}}
+{{/content.type=application/vnd.redpesk.service|application/vnd.agl.service}}
 
 %end systemd-unit
 

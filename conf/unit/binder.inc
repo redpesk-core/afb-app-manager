@@ -3,7 +3,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 IF_REDPESK_DEVEL
 X-AFM-http-port=HTTP_PORT
 ELSE
-IF_NOT_CONTENT(application/vnd.agl.service)
+IF_NOT_CONTENT(application/vnd.redpesk.service|application/vnd.agl.service)
 X-AFM--http-port=HTTP_PORT
 ENDIF
 ENDIF
@@ -20,9 +20,9 @@ IF_REDPESK_DEVEL \
 	--monitoring \
 	--port=HTTP_PORT \
 	--interface=tcp:LOCALUSERAPP:8080 \
-	--roothttp=ON_CONTENT(application/vnd.agl.service, ., ON_AGL_PERM(:public:no-htdocs, ., htdocs)) \
+	--roothttp=ON_CONTENT(application/vnd.redpesk.service|application/vnd.agl.service, ., ON_AGL_PERM(:public:no-htdocs, ., htdocs)) \
 ELSE \
-	IF_CONTENT(application/vnd.agl.service) \
+	IF_CONTENT(application/vnd.redpesk.service|application/vnd.agl.service) \
 		--no-httpd \
 	ELSE \
 		--port=HTTP_PORT \
@@ -52,5 +52,5 @@ ENDIF \
 	{{/provided-api}} \
 	ON_AGL_PERM(:platform:apis:auto-ws, --auto-api=API_PATH_WS) \
 	ON_CONTENT(text/html,			--exec /usr/bin/cynagoauth-launch /usr/bin/web-runtime http://LOCALUSERAPP:8080/{{content.src}}) \
-	ON_CONTENT(application/vnd.agl.native,	--exec APP_INSTALL_DIR/{{content.src}} @p @t)
+	ON_CONTENT(application/vnd.redpesk.service|application/vnd.agl.native,	--exec APP_INSTALL_DIR/{{content.src}} @p @t)
 %nl

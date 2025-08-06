@@ -54,7 +54,7 @@ targets:
   - target: main
     content:
       src: .rpconfig/manifest.yml
-      type: application/vnd.agl.service
+      type: application/vnd.redpesk.service
     required-binding:
       - name: extra
         value: extern
@@ -91,7 +91,7 @@ targets:
   - target: main
     content:
       src: .rpconfig/manifest.yml
-      type: application/vnd.agl.service
+      type: application/vnd.redpesk.service
     required-binding:
       - name: extra
         value: extern

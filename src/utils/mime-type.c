@@ -28,6 +28,7 @@
 
 static const char* exec_type_strings[] = {
 	"application/x-executable",
+	"application/vnd.redpesk.native",
 	"application/vnd.agl.native"
 };
 

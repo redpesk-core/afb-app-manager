@@ -11,12 +11,12 @@ Known types for the type of content are:
   content.src designates the home page of the application
   **(don't use it)**
 
-- ***application/vnd.agl.native***
-  AGL compatible native,
+- ***application/vnd.redpesk.native***
+  repesk compatible native,
   content.src designates the relative path of the binary.
 
-- ***application/vnd.agl.service***:
-  AGL service, content.src is not used but must exist.
+- ***application/vnd.redpesk.service***:
+  repesk service, content.src is not used but must exist.
 
 - ***application/x-executable***:
   Native application,
@@ -30,4 +30,10 @@ Known types for the type of content are:
 - ***application/vnd.redpesk.httpd***:
   HTTP server only,
   content.src must exist but is not used
+
+- ***application/vnd.agl.native***
+  LEGACY, synonym of *application/vnd.redpesk.native*
+
+- ***application/vnd.agl.service***:
+  LEGACY, synonym of *application/vnd.redpesk.service*
 

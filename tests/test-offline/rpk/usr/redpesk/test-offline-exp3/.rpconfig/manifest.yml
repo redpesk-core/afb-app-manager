@@ -12,7 +12,7 @@ targets:
   - target: main
     content:
        src: lib/start
-       type: application/vnd.agl.service
+       type: application/vnd.redpesk.service
     required-binding:
        name: lib/start
        value: local

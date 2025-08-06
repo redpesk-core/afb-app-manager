@@ -59,7 +59,7 @@ targets:
   - target: main
     content:
 	src: lib/useful.so
-	type: application/vnd.agl.service
+	type: application/vnd.redpesk.service
     required-binding:
       - name: lib/useful.so
         value: local
@@ -82,7 +82,7 @@ targets:
   - target: main
     content:
 	src: lib/useful.so
-	type: application/vnd.agl.service
+	type: application/vnd.redpesk.service
     required-binding:
       - name: lib/useful.so
         value: local

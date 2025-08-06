@@ -1,3 +1,11 @@
+Version next
+--------------
+
+- Add mime-types application/vnd.redpesk.service
+- Add mime-types application/vnd.redpesk.native
+- Deprecate mime-types application/vnd.agl.service
+- Deprecate mime-types application/vnd.agl.native
+
 Version 12.4.3
 --------------
 
