@@ -59,6 +59,10 @@
 #include "manage-afid.h"
 #include "mime-type.h"
 
+#ifndef FWK_AGL_PREFIX
+#define FWK_AGL_PREFIX "urn:AGL:"
+#endif
+
 #ifndef DEFAULT_TCP_PORT_BASE
 #define DEFAULT_TCP_PORT_BASE		29000
 #endif

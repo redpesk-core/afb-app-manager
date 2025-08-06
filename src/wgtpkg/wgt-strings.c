@@ -53,6 +53,9 @@ const char string_width[] = "width";
 const char string_config_dot_xml[] = "config.xml";
 
 /* other strings */
+#ifndef FWK_AGL_PREFIX
+#define FWK_AGL_PREFIX "urn:AGL:"
+#endif
 const char string_AGL_prefix[] = FWK_AGL_PREFIX;
 const char string_AGL_permission_prefix[] = FWK_AGL_PREFIX "permission:";
 const char string_AGL_widget_prefix[] = FWK_AGL_PREFIX "widget:";

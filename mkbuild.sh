@@ -46,7 +46,6 @@ cmake \
 	${afm_appdir+-Dafm_appdir="${afm_appdir}"} \
 	${afm_icondir+-Dafm_icondir="${afm_icondir}"} \
 	${afm_redpesk_prefix+-Dafm_redpesk_prefix="${afm_redpesk_prefix}"} \
-	${afm_agl_prefix+-Dafm_agl_prefix="${afm_agl_prefix}"} \
 	${afm_units_root+-Dafm_units_root="${afm_units_root}"} \
 	${crypto_trusted_certs_dir+-Dcrypto_trusted_certs_dir="${crypto_trusted_certs_dir}"} \
 	${crypto_sample_keys_dir+-Dcrypto_sample_keys_dir="${crypto_sample_keys_dir}"} \

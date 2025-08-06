@@ -42,6 +42,13 @@
 #include "afm-urun.h"
 #include "wgt-info.h"
 
+#ifndef FWK_AGL_PREFIX
+#define FWK_AGL_PREFIX "urn:AGL:"
+#endif
+#ifndef FWK_PERM_PREFIX
+#define FWK_PERM_PREFIX FWK_AGL_PREFIX
+#endif
+
 /*
  * constant strings
  */
@@ -76,35 +83,35 @@ static const char _update_[]    = "update";
 static const struct afb_auth
 	auth_perm_widget = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:widget"
+		.text = FWK_PERM_PREFIX"permission:afm:system:widget"
 	},
 	auth_perm_widget_detail = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:widget:detail"
+		.text = FWK_PERM_PREFIX"permission:afm:system:widget:detail"
 	},
 	auth_perm_widget_start = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:widget:start"
+		.text = FWK_PERM_PREFIX"permission:afm:system:widget:start"
 	},
 	auth_perm_widget_view_all = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:widget:view-all"
+		.text = FWK_PERM_PREFIX"permission:afm:system:widget:view-all"
 	},
 	auth_perm_runner = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:runner"
+		.text = FWK_PERM_PREFIX"permission:afm:system:runner"
 	},
 	auth_perm_runner_state = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:runner:state"
+		.text = FWK_PERM_PREFIX"permission:afm:system:runner:state"
 	},
 	auth_perm_runner_kill = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:runner:kill"
+		.text = FWK_PERM_PREFIX"permission:afm:system:runner:kill"
 	},
 	auth_perm_set_uid = {
 		.type = afb_auth_Permission,
-		.text = FWK_AGL_PREFIX"permission:afm:system:set-uid"
+		.text = FWK_PERM_PREFIX"permission:afm:system:set-uid"
 	},
 	auth_detail = {
 		.type = afb_auth_Or,

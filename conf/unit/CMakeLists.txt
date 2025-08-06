@@ -33,7 +33,6 @@ if(NOT ONLY_SDK)
 
 	set(m4defs
 		-DAFM_REDPESK_PREFIX=${afm_redpesk_prefix}
-		-DAFM_AGL_PREFIX=${afm_agl_prefix}
 		-DAFM_USERS_RUNDIR=${afm_users_rundir}
 		-DAFM_PLATFORM_RUNDIR=${afm_platform_rundir}
 		-DAFM_SCOPE_PLATFORM_HOMEDIR=${afm_scope_platform_dir}

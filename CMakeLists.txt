@@ -53,7 +53,6 @@ set(afm_contentdir          "${CMAKE_INSTALL_PREFIX}/redpesk"              CACHE
 set(afm_appdir              "${afm_contentdir}"                            CACHE STRING "Directory for installing applications")
 set(afm_icondir             "${afm_contentdir}/${afm_name}/icons"          CACHE STRING "Directory for installing icons")
 set(afm_redpesk_prefix      "urn:redpesk:"                                 CACHE STRING "Prefix for redpesk uniform resource name")
-set(afm_agl_prefix          "urn:AGL:"                                     CACHE STRING "Prefix for AGL uniform resource name")
 set(afm_units_root          "${afm_datadir}/systemd"                       CACHE STRING "Place where unit files are to be set")
 set(crypto_trusted_certs_dir "${afm_confdir}/certs"                        CACHE STRING "Path to internal certificates")
 set(crypto_sample_keys_dir  "${afm_datadir}/keys"                          CACHE STRING "Path to internal keys")
