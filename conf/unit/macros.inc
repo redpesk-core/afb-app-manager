@@ -30,7 +30,7 @@ define( `IF_REDPESK_PERM', `MUSTACH_IF(REQ_REDPESK_PERM($1))')
 define( `IF_NOT_REDPESK_PERM', `MUSTACH_IF_NOT(REQ_REDPESK_PERM($1))')
 
 define( `AGL_PERM', `urn:AGL:permission:$1')
-define( `REQ_AGL_PERM', `required-permission.AGL_PERM($1)')
+define( `REQ_AGL_PERM', `REQ_REDPESK_PERM($1)|required-permission.AGL_PERM($1)')
 
 define( `ON_AGL_PERM', `MUSTACH_ON(REQ_AGL_PERM($1),$2,$3)')
 define( `ON_NOT_AGL_PERM', `MUSTACH_ON(REQ_AGL_PERM($1),$3,$2)')

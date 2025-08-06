@@ -265,8 +265,8 @@ Example:
 ```xml
   <feature name="urn:AGL:widget:required-permission">
     <param name="#target" value="geoloc" />
-    <param name="urn:AGL:permission:real-time" value="required" />
-    <param name="urn:AGL:permission:syscall:*" value="required" />
+    <param name="urn:redpesk:permission:real-time" value="required" />
+    <param name="urn:redpesk:permission:syscall:*" value="required" />
   </feature>
 ```
 
@@ -274,12 +274,12 @@ This will be *virtually* translated for mustaches to the JSON
 
 ```json
 "required-permission":{
-  "urn:AGL:permission:real-time":{
-    "name":"urn:AGL:permission:real-time",
+  "urn:redpesk:permission:real-time":{
+    "name":"urn:redpesk:permission:real-time",
     "value":"required"
   },
-  "urn:AGL:permission:syscall:*":{
-    "name":"urn:AGL:permission:syscall:*",
+  "urn:redpesk:permission:syscall:*":{
+    "name":"urn:redpesk:permission:syscall:*",
     "value":"required"
   }
 }

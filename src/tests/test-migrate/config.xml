@@ -28,8 +28,8 @@
     <param name="extra" value="extern" />
   </feature>
   <feature name="urn:AGL:widget:required-permission">
-    <param name="urn:AGL:permission:real-time" value="required" />
-    <param name="urn:AGL:permission:syscall:*" value="required" />
+    <param name="urn:redpesk:permission:real-time" value="required" />
+    <param name="urn:redpesk:permission:syscall:*" value="required" />
   </feature>
   <feature name="urn:AGL:widget:provided-api">
     <param name="#target" value="main" />
@@ -46,8 +46,8 @@
   </feature>
   <feature name="urn:AGL:widget:required-permission">
     <param name="#target" value="geoloc" />
-    <param name="urn:AGL:permission:real-time" value="required" />
-    <param name="urn:AGL:permission:syscall:*" value="required" />
+    <param name="urn:redpesk:permission:real-time" value="required" />
+    <param name="urn:redpesk:permission:syscall:*" value="required" />
   </feature>
   <feature name="urn:AGL:widget:required-api">
     <param name="#target" value="geoloc" />

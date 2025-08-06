@@ -70,12 +70,12 @@ by colons.
 Here is a list of some possible permissions.
 These permissions are available the 21th of May 2019.
 
-- `urn:AGL:permission::platform:no-oom`
+- `urn:redpesk:permission::platform:no-oom`
 
   Set OOMScoreAdjust=-500 to keep the out-of-memory
   killer away.
 
-- `urn:AGL:permission::partner:real-time`
+- `urn:redpesk:permission::partner:real-time`
 
   Set IOSchedulingClass=realtime to give to the process
   realtime scheduling.
@@ -83,57 +83,57 @@ These permissions are available the 21th of May 2019.
   Conversely, not having this permission set RestrictRealtime=on
   to forbid realtime features.
 
-- `urn:AGL:permission::public:display`
+- `urn:redpesk:permission::public:display`
 
   Adds the group "display" to the list of supplementary groups
   of the process.
 
-- `urn:AGL:permission::public:syscall:clock`
+- `urn:redpesk:permission::public:syscall:clock`
 
   Without this permission SystemCallFilter=~@clock is set to
   forbid call to clock.
 
-- `urn:AGL:permission::public:no-htdocs`
+- `urn:redpesk:permission::public:no-htdocs`
 
   The http directory served is not "htdocs" but "."
 
-- `urn:AGL:permission::public:applications:read`
+- `urn:redpesk:permission::public:applications:read`
 
   Allows to read data of installed applications (and to
   access icons).
 
-- `urn:AGL:permission::partner:service:no-ws`
+- `urn:redpesk:permission::partner:service:no-ws`
 
   Forbids services to provide its API through websocket.
 
-- `urn:AGL:permission::partner:service:no-dbus`
+- `urn:redpesk:permission::partner:service:no-dbus`
 
   Forbids services to provide its API through D-Bus.
 
-- `urn:AGL:permission::system:run-by-default`
+- `urn:redpesk:permission::system:run-by-default`
 
   Starts automatically the application. Example: home-screen.
 
-- `urn:AGL:permission::partner:scope-platform`
+- `urn:redpesk:permission::partner:scope-platform`
 
   Install the service at the scope of the platform.
 
-- `urn:AGL:permission::partner:tty`
+- `urn:redpesk:permission::partner:tty`
 
   Adds the group "tty" to the list of supplementary groups
   of the process.
 
-- `urn:AGL:permission::partner:dialout`
+- `urn:redpesk:permission::partner:dialout`
 
   Adds the group "dialout" to the list of supplementary groups
   of the process.
 
-- `urn:AGL:permission::partner:video`
+- `urn:redpesk:permission::partner:video`
 
   Adds the group "video" to the list of supplementary groups
   of the process.
 
-- `urn:AGL:permission::system:capability:keep-all`
+- `urn:redpesk:permission::system:capability:keep-all`
 
   Keep all capabilities for the service. Note that implementing
   that permission is not mandatory or can be adapted for the given
@@ -143,43 +143,43 @@ These permissions are available the 21th of May 2019.
 
   Permission to use D-Bus.
 
-- `urn:AGL:permission:afm:system:widget`
+- `urn:redpesk:permission:afm:system:widget`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:widget:detail`
+- `urn:redpesk:permission:afm:system:widget:detail`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:widget:start`
+- `urn:redpesk:permission:afm:system:widget:start`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:widget:view-all`
+- `urn:redpesk:permission:afm:system:widget:view-all`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:runner`
+- `urn:redpesk:permission:afm:system:runner`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:runner:state`
+- `urn:redpesk:permission:afm:system:runner:state`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:runner:kill`
+- `urn:redpesk:permission:afm:system:runner:kill`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:set-uid`
+- `urn:redpesk:permission:afm:system:set-uid`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:widget:install`
+- `urn:redpesk:permission:afm:system:widget:install`
 
   Permission of the application framework
 
-- `urn:AGL:permission:afm:system:widget:uninstall`
+- `urn:redpesk:permission:afm:system:widget:uninstall`
 
   Permission of the application framework
 

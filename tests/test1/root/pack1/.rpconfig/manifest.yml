@@ -14,5 +14,5 @@ targets:
        src: hello.html
        type: text/html
     required-permission:
-      - urn:AGL:permission::public:no-htdocs
+      - urn:redpesk:permission::public:no-htdocs
 

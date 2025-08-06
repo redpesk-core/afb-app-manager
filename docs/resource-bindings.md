@@ -66,7 +66,7 @@ as extra.
 A resource binding with no further configuration than shown
 here is run as a user binding and can only be used by bindings
 of the same user. A resource binding installed platform-wide
-(with the `urn:AGL:permission::partner:scope-platform` permission)
+(with the `urn:redpesk:permission::partner:scope-platform` permission)
 can be used by bindings from all users and by other platform-wide
 bindings.
 

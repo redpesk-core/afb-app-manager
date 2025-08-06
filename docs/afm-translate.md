@@ -236,7 +236,7 @@ targets:
       src: lib/spawn-binding.so
       type: application/vnd.redpesk.resource
     required-permission:
-      - urn:AGL:permission::partner:scope-platform
+      - urn:redpesk:permission::partner:scope-platform
     provided-binding:
       - name: spawn
         value: lib/spawn-binding.so

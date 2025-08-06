@@ -31,12 +31,12 @@ After=afm-api-{{name}}
 SmackProcessLabel=App:{{id}}
 
 {{#required-permission.dict}}
-  {{#urn:AGL:permission::platform:no-oom}}      OOMScoreAdjust=-500             {{/urn:AGL:permission::platform:no-oom}}
-  {{#urn:AGL:permission::partner:real-time}}    IOSchedulingClass=realtime      {{/urn:AGL:permission::partner:real-time}}
-  {{^urn:AGL:permission::partner:real-time}}    RestrictRealtime=on             {{/urn:AGL:permission::partner:real-time}}
-  {{#urn:AGL:permission::public:display}}       SupplementaryGroups=display     {{/urn:AGL:permission::public:display}}
-  {{^urn:AGL:permission::public:syscall:clock}} SystemCallFilter=~@clock        {{/urn:AGL:permission::public:syscall:clock}}
-  {{^urn:AGL:permission::public:internet}}      RestrictAddressFamilies=AF_UNIX {{/urn:AGL:permission::public:internet}}
+  {{#urn:redpesk:permission::platform:no-oom}}      OOMScoreAdjust=-500             {{/urn:redpesk:permission::platform:no-oom}}
+  {{#urn:redpesk:permission::partner:real-time}}    IOSchedulingClass=realtime      {{/urn:redpesk:permission::partner:real-time}}
+  {{^urn:redpesk:permission::partner:real-time}}    RestrictRealtime=on             {{/urn:redpesk:permission::partner:real-time}}
+  {{#urn:redpesk:permission::public:display}}       SupplementaryGroups=display     {{/urn:redpesk:permission::public:display}}
+  {{^urn:redpesk:permission::public:syscall:clock}} SystemCallFilter=~@clock        {{/urn:redpesk:permission::public:syscall:clock}}
+  {{^urn:redpesk:permission::public:internet}}      RestrictAddressFamilies=AF_UNIX {{/urn:redpesk:permission::public:internet}}
 {{/required-permission.dict}}
 %nl
 
@@ -52,9 +52,9 @@ ExecStart=/usr/bin/afb-binder --port=%P --random-token \
 	--rootdir={{widget-install-dir}} \
 	--workdir={{{widget-app-data-dir}}} \
 	--roothttp=htdocs \
-	{{#required-permission.dict.urn:AGL:permission::public:applications:read}}\
+	{{#required-permission.dict.urn:redpesk:permission::public:applications:read}}\
 	--alias=/icons:{{widget-icons-dir}} \
-	\{{/required-permission.dict.urn:AGL:permission::public:applications:read}}
+	\{{/required-permission.dict.urn:redpesk:permission::public:applications:read}}
 	{{#required-api}}\
 	--ws-client=unix:%t/bindings/{{:#target}}
 	\{{/required-api}}

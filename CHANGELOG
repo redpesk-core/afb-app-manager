@@ -1,6 +1,8 @@
 Version next
 --------------
 
+- Change urn:AGL:permission:... to urn:redpesk:permission:...
+  but keeping compatibility with older urn:AGL:permission:...
 - Remove setting of afm_redpesk_prefix
 - Remove setting of afm_agl_prefix
 - Add mime-types application/vnd.redpesk.service

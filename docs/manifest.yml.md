@@ -161,11 +161,11 @@ Example:
 
 ```yaml
 required-permission:
-  urn:AGL:permission:real-time:
-    name: urn:AGL:permission:real-time
+  urn:redpesk:permission:real-time:
+    name: urn:redpesk:permission:real-time
     value: required
-  urn:AGL:permission:syscall:
-    name: urn:AGL:permission:syscall:*
+  urn:redpesk:permission:syscall:
+    name: urn:redpesk:permission:syscall:*
     value: required
 ```
 

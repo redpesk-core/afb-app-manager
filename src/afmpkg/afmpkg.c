@@ -110,7 +110,7 @@ static const char key_type[] = "type";
 
 /** default given permissions */
 static const char *default_permissions[] = {
-	"urn:AGL:token:valid"
+	"urn:redpesk:token:valid"
 };
 
 /* predeclaration of legacy functions (avoids including legacy headers at top) */

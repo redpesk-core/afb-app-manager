@@ -70,7 +70,7 @@
 int tcp_port_base = DEFAULT_TCP_PORT_BASE;
 
 static const char *default_permissions[] = {
-	"urn:AGL:token:valid"
+	"urn:redpesk:token:valid"
 };
 
 static int check_defined(const void *data, const char *name)

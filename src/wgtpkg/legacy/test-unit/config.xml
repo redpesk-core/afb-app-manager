@@ -19,11 +19,11 @@
   </feature>
   <feature name="urn:AGL:widget:required-permission">
     <param name="#target" value="main" />
-    <param name="urn:AGL:permission::platform:no-oom" value="required" />
-    <param name="urn:AGL:permission::partner:real-time" value="required" />
-    <param name="urn:AGL:permission::public:applications:read" value="required" />
-    <param name="urn:AGL:permission::public:display" value="required" />
-    <param name="urn:AGL:permission::system:run-by-default" value="required" />
+    <param name="urn:redpesk:permission::platform:no-oom" value="required" />
+    <param name="urn:redpesk:permission::partner:real-time" value="required" />
+    <param name="urn:redpesk:permission::public:applications:read" value="required" />
+    <param name="urn:redpesk:permission::public:display" value="required" />
+    <param name="urn:redpesk:permission::system:run-by-default" value="required" />
   </feature>
   <feature name="urn:AGL:widget:provided-unit">
     <param name="#target" value="geoloc" />
@@ -44,12 +44,12 @@
   </feature>
   <feature name="urn:AGL:widget:required-permission">
     <param name="#target" value="geoloc" />
-    <param name="urn:AGL:permission:real-time" value="required" />
-    <param name="urn:AGL:permission:syscall:*" value="required" />
-    <param name="urn:AGL:permission::system:run-by-default" value="required" />
+    <param name="urn:redpesk:permission:real-time" value="required" />
+    <param name="urn:redpesk:permission:syscall:*" value="required" />
+    <param name="urn:redpesk:permission::system:run-by-default" value="required" />
   </feature>
   <feature name="urn:AGL:widget:defined-permission">
-    <param name="urn:AGL:permission:geoloc:public:settings" value="public" />
+    <param name="urn:redpesk:permission:geoloc:public:settings" value="public" />
   </feature>
 </widget>
 
