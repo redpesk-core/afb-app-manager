@@ -21,7 +21,7 @@ define( `MUSTACH_IF_NOT', `{{^$1}}pushdef(`ELSE',`{{/$1}}{{#$1}}')pushdef(`ENDIF
 --------------------------------------------------------------------------------
 -- CONDITIONAL HELPERS
 --------------------------------------------------------------------------------
-define( `REDPESK_PERM', `AFM_REDPESK_PREFIX`'permission:$1')
+define( `REDPESK_PERM', `urn:redpesk:permission:$1')
 define( `REQ_REDPESK_PERM', `required-permission.REDPESK_PERM($1)')
 
 define( `ON_REDPESK_PERM', `MUSTACH_ON(REQ_REDPESK_PERM($1),$2,$3)')

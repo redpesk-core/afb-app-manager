@@ -1,6 +1,7 @@
 Version next
 --------------
 
+- Remove setting of afm_redpesk_prefix
 - Remove setting of afm_agl_prefix
 - Add mime-types application/vnd.redpesk.service
 - Add mime-types application/vnd.redpesk.native
