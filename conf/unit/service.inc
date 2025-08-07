@@ -151,7 +151,6 @@ Environment=XDG_DATA_HOME=APP_WORK_DIR
 Environment=XDG_CONFIG_HOME=APP_WORK_DIR
 Environment=XDG_CACHE_HOME=APP_WORK_DIR
 Environment=XDG_RUNTIME_DIR=RUN_DIR
-ON_CONTENT(text/html, Environment=WAIT_FOR_HOST_SERVICE="1")
 
 IF_REDPESK_DEVEL
 ; Needed to enable debug
@@ -164,14 +163,13 @@ StandardOutput=journal
 StandardError=journal
 
 ;-------------------------------------------------------------------------------
-;----   text/html                                                           ----
 ;----   application/vnd.redpesk.native  application/vnd.redpesk.service     ----
 ;----   application/vnd.redpesk.httpd                                       ----
 ;----   application/vnd.agl.native  application/vnd.agl.service             ----
 ;-------------------------------------------------------------------------------
-{{#content.type=text/html|application/vnd.redpesk.service|application/vnd.redpesk.native|application/vnd.redpesk.httpd|application/vnd.agl.native|application/vnd.agl.service}}
+{{#content.type=application/vnd.redpesk.service|application/vnd.redpesk.native|application/vnd.redpesk.httpd|application/vnd.agl.native|application/vnd.agl.service}}
 include(binder.inc)
-{{/content.type=text/html|application/vnd.redpesk.service|application/vnd.redpesk.native|application/vnd.redpesk.httpd|application/vnd.agl.native|application/vnd.agl.service}}
+{{/content.type=application/vnd.redpesk.service|application/vnd.redpesk.native|application/vnd.redpesk.httpd|application/vnd.agl.native|application/vnd.agl.service}}
 
 ;-------------------------------------------------------------------------------
 ;----                 application/x-executable                              ----

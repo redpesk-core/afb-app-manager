@@ -1,6 +1,7 @@
 Version next
 --------------
 
+- Mime type text/html of applications removed
 - Reference to http://tizen.org/privilege/internal/dbus removed
 - Change urn:AGL:permission:... to urn:redpesk:permission:...
   but keeping compatibility with older urn:AGL:permission:...
