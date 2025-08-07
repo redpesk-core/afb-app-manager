@@ -139,10 +139,6 @@ These permissions are available the 21th of May 2019.
   that permission is not mandatory or can be adapted for the given
   system.
 
-- `http://tizen.org/privilege/internal/dbus`
-
-  Permission to use D-Bus.
-
 - `urn:redpesk:permission:afm:system:widget`
 
   Permission of the application framework
