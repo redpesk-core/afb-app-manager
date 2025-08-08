@@ -29,9 +29,6 @@
 #include <rpm/rpmte.h>
 #include <rpm-plugins/rpmplugin.h>
 
-#include "afmpkg-client.h"
-#include "afmpkg-common.h"
-
 /***************************************************
 * RPM plugins MUST have a NAME following C naming
 * conventions: characters, digits, underscores
@@ -136,6 +133,75 @@ typedef struct record {
 /** head of the record list */
 static record_t *records;
 
+/***************************************************/
+/**  DIRECT ACCESS TO AFMPKG                      **/
+/***************************************************/
+
+#if DIRECT_AFMPKG
+
+#include <string.h>
+#include "afmpkg.h"
+#include "afmpkg-common.h"
+#include "afmpkg-std.h"
+
+/** perform the given operation if the record is of the given type */
+static int perform(
+		record_t *record,
+		rpmElementType type,
+		int onlycheck,
+		rpmRC *prc
+) {
+	int rc;
+	rpmfi fi;
+	afmpkg_t apkg;
+	const char *filename;
+	const char *rootdir = rpmtsRootDir(record->ts);
+	const char *name = rpmteN(record->te);
+	const char *redpakid = getenv(AFMPKG_ENVVAR_REDPAKID);
+
+	/* check the type */
+	if (record->type != type)
+		return 0; /* don't drop */
+
+	if (onlycheck)
+		return 0; /* no check ATM */
+
+	memset(&apkg, 0, sizeof apkg);
+	apkg.package = (char*)name;
+	apkg.root = (char*)rootdir;
+	apkg.redpakid = (char*)redpakid;
+	rc = path_entry_create_root(&apkg.files);
+	if (rc >= 0) {
+
+		fi = rpmfilesIter(record->files, RPMFI_ITER_FWD);
+		while (rc >= 0 && rpmfiNext(fi) >= 0) {
+			filename = rpmfiFN(fi);
+			rc = path_entry_add(apkg.files, NULL, filename);
+		}
+		rpmfiFree(fi);
+
+		if (rc >= 0) {
+			if (type == TR_ADDED)
+				rc = afmpkg_std_install(&apkg);
+			else
+				rc = afmpkg_std_uninstall(&apkg);
+		}
+		path_entry_destroy(apkg.files);
+	}
+	if (rc < 0)
+		*prc = RPMRC_FAIL;
+
+	return 1; /* done, drop the action */
+}
+
+#else
+/***************************************************/
+/**  ACCESS TO AFMPKG THROUGH SERVER              **/
+/***************************************************/
+
+#include "afmpkg-common.h"
+#include "afmpkg-client.h"
+
 /**
  * @brief Makes the message's buffer
  *
@@ -183,19 +249,33 @@ static int make_message(
 	return rc;
 }
 
+static afmpkg_operation_t get_operation(rpmElementType type, int onlycheck)
+{
+	switch (type) {
+	case TR_ADDED:
+		return onlycheck ? afmpkg_operation_Check_Add : afmpkg_operation_Add;
+	case TR_REMOVED:
+		return onlycheck ? afmpkg_operation_Check_Remove : afmpkg_operation_Remove;
+	default:
+		return -1;
+	}
+}
+
 /** perform the given operation if the record is of the given type */
 static int perform(
 		record_t *record,
 		rpmElementType type,
-		afmpkg_operation_t operation,
+		int onlycheck,
 		rpmRC *prc
 ) {
 	afmpkg_client_t client;
+	afmpkg_operation_t operation;
 	int rc;
 
 	/* check the type */
 	if (record->type != type)
 		return 0; /* don't drop */
+	operation = get_operation(type, onlycheck);
 
 	/* compute size of the message and allocates it */
 	afmpkg_client_init(&client);
@@ -217,29 +297,31 @@ static int perform(
 	afmpkg_client_release(&client);
 	return 1; /* done, drop the action */
 }
+#endif
 
+/***************************************************/
 /** callback for performing remove actions */
 static int perform_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, afmpkg_operation_Remove, (rpmRC*)closure);
+	return perform(record, TR_REMOVED, 0, (rpmRC*)closure);
 }
 
 /** callback for performing add actions */
 static int perform_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, afmpkg_operation_Add, (rpmRC*)closure);
+	return perform(record, TR_ADDED, 0, (rpmRC*)closure);
 }
 
 /** callback for performing check remove actions */
 static int perform_check_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, afmpkg_operation_Check_Remove, (rpmRC*)closure);
+	return perform(record, TR_REMOVED, 1, (rpmRC*)closure);
 }
 
 /** callback for performing check add actions */
 static int perform_check_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, afmpkg_operation_Check_Add, (rpmRC*)closure);
+	return perform(record, TR_ADDED, 1, (rpmRC*)closure);
 }
 
 /** apply the function to each record of the given set */

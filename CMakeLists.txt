@@ -44,6 +44,7 @@ option(WITH_CONFIG_XML    "Allow use of legacy config.xml instead of manifest" O
 option(SIMULATE_SECMGR    "If set, the sec lsm manager is simulated" OFF)
 option(ALLOW_NO_SIGNATURE "If set, widgets without signature are accepted" OFF)
 option(INSTALL_SAMPLE_KEYS "Install the sample keys and certificates" OFF)
+option(RPM_PLUGIN_DIRECT  "Dont use afmpkg installer daemon from rpm plugin" OFF)
 
 set(afm_name                "afm"                                          CACHE STRING "Name for application framework user")
 set(afm_confdir             "${CMAKE_INSTALL_FULL_SYSCONFDIR}/${afm_name}" CACHE STRING "Directory for configuration files")
