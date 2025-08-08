@@ -32,7 +32,7 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 
-#include "afmpkg-common.h"
+#include "afmpkg-proto.h"
 
 static const char framework_address[] = AFMPKG_SOCKET_ADDRESS;
 

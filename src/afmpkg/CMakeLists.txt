@@ -22,7 +22,8 @@
 # $RP_END_LICENSE$
 ###########################################################################
 
-add_library(afmpkg STATIC afmpkg.c afmpkg-request.c afmpkg-std.c)
+add_library(afmpkg STATIC afmpkg.c afmpkg-request.c afmpkg-std.c
+                          afmpkg-server.c afmpkg-client.c)
 target_link_libraries(afmpkg units utils)
 
 if(WITH_LEGACY_AFMPKG)

@@ -43,7 +43,7 @@
 #include <rp-utils/rp-socket.h>
 
 #include "afmpkg-request.h"
-#include "afmpkg-common.h"
+#include "afmpkg-proto.h"
 
 #if WITH_LEGACY_AFMPKG
 #include "afmpkg-legacy.h"

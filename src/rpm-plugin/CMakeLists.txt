@@ -33,7 +33,7 @@ if(WITH_RPM_REDPESK_PLUGIN AND NOT ONLY_SDK)
 
 	target_include_directories(redpesk PRIVATE ${CMAKE_SOURCE_DIR}/external-includes)
 	target_link_directories(redpesk PUBLIC ${RPM_LIBRARY_DIRS})
-	target_link_libraries(redpesk LINK_PUBLIC ${RPM_LIBRARIES})
+	target_link_libraries(redpesk PRIVATE afmpkg PUBLIC ${RPM_LIBRARIES})
 	install(TARGETS redpesk LIBRARY DESTINATION ${rpm_plugin_dir})
 	install(FILES macros.afm-main DESTINATION ${rpm_macros_dir})
 else()

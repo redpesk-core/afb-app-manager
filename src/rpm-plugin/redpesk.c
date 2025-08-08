@@ -22,23 +22,14 @@
  $RP_END_LICENSE$
 */
 
-#include <stddef.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <linux/limits.h>
-#include <sys/types.h>
-#include <string.h>
-#include <signal.h>
-#include <errno.h>
-#include <unistd.h>
 
 #include <rpm/rpmlog.h>
 #include <rpm/rpmts.h>
 #include <rpm/rpmte.h>
 #include <rpm-plugins/rpmplugin.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
+#include "afmpkg-client.h"
 #include "afmpkg-common.h"
 
 /***************************************************
@@ -114,113 +105,6 @@ static void dump_ts(rpmts ts, const char *step)
 
 /***************************************************/
 
-static const char framework_address[] = AFMPKG_SOCKET_ADDRESS;
-
-/** connect to the framework */
-static int connect_framework()
-{
-	int rc, sock;
-	struct sockaddr_un adr;
-
-	/* create the socket */
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0)
-		rc = -errno;
-	else {
-		/* connect the socket */
-		memset(&adr, 0, sizeof adr);
-		adr.sun_family = AF_UNIX;
-		memcpy(adr.sun_path, framework_address, sizeof framework_address);
-		if (adr.sun_path[0] == '@')
-			adr.sun_path[0] = 0;
-		rc = connect(sock, (struct sockaddr*)&adr, offsetof(struct sockaddr_un,sun_path) + sizeof framework_address - !adr.sun_path[0]);
-		if (rc >= 0)
-			rc = sock;
-		else {
-			rc = -errno;
-			close(sock);
-		}
-	}
-	return rc;
-}
-
-/** disconnect from the framework */
-static void disconnect_framework(int sock)
-{
-	if (sock >= 0)
-		close(sock);
-}
-
-/** send something to the framework */
-static int send_framework(int sock, const char *buffer, size_t length)
-{
-	ssize_t sz;
-	do { sz = send(sock, buffer, length, 0); } while(sz == -1 && errno == EINTR);
-	return sz < 0 ? -errno : 0;
-}
-
-/** receive something from the framework */
-static int recv_framework(int sock, char **arg)
-{
-	int rc;
-	char inputbuf[1000];
-	ssize_t sz;
-
-	if (arg != NULL)
-		*arg = NULL;
-
-	/* blocking socket ensure sz == length */
-	do { sz = recv(sock, inputbuf, sizeof inputbuf - 1, 0); } while(sz == -1 && errno == EINTR);
-	if (sz < 0)
-		return -errno;
-
-	/* the reply must be atomic */
-	while (sz && inputbuf[sz - 1] == '\n') sz--;
-	inputbuf[sz] = 0;
-	if (0 == memcmp(inputbuf, AFMPKG_KEY_OK, strlen(AFMPKG_KEY_OK))) {
-		rc = 1;
-		sz = strlen(AFMPKG_KEY_OK);
-	}
-	else if (0 == memcmp(inputbuf, AFMPKG_KEY_ERROR, strlen(AFMPKG_KEY_ERROR))) {
-		rc = 0;
-		sz = strlen(AFMPKG_KEY_ERROR);
-	}
-	else
-		return -EBADMSG;
-
-	if (inputbuf[sz] != 0) {
-		if (inputbuf[sz] != ' ')
-			return -EBADMSG;
-		do { sz++; } while(inputbuf[sz] == ' ');
-	}
-	if (arg != NULL && inputbuf[sz] != 0)
-		*arg = strdup(&inputbuf[sz]);
-	return rc;
-}
-
-/** dial with the framework */
-static int dial_framework(const char *buffer, size_t length, char **errstr)
-{
-	int rc, sock;
-
-	if (rpmIsDebug())
-		rpmlog(RPMLOG_DEBUG, "[REDPESK] SENDING\n%.*s", (int)length, buffer);
-
-	rc = connect_framework();
-	if (rc >= 0) {
-		sock = rc;
-		rc = send_framework(sock, buffer, length);
-		if (rc >= 0) {
-			shutdown(sock, SHUT_WR);
-			rc = recv_framework(sock, errstr);
-		}
-		disconnect_framework(sock);
-	}
-	return rc;
-}
-
-/***************************************************/
-
 /**
  * this structure is used to record installed files for post processing
  */
@@ -252,62 +136,6 @@ typedef struct record {
 /** head of the record list */
 static record_t *records;
 
-static size_t put_str(char *buffer, size_t size, size_t offset, const char *str, size_t length)
-{
-	if (offset < size)
-		memcpy(&buffer[offset], str, length <= size - offset ? length : size - offset);
-	return offset + length;
-}
-
-static size_t put_nl(char *buffer, size_t size, size_t offset)
-{
-	return put_str(buffer, size, offset, "\n", 1);
-}
-
-static size_t put_sp(char *buffer, size_t size, size_t offset)
-{
-	return put_str(buffer, size, offset, " ", 1);
-}
-
-static size_t put_str_nl(char *buffer, size_t size, size_t offset, const char *str, size_t length)
-{
-	offset = put_str(buffer, size, offset, str, length);
-	return put_nl(buffer, size, offset);
-}
-
-static size_t put_strz(char *buffer, size_t size, size_t offset, const char *str)
-{
-	return put_str(buffer, size, offset, str, strlen(str));
-}
-
-static size_t put_strz_nl(char *buffer, size_t size, size_t offset, const char *str)
-{
-	return put_str_nl(buffer, size, offset, str, strlen(str));
-}
-
-static size_t put_key_val_nl(char *buffer, size_t size, size_t offset, const char *key, const char *val)
-{
-	offset = put_strz(buffer, size, offset, key);
-	offset = put_sp(buffer, size, offset);
-	return put_strz_nl(buffer, size, offset, val);
-}
-
-/**
- * @brief translate a positive integer to a zero terminated string
- *
- * @param value the value to convert
- * @param buffer the buffer for storing the value
- * @return the computed string representation
- */
-#define ITOALEN 25
-static const char *itoa(int value, char buffer[ITOALEN])
-{
-	char *p = &buffer[ITOALEN - 1];
-	*p = 0;
-	do { *--p = (char)('0' + value % 10); value /= 10; } while(value);
-	return p;
-}
-
 /**
  * @brief Makes the message's buffer
  *
@@ -318,41 +146,51 @@ static const char *itoa(int value, char buffer[ITOALEN])
  * @param operation the operation of the message
  * @return offset of the byte after the end of the buffer
  */
-static size_t make_message(char *buffer, size_t size, size_t offset, record_t *record, const char *operation)
-{
+static int make_message(
+		afmpkg_client_t *client,
+		record_t *record,
+		afmpkg_operation_t operation
+) {
+	int rc;
 	rpmfi fi;
-	char scratch[ITOALEN];
 	const char *filename;
 	const char *rootdir = rpmtsRootDir(record->ts);
 	const char *name = rpmteN(record->te);
 	const char *transid = getenv(AFMPKG_ENVVAR_TRANSID);
-	const char *redpackid = getenv(AFMPKG_ENVVAR_REDPAKID);
+	const char *redpakid = getenv(AFMPKG_ENVVAR_REDPAKID);
 
-	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_BEGIN, operation);
-	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_PACKAGE, name);
-	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_INDEX, itoa(record->index, scratch));
-	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_COUNT, itoa(record->count, scratch));
-	if (rootdir)
-		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_ROOT, rootdir);
-	if (transid)
-		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_TRANSID, transid);
-	if (redpackid)
-		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_REDPAKID, redpackid);
+	rc = afmpkg_client_begin(client, operation, name, record->index, record->count);
+
+	if (rc == 0 && rootdir)
+		rc = afmpkg_client_put_rootdir(client, rootdir);
+
+	if (rc == 0 && transid)
+		rc = afmpkg_client_put_transid(client, transid);
+
+	if (rc == 0 && redpakid)
+		rc = afmpkg_client_put_redpakid(client, redpakid);
+
 	fi = rpmfilesIter(record->files, RPMFI_ITER_FWD);
-	while (rpmfiNext(fi) >= 0) {
+	while (rc == 0 && rpmfiNext(fi) >= 0) {
 		filename = rpmfiFN(fi);
-		offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_FILE, filename);
+		rc = afmpkg_client_put_file(client, filename);
 	}
 	rpmfiFree(fi);
-	offset = put_key_val_nl(buffer, size, offset, AFMPKG_KEY_END, operation);
-	return offset;
+
+	if (rc == 0)
+		rc = afmpkg_client_end(client);
+
+	return rc;
 }
 
 /** perform the given operation if the record is of the given type */
-static int perform(record_t *record, rpmElementType type, const char *operation, rpmRC *prc)
-{
-	char *message;
-	size_t length;
+static int perform(
+		record_t *record,
+		rpmElementType type,
+		afmpkg_operation_t operation,
+		rpmRC *prc
+) {
+	afmpkg_client_t client;
 	int rc;
 
 	/* check the type */
@@ -360,47 +198,48 @@ static int perform(record_t *record, rpmElementType type, const char *operation,
 		return 0; /* don't drop */
 
 	/* compute size of the message and allocates it */
-	length = make_message(NULL, 0, 0, record, operation);
-	message = malloc(length + 1);
-	if (message == NULL) {
+	afmpkg_client_init(&client);
+	rc = make_message(&client, record, operation);
+	if (rc < 0) {
 		rpmlog(RPMLOG_ERR, "malloc failed");
 		*prc = RPMRC_FAIL;
 	}
 	else {
-		/* make the message in the fresh buffer */
-		make_message(message, length, 0, record, operation);
-		message[length] = 0;
+		if (rpmIsDebug())
+			rpmlog(RPMLOG_DEBUG, "[REDPESK] SENDING\n%.*s",
+					(int)client.length, client.buffer);
+
 		/* send the message to the framework */
-		rc = dial_framework(message, length, NULL);
-		free(message);
+		rc = afmpkg_client_dial(&client, NULL);
 		if (rc <= 0)
 			*prc = RPMRC_FAIL;
 	}
+	afmpkg_client_release(&client);
 	return 1; /* done, drop the action */
 }
 
 /** callback for performing remove actions */
 static int perform_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, AFMPKG_OPERATION_REMOVE, (rpmRC*)closure);
+	return perform(record, TR_REMOVED, afmpkg_operation_Remove, (rpmRC*)closure);
 }
 
 /** callback for performing add actions */
 static int perform_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, AFMPKG_OPERATION_ADD, (rpmRC*)closure);
+	return perform(record, TR_ADDED, afmpkg_operation_Add, (rpmRC*)closure);
 }
 
 /** callback for performing check remove actions */
 static int perform_check_remove(record_t *record, void *closure)
 {
-	return perform(record, TR_REMOVED, AFMPKG_OPERATION_CHECK_REMOVE, (rpmRC*)closure);
+	return perform(record, TR_REMOVED, afmpkg_operation_Check_Remove, (rpmRC*)closure);
 }
 
 /** callback for performing check add actions */
 static int perform_check_add(record_t *record, void *closure)
 {
-	return perform(record, TR_ADDED, AFMPKG_OPERATION_CHECK_ADD, (rpmRC*)closure);
+	return perform(record, TR_ADDED, afmpkg_operation_Check_Add, (rpmRC*)closure);
 }
 
 /** apply the function to each record of the given set */

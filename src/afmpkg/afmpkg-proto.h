@@ -24,5 +24,26 @@
 
 #pragma once
 
-#define AFMPKG_ENVVAR_TRANSID      "AFMPKG_TRANSID"
-#define AFMPKG_ENVVAR_REDPAKID     "AFMPKG_REDPAKID"
+#ifndef AFMPKG_SOCKET_ADDRESS
+#define AFMPKG_SOCKET_ADDRESS "@afmpkg-installer.socket"
+#endif
+
+#define AFMPKG_OPERATION_ADD           "ADD"
+#define AFMPKG_OPERATION_REMOVE        "REMOVE"
+#define AFMPKG_OPERATION_CHECK_ADD     "CHECK-ADD"
+#define AFMPKG_OPERATION_CHECK_REMOVE  "CHECK-REMOVE"
+
+
+#define AFMPKG_KEY_BEGIN           "BEGIN"
+#define AFMPKG_KEY_COUNT           "COUNT"
+#define AFMPKG_KEY_END             "END"
+#define AFMPKG_KEY_ERROR           "ERROR"
+#define AFMPKG_KEY_FILE            "FILE"
+#define AFMPKG_KEY_INDEX           "INDEX"
+#define AFMPKG_KEY_OK              "OK"
+#define AFMPKG_KEY_PACKAGE         "PACKAGE"
+#define AFMPKG_KEY_REDPAKID        "REDPAKID"
+#define AFMPKG_KEY_ROOT            "ROOT"
+#define AFMPKG_KEY_STATUS          "STATUS"
+#define AFMPKG_KEY_TRANSID         "TRANSID"
+
