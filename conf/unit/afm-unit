@@ -103,6 +103,7 @@ ENDIF
 ;----        F O R E A C H   T A R G E T                                    ----
 ;-------------------------------------------------------------------------------
 {{#targets}}
+{{^content.type=application/vnd.redpesk.resource|application/vnd.agl.resource}}
 ;-------------------------------------------------------------------------------
 include(service.inc)
 IF_AGL_PERM(:partner:scope-platform)
@@ -126,6 +127,7 @@ include(provided-api-user.inc)
 {{/provided-api}}
 ;-------------------------------------------------------------------------------
 ENDIF
+{{/content.type=application/vnd.redpesk.resource|application/vnd.agl.resource}}
 {{/targets}}
 ;-------------------------------------------------------------------------------
 ; End of file afm-unit.conf mode ON_REDPESK_DEVEL(DEVEL, RELEASE)

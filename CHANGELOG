@@ -1,7 +1,8 @@
 Version next
 --------------
 
-- dded option RPM_PLUGIN_DIRECT for embedding installer
+- No systemd unit for resources
+- Added option RPM_PLUGIN_DIRECT for embedding installer
 - Mime type text/html of applications removed
 - Reference to http://tizen.org/privilege/internal/dbus removed
 - Change urn:AGL:permission:... to urn:redpesk:permission:...
