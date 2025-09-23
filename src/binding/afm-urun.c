@@ -45,6 +45,10 @@
 #include "afm-udb.h"
 #include "afm-urun.h"
 
+#ifndef WAIT_JOB_SECONDS
+#define WAIT_JOB_SECONDS 300
+#endif
+
 static const char key_unit_d_path[] = "-unit-dpath-";
 
 /**************** get appli basis *********************/
@@ -159,7 +163,7 @@ static enum SysD_State wait_state_stable(int isuser, const char *dpath, char *jo
 	enum SysD_State state = SysD_State_INVALID;
 	struct timespec tispec;
 	const int period_ms = 10;
-	const int trial_s = 10;
+	const int trial_s = WAIT_JOB_SECONDS;
 	const int trial_count = (trial_s * 1000) / period_ms;
 	const int period_ns = period_ms * 1000000;
 
