@@ -42,13 +42,6 @@
 #include "afm-urun.h"
 #include "wgt-info.h"
 
-#ifndef FWK_AGL_PREFIX
-#define FWK_AGL_PREFIX "urn:AGL:"
-#endif
-#ifndef FWK_PERM_PREFIX
-#define FWK_PERM_PREFIX FWK_AGL_PREFIX
-#endif
-
 /*
  * constant strings
  */
@@ -80,42 +73,52 @@ static const char _update_[]    = "update";
 /*
  * the permissions
  */
-static const struct afb_auth
-#define PERM(perm) \
-		{ .type = afb_auth_Permission, .text = perm }
-#define OR(case1, case2) \
-		{ .type = afb_auth_Or, .first = &case1, .next = &case2 }
-#define REDPESK_PERM(suffix) \
-		PERM("urn:redpesk:permission:afm:system:"suffix)
-#define AGL_PERM(suffix) \
-		PERM("urn:AGL:permission:afm:system:"suffix)
+#define REDPESK_PREFIX "urn:redpesk:permission:afm:system:"
 
-#define DEF_OR(name, case1, case2)      name = OR(case1, case2)
-#define DEF_REDPESK_PERM(name, suffix)  name = REDPESK_PERM(suffix)
-#define DEF_AGL_PERM(name, suffix)      name = AGL_PERM(suffix)
-#if 0
-#  define DEF_PERM(name, suffix) DEF_REDPESK_PERM(name, suffix)
-#else
-#  define DEF_PERM(name, suffix) \
-	DEF_REDPESK_PERM(name##_redpesk, suffix), \
-	DEF_AGL_PERM(name##_agl, suffix), \
-	DEF_OR(name, name##_redpesk, name##_agl)
+#define DEF_OR(name, case1, case2) \
+		static const struct afb_auth name = { \
+			.type = afb_auth_Or, \
+			.first = &case1, \
+			.next = &case2 };
+
+#define DEF_PREFIX_PERM(name, prefix, suffix) \
+		static const struct afb_auth name = { \
+			.type = afb_auth_Permission, \
+			.text = prefix suffix };
+
+#define DEF_PERM(name, suffix) \
+	DEF_PREFIX_PERM(name, REDPESK_PREFIX, suffix)
+
+#if !defined(ADD_AGL_PERMISSIONS)
+#define ADD_AGL_PERMISSIONS 1
 #endif
-	DEF_PERM(auth_perm_widget,          "widget"),
-	DEF_PERM(auth_perm_widget_detail,   "widget:detail"),
-	DEF_PERM(auth_perm_widget_start,    "widget:start"),
-	DEF_PERM(auth_perm_widget_view_all, "widget:view-all"),
-	DEF_PERM(auth_perm_runner,          "runner"),
-	DEF_PERM(auth_perm_runner_state,    "runner:state"),
-	DEF_PERM(auth_perm_runner_kill,     "runner:kill"),
-	DEF_PERM(auth_perm_set_uid,         "set-uid"),
 
-	DEF_OR(auth_detail, auth_perm_widget, auth_perm_widget_detail),
-	DEF_OR(auth_start, auth_perm_widget, auth_perm_widget_start),
-	DEF_OR(auth_view_all, auth_perm_widget, auth_perm_widget_view_all),
-	DEF_OR(auth_state, auth_perm_runner, auth_perm_runner_state),
-	DEF_OR(auth_kill, auth_perm_runner, auth_perm_runner_kill)
-;
+#if ADD_AGL_PERMISSIONS
+
+#  define AGL_PREFIX     "urn:AGL:permission:afm:system:"
+
+#  undef DEF_PERM
+#  define DEF_PERM(name, suffix) \
+	DEF_PREFIX_PERM(name##_redpesk, REDPESK_PREFIX, suffix) \
+	DEF_PREFIX_PERM(name##_agl, AGL_PREFIX, suffix) \
+	DEF_OR(name, name##_redpesk, name##_agl)
+
+#endif
+
+DEF_PERM(auth_perm_widget,          "widget")
+DEF_PERM(auth_perm_widget_detail,   "widget:detail")
+DEF_PERM(auth_perm_widget_start,    "widget:start")
+DEF_PERM(auth_perm_widget_view_all, "widget:view-all")
+DEF_PERM(auth_perm_runner,          "runner")
+DEF_PERM(auth_perm_runner_state,    "runner:state")
+DEF_PERM(auth_perm_runner_kill,     "runner:kill")
+DEF_PERM(auth_perm_set_uid,         "set-uid")
+
+DEF_OR(auth_detail,   auth_perm_widget, auth_perm_widget_detail)
+DEF_OR(auth_start,    auth_perm_widget, auth_perm_widget_start)
+DEF_OR(auth_view_all, auth_perm_widget, auth_perm_widget_view_all)
+DEF_OR(auth_state,    auth_perm_runner, auth_perm_runner_state)
+DEF_OR(auth_kill,     auth_perm_runner, auth_perm_runner_kill)
 
 /**
  * Enumerate the possible arguments
