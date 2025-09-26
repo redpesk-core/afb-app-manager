@@ -34,6 +34,11 @@ if(libsystemd_FOUND AND AFB_FOUND AND NOT ONLY_SDK)
 		afm-udb.c
 		afm-urun.c
 	)
+	target_compile_definitions(
+		afm-binding
+		PRIVATE
+		ADD_AGL_PERMISSIONS=$<BOOL:${ADD_AGL_PERMISSIONS}>
+	)
 	target_compile_options(
 		afm-binding
 		PRIVATE

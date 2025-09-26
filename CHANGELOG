@@ -1,6 +1,7 @@
 Version next
 --------------
 
+- Improve shift to redpesk permissions
 - Wait start of application during 5 minutes
 - No systemd unit for resources
 - Added option RPM_PLUGIN_DIRECT for embedding installer
