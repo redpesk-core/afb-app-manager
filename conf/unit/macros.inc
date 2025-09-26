@@ -24,18 +24,15 @@ define( `MUSTACH_IF_NOT', `{{^$1}}pushdef(`ELSE',`{{/$1}}{{#$1}}')pushdef(`ENDIF
 define( `REDPESK_PERM', `urn:redpesk:permission:$1')
 define( `REQ_REDPESK_PERM', `required-permission.REDPESK_PERM($1)')
 
-define( `ON_REDPESK_PERM', `MUSTACH_ON(REQ_REDPESK_PERM($1),$2,$3)')
-define( `ON_NOT_REDPESK_PERM', `MUSTACH_ON(REQ_REDPESK_PERM($1),$3,$2)')
-define( `IF_REDPESK_PERM', `MUSTACH_IF(REQ_REDPESK_PERM($1))')
-define( `IF_NOT_REDPESK_PERM', `MUSTACH_IF_NOT(REQ_REDPESK_PERM($1))')
-
 define( `AGL_PERM', `urn:AGL:permission:$1')
-define( `REQ_AGL_PERM', `REQ_REDPESK_PERM($1)|required-permission.AGL_PERM($1)')
+define( `REQ_AGL_PERM', `required-permission.AGL_PERM($1)')
 
-define( `ON_AGL_PERM', `MUSTACH_ON(REQ_AGL_PERM($1),$2,$3)')
-define( `ON_NOT_AGL_PERM', `MUSTACH_ON(REQ_AGL_PERM($1),$3,$2)')
-define( `IF_AGL_PERM', `MUSTACH_IF(REQ_AGL_PERM($1))')
-define( `IF_NOT_AGL_PERM', `MUSTACH_IF_NOT(REQ_AGL_PERM($1))')
+define( `REQ_PERM', `REQ_REDPESK_PERM($1)|REQ_AGL_PERM($1)')
+
+define( `ON_PERM', `MUSTACH_ON(REQ_PERM($1),$2,$3)')
+define( `ON_NOT_PERM', `MUSTACH_ON(REQ_PERM($1),$3,$2)')
+define( `IF_PERM', `MUSTACH_IF(REQ_PERM($1))')
+define( `IF_NOT_PERM', `MUSTACH_IF_NOT(REQ_PERM($1))')
 
 define( `ON_CONTENT', `MUSTACH_ON(content.type=$1,$2,$3)')
 define( `IF_CONTENT', `MUSTACH_IF(content.type=$1)')
@@ -57,8 +54,8 @@ define( `SMACKLABEL', `App:{{:id}}')
 define( `SELINUXLABEL', `system_u:system_r:{{:id-underscore}}_t:s0')
 define( `TARGET', `{{idaver}}{{^#target=main}}--{{:#target}}{{/#target=main}}')
 define( `FULLTARGET', `{{:id}}--{{:#target}}')
-define( `UNITSUFFIX', `ON_NOT_AGL_PERM(`:partner:scope-platform', `@%i')')
-define( `UNIT_NAME_BASE', `afm-ON_AGL_PERM(`:public:hidden', `service', `appli')-FULLTARGET')
+define( `UNITSUFFIX', `ON_NOT_PERM(`:partner:scope-platform', `@%i')')
+define( `UNIT_NAME_BASE', `afm-ON_PERM(`:public:hidden', `service', `appli')-FULLTARGET')
 define( `UNIT_NAME_API_BASE', `afm-api-$1')
 define( `UNIT_NAME_API_SERVICE', `UNIT_NAME_API_BASE($1)UNITSUFFIX.service')
 define( `UNIT_NAME_API_SOCKET', `UNIT_NAME_API_BASE($1)UNITSUFFIX.socket')
@@ -81,8 +78,8 @@ DEFPATH( `CONF_DIR', `AFM_CONFDIR')
 DEFPATH( `ICONS_DIR', `{{:#metadata.icons-dir}}')
 DEFPATH( `APP_INSTALL_DIR', `{{:#metadata.install-dir}}')
 
-DEFPATH( `RUN_DIR', `ON_AGL_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
-DEFPATH( `APP_DATA_DIR', `ON_AGL_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')
+DEFPATH( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
+DEFPATH( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')
 
 DEFSUBPATH( `APP_WORK_DIR', `APP_DATA_DIR', `{{:id}}')
 
@@ -98,7 +95,7 @@ DEFSUBPATH( `USER_API_PATH', `USER_RUN_DIR', `apis')
 DEFSUBPATH( `USER_API_PATH_WS', `USER_API_PATH', `ws')
 DEFSUBPATH( `USER_API_PATH_LINK', `USER_API_PATH', `link')
 
-define( `LOCALUSERAPP', `ON_AGL_PERM(`:partner:scope-platform', `localuser---AFID', `localuser--AFID')')
+define( `LOCALUSERAPP', `ON_PERM(`:partner:scope-platform', `localuser---AFID', `localuser--AFID')')
 
 define( `HTTP_PORT', `{{:#metatarget.http-port}}')
 --------------------------------------------------------------------------------

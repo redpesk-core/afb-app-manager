@@ -8,7 +8,7 @@ dnl vim: set filetype=sysctl.conf.m4 syntax=sysctl.conf.m4:
 %nl
 
 %systemd-unit system
-IF_AGL_PERM(:partner:scope-platform)
+IF_PERM(:partner:scope-platform)
 %systemd-unit service UNIT_NAME_BASE
 ELSE
 %systemd-unit service UNIT_NAME_BASE@
@@ -38,10 +38,10 @@ X-AFM--workdir=FULL_APP_WORK_DIR
 X-AFM--target-name={{:#target}}
 X-AFM--content={{content.src}}
 X-AFM--type={{content.type}}
-X-AFM--visibility=ON_AGL_PERM(:public:hidden,hidden,visible)
+X-AFM--visibility=ON_PERM(:public:hidden,hidden,visible)
 %nl
 
-IF_AGL_PERM(:partner:scope-platform)
+IF_PERM(:partner:scope-platform)
 X-AFM--scope=platform
 After=afm-system-setup.service
 ELSE
@@ -51,15 +51,15 @@ After=user@%i.service
 ENDIF
 
 After=Network.target
-IF_AGL_PERM(:public:network)
+IF_PERM(:public:network)
 Wants=network.target
 ENDIF
-IF_AGL_PERM(:public:bluetooth)
+IF_PERM(:public:bluetooth)
 Wants=bluetooth.target
 After=bluetooth.target
 ENDIF
 
-IF_AGL_PERM(:public:display)
+IF_PERM(:public:display)
 BindsTo=weston@display.service
 After=weston@display.service
 ENDIF
@@ -107,7 +107,7 @@ SELinuxContext=SELINUXLABEL
 SuccessExitStatus=0 SIGKILL
 UMask=0077
 
-IF_AGL_PERM(:partner:scope-platform)
+IF_PERM(:partner:scope-platform)
 #DynamicUser=true
 User=daemon
 Group=nobody
@@ -118,27 +118,27 @@ Slice=user-%i.slice
 WorkingDirectory=-FULL_APP_WORK_DIR
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=USER_RUN_DIR/bus
 ENDIF
-IF_AGL_PERM(:system:capability:keep-all)
+IF_PERM(:system:capability:keep-all)
 CapabilityBoundingSet=~
 AmbientCapabilities=~
 ELSE
 CapabilityBoundingSet=
 ENDIF
 
-IF_REDPESK_PERM(:partner:cgroup-manager)
+IF_PERM(:partner:cgroup-manager)
 Delegate=yes
 ELSE
 ExecStartPre=-REDWRAP`'/bin/mkdir -p APP_WORK_DIR
 ENDIF
 
-ON_AGL_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
-ON_AGL_PERM(:partner:real-time, IOSchedulingClass=realtime)
-ON_AGL_PERM(:partner:tty,       SupplementaryGroups=tty)
-ON_AGL_PERM(:partner:dialout,   SupplementaryGroups=dialout)
-ON_AGL_PERM(:partner:video,     SupplementaryGroups=video)
-ON_AGL_PERM(:public:display,    SupplementaryGroups=display)
-ON_AGL_PERM(:public:audio,      SupplementaryGroups=audio)
-ON_NOT_AGL_PERM(:public:syscall:clock, SystemCallFilter=~@clock)
+ON_PERM(:platform:no-oom,   OOMScoreAdjust=-500)
+ON_PERM(:partner:real-time, IOSchedulingClass=realtime)
+ON_PERM(:partner:tty,       SupplementaryGroups=tty)
+ON_PERM(:partner:dialout,   SupplementaryGroups=dialout)
+ON_PERM(:partner:video,     SupplementaryGroups=video)
+ON_PERM(:public:display,    SupplementaryGroups=display)
+ON_PERM(:public:audio,      SupplementaryGroups=audio)
+ON_NOT_PERM(:public:syscall:clock, SystemCallFilter=~@clock)
 %nl
 
 Environment=AFM_ID=TARGET
@@ -178,12 +178,12 @@ include(binder.inc)
 ExecStart=REDWRAP`'APP_INSTALL_DIR/{{content.src}}
 {{/content.type=application/x-executable}}
 
-IF_AGL_PERM(:system:run-by-default)
+IF_PERM(:system:run-by-default)
 ;-------------------------------------------------------------------------------
 ; auto start
 ;-------------------------------------------------------------------------------
 [Install]
-IF_AGL_PERM(:partner:scope-platform)
+IF_PERM(:partner:scope-platform)
 WantedBy=multi-user.target
 %systemd-unit wanted-by multi-user.target
 ELSE
