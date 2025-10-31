@@ -29,7 +29,7 @@ dodir() {
 #####################
 
 pdir=@afm_platform_rundir@
-spdir=@afm_scope_platform_dir@
+spdir=@afm_platform_datadir@
 
 # Create /run/* directories
 dodir "-T -a System:Shared" "/run/user" "$pdir" "$pdir/display" "$pdir/apis"
@@ -41,4 +41,4 @@ test -z "@create_platform_debug@" || dodir "-T -a System:Shared" "$pdir/debug"
 # Create /var/score-platform directory
 dodir "-T -a User:App-Shared" "$spdir"
 dodir "-t -a System:Shared" "$spdir/share"
-chown -R daemon:daemon "$spdir"
+chown -R @afm_platform_user@: "$spdir"

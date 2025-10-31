@@ -34,7 +34,7 @@ if(NOT ONLY_SDK)
 	set(m4defs
 		-DAFM_USERS_RUNDIR=${afm_users_rundir}
 		-DAFM_PLATFORM_RUNDIR=${afm_platform_rundir}
-		-DAFM_SCOPE_PLATFORM_HOMEDIR=${afm_scope_platform_dir}
+		-DAFM_PLATFORM_DATADIR=${afm_platform_datadir}
 		-DAFM_CONFDIR=${afm_confdir}
 	)
 

@@ -79,7 +79,7 @@ DEFPATH( `ICONS_DIR', `{{:#metadata.icons-dir}}')
 DEFPATH( `APP_INSTALL_DIR', `{{:#metadata.install-dir}}')
 
 DEFPATH( `RUN_DIR', `ON_PERM(`:partner:scope-platform', `PLATFORM_RUN_DIR', `USER_RUN_DIR')')
-DEFPATH( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_SCOPE_PLATFORM_HOMEDIR', `/home/%i/app-data')')
+DEFPATH( `APP_DATA_DIR', `ON_PERM(`:partner:scope-platform', `AFM_PLATFORM_DATADIR', `/home/%i/app-data')')
 
 DEFSUBPATH( `APP_WORK_DIR', `APP_DATA_DIR', `{{:id}}')
 

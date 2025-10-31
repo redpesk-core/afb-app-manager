@@ -51,7 +51,7 @@ cmake \
 	${crypto_sample_certs_dir+-Dcrypto_sample_certs_dir="${crypto_sample_certs_dir}"} \
 	${afm_platform_rundir+-Dafm_platform_rundir="${afm_platform_rundir}"} \
 	${afm_users_rundir+-Dafm_users_rundir="${afm_users_rundir}"} \
-	${afm_scope_platform_dir+-Dafm_scope_platform_dir="${afm_scope_platform_dir}"} \
+	${afm_platform_datadir+-Dafm_platform_datadir="${afm_platform_datadir}"} \
 	${rpm_plugin_dir+-Drpm_plugin_dir="${rpm_plugin_dir}"} \
 	${AFMPKG_SOCKET_ADDRESS+-DAFMPKG_SOCKET_ADDRESS="${AFMPKG_SOCKET_ADDRESS}"} \
 	${SYSCONFDIR_DBUS_SYSTEM+-DSYSCONFDIR_DBUS_SYSTEM="${SYSCONFDIR_DBUS_SYSTEM}"} \
