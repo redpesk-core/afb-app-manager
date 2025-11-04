@@ -3,4 +3,4 @@ Description=Initiate afm-system-setup
 Before=weston@display.service afs-supervisor.service afm-system-daemon.service
 [Service]
 Type=oneshot
-ExecStart=-@afm_libexecdir@/afm-system-setup.sh
+ExecStart=-@afm_libexecdir@/afm-system-setup

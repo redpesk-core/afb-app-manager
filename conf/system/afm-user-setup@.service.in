@@ -7,4 +7,4 @@ BindsTo=user@%i.service
 Type=oneshot
 RemainAfterExit=yes
 StartLimitInterval=0
-ExecStart=-@afm_libexecdir@/afm-user-setup.sh %i
+ExecStart=-@afm_libexecdir@/afm-user-setup %i

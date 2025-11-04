@@ -24,19 +24,13 @@
 
 if(NOT ONLY_SDK)
 
-	if(REDPESK_DEVEL)
-	  set(create_platform_debug "true")
-	endif()
-
 	configure_file(afm-system-daemon.service.in afm-system-daemon.service  @ONLY)
 	configure_file(afm-system-daemon.socket.in  afm-system-daemon.socket   @ONLY)
 	configure_file(afm-system-setup.service.in  afm-system-setup.service   @ONLY)
-	configure_file(afm-system-setup.sh.in       afm-system-setup.sh        @ONLY)
 	configure_file(afm-api-afm-main@.service.in afm-api-afm-main@.service  @ONLY)
 	configure_file(afm-create-user.sh.in        afm-create-user.sh         @ONLY)
 	configure_file(afm-user-session@.service.in afm-user-session@.service  @ONLY)
 	configure_file(afm-user-setup@.service.in   afm-user-setup@.service    @ONLY)
-	configure_file(afm-user-setup.sh.in         afm-user-setup.sh          @ONLY)
 	configure_file(afmpkg-installer.service.in  afmpkg-installer.service   @ONLY)
 	configure_file(afmpkg-installer.socket.in   afmpkg-installer.socket    @ONLY)
 
@@ -65,8 +59,6 @@ if(NOT ONLY_SDK)
 	install(
 		PROGRAMS
 			${CMAKE_CURRENT_BINARY_DIR}/afm-create-user.sh
-			${CMAKE_CURRENT_BINARY_DIR}/afm-user-setup.sh
-			${CMAKE_CURRENT_BINARY_DIR}/afm-system-setup.sh
 		DESTINATION
 			${afm_libexecdir}
 	)
