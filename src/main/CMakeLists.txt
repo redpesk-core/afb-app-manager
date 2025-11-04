@@ -44,9 +44,9 @@ if(NOT ONLY_SDK)
 				PERMISSIONS SETUID OWNER_READ OWNER_WRITE OWNER_EXECUTE
 						GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-	add_executable(afm-check-pkg main-afmpkg-check.c)
-	target_link_libraries(afm-check-pkg afmpkg)
-	install(TARGETS afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
+		add_executable(afm-check-pkg main-afmpkg-check.c)
+		target_link_libraries(afm-check-pkg afmpkg)
+		install(TARGETS afm-check-pkg DESTINATION ${CMAKE_INSTALL_BINDIR})
 	else()
 		MESSAGE("WARNING, Not creating afm-user-session!")
 	endif()
@@ -92,3 +92,4 @@ if(WITH_TOOLS)
 		install(TARGETS wgt-migrate DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 endif()
+
