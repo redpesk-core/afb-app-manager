@@ -1368,7 +1368,7 @@ static int config_read_and_check(struct json_object **obj, const char *path)
 
 static int config_read_and_check(struct json_object **obj, const char *path)
 {
-	RP_ERROR("config.xml panifest aren't supported anymore", state->path);
+	RP_ERROR("config.xml manifest aren't supported anymore", state->path);
 	return -ENOTSUP;
 }
 
