@@ -21,6 +21,8 @@
  * $RP_END_LICENSE$
  */
 
+#include <sys/stat.h>
+
 #include "setup-utils.h"
 
 #define LABEL_APP_SHARED "User:App-Shared"
@@ -51,6 +53,7 @@ int main(int ac, char **av)
 	uid_t uid;
 	gid_t gid;
 
+	umask(0022);
 	sts = setup_dirs(0, 0, root_dirs, &root_dirs[sizeof root_dirs / sizeof *root_dirs], false);
 	if (sts == 0) {
 		sts = get_user(AFM_PLATFORM_USER, &uid, &gid);

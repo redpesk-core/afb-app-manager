@@ -21,6 +21,8 @@
  * $RP_END_LICENSE$
  */
 
+#include <sys/stat.h>
+
 #include "setup-utils.h"
 
 #define LABEL_APP_SHARED "User:App-Shared"
@@ -66,6 +68,7 @@ int setup_user(const char *user)
 
 int main(int ac, char **av)
 {
+	umask(0022);
 	switch (ac) {
 	case 2: return setup_user(av[1]);
 	default: return err("usage: afm-user-setup user");

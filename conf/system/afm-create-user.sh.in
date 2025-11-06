@@ -9,6 +9,8 @@
 # afm_user_home_t => /home/user_id/app-data
 # => defined in the policy
 
+umask 0022
+
 user_id=${1:-$user_id}
 user_name=${2:-user-$user_id}
 group=${3:-users}
