@@ -46,7 +46,7 @@ chown "$user_name":"$group" "/home/$user_id" "/home/$user_id/app-data"
 
 # set smack label
 if test -x "/usr/bin/chsmack"; then
-    /usr/bin/chsmack -r -a "User:Home" "/home/$user_id"
+    /usr/bin/chsmack -r --if-no-access -a "User:Home" "/home/$user_id"
     /usr/bin/chsmack -T -a "User:App-Shared" "/home/$user_id/app-data"
 fi
 
