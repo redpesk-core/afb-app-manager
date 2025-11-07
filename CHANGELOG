@@ -1,3 +1,10 @@
+Version 12.5.1
+--------------
+
+- Internal renaming of platform scope settings
+- Replace afm setup scripts by binary programs
+- Improve creation of users
+
 Version 12.5.0
 --------------
 
