@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2015-2025 IoT.bzh Company
+ Copyright (C) 2015-2026 IoT.bzh Company
  Copyright (C) 2020 Konsulko Group
 
  Author: José Bollo <jose.bollo@iot.bzh>
