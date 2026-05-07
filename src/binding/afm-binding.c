@@ -123,12 +123,21 @@ DEF_OR(auth_kill,     auth_perm_runner, auth_perm_runner_kill)
  * and, finally, set.
  */
 enum {
-	Param_Spare  = 1,
-	Param_All    = 2,
-	Param_Spare2 = 4,
-	Param_Spare3 = 8,
-	Param_Id     = 16,
-	Param_RunId  = 32
+	Param_UID    = 1,  /* the UID is set for the request */
+	Param_All    = 2,  /* get even hidden items */
+	Param_Id     = 4,  /* the id of an application */
+	Param_RunId  = 8   /* the pid of a process*/
+};
+
+/**
+ * Enumerate the status code of parameter scanning
+ */
+enum {
+	no_error = 0,
+	error_bad_request = 1,
+	error_not_found = 2,
+	error_not_running = 3,
+	error_forbidden = 4
 };
 
 /**
@@ -238,13 +247,6 @@ static void application_list_changed(const char *operation, const char *data)
  */
 static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, struct params *params)
 {
-	enum {
-		no_error = 0,
-		error_bad_request = 1,
-		error_not_found = 2,
-		error_not_running = 3,
-		error_forbidden = 4
-	};
 
 	int id, error;
 	struct json_object *args, *obj;
