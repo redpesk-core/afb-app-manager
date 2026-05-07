@@ -31,7 +31,7 @@
 
 #include <json-c/json.h>
 
-#define AFB_BINDING_VERSION 3
+#define AFB_BINDING_VERSION 4
 #include <afb/afb-binding.h>
 
 #include <rp-utils/rp-verbose.h>
@@ -46,7 +46,7 @@
  * constant strings
  */
 static const char _all_[]       = "all";
-static const char _a_l_c_[]     = "application-list-changed";
+static const char _applstchg_[] = "application-list-changed";
 static const char _bad_request_[] = "bad-request";
 static const char _cannot_start_[] = "cannot-start";
 static const char _detail_[]    = "detail";
@@ -168,18 +168,52 @@ static struct afm_udb *afudb;
  */
 static afb_event_t applist_changed_event;
 
+static int json2data(afb_data_t *data, struct json_object *object)
+{
+	return afb_create_data_raw(data, AFB_PREDEFINED_TYPE_JSON_C, object, 0, (void*)json_object_put, object);
+}
+
+/* extract the json object of the request */
+static struct json_object *get_json_object(afb_req_t req)
+{
+	afb_data_t data;
+	int rc = afb_req_param_convert(req, 0, AFB_PREDEFINED_TYPE_JSON_C, &data);
+	return rc == 0 ? afb_data_ro_pointer(data) : NULL;
+}
+
+/* reply json object */
+static void reply_json_object(afb_req_t req, struct json_object *object)
+{
+	afb_data_t data;
+	json2data(&data, object);
+	afb_req_reply(req, 0, 1, &data);
+}
+
+/* reply an error code */
+static void reply_error(afb_req_t req, const char *text, int errcode)
+{
+	afb_req_reply(req, errcode, 0, NULL);
+}
+
 /*
- * the preallocated true json_object
+ * Sends the reply "true" to the request 'req' if 'status' is zero.
+ * Otherwise, when 'status' is not zero replies the error string 'errstr'.
  */
-static struct json_object *json_true;
+static void reply_status(afb_req_t req, int status)
+{
+	if (status >= 0)
+		reply_json_object(req, json_object_new_boolean(1));
+	else
+		reply_error(req, strerror(errno), AFB_ERRNO_INTERNAL_ERROR);
+}
 
 /* common bad request reply */
 static void bad_request(afb_req_t req)
 {
 	RP_INFO("bad request verb %s: %s",
 		afb_req_get_called_verb(req),
-		json_object_to_json_string(afb_req_json(req)));
-	afb_req_fail(req, _bad_request_, NULL);
+		json_object_to_json_string(get_json_object(req)));
+	reply_error(req, _bad_request_, AFB_ERRNO_INVALID_REQUEST);
 }
 
 /* forbidden request reply */
@@ -187,27 +221,30 @@ static void forbidden_request(afb_req_t req)
 {
 	RP_INFO("forbidden request verb %s: %s",
 		afb_req_get_called_verb(req),
-		json_object_to_json_string(afb_req_json(req)));
-	afb_req_fail(req, _forbidden_, NULL);
+		json_object_to_json_string(get_json_object(req)));
+	reply_error(req, _forbidden_, AFB_ERRNO_FORBIDDEN);
 }
 
 /* common not found reply */
 static void not_found(afb_req_t req)
 {
-	afb_req_fail(req, _not_found_, NULL);
+	reply_error(req, _not_found_, AFB_ERRNO_NO_ITEM);
 }
 
 /* common not running reply */
 static void not_running(afb_req_t req)
 {
-	afb_req_fail(req, _not_running_, NULL);
+	reply_error(req, _not_running_, AFB_ERRNO_BAD_STATE);
 }
 
 /* common can't start reply */
 static void cant_start(afb_req_t req)
 {
-	afb_req_fail(req, _cannot_start_, NULL);
+	reply_error(req, _cannot_start_, AFB_ERRNO_INTERNAL_ERROR);
 }
+
+/* temporarily disable any permission */
+static int afb_req_has_permission(afb_req_t req, const char *permission) { return 0; }
 
 /* emulate missing function */
 static int has_auth(afb_req_t req, const struct afb_auth *auth)
@@ -233,13 +270,34 @@ static int has_auth(afb_req_t req, const struct afb_auth *auth)
 
 /*
  * Broadcast the event "application-list-changed".
- * This event is sent was the event "changed" is received from dbus.
+ * This event is sent when SIGHUP is received
  */
 static void application_list_changed(const char *operation, const char *data)
 {
+	afb_data_t ada;
 	struct json_object *e = NULL;
 	rp_jsonc_pack(&e, "{ss ss}", "operation", operation, "data", data);
-	afb_event_broadcast(applist_changed_event, e);
+	json2data(&ada, e);
+	afb_event_broadcast(applist_changed_event, 1, &ada);
+}
+
+/**
+ * get the uid of the request
+ */
+static int get_req_uid(afb_req_t req)
+{
+#define NOBODY 99
+	int uid = NOBODY, val;
+	struct json_object *clifo, *juid;
+	clifo = afb_req_get_client_info(req);
+	if (clifo != NULL
+	 && json_object_object_get_ex(clifo, "uid", &juid)
+	 && json_object_is_type(juid, json_type_int)) {
+		val = json_object_get_int(juid);
+		if (val >= 0 && val <= 65534)
+			uid = val;
+	}
+	return uid;
 }
 
 /**
@@ -257,8 +315,8 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 	memset(params, 0, sizeof *params);
 	error = no_error;
 	found = 0;
-	params->uid = afb_req_get_uid(req);
-	args = afb_req_json(req);
+	params->uid = get_req_uid(req);
+	args = get_json_object(req);
 
 	/* args is a numeric value: a run id */
 	if (json_object_is_type(args, json_type_int)) {
@@ -287,7 +345,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 				if (id < 0)
 					error = error_bad_request;
 				else if (params->uid != id) {
-					if (!afb_req_has_permission(req, auth_perm_set_uid.text))
+					if (!has_auth(req, &auth_perm_set_uid))
 						error = error_forbidden;
 					else {
 						params->uid = id;
@@ -366,30 +424,9 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 }
 
 /*
- * Sends the reply 'resp' to the request 'req' if 'resp' is not NULLzero.
- * Otherwise, when 'resp' is NULL replies the error string 'errstr'.
- */
-static void reply(afb_req_t req, struct json_object *resp)
-{
-	if (resp)
-		afb_req_reply(req, resp, NULL, NULL);
-	else
-		afb_req_reply(req, NULL, "failed", strerror(errno));
-}
-
-/*
- * Sends the reply "true" to the request 'req' if 'status' is zero.
- * Otherwise, when 'status' is not zero replies the error string 'errstr'.
- */
-static void reply_status(afb_req_t req, int status)
-{
-	reply(req, status ? NULL : json_object_get(json_true));
-}
-
-/*
  * On query "runnables"
  */
-static void v_runnables(afb_req_t req)
+static void v_runnables(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	struct json_object *resp;
@@ -400,13 +437,13 @@ static void v_runnables(afb_req_t req)
 
 	/* get the applications */
 	resp = afm_udb_applications_public(afudb, params.all, params.uid);
-	afb_req_success(req, resp, NULL);
+	reply_json_object(req, resp);
 }
 
 /*
  * On query "detail"
  */
-static void v_detail(afb_req_t req)
+static void v_detail(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	struct json_object *resp;
@@ -418,7 +455,7 @@ static void v_detail(afb_req_t req)
 	/* get the details */
 	resp = afm_udb_get_application_public(afudb, params.id, params.uid);
 	if (resp)
-		afb_req_success(req, resp, NULL);
+		reply_json_object(req, resp);
 	else
 		not_found(req);
 }
@@ -426,7 +463,7 @@ static void v_detail(afb_req_t req)
 /*
  * On query "start"
  */
-static void v_start(afb_req_t req)
+static void v_start(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	struct json_object *appli, *resp;
@@ -454,13 +491,13 @@ static void v_start(afb_req_t req)
 	resp = NULL;
 	if (runid)
 		rp_jsonc_pack(&resp, "i", runid);
-	afb_req_success(req, resp, NULL);
+	reply_json_object(req, resp);
 }
 
 /*
  * On query "once"
  */
-static void v_once(afb_req_t req)
+static void v_once(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	struct json_object *appli, *resp;
@@ -486,13 +523,13 @@ static void v_once(afb_req_t req)
 
 	/* returns the state */
 	resp = runid ? afm_urun_state(afudb, runid, params.uid) : NULL;
-	afb_req_success(req, resp, NULL);
+	reply_json_object(req, resp);
 }
 
 /*
  * On query "pause"
  */
-static void v_pause(afb_req_t req)
+static void v_pause(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	int status;
@@ -507,7 +544,7 @@ static void v_pause(afb_req_t req)
 /*
  * On query "resume" from 'smsg' with parameters of 'obj'.
  */
-static void v_resume(afb_req_t req)
+static void v_resume(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	int status;
@@ -522,7 +559,7 @@ static void v_resume(afb_req_t req)
 /*
  * On query "terminate"
  */
-static void v_terminate(afb_req_t req)
+static void v_terminate(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	int status;
@@ -537,7 +574,7 @@ static void v_terminate(afb_req_t req)
 /*
  * On query "runners"
  */
-static void v_runners(afb_req_t req)
+static void v_runners(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	struct json_object *resp;
@@ -547,13 +584,13 @@ static void v_runners(afb_req_t req)
 		return;
 
 	resp = afm_urun_list(afudb, params.all, params.uid);
-	afb_req_success(req, resp, NULL);
+	reply_json_object(req, resp);
 }
 
 /*
  * On query "state"
  */
-static void v_state(afb_req_t req)
+static void v_state(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
 	struct params params;
 	struct json_object *resp;
@@ -561,7 +598,10 @@ static void v_state(afb_req_t req)
 	/* scan the request */
 	if (get_params(req, Param_RunId, 0, &params)) {
 		resp = afm_urun_state(afudb, params.runid, params.uid);
-		reply(req, resp);
+		if (resp != NULL)
+			reply_json_object(req, resp);
+		else
+			reply_error(req, NULL, AFB_ERRNO_INTERNAL_ERROR);
 	}
 }
 
@@ -573,9 +613,6 @@ static void onsighup(int signal)
 
 static int init(afb_api_t api)
 {
-	/* create TRUE */
-	json_true = json_object_new_boolean(1);
-
 	/* init database */
 	afudb = afm_udb_create(1, 0, "afm-");
 	if (!afudb) {
@@ -586,8 +623,12 @@ static int init(afb_api_t api)
 	signal(SIGHUP, onsighup);
 
 	/* create the event */
-	applist_changed_event = afb_api_make_event(api, _a_l_c_);
-	return -!afb_event_is_valid(applist_changed_event);
+	return afb_api_new_event(api, _applstchg_, &applist_changed_event);
+}
+
+static int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdata)
+{
+	return ctlid == afb_ctlid_Init ? init(api) : 0;
 }
 
 static const afb_verb_t verbs[] =
@@ -609,9 +650,7 @@ const afb_binding_t afbBindingExport = {
 	.specification = NULL,
 	.info = "Application Framework Master Service",
 	.verbs = verbs,
-	.preinit = NULL,
-	.init = init,
-	.onevent = NULL,
+	.mainctl = mainctl,
 	.noconcurrency = 1 /* relies on binder for serialization of requests */
 };
 
