@@ -467,65 +467,69 @@ static int get_params(
 	return check_final_params(req, params);
 }
 
+
+static void with_params(afb_req_t req, unsigned mandatory, unsigned optional,
+		void (*action)(afb_req_t req, const struct params *params))
+{
+	struct params params;
+	if (get_params(req, mandatory, optional, &params))
+		action(req, &params);
+}
+
 /*
  * On query "runnables"
  */
-static void v_runnables(afb_req_t req, unsigned nargs, afb_data_t const *args)
+static void a_runnables(afb_req_t req, const struct params *params)
 {
-	struct params params;
 	struct json_object *resp;
 
-	/* scan the request */
-	if (!get_params(req, 0, Param_All, &params))
-		return;
-
 	/* get the applications */
-	resp = afm_udb_applications_public(afudb, params.all, params.uid);
+	resp = afm_udb_applications_public(afudb, params->all, params->uid);
 	reply_json_object(req, resp);
+}
+
+static void v_runnables(afb_req_t req, unsigned nargs, afb_data_t const *args)
+{
+	with_params(req, 0, Param_All, a_runnables);
 }
 
 /*
  * On query "detail"
  */
-static void v_detail(afb_req_t req, unsigned nargs, afb_data_t const *args)
+static void a_detail(afb_req_t req, const struct params *params)
 {
-	struct params params;
 	struct json_object *resp;
 
-	/* scan the request */
-	if (!get_params(req, Param_Id, 0, &params))
-		return;
-
 	/* get the details */
-	resp = afm_udb_get_application_public(afudb, params.id, params.uid);
+	resp = afm_udb_get_application_public(afudb, params->id, params->uid);
 	if (resp)
 		reply_json_object(req, resp);
 	else
 		not_found(req);
 }
 
+static void v_detail(afb_req_t req, unsigned nargs, afb_data_t const *args)
+{
+	with_params(req, Param_Id, 0, a_detail);
+}
+
 /*
  * On query "start"
  */
-static void v_start(afb_req_t req, unsigned nargs, afb_data_t const *args)
+static void a_start(afb_req_t req, const struct params *params)
 {
-	struct params params;
 	struct json_object *appli, *resp;
 	int runid;
 
-	/* scan the request */
-	if (!get_params(req, Param_Id, 0, &params))
-		return;
-
 	/* get the application */
-	appli = afm_udb_get_application_private(afudb, params.id, params.uid);
+	appli = afm_udb_get_application_private(afudb, params->id, params->uid);
 	if (appli == NULL) {
 		not_found(req);
 		return;
 	}
 
 	/* launch the application */
-	runid = afm_urun_start(appli, params.uid);
+	runid = afm_urun_start(appli, params->uid);
 	if (runid < 0) {
 		cant_start(req);
 		return;
@@ -538,115 +542,114 @@ static void v_start(afb_req_t req, unsigned nargs, afb_data_t const *args)
 	reply_json_object(req, resp);
 }
 
+static void v_start(afb_req_t req, unsigned nargs, afb_data_t const *args)
+{
+	with_params(req, Param_Id, 0, a_start);
+}
+
 /*
  * On query "once"
  */
-static void v_once(afb_req_t req, unsigned nargs, afb_data_t const *args)
+static void a_once(afb_req_t req, const struct params *params)
 {
-	struct params params;
 	struct json_object *appli, *resp;
 	int runid;
 
-	/* scan the request */
-	if (!get_params(req, Param_Id, 0, &params))
-		return;
-
 	/* get the application */
-	appli = afm_udb_get_application_private(afudb, params.id, params.uid);
+	appli = afm_udb_get_application_private(afudb, params->id, params->uid);
 	if (appli == NULL) {
 		not_found(req);
 		return;
 	}
 
 	/* launch the application */
-	runid = afm_urun_once(appli, params.uid);
+	runid = afm_urun_once(appli, params->uid);
 	if (runid < 0) {
 		cant_start(req);
 		return;
 	}
 
 	/* returns the state */
-	resp = runid ? afm_urun_state(afudb, runid, params.uid) : NULL;
+	resp = runid ? afm_urun_state(afudb, runid, params->uid) : NULL;
 	reply_json_object(req, resp);
+}
+
+static void v_once(afb_req_t req, unsigned nargs, afb_data_t const *args)
+{
+	with_params(req, Param_Id, 0, a_once);
 }
 
 /*
  * On query "pause"
  */
+static void a_pause(afb_req_t req, const struct params *params)
+{
+	int status = afm_urun_pause(params->runid, params->uid);
+	reply_status(req, status);
+}
+
 static void v_pause(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
-	struct params params;
-	int status;
-
-	/* scan the request */
-	if (get_params(req, Param_RunId, 0, &params)) {
-		status = afm_urun_pause(params.runid, params.uid);
-		reply_status(req, status);
-	}
+	with_params(req, Param_RunId, 0, a_pause);
 }
 
 /*
  * On query "resume" from 'smsg' with parameters of 'obj'.
  */
+static void a_resume(afb_req_t req, const struct params *params)
+{
+	int status = afm_urun_resume(params->runid, params->uid);
+	reply_status(req, status);
+}
+
 static void v_resume(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
-	struct params params;
-	int status;
-
-	/* scan the request */
-	if (get_params(req, Param_RunId, 0, &params)) {
-		status = afm_urun_resume(params.runid, params.uid);
-		reply_status(req, status);
-	}
+	with_params(req, Param_RunId, 0, a_resume);
 }
 
 /*
  * On query "terminate"
  */
+static void a_terminate(afb_req_t req, const struct params *params)
+{
+	int status = afm_urun_terminate(params->runid, params->uid);
+	reply_status(req, status);
+}
+
 static void v_terminate(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
-	struct params params;
-	int status;
-
-	/* scan the request */
-	if (get_params(req, Param_RunId, 0, &params)) {
-		status = afm_urun_terminate(params.runid, params.uid);
-		reply_status(req, status);
-	}
+	with_params(req, Param_RunId, 0, a_terminate);
 }
 
 /*
  * On query "runners"
  */
+static void a_runners(afb_req_t req, const struct params *params)
+{
+	struct json_object *resp = afm_urun_list(afudb, params->all, params->uid);
+	reply_json_object(req, resp);
+}
+
 static void v_runners(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
-	struct params params;
-	struct json_object *resp;
-
-	/* scan the request */
-	if (!get_params(req, 0, Param_All, &params))
-		return;
-
-	resp = afm_urun_list(afudb, params.all, params.uid);
-	reply_json_object(req, resp);
+	with_params(req, 0, Param_All, a_runners);
 }
 
 /*
  * On query "state"
  */
+static void a_state(afb_req_t req, const struct params *params)
+{
+	struct json_object *resp = afm_urun_state(afudb, params->runid, params->uid);
+	if (resp != NULL)
+		reply_json_object(req, resp);
+	else
+		reply_error(req, NULL, AFB_ERRNO_INTERNAL_ERROR);
+}
+
 static void v_state(afb_req_t req, unsigned nargs, afb_data_t const *args)
 {
-	struct params params;
-	struct json_object *resp;
-
-	/* scan the request */
-	if (get_params(req, Param_RunId, 0, &params)) {
-		resp = afm_urun_state(afudb, params.runid, params.uid);
-		if (resp != NULL)
-			reply_json_object(req, resp);
-		else
-			reply_error(req, NULL, AFB_ERRNO_INTERNAL_ERROR);
-	}
+	with_params(req, Param_RunId, 0, a_state);
 }
 
 static void onsighup(int signal)
