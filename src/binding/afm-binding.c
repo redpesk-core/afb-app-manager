@@ -154,8 +154,6 @@ struct params {
 	const char *lang;
 	/** value of param 'id' if set */
 	const char *id;
-	/** value of param 'wgt' if set */
-	const char *wgt;
 	/** object value of parameters */
 	struct json_object *args;
 };
