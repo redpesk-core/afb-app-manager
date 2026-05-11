@@ -60,7 +60,6 @@ static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
 static const char _reload_[]    = "reload";
 static const char _resume_[]    = "resume";
-static const char _root_[]      = "root";
 static const char _runid_[]     = "runid";
 static const char _runnables_[] = "runnables";
 static const char _runners_[]   = "runners";
@@ -132,8 +131,7 @@ enum {
 	Param_Force  = 4,
 	Param_Reload = 8,
 	Param_Id     = 16,
-	Param_RunId  = 32,
-	Param_Root   = 64
+	Param_RunId  = 32
 };
 
 /**
@@ -158,8 +156,6 @@ struct params {
 	const char *id;
 	/** value of param 'wgt' if set */
 	const char *wgt;
-	/** value of param 'root' if set */
-	const char *root;
 	/** object value of parameters */
 	struct json_object *args;
 };
@@ -338,13 +334,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		&& json_object_object_get_ex(args, _lang_, &obj)) {
 			params->lang = json_object_get_string(obj);
 			found |= Param_Lang;
-		}
-
-		/* get root */
-		if ((expected & Param_Root)
-		&& json_object_object_get_ex(args, _root_, &obj)) {
-			params->root = json_object_get_string(obj);
-			found |= Param_Root;
 		}
 
 		/* get appid */
