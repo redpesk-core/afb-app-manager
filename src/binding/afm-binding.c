@@ -493,12 +493,8 @@ static void v_start(afb_req_t req)
 
 	/* returns */
 	resp = NULL;
-#if 0
-	rp_jsonc_pack(&resp, "{si}", _runid_, runid);
-#else
 	if (runid)
 		rp_jsonc_pack(&resp, "i", runid);
-#endif
 	afb_req_success(req, resp, NULL);
 }
 
