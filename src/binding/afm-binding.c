@@ -51,7 +51,6 @@ static const char _bad_request_[] = "bad-request";
 static const char _cannot_start_[] = "cannot-start";
 static const char _detail_[]    = "detail";
 static const char _forbidden_[] = "forbidden";
-static const char _force_[]     = "force";
 static const char _id_[]	= "id";
 static const char _not_found_[] = "not-found";
 static const char _not_running_[] = "not-running";
@@ -126,8 +125,8 @@ DEF_OR(auth_kill,     auth_perm_runner, auth_perm_runner_kill)
 enum {
 	Param_Spare  = 1,
 	Param_All    = 2,
-	Param_Force  = 4,
-	Param_Spare2 = 8,
+	Param_Spare2 = 4,
+	Param_Spare3 = 8,
 	Param_Id     = 16,
 	Param_RunId  = 32
 };
@@ -140,8 +139,6 @@ struct params {
 	unsigned found;
 	/** value of param 'all' if set */
 	int all;
-	/** value of param 'force' if set */
-	int force;
 	/** value of param 'uid' if set */
 	int uid;
 	/** value of param 'runid' if set */
@@ -305,13 +302,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 				error = error_forbidden;
 			else
 				found |= Param_All;
-		}
-
-		/* get force */
-		if ((expected & Param_Force)
-		&& json_object_object_get_ex(args, _force_, &obj)) {
-			params->force = json_object_get_boolean(obj);
-			found |= Param_Force;
 		}
 
 		/* get appid */
