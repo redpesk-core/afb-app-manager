@@ -162,6 +162,8 @@ struct params {
 	struct json_object *args;
 	/** the request */
 	afb_req_t req;
+	/** processing function */
+	void (*action)(afb_req_t, const struct params *);
 };
 
 /*
@@ -263,18 +265,18 @@ static void cant_start(afb_req_t req)
 /* temporarily disable any permission */
 static int afb_req_has_permission(afb_req_t req, const char *permission) { return 0; }
 
-/* emulate missing function */
-static int has_auth(afb_req_t req, const struct afb_auth *auth)
+/* temporarily check permission synchronously */
+static int has_auth_sync(afb_req_t req, const struct afb_auth *auth)
 {
 	switch (auth->type) {
 	case afb_auth_Permission:
 		return afb_req_has_permission(req, auth->text);
 	case afb_auth_Or:
-		return has_auth(req, auth->first) || has_auth(req, auth->next);
+		return has_auth_sync(req, auth->first) || has_auth_sync(req, auth->next);
 	case afb_auth_And:
-		return has_auth(req, auth->first) && has_auth(req, auth->next);
+		return has_auth_sync(req, auth->first) && has_auth_sync(req, auth->next);
 	case afb_auth_Not:
-		return !has_auth(req, auth->first);
+		return !has_auth_sync(req, auth->first);
 	case afb_auth_Yes:
 		return 1;
 	case afb_auth_No:
@@ -283,6 +285,17 @@ static int has_auth(afb_req_t req, const struct afb_auth *auth)
 	default:
 		return 0;
 	}
+}
+
+/* emulate missing function */
+static void has_auth(
+	struct params *params,
+	const struct afb_auth *auth,
+	void (*callback)(struct params *params)
+) {
+	if (!has_auth_sync(params->req, auth))
+		params->status = error_forbidden;
+	callback(params);
 }
 
 /*
@@ -401,20 +414,33 @@ static void extract_params(
 	params->args = args;
 }
 
-static void check_permission_uid(struct params *params)
+static void check_final(struct params *params)
 {
-	if (params->status == no_error && (params->found & Param_UID)) {
-		if (!has_auth(params->req, &auth_perm_set_uid))
-			params->status = error_forbidden;
+	/* check status */
+	if ((params->status == no_error)
+	 && ((params->required & params->found) == params->required)) {
+		/* parameters are good! perform the action of the verb */
+		params->action(params->req, params);
 	}
-}
-
-static void check_permission_all(struct params *params)
-{
-	if (params->status == no_error && (params->found & Param_All)) {
-		if (!has_auth(params->req, &auth_view_all))
-			params->status = error_forbidden;
+	else {
+		/* error reported */
+		switch(params->status) {
+		case error_not_found:
+			not_found(params->req);
+			break;
+		case error_not_running:
+			not_running(params->req);
+			break;
+		case error_forbidden:
+			forbidden_request(params->req);
+			break;
+		case error_bad_request:
+		default:
+			bad_request(params->req);
+			break;
+		}
 	}
+	free(params);
 }
 
 static void check_runid(struct params *params)
@@ -431,32 +457,23 @@ static void check_runid(struct params *params)
 			params->found |= Param_RunId;
 		}
 	}
+	check_final(params);
 }
 
-static int check_final_params(struct params *params)
+static void check_permission_all(struct params *params)
 {
-	/* status check */
-	if ((params->status == no_error)
-	 && ((params->required & params->found) == params->required))
-		return 1;
+	if (params->status != no_error || !(params->found & Param_All))
+		check_runid(params);
+	else
+		has_auth(params, &auth_view_all, check_runid);
+}
 
-	/* error reported */
-	switch(params->status) {
-	case error_not_found:
-		not_found(params->req);
-		break;
-	case error_not_running:
-		not_running(params->req);
-		break;
-	case error_forbidden:
-		forbidden_request(params->req);
-		break;
-	case error_bad_request:
-	default:
-		bad_request(params->req);
-		break;
-	}
-	return 0;
+static void check_permission_uid(struct params *params)
+{
+	if (params->status != no_error || !(params->found & Param_UID))
+		check_permission_all(params);
+	else
+		has_auth(params, &auth_perm_set_uid, check_permission_all);
 }
 
 static void with_params(afb_req_t req, unsigned required, unsigned optional,
@@ -471,11 +488,6 @@ static void with_params(afb_req_t req, unsigned required, unsigned optional,
 		params->action = action;
 		extract_params(params, optional);
 		check_permission_uid(params);
-		check_permission_all(params);
-		check_runid(params);
-		if (check_final_params(params))
-			action(params->req, params);
-		free(params);
 	}
 }
 
