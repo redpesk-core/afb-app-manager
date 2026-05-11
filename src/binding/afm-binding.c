@@ -307,17 +307,20 @@ static int get_req_uid(afb_req_t req)
 /**
  * common routine for getting parameters
  */
-static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, struct params *params)
-{
-
-	int id, error;
+static int get_params(
+	afb_req_t req,
+	unsigned mandatory,
+	unsigned optional,
+	struct params *params
+) {
+	int id, status;
 	struct json_object *args, *obj;
 	unsigned found, expected;
 
 	/* init */
 	expected = optional|mandatory;
 	memset(params, 0, sizeof *params);
-	error = no_error;
+	status = no_error;
 	found = 0;
 	params->uid = get_req_uid(req);
 	args = get_json_object(req);
@@ -343,14 +346,14 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		/* get UID */
 		if (json_object_object_get_ex(args, _uid_, &obj)) {
 			if (!json_object_is_type(obj, json_type_int))
-				error = error_bad_request;
+				status = error_bad_request;
 			else {
 				id = json_object_get_int(obj);
 				if (id < 0)
-					error = error_bad_request;
+					status = error_bad_request;
 				else if (params->uid != id) {
 					if (!has_auth(req, &auth_perm_set_uid))
-						error = error_forbidden;
+						status = error_forbidden;
 					else {
 						params->uid = id;
 					}
@@ -363,7 +366,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		&& json_object_object_get_ex(args, _all_, &obj)) {
 			params->all = json_object_get_boolean(obj);
 			if (params->all && !has_auth(req, &auth_view_all))
-				error = error_forbidden;
+				status = error_forbidden;
 			else
 				found |= Param_All;
 		}
@@ -380,7 +383,7 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		if (expected & Param_RunId) {
 			if (json_object_object_get_ex(args, _runid_, &obj)) {
 				if (!json_object_is_type(obj, json_type_int))
-					error = error_bad_request;
+					status = error_bad_request;
 				else {
 					params->runid = json_object_get_int(obj);
 					found |= Param_RunId;
@@ -397,14 +400,14 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 			found |= Param_RunId;
 		}
 		else if (errno == ESRCH)
-			error = error_not_running;
+			status = error_not_running;
 		else
-			error = error_not_found;
+			status = error_not_found;
 	}
 
 	/* check all mandatory are here */
-	if (error != no_error || (mandatory & found) != mandatory) {
-		switch(error) {
+	if (status != no_error || (mandatory & found) != mandatory) {
+		switch(status) {
 		case error_not_found:
 			not_found(req);
 			break;
