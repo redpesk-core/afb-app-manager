@@ -168,9 +168,13 @@ static struct afm_udb *afudb;
  */
 static afb_event_t applist_changed_event;
 
+/*
+ * creates the data handling the given JSON object
+ */
 static int json2data(afb_data_t *data, struct json_object *object)
 {
-	return afb_create_data_raw(data, AFB_PREDEFINED_TYPE_JSON_C, object, 0, (void*)json_object_put, object);
+	return afb_create_data_raw(data, AFB_PREDEFINED_TYPE_JSON_C,
+			object, 0, (void*)json_object_put, object);
 }
 
 /* extract the json object of the request */
