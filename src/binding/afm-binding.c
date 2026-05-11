@@ -144,6 +144,10 @@ enum {
  * Records the parameters of verb queries
  */
 struct params {
+	/** status of the scan */
+	int status;
+	/** bit mask of the required param */
+	unsigned required;
 	/** bit mask of the given param */
 	unsigned found;
 	/** value of param 'all' if set */
@@ -307,9 +311,9 @@ static int get_req_uid(afb_req_t req)
 /**
  * common routine for getting parameters
  */
-static int get_params(
+static void extract_params(
 	afb_req_t req,
-	unsigned mandatory,
+	unsigned required,
 	unsigned optional,
 	struct params *params
 ) {
@@ -318,8 +322,9 @@ static int get_params(
 	unsigned found, expected;
 
 	/* init */
-	expected = optional|mandatory;
 	memset(params, 0, sizeof *params);
+	params->required = required;
+	expected = optional|required;
 	status = no_error;
 	found = 0;
 	params->uid = get_req_uid(req);
@@ -386,53 +391,80 @@ static int get_params(
 			}
 		}
 	}
-
-	/* check permissions */
-	if (found & Param_UID) {
-		if (!has_auth(req, &auth_perm_set_uid))
-			status = error_forbidden;
-	}
-	if (found & Param_All) {
-		if (!has_auth(req, &auth_view_all))
-			status = error_forbidden;
-	}
-
-	/* deduce the runid from the uid on need */
-	if ((mandatory & Param_RunId) && !(found & Param_RunId) && (found & Param_Id)) {
-		id = afm_urun_search_runid(afudb, params->id, params->uid);
-		if (id > 0) {
-			params->runid = id;
-			found |= Param_RunId;
-		}
-		else if (errno == ESRCH)
-			status = error_not_running;
-		else
-			status = error_not_found;
-	}
-
-	/* check all mandatory are here */
-	if (status != no_error || (mandatory & found) != mandatory) {
-		switch(status) {
-		case error_not_found:
-			not_found(req);
-			break;
-		case error_not_running:
-			not_running(req);
-			break;
-		case error_forbidden:
-			forbidden_request(req);
-			break;
-		case error_bad_request:
-		default:
-			bad_request(req);
-			break;
-		}
-		return 0;
-	}
-
-	params->args = args;
+	params->status = status;
 	params->found = found;
-	return 1;
+	params->args = args;
+}
+
+static void check_permissions(afb_req_t req, struct params *params)
+{
+	if (params->status == no_error) {
+		/* check permissions */
+		if (params->found & Param_UID) {
+			if (!has_auth(req, &auth_perm_set_uid))
+				params->status = error_forbidden;
+		}
+	}
+	if (params->status == no_error) {
+		if (params->found & Param_All) {
+			if (!has_auth(req, &auth_view_all))
+				params->status = error_forbidden;
+		}
+	}
+}
+
+static void check_runid(struct params *params)
+{
+	/* deduce the runid from the uid on need */
+	if (params->status == no_error
+	 && (params->required & Param_RunId)
+	 && (params->found & (Param_RunId | Param_Id)) == Param_Id) {
+		int id = afm_urun_search_runid(afudb, params->id, params->uid);
+		if (id < 0)
+			params->status = errno == ESRCH ? error_not_running : error_not_found;
+		else {
+			params->runid = id;
+			params->found |= Param_RunId;
+		}
+	}
+}
+
+static int check_final_params(afb_req_t req, struct params *params)
+{
+	/* status check */
+	if ((params->status == no_error)
+	 && ((params->required & params->found) == params->required))
+		return 1;
+
+	/* error reported */
+	switch(params->status) {
+	case error_not_found:
+		not_found(req);
+		break;
+	case error_not_running:
+		not_running(req);
+		break;
+	case error_forbidden:
+		forbidden_request(req);
+		break;
+	case error_bad_request:
+	default:
+		bad_request(req);
+		break;
+	}
+	return 0;
+}
+
+static int get_params(
+	afb_req_t req,
+	unsigned required,
+	unsigned optional,
+	struct params *params
+) {
+	extract_params(req, required, optional, params);
+	check_permissions(req, params);
+	check_runid(params);
+	return check_final_params(req, params);
 }
 
 /*
