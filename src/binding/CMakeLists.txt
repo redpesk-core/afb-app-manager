@@ -33,6 +33,7 @@ if(libsystemd_FOUND AND AFB_FOUND AND NOT ONLY_SDK)
 		afm-binding.c
 		afm-udb.c
 		afm-urun.c
+		auth.c
 	)
 	target_compile_definitions(
 		afm-binding

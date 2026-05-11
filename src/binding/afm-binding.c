@@ -41,6 +41,7 @@
 #include "afm-udb.h"
 #include "afm-urun.h"
 #include "wgt-info.h"
+#include "auth.h"
 
 /*
  * constant strings
@@ -72,13 +73,13 @@ static const char _update_[]    = "update";
 #define REDPESK_PREFIX "urn:redpesk:permission:afm:system:"
 
 #define DEF_OR(name, case1, case2) \
-		static const struct afb_auth name = { \
+		static const afb_auth_t name = { \
 			.type = afb_auth_Or, \
 			.first = &case1, \
 			.next = &case2 };
 
 #define DEF_PREFIX_PERM(name, prefix, suffix) \
-		static const struct afb_auth name = { \
+		static const afb_auth_t name = { \
 			.type = afb_auth_Permission, \
 			.text = prefix suffix };
 
@@ -263,40 +264,23 @@ static void cant_start(afb_req_t req)
 	reply_error(req, _cannot_start_, AFB_ERRNO_INTERNAL_ERROR);
 }
 
-/* temporarily disable any permission */
-static int afb_req_has_permission(afb_req_t req, const char *permission) { return 0; }
-
-/* temporarily check permission synchronously */
-static int has_auth_sync(afb_req_t req, const struct afb_auth *auth)
+static void has_auth_cb(void *closure, int status, void *extra)
 {
-	switch (auth->type) {
-	case afb_auth_Permission:
-		return afb_req_has_permission(req, auth->text);
-	case afb_auth_Or:
-		return has_auth_sync(req, auth->first) || has_auth_sync(req, auth->next);
-	case afb_auth_And:
-		return has_auth_sync(req, auth->first) && has_auth_sync(req, auth->next);
-	case afb_auth_Not:
-		return !has_auth_sync(req, auth->first);
-	case afb_auth_Yes:
-		return 1;
-	case afb_auth_No:
-	case afb_auth_Token:
-	case afb_auth_LOA:
-	default:
-		return 0;
-	}
-}
-
-/* emulate missing function */
-static void has_auth(
-	struct params *params,
-	const struct afb_auth *auth,
-	void (*callback)(struct params *params)
-) {
-	if (!has_auth_sync(params->req, auth))
+	struct params *params = closure;
+	void (*callback)(struct params *params) = extra;
+	if (status == -ENOMEM)
+		params->status = error_out_of_memory;
+	else if (status <= 0)
 		params->status = error_forbidden;
 	callback(params);
+}
+
+static void has_auth(
+	struct params *params,
+	const afb_auth_t *auth,
+	void (*callback)(struct params *params)
+) {
+	auth_check(params->req, auth, has_auth_cb, params, callback);
 }
 
 /*
