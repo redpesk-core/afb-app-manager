@@ -57,7 +57,6 @@ static const char _not_found_[] = "not-found";
 static const char _not_running_[] = "not-running";
 static const char _once_[]      = "once";
 static const char _pause_[]     = "pause";
-static const char _reload_[]    = "reload";
 static const char _resume_[]    = "resume";
 static const char _runid_[]     = "runid";
 static const char _runnables_[] = "runnables";
@@ -128,7 +127,7 @@ enum {
 	Param_Spare  = 1,
 	Param_All    = 2,
 	Param_Force  = 4,
-	Param_Reload = 8,
+	Param_Spare2 = 8,
 	Param_Id     = 16,
 	Param_RunId  = 32
 };
@@ -143,8 +142,6 @@ struct params {
 	int all;
 	/** value of param 'force' if set */
 	int force;
-	/** value of param 'reload' if set */
-	int reload;
 	/** value of param 'uid' if set */
 	int uid;
 	/** value of param 'runid' if set */
@@ -315,13 +312,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 		&& json_object_object_get_ex(args, _force_, &obj)) {
 			params->force = json_object_get_boolean(obj);
 			found |= Param_Force;
-		}
-
-		/* get reload */
-		if ((expected & Param_Reload)
-		&& json_object_object_get_ex(args, _reload_, &obj)) {
-			params->reload = json_object_get_boolean(obj);
-			found |= Param_Reload;
 		}
 
 		/* get appid */
