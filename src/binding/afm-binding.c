@@ -137,7 +137,8 @@ enum {
 	error_bad_request = 1,
 	error_not_found = 2,
 	error_not_running = 3,
-	error_forbidden = 4
+	error_forbidden = 4,
+	error_out_of_memory = 5
 };
 
 /**
@@ -433,6 +434,9 @@ static void check_final(struct params *params)
 			break;
 		case error_forbidden:
 			forbidden_request(params->req);
+			break;
+		case error_out_of_memory:
+			out_of_memory(params->req);
 			break;
 		case error_bad_request:
 		default:
