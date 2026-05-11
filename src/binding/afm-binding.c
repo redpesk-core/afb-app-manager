@@ -396,20 +396,19 @@ static void extract_params(
 	params->args = args;
 }
 
-static void check_permissions(afb_req_t req, struct params *params)
+static void check_permission_uid(afb_req_t req, struct params *params)
 {
-	if (params->status == no_error) {
-		/* check permissions */
-		if (params->found & Param_UID) {
-			if (!has_auth(req, &auth_perm_set_uid))
-				params->status = error_forbidden;
-		}
+	if (params->status == no_error && (params->found & Param_UID)) {
+		if (!has_auth(req, &auth_perm_set_uid))
+			params->status = error_forbidden;
 	}
-	if (params->status == no_error) {
-		if (params->found & Param_All) {
-			if (!has_auth(req, &auth_view_all))
-				params->status = error_forbidden;
-		}
+}
+
+static void check_permission_all(afb_req_t req, struct params *params)
+{
+	if (params->status == no_error && (params->found & Param_All)) {
+		if (!has_auth(req, &auth_view_all))
+			params->status = error_forbidden;
 	}
 }
 
@@ -462,7 +461,8 @@ static int get_params(
 	struct params *params
 ) {
 	extract_params(req, required, optional, params);
-	check_permissions(req, params);
+	check_permission_uid(req, params);
+	check_permission_all(req, params);
 	check_runid(params);
 	return check_final_params(req, params);
 }
