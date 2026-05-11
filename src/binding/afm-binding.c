@@ -352,11 +352,8 @@ static int get_params(
 				if (id < 0)
 					status = error_bad_request;
 				else if (params->uid != id) {
-					if (!has_auth(req, &auth_perm_set_uid))
-						status = error_forbidden;
-					else {
-						params->uid = id;
-					}
+					params->uid = id;
+					found |= Param_UID;
 				}
 			}
 		}
@@ -365,9 +362,7 @@ static int get_params(
 		if ((expected & Param_All)
 		&& json_object_object_get_ex(args, _all_, &obj)) {
 			params->all = json_object_get_boolean(obj);
-			if (params->all && !has_auth(req, &auth_view_all))
-				status = error_forbidden;
-			else
+			if (params->all)
 				found |= Param_All;
 		}
 
@@ -390,6 +385,16 @@ static int get_params(
 				}
 			}
 		}
+	}
+
+	/* check permissions */
+	if (found & Param_UID) {
+		if (!has_auth(req, &auth_perm_set_uid))
+			status = error_forbidden;
+	}
+	if (found & Param_All) {
+		if (!has_auth(req, &auth_view_all))
+			status = error_forbidden;
 	}
 
 	/* deduce the runid from the uid on need */
