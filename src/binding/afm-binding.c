@@ -53,7 +53,6 @@ static const char _detail_[]    = "detail";
 static const char _forbidden_[] = "forbidden";
 static const char _force_[]     = "force";
 static const char _id_[]	= "id";
-static const char _lang_[]      = "lang";
 static const char _not_found_[] = "not-found";
 static const char _not_running_[] = "not-running";
 static const char _once_[]      = "once";
@@ -126,7 +125,7 @@ DEF_OR(auth_kill,     auth_perm_runner, auth_perm_runner_kill)
  * and, finally, set.
  */
 enum {
-	Param_Lang   = 1,
+	Param_Spare  = 1,
 	Param_All    = 2,
 	Param_Force  = 4,
 	Param_Reload = 8,
@@ -150,8 +149,6 @@ struct params {
 	int uid;
 	/** value of param 'runid' if set */
 	int runid;
-	/** value of param 'lang' if set */
-	const char *lang;
 	/** value of param 'id' if set */
 	const char *id;
 	/** object value of parameters */
@@ -327,13 +324,6 @@ static int get_params(afb_req_t req, unsigned mandatory, unsigned optional, stru
 			found |= Param_Reload;
 		}
 
-		/* get languages */
-		if ((expected & Param_Lang)
-		&& json_object_object_get_ex(args, _lang_, &obj)) {
-			params->lang = json_object_get_string(obj);
-			found |= Param_Lang;
-		}
-
 		/* get appid */
 		if (expected & (Param_Id | Param_RunId)) {
 			if (json_object_object_get_ex(args, _id_, &obj)) {
@@ -423,7 +413,7 @@ static void v_runnables(afb_req_t req)
 	struct json_object *resp;
 
 	/* scan the request */
-	if (!get_params(req, 0, Param_Lang|Param_All, &params))
+	if (!get_params(req, 0, Param_All, &params))
 		return;
 
 	/* get the applications */
@@ -440,7 +430,7 @@ static void v_detail(afb_req_t req)
 	struct json_object *resp;
 
 	/* scan the request */
-	if (!get_params(req, Param_Id, Param_Lang, &params))
+	if (!get_params(req, Param_Id, 0, &params))
 		return;
 
 	/* get the details */
