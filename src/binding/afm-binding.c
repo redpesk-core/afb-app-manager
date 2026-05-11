@@ -160,6 +160,8 @@ struct params {
 	const char *id;
 	/** object value of parameters */
 	struct json_object *args;
+	/** the request */
+	afb_req_t req;
 };
 
 /*
@@ -231,6 +233,13 @@ static void forbidden_request(afb_req_t req)
 		afb_req_get_called_verb(req),
 		json_object_to_json_string(get_json_object(req)));
 	reply_error(req, _forbidden_, AFB_ERRNO_FORBIDDEN);
+}
+
+/* out of memory reply */
+static void out_of_memory(afb_req_t req)
+{
+	RP_CRITICAL("Out of memory");
+	reply_error(req, NULL, AFB_ERRNO_OUT_OF_MEMORY);
 }
 
 /* common not found reply */
@@ -312,23 +321,19 @@ static int get_req_uid(afb_req_t req)
  * common routine for getting parameters
  */
 static void extract_params(
-	afb_req_t req,
-	unsigned required,
-	unsigned optional,
-	struct params *params
+	struct params *params,
+	unsigned optional
 ) {
 	int id, status;
 	struct json_object *args, *obj;
 	unsigned found, expected;
 
 	/* init */
-	memset(params, 0, sizeof *params);
-	params->required = required;
-	expected = optional|required;
+	expected = optional | params->required;
 	status = no_error;
 	found = 0;
-	params->uid = get_req_uid(req);
-	args = get_json_object(req);
+	params->uid = get_req_uid(params->req);
+	args = get_json_object(params->req);
 
 	/* args is a numeric value: a run id */
 	if (json_object_is_type(args, json_type_int)) {
@@ -396,18 +401,18 @@ static void extract_params(
 	params->args = args;
 }
 
-static void check_permission_uid(afb_req_t req, struct params *params)
+static void check_permission_uid(struct params *params)
 {
 	if (params->status == no_error && (params->found & Param_UID)) {
-		if (!has_auth(req, &auth_perm_set_uid))
+		if (!has_auth(params->req, &auth_perm_set_uid))
 			params->status = error_forbidden;
 	}
 }
 
-static void check_permission_all(afb_req_t req, struct params *params)
+static void check_permission_all(struct params *params)
 {
 	if (params->status == no_error && (params->found & Param_All)) {
-		if (!has_auth(req, &auth_view_all))
+		if (!has_auth(params->req, &auth_view_all))
 			params->status = error_forbidden;
 	}
 }
@@ -428,7 +433,7 @@ static void check_runid(struct params *params)
 	}
 }
 
-static int check_final_params(afb_req_t req, struct params *params)
+static int check_final_params(struct params *params)
 {
 	/* status check */
 	if ((params->status == no_error)
@@ -438,42 +443,40 @@ static int check_final_params(afb_req_t req, struct params *params)
 	/* error reported */
 	switch(params->status) {
 	case error_not_found:
-		not_found(req);
+		not_found(params->req);
 		break;
 	case error_not_running:
-		not_running(req);
+		not_running(params->req);
 		break;
 	case error_forbidden:
-		forbidden_request(req);
+		forbidden_request(params->req);
 		break;
 	case error_bad_request:
 	default:
-		bad_request(req);
+		bad_request(params->req);
 		break;
 	}
 	return 0;
 }
 
-static int get_params(
-	afb_req_t req,
-	unsigned required,
-	unsigned optional,
-	struct params *params
-) {
-	extract_params(req, required, optional, params);
-	check_permission_uid(req, params);
-	check_permission_all(req, params);
-	check_runid(params);
-	return check_final_params(req, params);
-}
-
-
-static void with_params(afb_req_t req, unsigned mandatory, unsigned optional,
+static void with_params(afb_req_t req, unsigned required, unsigned optional,
 		void (*action)(afb_req_t req, const struct params *params))
 {
-	struct params params;
-	if (get_params(req, mandatory, optional, &params))
-		action(req, &params);
+	struct params *params = calloc(1, sizeof *params);
+	if (params == NULL)
+		out_of_memory(req);
+	else {
+		params->required = required;
+		params->req = req;
+		params->action = action;
+		extract_params(params, optional);
+		check_permission_uid(params);
+		check_permission_all(params);
+		check_runid(params);
+		if (check_final_params(params))
+			action(params->req, params);
+		free(params);
+	}
 }
 
 /*
