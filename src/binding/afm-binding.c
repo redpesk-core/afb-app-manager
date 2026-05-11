@@ -427,7 +427,7 @@ static void v_runnables(afb_req_t req)
 		return;
 
 	/* get the applications */
-	resp = afm_udb_applications_public(afudb, params.all, params.uid, params.lang);
+	resp = afm_udb_applications_public(afudb, params.all, params.uid);
 	afb_req_success(req, resp, NULL);
 }
 
@@ -444,7 +444,7 @@ static void v_detail(afb_req_t req)
 		return;
 
 	/* get the details */
-	resp = afm_udb_get_application_public(afudb, params.id, params.uid, params.lang);
+	resp = afm_udb_get_application_public(afudb, params.id, params.uid);
 	if (resp)
 		afb_req_success(req, resp, NULL);
 	else

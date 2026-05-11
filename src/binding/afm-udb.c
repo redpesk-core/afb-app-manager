@@ -89,11 +89,6 @@ struct afm_updt {
 };
 
 /*
- * The default language
- */
-static char *default_lang;
-
-/*
  * initilize object 'apps'.
  * returns 1 if okay or 0 on case of memory depletion
  */
@@ -527,16 +522,6 @@ int afm_udb_update(struct afm_udb *afudb)
 }
 
 /*
- * set the default language to 'lang'
- */
-void afm_udb_set_default_lang(const char *lang)
-{
-	char *oldval = default_lang;
-	default_lang = lang ? strdup(lang) : NULL;
-	free(oldval);
-}
-
-/*
  * Get the list of the applications private data of the afm_udb object 'afudb'.
  * The list is returned as a JSON-array that must be released using
  * 'json_object_put'.
@@ -553,7 +538,7 @@ struct json_object *afm_udb_applications_private(struct afm_udb *afudb, int all,
  * 'json_object_put'.
  * Returns NULL in case of error.
  */
-struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int all, int uid, const char *lang)
+struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int all, int uid)
 {
 	return json_object_get(all ? afudb->applications.publics.all : afudb->applications.publics.visibles);
 }
@@ -563,7 +548,7 @@ struct json_object *afm_udb_applications_public(struct afm_udb *afudb, int all, 
  * It returns a JSON-object that must be released using 'json_object_put'.
  * Returns NULL in case of error.
  */
-static struct json_object *get_no_case(struct json_object *object, const char *id, int uid, const char *lang)
+static struct json_object *get_no_case(struct json_object *object, const char *id, int uid)
 {
 	struct json_object *result;
 	struct json_object_iter i;
@@ -587,7 +572,7 @@ static struct json_object *get_no_case(struct json_object *object, const char *i
  */
 struct json_object *afm_udb_get_application_private(struct afm_udb *afudb, const char *id, int uid)
 {
-	return get_no_case(afudb->applications.privates.byname, id, uid, NULL);
+	return get_no_case(afudb->applications.privates.byname, id, uid);
 }
 
 /*
@@ -595,10 +580,9 @@ struct json_object *afm_udb_get_application_private(struct afm_udb *afudb, const
  * It returns a JSON-object that must be released using 'json_object_put'.
  * Returns NULL in case of error.
  */
-struct json_object *afm_udb_get_application_public(struct afm_udb *afudb,
-							const char *id, int uid, const char *lang)
+struct json_object *afm_udb_get_application_public(struct afm_udb *afudb, const char *id, int uid)
 {
-	return get_no_case(afudb->applications.publics.byname, id, uid, lang);
+	return get_no_case(afudb->applications.publics.byname, id, uid);
 }
 
 
