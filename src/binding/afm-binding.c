@@ -263,6 +263,7 @@ static void cant_start(afb_req_t req)
 	reply_error(req, _cannot_start_, AFB_ERRNO_INTERNAL_ERROR);
 }
 
+/* callback for has_auth */
 static void has_auth_cb(void *closure, int status, void *extra)
 {
 	struct params *params = closure;
@@ -274,6 +275,7 @@ static void has_auth_cb(void *closure, int status, void *extra)
 	callback(params);
 }
 
+/* check the auth and calls the callback with the status */
 static void has_auth(
 	struct params *params,
 	const afb_auth_t *auth,
@@ -398,6 +400,10 @@ static void extract_params(
 	params->args = args;
 }
 
+/*
+ * Final check, either send an error or perform the recorded action
+ * Then release the allocated params
+ */
 static void check_final(struct params *params)
 {
 	/* check status */
@@ -427,9 +433,13 @@ static void check_final(struct params *params)
 			break;
 		}
 	}
+	/* release the params structure */
 	free(params);
 }
 
+/*
+ * ensure a runid if it is required
+ */
 static void check_runid(struct params *params)
 {
 	/* deduce the runid from the uid on need */
@@ -447,6 +457,7 @@ static void check_runid(struct params *params)
 	check_final(params);
 }
 
+/* check, if needed, that permission view-all is granted */
 static void check_permission_all(struct params *params)
 {
 	if (params->status != no_error || !(params->found & Param_All))
@@ -455,6 +466,7 @@ static void check_permission_all(struct params *params)
 		has_auth(params, &auth_perm_view_all, check_runid);
 }
 
+/* check, if needed, that permission set-uid is granted */
 static void check_permission_uid(struct params *params)
 {
 	if (params->status != no_error || !(params->found & Param_UID))
@@ -463,6 +475,7 @@ static void check_permission_uid(struct params *params)
 		has_auth(params, &auth_perm_set_uid, check_permission_all);
 }
 
+/* compute the parameters, check it and then if correct perform the action */
 static void with_params(afb_req_t req, unsigned required, unsigned optional,
 		void (*action)(afb_req_t req, const struct params *params))
 {
