@@ -105,15 +105,14 @@ static const char _update_[]    = "update";
 DEF_PERM(auth_perm_widget,          "widget")
 DEF_PERM(auth_perm_widget_detail,   "widget:detail")
 DEF_PERM(auth_perm_widget_start,    "widget:start")
-DEF_PERM(auth_perm_widget_view_all, "widget:view-all")
 DEF_PERM(auth_perm_runner,          "runner")
 DEF_PERM(auth_perm_runner_state,    "runner:state")
 DEF_PERM(auth_perm_runner_kill,     "runner:kill")
+DEF_PERM(auth_perm_view_all,        "view-all")
 DEF_PERM(auth_perm_set_uid,         "set-uid")
 
 DEF_OR(auth_detail,   auth_perm_widget, auth_perm_widget_detail)
 DEF_OR(auth_start,    auth_perm_widget, auth_perm_widget_start)
-DEF_OR(auth_view_all, auth_perm_widget, auth_perm_widget_view_all)
 DEF_OR(auth_state,    auth_perm_runner, auth_perm_runner_state)
 DEF_OR(auth_kill,     auth_perm_runner, auth_perm_runner_kill)
 
@@ -453,7 +452,7 @@ static void check_permission_all(struct params *params)
 	if (params->status != no_error || !(params->found & Param_All))
 		check_runid(params);
 	else
-		has_auth(params, &auth_view_all, check_runid);
+		has_auth(params, &auth_perm_view_all, check_runid);
 }
 
 static void check_permission_uid(struct params *params)
