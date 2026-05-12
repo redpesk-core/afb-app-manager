@@ -151,8 +151,6 @@ struct params {
 	unsigned required;
 	/** bit mask of the given param */
 	unsigned found;
-	/** value of param 'all' if set */
-	int all;
 	/** value of param 'uid' if set */
 	int uid;
 	/** value of param 'runid' if set */
@@ -370,8 +368,7 @@ static void extract_params(
 		/* get all */
 		if ((expected & Param_All)
 		&& json_object_object_get_ex(args, _all_, &obj)) {
-			params->all = json_object_get_boolean(obj);
-			if (params->all)
+			if (json_object_get_boolean(obj))
 				found |= Param_All;
 		}
 
@@ -497,9 +494,10 @@ static void with_params(afb_req_t req, unsigned required, unsigned optional,
 static void a_runnables(afb_req_t req, const struct params *params)
 {
 	struct json_object *resp;
+	int all = (params->found & Param_All) != 0;
 
 	/* get the applications */
-	resp = afm_udb_applications_public(afudb, params->all, params->uid);
+	resp = afm_udb_applications_public(afudb, all, params->uid);
 	reply_json_object(req, resp);
 }
 
@@ -641,7 +639,8 @@ static void v_terminate(afb_req_t req, unsigned nargs, afb_data_t const *args)
  */
 static void a_runners(afb_req_t req, const struct params *params)
 {
-	struct json_object *resp = afm_urun_list(afudb, params->all, params->uid);
+	int all = (params->found & Param_All) != 0;
+	struct json_object *resp = afm_urun_list(afudb, all, params->uid);
 	reply_json_object(req, resp);
 }
 
