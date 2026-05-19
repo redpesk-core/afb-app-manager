@@ -77,6 +77,8 @@ static void method_legacy(const char *ftempl, struct json_object *manif)
 /* the modern method is the standard output since version 0.2 */
 static int modern_cb(void *closure, char *text, size_t size)
 {
+	/* normalize the result */
+	normalize_unit_file(text);
 	fputs(text, stdout);
 	return 0;
 }
