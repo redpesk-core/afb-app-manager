@@ -2,6 +2,7 @@ Version 12.6.1
 --------------
 
 - Fix processing 'or' of keys in afm-units.conf
+- Add option -j to afm-translate for seeing internal JSON
 
 Version 12.6.0
 --------------

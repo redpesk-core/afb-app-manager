@@ -278,6 +278,7 @@ static void usage(const char *name)
 	printf("  or   %s (-v | --version)\n", name);
 	printf("  or   %s [OPTION...] manifest [meta...]\n", name);
 	printf("where OPTION in:\n"
+	       " -j        print internal json without processing\n"
 	       " -l        use legacy translation\n"
 	       " -m        use modern translation\n"
 	       " -s        use split translation (produce tar file)\n"
@@ -328,7 +329,7 @@ static void add_metadata(struct json_object *manif, struct json_object *meta)
 
 int main(int ac, char **av)
 {
-	int rc, idx;
+	int rc, idx, jsopt = 0;
 	struct json_object *manif, *meta;
 	const char *ftempl, *me, *unitdir, *fileout;
 	enum { Legacy, Modern, Split } method = Modern;
@@ -341,7 +342,7 @@ int main(int ac, char **av)
 	fileout = unitdir = NULL;
 
 	/* scan options */
-	while((rc = getopt(ac, av, "?hlmo:st:u:v")) > 0) {
+	while((rc = getopt(ac, av, "?hjlmo:st:u:v")) > 0) {
 		switch((char)rc) {
 		default:
 			fprintf(stderr, "unrecognized option '%c'\n", (char)rc);
@@ -349,6 +350,9 @@ int main(int ac, char **av)
 		case '?':
 		case 'h':
 			usage(me);
+			break;
+		case 'j':
+			jsopt = 1;
 			break;
 		case 'l':
 			method = Legacy;
@@ -401,6 +405,12 @@ int main(int ac, char **av)
 		}
 		if (meta != NULL)
 			add_metadata(manif, meta);
+	}
+
+	/* prints the json if required */
+	if (jsopt) {
+		printf("%s\n", json_object_to_json_string_ext(manif, JSON_C_TO_STRING_PRETTY|JSON_C_TO_STRING_NOSLASHESCAPE));
+		return EXIT_SUCCESS;
 	}
 
 	/* check, opens the output */
