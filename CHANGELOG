@@ -1,4 +1,4 @@
-Version 12.6.1
+Version 12.7.0
 --------------
 
 - Fix processing 'or' of keys in afm-units.conf
