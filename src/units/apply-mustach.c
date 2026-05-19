@@ -172,16 +172,13 @@ static char *globalize(char *key)
 }
 
 /*
- * find the object of 'name'
+ * find the object of according to n looking like "key['='val['|'val]...]"
  */
-static struct json_object *find(struct expl *e, const char *name)
+static struct json_object *findin(struct expl *e, char *n)
 {
 	int i, isptr;
 	struct json_object *o, *r;
-	char *n, *c, *v;
-
-	/* get a local key */
-	n = strdupa(name);
+	char *c, *v;
 
 	/* is it a JSON pointer? */
 	isptr = n[0] == '/';
@@ -237,6 +234,15 @@ static struct json_object *find(struct expl *e, const char *name)
 	return o;
 }
 
+/*
+ * find the object of 'name'
+ */
+static struct json_object *find(struct expl *e, const char *name)
+{
+	char *n = strdupa(name);
+	return findin(e, n);
+}
+
 static int start(void *closure)
 {
 	struct expl *e = closure;
@@ -271,10 +277,32 @@ static int put(void *closure, const char *name, int escape, FILE *file)
 	return 0;
 }
 
+/*
+ * find one of the object object of 'name' looking like "keyval['||'keyval]..."
+ */
+static struct json_object *findor(struct expl *e, const char *name)
+{
+	struct json_object *o = NULL;
+	char *n = strdupa(name);
+
+	while(*n && o == NULL) {
+		char *nn = n;
+		while (nn[0] != 0 && (nn[0] != '|' || nn[1] != '|'))
+			nn++;
+		if (nn[0] != 0) {
+			nn[0] = 0;
+			nn += 2;
+		}
+		o = findin(e, n);
+		n = nn;
+	}
+	return o;
+}
+
 static int enter(void *closure, const char *name)
 {
 	struct expl *e = closure;
-	struct json_object *o = find(e, name);
+	struct json_object *o = findor(e, name);
 	if (++e->depth >= MAX_DEPTH)
 		return MUSTACH_ERROR_TOO_DEEP;
 	if (json_object_is_type(o, json_type_array)) {
