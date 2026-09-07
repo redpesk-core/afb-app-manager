@@ -77,7 +77,6 @@ After=afm-system-setup.service
 DefaultDependencies=no
 
 [Socket]
-SmackLabel=*
 SmackLabelIPIn=System
 SmackLabelIPOut=System
 SELinuxContextFromNet=true
