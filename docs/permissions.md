@@ -1,6 +1,6 @@
 # The permissions
 
-## Permission's names
+## Permissions name
 
 Permissions are simple strings called name of the permission or
 simply the permission. The string used could be any distinct string
@@ -12,15 +12,14 @@ The permission names are [URN][URN] of the form:
     urn:NID:permission:<api>:<level>:<hierarchical-name>
 ```
 
-where the NID (the namespace identifier) is depends of the surrounding
-namespace.
+where the NID (the Namespace IDentifier) depends on the associated namespace.
 
-The currently used NID used are:
+The currently used NIDs are:
 
 - **AGL**: dedicated to AGL
 - **redpesk**: dedicated to redpesk
 
-The permission names are made of NSS (the namespace specific string)
+The permission names are made of NSS (the Namespace Specific String)
 starting with "permission:" and followed by colon separated
 fields.
 
@@ -41,8 +40,8 @@ fields are grouped to form the `<hierarchical-name>`.
     <extra> ::= "-" | "." | "_" | "@"
 ```
 
-Doing this, there is no real need for the
-framework to keep installed permissions in a database.
+By doing so, there is no need for the framework
+to keep installed permissions in a database.
 
 The field `<api>` can be made of any valid character for NSS except
 the characters colon (`:`) and star (`*`).
@@ -50,7 +49,7 @@ This field designates the api providing the permission.
 This scheme is used to deduce binding requirements
 from permission requirements.
 The field `<api>` can be the empty string when the permission
-is defined by the system or for any api itself.
+is defined by the system or for an api itself.
 
 The field `<level>` is made only of letters in lower case.
 The field `<level>` can only take the predefined values:
@@ -77,10 +76,10 @@ These permissions are available the 21th of May 2019.
 
 - `urn:redpesk:permission::partner:real-time`
 
-  Set IOSchedulingClass=realtime to give to the process
+  Set IOSchedulingClass=realtime to give the process
   realtime scheduling.
 
-  Conversely, not having this permission set RestrictRealtime=on
+  Conversely, not having this permission sets RestrictRealtime=on
   to forbid realtime features.
 
 - `urn:redpesk:permission::public:display`
@@ -104,11 +103,11 @@ These permissions are available the 21th of May 2019.
 
 - `urn:redpesk:permission::partner:service:no-ws`
 
-  Forbids services to provide its API through websocket.
+  Forbids a service to provide its API through websocket.
 
 - `urn:redpesk:permission::partner:service:no-dbus`
 
-  Forbids services to provide its API through D-Bus.
+  Forbids a service to provide its API through D-Bus.
 
 - `urn:redpesk:permission::system:run-by-default`
 
@@ -135,7 +134,7 @@ These permissions are available the 21th of May 2019.
 
 - `urn:redpesk:permission::system:capability:keep-all`
 
-  Keep all capabilities for the service. Note that implementing
+  Keeps all capabilities for the service. Note that implementing
   that permission is not mandatory or can be adapted for the given
   system.
 

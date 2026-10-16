@@ -5,10 +5,10 @@ to send orders to **afm-system-daemon**.
 
 The syntax is simple: `afm-util [option]... command [argument]`
 
-- it accepts a command and when required, an attached argument;
+- it accepts a command and when required, an associated argument;
 
 - the option **--uid UID** (or **-u UID**), if permitted,
-  allows to play the command for an other user;
+  allows to play the command for another user;
 
   Required permission: *urn:redpesk:permission:afm:system:set-uid*
 
@@ -49,7 +49,7 @@ or *urn:redpesk:permission:afm:system:widget:detail*
 
 Synopsis: `afm-util [--uid UID] start id`
 
-Starts an instance of the widget of id
+Starts an instance of the widget id
 
 Required permission: *urn:redpesk:permission:afm:system:widget*
 or *urn:redpesk:permission:afm:system:widget:start*
@@ -58,7 +58,7 @@ or *urn:redpesk:permission:afm:system:widget:start*
 
 Synopsis: `afm-util [--uid UID] [--all] runners`
 
-Lists the running instance
+Lists the running instances
 
 Required permission: *urn:redpesk:permission:afm:system:runner*
 or *urn:redpesk:permission:afm:system:runner:state*
@@ -67,7 +67,7 @@ or *urn:redpesk:permission:afm:system:runner:state*
 
 Synopsis: `afm-util [--uid UID] state rid`
 
-Gets status of the running instance rid
+Gets the status of the running instance rid
 
 Required permission: *urn:redpesk:permission:afm:system:runner*
 or *urn:redpesk:permission:afm:system:runner:state*
@@ -81,10 +81,9 @@ Terminates the running instance rid
 Required permission: *urn:redpesk:permission:afm:system:runner*
 or *urn:redpesk:permission:afm:system:runner:kill*
 
-
 ## Command aliases
 
-For historical and practical reasons, most commands have alias.
+For historical and practical reasons, most commands have aliases.
 Here is the list
 
 | official name | alias name |

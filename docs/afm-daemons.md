@@ -4,7 +4,7 @@
 
 The application framework of redpesk provides two services running in
 background as daemons.
-They ensure that operations use correctly the security framework
+They ensure that operations correctly use the security framework
 and that applications are executed in the correct security context.
 
 - **afmpkg-installerd**: this daemon installs and removes applications.
@@ -19,7 +19,7 @@ It automatically stops after an inactivity period.
 
 The daemon **afm-system-daemon** is accessible through redpesk
 micro-service architecture using either the binder **afb-binder**,
-the client library **libafbcli** or the programs **afb-client** and
+the client library **libafbcli**, or the programs **afb-client** and
 **afm-util**.
 
 It is installed as a systemd service and started automatically on need.
@@ -33,7 +33,7 @@ $ systemctl status afm-system-daemon
 
 ### List of applications
 
-At start **afm-system-daemon** scans the directories containing
+At startup, **afm-system-daemon** scans the directories containing
 applications and load in memory a list of available applications
 accessible by current user.
 
@@ -49,8 +49,8 @@ given application.
 Systemd builds a secure environment for the application
 before starting it.
 
-Once launched, running instances of application receive
-a runid that identify them. On previous versions, the *runid*
+Once launched, running instances of the application receive
+a runid that identifies them. In previous versions, the *runid*
 had a special meaning. The current version uses the linux *PID*
 of the launched process as *runid*.
 
@@ -77,7 +77,7 @@ it automatically stops.
 ### Installing applications
 
 **afmpkg-installerd** reads the metadata of the installed package and
-check it.
+checks it.
 
 When metadata are wrong, the installation is cancelled.
 
@@ -86,11 +86,11 @@ the *security manager* to setup the system security for the installed
 application.
 
 After installing or removing an application, **afmpkg-installerd**
-sends to **afm-system-daemon** a signal telling it to update its
+sends a signal to **afm-system-daemon**, telling it to update its
 applications database.
 
 ### Removing applications
 
 **afmpkg-installerd** contacts the *security manager* to cleanup the
-security rules for the removed application and to remove their
+security rules for the removed application and to remove it's
 security setup.
