@@ -1,7 +1,8 @@
-Version ??????
+Version 12.7.1
 --------------
 
 - Fix labelling named unix domain sockets (#9398)
+- Doc improvements
 
 Version 12.7.0
 --------------
