@@ -70,18 +70,6 @@ the framework also includes descriptions of dependencies on other services.
 As of today, this model allows the distribution of HTML and binary applications
 but it could be extended to any other class of applications.
 
-```
-IN THE FUTURE
-
-Signatures make it possible to grant or deny the permissions
-required by an application based on the signers' certificates.
-
-A chain of trust in the creation of certificates allows a hierarchical
-structuring of permissions.
-
-This item is 90% implemented.
-```
-
 ## The security model
 
 The security model refers to how DAC (Discretionary Access Control),
@@ -100,14 +88,8 @@ The security framework includes:
 - **redpesk**: RPM plugin that interacts with afmpkg-installer
 - **D-Bus** compliant with Cynagora: checks the permissions to deliver messages
 
-**In theory, the security framework/model is an implementation detail
-that should not impact the programming model from a user point of view**.
-
-```
-IN THE FUTURE
-
-redpesk framework will include self security diagnostic by analyzing audit and log reports.
-```
+**The security framework/model is an implementation detail
+that doesn't impact the programming model from a user point of view**.
 
 ## Systemd services
 

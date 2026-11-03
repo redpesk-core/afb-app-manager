@@ -67,7 +67,6 @@ by colons.
 ## Example of permissions
 
 Here is a list of some possible permissions.
-These permissions are available the 21th of May 2019.
 
 - `urn:redpesk:permission::platform:no-oom`
 
@@ -177,43 +176,6 @@ These permissions are available the 21th of May 2019.
 - `urn:redpesk:permission:afm:system:widget:uninstall`
 
   Permission of the application framework
-
-
-## Proposals of evolution
-
-### [PROPOSAL 1] @API
-
-The field `<api>` if starting with the character "@" represents
-a transversal/cross permission not bound to any binding.
-
-### [PROPOSAL 2] @@API
-
-The field `<api>` if starting with the 2 characters "@@"
-in addition to a permission not bound to any binding, represents a
-permission that must be set at installation and that can not be
-revoked later.
-
-### [PROPOSAL 3] Hierarchy in name
-
-The names at left are hierarchically grouping the names at right.
-This hierarchical behaviour is intended to
-be used to request permissions using hierarchical grouping.
-This behaviour is not implemented by the framework at the moment
-but it is sometime implemented using specific rules.
-
-### [PROPOSAL 4] Permission value
-
-In some case, it could be worth to add a value to a permission,
-like in `urn:redpesk:permission::user=foo`.
-
-Currently, the framework allows it for permissions linked to
-generation of systemd units. But this not currently used.
-
-Conversely, permissions linked to cynagora can't carry data
-except in their name.
-
-Thus to have a simple and cleaner model, it is better to forbid
-attachment of value to permission.
 
 
 [URN]: https://tools.ietf.org/rfc/rfc2141.txt "RFC 2141: URN Syntax"
