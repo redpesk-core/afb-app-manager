@@ -89,7 +89,7 @@ The security framework includes:
 - **D-Bus** compliant with Cynagora: checks the permissions to deliver messages
 
 **The security framework/model is an implementation detail
-that doesn't impact the programming model from a user point of view**.
+that shall not impact the programming model from a user point of view**.
 
 ## Systemd services
 
